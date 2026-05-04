@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.frontend", "MES.frontend.csproj", "{5F13FCE2-3C69-BDD4-D532-217B5BE85ADA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5F13FCE2-3C69-BDD4-D532-217B5BE85ADA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F13FCE2-3C69-BDD4-D532-217B5BE85ADA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F13FCE2-3C69-BDD4-D532-217B5BE85ADA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F13FCE2-3C69-BDD4-D532-217B5BE85ADA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C8DBB022-B705-43D7-8621-37B9417CEA1C}
+	EndGlobalSection
+EndGlobal

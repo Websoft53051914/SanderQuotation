@@ -1,0 +1,232 @@
+@{
+    ViewBag.Title = "FOUP 批次管理";
+    ViewBag.pTitle = "FOUP 批次管理";
+    ViewBag.pageTitle = "EMS";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">批次列表</h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-soft-danger" id="remove-actions" style="display:none;"
+                                    onclick="deleteMultiple()">
+                                <i class="ri-delete-bin-2-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" id="globalSearchInput"
+                                       class="form-control search bg-light border-light" placeholder="搜尋批號、狀態...">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-2 col-sm-6">
+                            <select id="statusFilter" class="form-select bg-light border-light">
+                                <option value="">全部狀態</option>
+                                <option value="Active">進行中</option>
+                                <option value="HELD">暫停</option>
+                                <option value="Running">執行中</option>
+                            </select>
+                        </div>
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                篩選
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll">
+                                    </div>
+                                </th>
+                                <th>操作</th>
+                                <th data-sort="No">編號</th>
+                                <th data-sort="LotId">批號</th>
+                                <th data-sort="Product">產品</th>
+                                <th data-sort="Status">狀態</th>
+                                <th data-sort="Utilization">使用率</th>
+                                <th data-sort="Location">位置</th>
+                                <th data-sort="CreatedAt">建立時間</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display:none;">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">上一頁</a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">下一頁</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // ── Demo data ──────────────────────────────────────────────────────────────
+        const DEMO_LOTS = [
+            { Id: '1', No: 1, LotId: 'LOT-2024-001', Product: 'PROD-A', Status: 'Active', WaferCount: 25, TotalSlot: 25, Location: 'FOUP-01', CreatedAt: '2024-01-10' },
+            { Id: '2', No: 2, LotId: 'LOT-2024-002', Product: 'PROD-B', Status: 'HELD', WaferCount: 18, TotalSlot: 25, Location: 'FOUP-02', CreatedAt: '2024-01-11' },
+            { Id: '3', No: 3, LotId: 'LOT-2024-003', Product: 'PROD-A', Status: 'Running', WaferCount: 20, TotalSlot: 25, Location: 'FOUP-03', CreatedAt: '2024-01-12' },
+            { Id: '4', No: 4, LotId: 'LOT-2024-004', Product: 'PROD-C', Status: 'Active', WaferCount: 12, TotalSlot: 25, Location: 'FOUP-04', CreatedAt: '2024-01-13' },
+            { Id: '5', No: 5, LotId: 'LOT-2024-005', Product: 'PROD-B', Status: 'Active', WaferCount: 8, TotalSlot: 25, Location: 'FOUP-05', CreatedAt: '2024-01-14' },
+            { Id: '6', No: 6, LotId: 'LOT-2024-006', Product: 'PROD-D', Status: 'HELD', WaferCount: 22, TotalSlot: 25, Location: 'FOUP-06', CreatedAt: '2024-01-15' },
+            { Id: '7', No: 7, LotId: 'LOT-2024-007', Product: 'PROD-A', Status: 'Running', WaferCount: 15, TotalSlot: 25, Location: 'FOUP-07', CreatedAt: '2024-01-16' },
+            { Id: '8', No: 8, LotId: 'LOT-2024-008', Product: 'PROD-C', Status: 'Active', WaferCount: 5, TotalSlot: 25, Location: 'FOUP-08', CreatedAt: '2024-01-17' },
+        ];
+
+        let queryState = {
+            pageIndex: 1,
+            pageSize: 10,
+            keyword: '',
+            status: '',
+        };
+
+        function loadDatas() {
+            let filtered = DEMO_LOTS.filter(d => {
+                const kw = queryState.keyword.toLowerCase();
+                const matchKw = !kw || d.LotId.toLowerCase().includes(kw) || d.Product.toLowerCase().includes(kw);
+                const matchSt = !queryState.status || d.Status === queryState.status;
+                return matchKw && matchSt;
+            });
+            renderTable(filtered);
+            renderPagination(filtered.length);
+        }
+
+        function statusBadge(status) {
+            const map = { Active: 'success', HELD: 'danger', Running: 'primary' };
+            return `<span class="badge bg-${map[status] || 'secondary'}-subtle text-${map[status] || 'secondary'} text-uppercase">${status}</span>`;
+        }
+
+        function utilizationBar(count, total) {
+            const pct = Math.round(count / total * 100);
+            return `
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:6px;">
+                        <div class="progress-bar bg-success" style="width:${pct}%"></div>
+                    </div>
+                    <span class="text-muted small">${count}/${total}</span>
+                </div>`;
+        }
+
+        function renderTable(rows) {
+            const tbody = document.getElementById('data-list-data');
+            tbody.innerHTML = '';
+
+            if (!rows || rows.length === 0) {
+                document.querySelector('.noresult').style.display = '';
+                return;
+            }
+            document.querySelector('.noresult').style.display = 'none';
+
+            const foupUrl = '@Url.Action("Index", "Foup")';
+            const splitUrl = '@Url.Action("SplitLot", "FoupLot")';
+            const mergeUrl = '@Url.Action("MergeLot", "FoupLot")';
+
+            rows.forEach(data => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = data.Id;
+                tr.innerHTML = `
+                    <th scope="row">
+                        <div class="form-check">
+                            <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}">
+                        </div>
+                    </th>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="${foupUrl}?lotId=${encodeURIComponent(data.LotId)}&location=${encodeURIComponent(data.Location)}" class="btn btn-sm btn-soft-secondary" title="FOUP 檢視">
+                                <i class="ri-layout-grid-line me-1"></i>FOUP
+                            </a>
+                            <a href="${splitUrl}?id=${data.Id}" class="btn btn-sm btn-soft-warning" title="拆批">
+                                <i class="ri-scissors-cut-line me-1"></i>拆批
+                            </a>
+                            <a href="${mergeUrl}?id=${data.Id}" class="btn btn-sm btn-soft-info" title="併批">
+                                <i class="ri-merge-cells-horizontal me-1"></i>併批
+                            </a>
+                        </div>
+                    </td>
+                    <td class="No">${data.No}</td>
+                    <td class="LotId fw-semibold text-primary">
+                        <a href="${splitUrl}?id=${data.Id}">${data.LotId}</a>
+                    </td>
+                    <td class="Product">${data.Product}</td>
+                    <td class="Status">${statusBadge(data.Status)}</td>
+                    <td class="Utilization" style="min-width:160px;">${utilizationBar(data.WaferCount, data.TotalSlot)}</td>
+                    <td class="Location">${data.Location}</td>
+                    <td class="CreatedAt">${data.CreatedAt}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // checkbox select-all
+            document.getElementById('checkAll').addEventListener('change', function () {
+                document.querySelectorAll('.row-check').forEach(cb => cb.checked = this.checked);
+                document.getElementById('remove-actions').style.display = this.checked ? '' : 'none';
+            });
+        }
+
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / queryState.pageSize);
+            const ul = document.querySelector('.listjs-pagination');
+            ul.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === queryState.pageIndex ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a>`;
+                ul.appendChild(li);
+            }
+
+            document.querySelector('.pagination-prev').classList.toggle('disabled', queryState.pageIndex === 1);
+            document.querySelector('.pagination-next').classList.toggle('disabled', queryState.pageIndex === totalPages);
+
+            document.querySelector('.pagination-prev').onclick = e => { e.preventDefault(); if (queryState.pageIndex > 1) { queryState.pageIndex--; loadDatas(); } };
+            document.querySelector('.pagination-next').onclick = e => { e.preventDefault(); if (queryState.pageIndex < totalPages) { queryState.pageIndex++; loadDatas(); } };
+        }
+
+        function gotoPage(page) { queryState.pageIndex = page; loadDatas(); }
+
+        function SearchData() {
+            queryState.keyword = document.getElementById('globalSearchInput').value.trim();
+            queryState.status = document.getElementById('statusFilter').value;
+            queryState.pageIndex = 1;
+            loadDatas();
+        }
+
+        document.getElementById('globalSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') SearchData(); });
+
+        // initial load
+        loadDatas();
+
+    </script>
+}

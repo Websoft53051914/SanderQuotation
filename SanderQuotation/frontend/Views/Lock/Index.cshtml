@@ -1,0 +1,270 @@
+﻿@{
+    ViewBag.Title = (config.GetMessage("Lock_Screen").ToHtmlString());
+    Layout = null;
+
+    var name = ViewData["name"] as string;
+    var acc = ViewData["acc"] as string;
+}
+
+<!doctype html>
+<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="ladylip" data-sidebar-size="lg">
+
+<head>
+    @Html.Partial("~/Views/Shared/_title_meta.cshtml")
+    @Html.Partial("~/Views/Shared/_head_css.cshtml")
+    <link href="~/assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        .mlr-20 {
+            margin: 0px 20px 0px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-page-wrapper pt-5">
+        <!-- auth page bg -->
+        <div class="auth-one-bg-position auth-one-bg" id="auth-particles">
+            <div></div>
+            <div class="bg-overlay"></div>
+
+            <div class="shape">
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1440 120">
+                    <path d="M 0,36 C 144,53.6 432,123.2 720,124 C 1008,124.8 1296,56.8 1440,40L1440 140L0 140z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- auth page content -->
+        <div class="auth-page-content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="text-center mt-sm-5 mb-4 text-white-50">
+                            <div>
+                                <img src="~/assets/images/logo.svg" alt="" style="filter: brightness(0) invert(1);">
+                                @* <img src="~/assets/images/logo-light.png" alt="" height="20"> *@
+                                @*                                 <a href="@Url.Action("Index", "Dashboard")" class="d-inline-block auth-logo">
+                                </a> *@
+                            </div>
+                            @* <p class="mt-3 fs-16 fw-semibold">Premium Admin & Dashboard Template</p> *@
+                        </div>
+                    </div>
+                </div>
+                <!-- end row -->
+
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6 col-xl-5">
+                        <div class="card mt-4  card-bg-fill">
+
+                            <div class="card-body p-4">
+                                <div class="text-center mt-2">
+                                    <h5 class="text-primary">@(config.GetMessage("Lock_Screen").ToHtmlString())</h5>
+                                    <p class="text-muted">@(config.GetMessage("Please_enter_your_password_to_unlock_the_screen").ToHtmlString())</p>
+                                </div>
+                                <div class="user-thumb text-center">
+                                    <img id="myImg" src="~/assets/images/users/user-dummy-img.jpg" class="rounded-circle img-thumbnail avatar-lg material-shadow" alt="thumbnail">
+                                    <h5 class="font-size-15 mt-3">@(acc) @(name)</h5>
+                                </div>
+                                <div class="p-2 mt-4">
+                                    <form method="post" action="/Lock/unLock">
+                                        <div class="row">
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit1-input" class="visually-hidden">Digit 1</label>
+                                                    <input type="password" class="form-control form-control-lg bg-light border-light text-center focusinput" onkeyup="moveToNext(1, event)" maxLength="1" id="digit1-input">
+                                                </div>
+                                            </div><!-- end col -->
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit2-input" class="visually-hidden">Digit 2</label>
+                                                    <input type="password" class="form-control form-control-lg bg-light border-light text-center" onkeyup="moveToNext(2, event)" maxLength="1" id="digit2-input">
+                                                </div>
+                                            </div><!-- end col -->
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit3-input" class="visually-hidden">Digit 3</label>
+                                                    <input type="password" class="form-control form-control-lg bg-light border-light text-center" onkeyup="moveToNext(3, event)" maxLength="1" id="digit3-input">
+                                                </div>
+                                            </div><!-- end col -->
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit4-input" class="visually-hidden">Digit 4</label>
+                                                    <input type="password" class="form-control form-control-lg bg-light border-light text-center" maxLength="1" id="digit4-input">
+                                                </div>
+                                            </div><!-- end col -->
+                                        </div>
+                                        @*                                         <div class="mb-3">
+                                            <label class="form-label" for="pincode">@(config.GetMessage("Pin_Code").ToHtmlString())</label>
+                                            <input type="password" name="pincode" class="form-control" id="pincode" required>
+                                        </div> *@
+                                        @if (ViewBag.Error != null)
+                                        {
+                                            <p style="color:red">@ViewBag.Error</p>
+                                        }
+
+                                        <div class="mb-2 mt-4">
+                                            <button class="btn btn-success w-100" id="btnPinCode" type="submit">@(config.GetMessage("Unlock").ToHtmlString())</button>
+                                        </div>
+                                    </form><!-- end form -->
+
+                                </div>
+                            </div>
+                            <!-- end card body -->
+                        </div>
+                        <!-- end card -->
+
+                        <div class="mt-4 text-center">
+                            <p class="mb-0">
+                                <a href="@Url.Action("Index", "Login")" class="fw-semibold text-primary text-decoration-underline">
+                                    @(config.GetMessage("Not_you_Back_to_login").ToHtmlString())
+                                </a>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end container -->
+        </div>
+        <!-- end auth page content -->
+        <!-- footer -->
+        <footer class="footer galaxy-border-none">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        @*                         <div class="text-center">
+                            <p class="mb-0 text-muted">&copy;
+                            <script>document.write(new Date().getFullYear())</script> frontend. Crafted with <i class="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                        </div> *@
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- end Footer -->
+    </div>
+    <!-- end auth-page-wrapper -->
+    @Html.Partial("~/Views/Shared/_vendor_scripts.cshtml")
+
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/assets/libs/sweetalert2/sweetalert2.min.js"></script>
+
+    <!-- particles js -->
+    <script src="~/assets/libs/particles.js/particles.js"></script>
+    <!-- particles app js -->
+    <script src="~/assets/js/pages/particles.app.js"></script>
+
+    <script src="~/assets/js/pages/two-step-verification.init.js"></script>
+    <script>
+        document.querySelectorAll('input[id^="digit"]').forEach(input => {
+            input.addEventListener('focus', function () {
+                this.select();
+            });
+        })
+
+        if (document.getElementById("btnPinCode"))
+          document.getElementById("btnPinCode").addEventListener("click", function(e) {
+            e.preventDefault();
+
+            if ((document.getElementById("digit1-input").value + document.getElementById("digit2-input").value + document.getElementById("digit3-input").value + document.getElementById("digit4-input").value).length != 4) {
+              Swal.fire({
+                title: '@(config.GetMessage("Please_enter_your_PIN_CODE").ToHtmlString())',
+                customClass: {
+                  confirmButton: 'btn btn-primary w-xs mt-2',
+                },
+                buttonsStyling: false,
+                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                showCloseButton: true
+              });
+              return;
+            }
+            var PinCode = $('#digit1-input').val() + $('#digit2-input').val() + $('#digit3-input').val() + $('#digit4-input').val();
+
+            $.ajax({
+                url: '@Url.Action("Unlock", "Lock")', // 對應 Controller/Action
+                type: 'POST',
+                contentType: 'application/json',
+                xhrFields: { withCredentials: true }, // 🔴 必須，確保 cookie/session
+                data: JSON.stringify({ pincode: PinCode }), // ⚡ 對應你的後端參數名稱
+              success: function(res) {
+                var msg = res.Success ? res.Data : res.Message;
+                var alertType = res.Success ? "success" : "error";
+                if (res.Success) {
+                  location.href = '@Url.Action("Index", "Home")';
+                } else {
+                  Swal.fire({
+                    title: msg,
+                    icon: alertType,
+                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                  }).then((result) => {});
+                }
+              },
+              error: function(xhr) {
+                console.log(xhr.responseText);
+              }
+            });
+          });
+
+        function GetProfileImage(imgElement) {
+            $.ajax({
+                type: 'POST',
+                url: '@(config.GetBackendUrl() + "/api" + Url.Action("ShowPic300", "SysUser"))',
+                xhrFields: {
+                    withCredentials: true
+                },
+                dataType: "binary",
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt')
+                },
+                xhr: function () {
+                    var xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState == 2) {
+                            if (xhr.status == 200) {
+                                xhr.responseType = "blob";
+                            } else {
+                                xhr.responseType = "text";
+                            }
+                        }
+                    };
+                    return xhr;
+                },
+                success: function (response, status, xhr) {
+                    const blob = new Blob([response], { type: xhr.getResponseHeader('content-type') });
+                    const url = URL.createObjectURL(blob);
+                    // 修正點：在 onload 事件觸發後才釋放 URL
+                    imgElement.onload = function () {
+                        URL.revokeObjectURL(url);
+                    };
+
+                    imgElement.src = url;
+                },
+                error: function (xhr, status, error) {
+                    if(xhr.status == 404){//沒有圖片
+                        // Swal.fire({
+                        //     title: '@(config.GetMessage("FileNotFound").ToHtmlString())',
+                        //     icon: 'error',
+                        //     confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        // });
+                    }
+                    else{
+                        Swal.fire({
+                            title: xhr.responseText,
+                            icon: 'error',
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                }
+            })
+        }
+        $(function() {
+
+            const imgElement = document.getElementById('myImg');
+            GetProfileImage(imgElement)
+
+            $('.focusinput').focus();
+        })
+    </script>
+</body>
+</html>

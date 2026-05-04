@@ -1,0 +1,817 @@
+@* ════════════════════════════════════════════════════════════════════════════
+    _SegmentDesigner.cshtml
+    版號區段設計器 Partial View
+    ── 使用方式 ──────────────────────────────────────────────────────────────
+    @@await Html.PartialAsync("_SegmentDesigner")
+    須在父頁面 @section scripts 中載入：
+      1. <partial name="~/Views/RecipeVersionNoRule/_SegmentDesigner.cshtml" />
+         在 scripts section 頁底載入即可觸發兩段 <script>
+    ════════════════════════════════════════════════════════════════════════════ *@
+
+@* ──────────────── 樣式（僅設計器需要的 CSS）──────────────── *@
+<style>
+    /* ── 區段軌道 ── */
+    #segTrack {
+        min-height: 64px;
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        transition: border-color .2s;
+    }
+
+        #segTrack.drag-over {
+            border-color: #405189;
+            background: #eef2fb;
+        }
+
+    /* ── 區段 Pill ── */
+    .seg-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: var(--vz-font-monospace, monospace);
+        cursor: pointer;
+        user-select: none;
+        border: 2px solid transparent;
+        transition: all .15s;
+    }
+
+        .seg-pill:hover {
+            opacity: .9;
+        }
+
+        .seg-pill.seg-active {
+            box-shadow: 0 0 0 3px rgba(64, 81, 137, .35);
+        }
+
+    .seg-pill-label {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .seg-pill-actions {
+        display: flex;
+        gap: 2px;
+        margin-left: 2px;
+    }
+
+    .seg-pill-btn {
+        cursor: pointer;
+        padding: 0 4px;
+        border-radius: 4px;
+        font-size: 10px;
+        opacity: .55;
+        line-height: 1.6;
+    }
+
+        .seg-pill-btn:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, .1);
+        }
+
+        .seg-pill-btn.btn-del {
+            color: #f06548;
+        }
+
+    /* ── 區段型別色系 ── */
+    .seg-MAJOR {
+        background: #fde8e4;
+        color: #c0392b;
+    }
+
+    .seg-MINOR {
+        background: #e8effd;
+        color: #2c55c2;
+    }
+
+    .seg-PATCH {
+        background: #ebebeb;
+        color: #495057;
+    }
+
+    .seg-DATE {
+        background: #fef9e7;
+        color: #9e6a03;
+    }
+
+    .seg-TIME {
+        background: #fef9e7;
+        color: #9e6a03;
+    }
+
+    .seg-FIXED {
+        background: #f8f9fa;
+        color: #495057;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .seg-SEP {
+        background: transparent;
+        color: #6c757d;
+        border: 1px solid #dee2e6 !important;
+        font-size: 14px;
+    }
+
+    .seg-RECIPE_NO {
+        background: #e8f8ff;
+        color: #0b768c;
+    }
+
+    .seg-SEQ {
+        background: #e8fdf3;
+        color: #176347;
+    }
+
+    /* ── 設定面板 ── */
+    #segConfigPanel {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: #f8f9fa;
+        padding: 14px 16px;
+    }
+
+    /* ── 分隔符號按鈕組 ── */
+    .sep-btn-grp .btn {
+        min-width: 38px;
+        font-family: monospace;
+    }
+
+    /* ── 版號預覽 Badge ── */
+    #previewBadge {
+        font-family: var(--vz-font-monospace, monospace);
+        font-size: 1rem;
+        letter-spacing: .5px;
+    }
+</style>
+
+@* ──────────────── 設計器 HTML（嵌入於父 Modal 的 card-body 內）──────────── *@
+<div class="card border mb-0" id="segDesignerCard">
+    <div class="card-header bg-light py-2">
+        <div class="d-flex align-items-center gap-2">
+            <h6 class="mb-0">版號區段設定</h6>
+            <span class="text-muted small">
+                點擊區段可編輯設定，使用
+                <kbd>◀</kbd><kbd>▶</kbd> 調整順序，
+                <kbd class="text-danger">✕</kbd> 刪除區段
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+
+        @* 區段軌道 *@
+        <div id="segTrack">
+            <span class="text-muted small align-self-center" id="segTrackEmpty">
+                尚未新增任何區段，請使用下方按鈕新增
+            </span>
+        </div>
+
+        @* 新增區段按鈕 *@
+        <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
+            <span class="text-muted small me-1">新增區段：</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="SD.addSegment('MAJOR')">
+                +
+                MAJOR
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="SD.addSegment('MINOR')">
+                +
+                MINOR
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="SD.addSegment('PATCH')">
+                +
+                PATCH
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="SD.addSegment('DATE')">+ 日期</button>
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="SD.addSegment('TIME')">+ 時間</button>
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="SD.addSegment('FIXED')">+ 固定文字</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="SD.addSegment('SEP')">
+                +
+                分隔符號
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="SD.addSegment('RECIPE_NO')">
+                +
+                配方編號
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="SD.addSegment('SEQ')">+ 流水號</button>
+        </div>
+
+        @* 選取區段設定面板（動態顯示）*@
+        <div id="segConfigPanel" class="mt-3 d-none">
+            <div id="segConfigBody"></div>
+        </div>
+
+        @* 版號預覽 *@
+        <hr class="my-3">
+        <div class="d-flex align-items-center gap-3 flex-wrap d-none">
+            <span class="text-muted small fw-semibold">版號預覽</span>
+            <span id="previewBadge" class="badge bg-primary-subtle text-primary px-3 py-2">—</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="SD.refreshPreview()">
+                <i class="ri-refresh-line align-bottom me-1"></i>重新預覽
+            </button>
+            <span class="text-muted small">（以初始種子模擬第一個版號）</span>
+        </div>
+
+    </div>
+</div>
+
+@* ═══════════════════════════════════════════════════════════════════════════
+    Script 1 — 區段設計器核心邏輯（無網路請求）
+    SD 命名空間物件：避免污染全域，同時方便父頁面呼叫
+    ═══════════════════════════════════════════════════════════════════════════ *@
+<script>
+    (function () {
+
+        // ── 狀態 ─────────────────────────────────────────────────────────────────
+
+        /** 目前編輯中的區段清單 @@type {{ uid: number, type: string, options: Object }[]} */
+        var _segments = [];
+
+        /** 目前選取的區段 uid（null 代表無選取） @@type {number|null} */
+        var _selectedUid = null;
+
+        // ── 區段型別 Meta ─────────────────────────────────────────────────────────
+
+        /** 各型別的顯示元資料（圖示 / Pill 預設標籤） */
+        var SEG_META = {
+            MAJOR: { icon: 'ri-arrow-up-circle-line', label: 'MAJOR' },
+            MINOR: { icon: 'ri-arrow-right-circle-line', label: 'MINOR' },
+            PATCH: { icon: 'ri-git-commit-line', label: 'PATCH' },
+            DATE: { icon: 'ri-calendar-line', label: '日期' },
+            TIME: { icon: 'ri-time-line', label: '時間' },
+            FIXED: { icon: 'ri-text', label: '固定文字' },
+            SEP: { icon: 'ri-more-line', label: '分隔' },
+            RECIPE_NO: { icon: 'ri-hashtag', label: '配方編號' },
+            SEQ: { icon: 'ri-list-ordered', label: '流水號' },
+        };
+
+        /**
+         * 各型別的預設 Options。
+         * 新增型別時在此加入對應的預設值物件。
+         */
+        var SEG_DEFAULTS = {
+            MAJOR: { StartValue: '1', Format: 'Integer', MaxValue: '', Digits: '1', PadChar: '0' },
+            MINOR: { StartValue: '0', Format: 'Integer', MaxValue: '', Digits: '1', PadChar: '0' },
+            PATCH: { StartValue: '0', Format: 'Integer', MaxValue: '', Digits: '1', PadChar: '0' },
+            DATE: { DateFormat: 'YYYY' },
+            TIME: { TimeFormat: 'HH' },
+            FIXED: { Text: 'V' },
+            SEP: { Symbol: '.' },
+            RECIPE_NO: {},
+            SEQ: { StartValue: '1', Digits: '3', PadChar: '0' },
+        };
+
+        // ── 公開 API（掛在 window.SD）────────────────────────────────────────────
+
+        window.SD = {
+
+            // ── 區段操作 ───────────────────────────────────────────────────────────
+
+            /**
+             * 新增一個區段至設計器。
+             * @@param {string} type 區段型別識別字
+             */
+            addSegment: function (type) {
+                var uid = Date.now() + Math.random();
+                var options = JSON.parse(JSON.stringify(SEG_DEFAULTS[type] || {}));
+                _segments.push({ uid: uid, type: type, options: options });
+                renderTrack();
+                SD._selectSegment(uid);
+                SD.refreshPreview();
+            },
+
+            /**
+             * 移除指定 uid 的區段。
+             * @@param {number} uid
+             */
+            removeSegment: function (uid) {
+                _segments = _segments.filter(function (s) { return s.uid !== uid; });
+                if (_selectedUid === uid) { _selectedUid = null; _hideConfigPanel(); }
+                renderTrack();
+                SD.refreshPreview();
+            },
+
+            /**
+             * 移動指定 uid 的區段（direction: -1=左, 1=右）。
+             * @@param {number} uid
+             * @@param {number} direction
+             */
+            moveSegment: function (uid, direction) {
+                var idx = _segments.findIndex(function (s) { return s.uid === uid; });
+                if (idx < 0) return;
+                var newIdx = idx + direction;
+                if (newIdx < 0 || newIdx >= _segments.length) return;
+                var tmp = _segments[idx];
+                _segments[idx] = _segments[newIdx];
+                _segments[newIdx] = tmp;
+                renderTrack();
+                SD.refreshPreview();
+            },
+
+            /**
+             * 更新指定區段的單一 Option 值。
+             * 同時重新繪製軌道（部分型別 Pill 文字依 Options 顯示）。
+             * @@param {number}  uid
+             * @@param {string}  key
+             * @@param {*}       value
+             */
+            updateOption: function (uid, key, value) {
+                var seg = _segments.find(function (s) { return s.uid === uid; });
+                if (!seg) return;
+                seg.options[key] = value;
+                renderTrack();
+            },
+
+            /**
+             * 將目前 segments 序列化為 RuleSetting JSON 字串。
+             * 空設計器時回傳空字串 ''。
+             * @@returns {string}
+             */
+            collectRuleSetting: function () {
+                if (!_segments.length) return '';
+                return JSON.stringify({
+                    Segments: _segments.map(function (s, i) {
+                        return { Order: i + 1, Type: s.type, Options: s.options };
+                    }),
+                });
+            },
+
+            /**
+             * 解析 RuleSetting JSON 並載入設計器（用於開啟編輯 Modal 時）。
+             * 解析失敗時清空設計器。
+             * @@param {string} json
+             */
+            loadRuleSetting: function (json) {
+                _segments = [];
+                _selectedUid = null;
+                try {
+                    var setting = JSON.parse(json || '{"Segments":[]}');
+                    (setting.Segments || [])
+                        .sort(function (a, b) { return a.Order - b.Order; })
+                        .forEach(function (seg) {
+                            _segments.push({
+                                uid: Date.now() + Math.random(),
+                                type: seg.Type,
+                                options: seg.Options || {},
+                            });
+                        });
+                } catch (e) {
+                    _segments = [];
+                }
+                renderTrack();
+                _hideConfigPanel();
+                SD.refreshPreview();
+            },
+
+            /**
+             * 重設設計器為空白狀態。
+             */
+            reset: function () {
+                _segments = [];
+                _selectedUid = null;
+                renderTrack();
+                _hideConfigPanel();
+                document.getElementById('previewBadge').textContent = '—';
+            },
+
+            /**
+             * 呼叫父頁面提供的 refreshPreview（由 Script 2 覆寫此函式），
+             * 使兩段 script 解耦：Script 1 不依賴 API URL 設定。
+             * 預設為 no-op，父頁面載入 Script 2 後自動替換。
+             */
+            refreshPreview: function () { /* 由 Script 2 覆寫 */ },
+        };
+
+        // ── 私有：軌道渲染 ────────────────────────────────────────────────────────
+
+        /** 重新繪製區段軌道 */
+        function renderTrack() {
+            var track = document.getElementById('segTrack');
+            if (!_segments.length) {
+                track.innerHTML = '<span class="text-muted small align-self-center">尚未新增任何區段，請使用下方按鈕新增</span>';
+                return;
+            }
+            track.innerHTML = _segments.map(function (s, i) {
+                var meta = SEG_META[s.type] || { icon: '', label: s.type };
+                var isActive = (s.uid === _selectedUid) ? ' seg-active' : '';
+                var text = _getPillText(s);
+                var canLeft = i > 0;
+                var canRight = i < _segments.length - 1;
+
+                return '<div class="seg-pill seg-' + _esc(s.type) + isActive + '"'
+                    + ' data-uid="' + s.uid + '"'
+                    + ' onclick="SD._selectSegment(' + s.uid + ')"'
+                    + ' title="點擊設定">'
+                    + '<i class="' + meta.icon + '" style="font-size:11px;"></i>'
+                    + '<span class="seg-pill-label">' + _esc(text) + '</span>'
+                    + '<span class="seg-pill-actions">'
+                    + (canLeft ? '<span class="seg-pill-btn" title="向左移" onclick="event.stopPropagation();SD.moveSegment(' + s.uid + ',-1)">◀</span>' : '')
+                    + (canRight ? '<span class="seg-pill-btn" title="向右移" onclick="event.stopPropagation();SD.moveSegment(' + s.uid + ',1)">▶</span>' : '')
+                    + '<span class="seg-pill-btn btn-del" title="刪除" onclick="event.stopPropagation();SD.removeSegment(' + s.uid + ')">✕</span>'
+                    + '</span></div>';
+            }).join('');
+        }
+
+        /**
+         * 依區段型別回傳 Pill 顯示文字摘要。
+         * @@param {{ type: string, options: Object }} seg
+         * @@returns {string}
+         */
+        function _getPillText(seg) {
+            switch (seg.type) {
+                case 'SEP': return '"' + (seg.options.Symbol || '.') + '"';
+                case 'FIXED': return '"' + (seg.options.Text || '') + '"';
+                case 'DATE': return _buildDatePreviewText(seg.options);
+                case 'TIME': return _buildTimePreviewText(seg.options);
+                case 'RECIPE_NO': return '配方編號';
+                case 'SEQ': return '流水號 x' + (seg.options.Digits || '3');
+                default: return seg.type;
+            }
+        }
+
+        /**
+         * 將 DATE 的 Parts 陣列組合成預覽文字（不含分隔符，僅部件名稱）。
+         * @@param {Object} options
+         * @@returns {string}
+         */
+        function _buildDatePreviewText(options) {
+            var fmt = options.DateFormat;
+            return (fmt && fmt.length) ? fmt : 'DATE';
+        }
+
+        /**
+         * 將 TIME 的 TimeFormat 字串回傳作為 Pill 預覽文字。
+         * @@param {Object} options
+         * @@returns {string}
+         */
+        function _buildTimePreviewText(options) {
+            var fmt = options.TimeFormat;
+            return (fmt && fmt.length) ? fmt : 'TIME';
+        }
+
+        // ── 私有：設定面板 ────────────────────────────────────────────────────────
+
+        /**
+         * 選取區段並顯示對應設定面板。
+         * 掛在 SD 命名空間以供 onclick 呼叫。
+         * @@param {number} uid
+         */
+        SD._selectSegment = function (uid) {
+            _selectedUid = uid;
+            renderTrack();
+            var seg = _segments.find(function (s) { return s.uid === uid; });
+            if (!seg) { _hideConfigPanel(); return; }
+            document.getElementById('segConfigPanel').classList.remove('d-none');
+            document.getElementById('segConfigBody').innerHTML = _buildConfigHtml(seg);
+            _initConfigSelect();
+        };
+
+        function _hideConfigPanel() {
+            document.getElementById('segConfigPanel').classList.add('d-none');
+        }
+
+        /**
+         * 依區段型別產生設定面板 HTML。
+         * 新增型別時只需在此 switch 加入對應分支，不影響其他型別。
+         * @@param {{ uid: number, type: string, options: Object }} seg
+         * @@returns {string}
+         */
+        function _buildConfigHtml(seg) {
+            switch (seg.type) {
+                case 'MAJOR':
+                    return _counterCfgHtml(seg,
+                        'MAJOR 區段設定',
+                        '異動類型 = MAJOR 時此計數器遞增，同時 MINOR 與 PATCH 重置至起始值');
+                case 'MINOR':
+                    return _counterCfgHtml(seg,
+                        'MINOR 區段設定',
+                        '異動類型 = MINOR 時此計數器遞增，同時 PATCH 重置至起始值');
+                case 'PATCH':
+                    return _counterCfgHtml(seg,
+                        'PATCH 區段設定',
+                        '異動類型 = PATCH 時此計數器遞增');
+                case 'DATE': return _dateCfgHtml(seg);
+                case 'TIME': return _timeCfgHtml(seg);
+                case 'FIXED': return _fixedCfgHtml(seg);
+                case 'SEP': return _sepCfgHtml(seg);
+                case 'SEQ': return _seqCfgHtml(seg);
+                case 'RECIPE_NO': return '<p class="mb-0 text-muted small">'
+                    + '<i class="ri-information-line me-1 text-info"></i>'
+                    + '直接輸出配方編號，無需額外設定。</p>';
+                default:
+                    return '<p class="mb-0 text-warning small">'
+                        + '<i class="ri-error-warning-line me-1"></i>未知區段型別：'
+                        + _esc(seg.type) + '</p>';
+            }
+        }
+
+        // ── 私有：各型別設定面板 HTML ──────────────────────────────────────────────
+
+        /**
+         * MAJOR / MINOR / PATCH 計數型設定面板。
+         * 最大值留空表示不限制。
+         */
+        function _counterCfgHtml(seg, title, hiddenNote) {
+            var uid = seg.uid;
+            var o = seg.options;
+            var fmtOpts = [
+                { v: 'Integer', t: '整數 (1, 2, 3…)' },
+                { v: 'Letter', t: '字母 (A, B, C…)' },
+            ].map(function (x) {
+                return '<option value="' + x.v + '"'
+                    + ((o.Format || 'Integer') === x.v ? ' selected' : '')
+                    + '>' + x.t + '</option>';
+            }).join('');
+
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">' + _esc(title) + '</p>'
+                + '<div class="row g-2">'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">起始值</label>'
+                + '<input type="number" min="0" class="form-control form-control-sm"'
+                + ' value="' + _esc(o.StartValue || '0') + '"'
+                + ' onchange="SD.updateOption(' + uid + ',\'StartValue\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '<div class="col-6 col-md-3">'
+                + '<label class="form-label small mb-1">格式</label>'
+                + '<select class="form-select" '
+                + ' onchange="SD.updateOption(' + uid + ',\'Format\',this.value);SD.refreshPreview()">'
+                + fmtOpts + '</select>'
+                + '</div>'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">最大值 <span class="text-muted fw-normal">(空=無限)</span></label>'
+                + '<input type="number" min="1" class="form-control form-control-sm"'
+                + ' value="' + _esc(o.MaxValue || '') + '" placeholder="不限"'
+                + ' onchange="SD.updateOption(' + uid + ',\'MaxValue\',this.value)">'
+                + '</div>'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">位數（補位）</label>'
+                + '<input type="number" min="1" max="5" class="form-control form-control-sm"'
+                + ' value="' + _esc(o.Digits || '1') + '"'
+                + ' onchange="SD.updateOption(' + uid + ',\'Digits\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">補位字元</label>'
+                + '<input type="text" maxlength="1" class="form-control form-control-sm font-monospace"'
+                + ' value="' + _esc(o.PadChar || '0') + '"'
+                + ' oninput="SD.updateOption(' + uid + ',\'PadChar\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '</div>'
+                + '<div class="mt-2 p-2 bg-info-subtle rounded small text-info-emphasis">'
+                + '<i class="ri-information-line me-1"></i><strong>隱藏設定：</strong>' + _esc(hiddenNote)
+                + '</div>';
+        }
+
+        /**
+         * 日期區段設定面板。
+         * 以下拉選單選擇單一部件：YYYY / YYY / MM / DD。
+         * 儲存格式：Options["DateFormat"] 單一字串，例如 "YYYY"。
+         */
+        function _dateCfgHtml(seg) {
+            var uid = seg.uid;
+            var fmt = seg.options.DateFormat || 'YYYY';
+
+            var DATE_OPTS = [
+                { v: 'YYYY', t: 'YYYY — 西元年（4位）' },
+                { v: 'YYY',  t: 'YYY  — 民國年（3位）' },
+                { v: 'MM',   t: 'MM   — 月（2位）' },
+                { v: 'DD',   t: 'DD   — 日（2位）' },
+            ];
+
+            var opts = DATE_OPTS.map(function (o) {
+                var sel = fmt === o.v ? ' selected' : '';
+                return '<option value="' + o.v + '"' + sel + '>' + _esc(o.t) + '</option>';
+            }).join('');
+
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">日期區段設定</p>'
+                + '<div class="row g-2"><div class="col-12 col-sm-5">'
+                + '<label class="form-label small mb-1">部件</label>'
+                + '<select class="form-select"'
+                + ' onchange="SD._onDatePartChange(' + uid + ',this.value)">'
+                + opts
+                + '</select>'
+                + '</div></div>'
+                + '<div class="mt-2 p-2 bg-warning-subtle rounded small text-warning-emphasis">'
+                + '<i class="ri-information-line me-1"></i>'
+                + 'YYYY=西元年（4位）、YYY=民國年（3位）、MM=月（2位）、DD=日（2位）'
+                + '</div>';
+        }
+
+        /**
+         * 時間區段設定面板。
+         * 以下拉選單選擇單一部件：HH / MM / SS。
+         * 儲存格式：Options["TimeFormat"] 單一字串，例如 "HH"。
+         */
+        function _timeCfgHtml(seg) {
+            var uid = seg.uid;
+            var fmt = seg.options.TimeFormat || 'HH';
+
+            var TIME_OPTS = [
+                { v: 'HH', t: 'HH — 時（24小時制）' },
+                { v: 'MM', t: 'MM — 分' },
+                { v: 'SS', t: 'SS — 秒' },
+            ];
+
+            var opts = TIME_OPTS.map(function (o) {
+                var sel = fmt === o.v ? ' selected' : '';
+                return '<option value="' + o.v + '"' + sel + '>' + _esc(o.t) + '</option>';
+            }).join('');
+
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">時間區段設定</p>'
+                + '<div class="row g-2"><div class="col-12 col-sm-5">'
+                + '<label class="form-label small mb-1">部件</label>'
+                + '<select class="form-select"'
+                + ' onchange="SD._onTimePartChange(' + uid + ',this.value)">'
+                + opts
+                + '</select>'
+                + '</div></div>'
+                + '<div class="mt-2 p-2 bg-warning-subtle rounded small text-warning-emphasis">'
+                + '<i class="ri-information-line me-1"></i>HH=時（24小時制）、MM=分、SS=秒'
+                + '</div>';
+        }
+
+        /**
+         * 固定文字設定面板。
+         */
+        function _fixedCfgHtml(seg) {
+            var uid = seg.uid;
+            var o = seg.options;
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">固定文字設定</p>'
+                + '<div class="row g-2">'
+                + '<div class="col-12 col-md-6">'
+                + '<label class="form-label small mb-1">文字內容</label>'
+                + '<input type="text" maxlength="50" class="form-control form-control-sm font-monospace"'
+                + ' value="' + _esc(o.Text || '') + '"'
+                + ' oninput="SD.updateOption(' + uid + ',\'Text\',this.value);SD.refreshPreview()">'
+                + '</div></div>';
+        }
+
+        /**
+         * 分隔符號設定面板。
+         */
+        function _sepCfgHtml(seg) {
+            var uid = seg.uid;
+            var sym = seg.options.Symbol || '.';
+            var symbols = ['-', '.', '_', '/'];
+            var btns = symbols.map(function (s) {
+                var active = (sym === s) ? 'btn-primary' : 'btn-outline-secondary';
+                return '<button type="button"'
+                    + ' class="btn btn-sm font-monospace ' + active + ' sep-sym-btn"'
+                    + ' data-uid="' + uid + '" data-sym="' + s + '"'
+                    + ' onclick="SD._selectSep(' + uid + ',\'' + s + '\',this)">'
+                    + _esc(s) + '</button>';
+            }).join('');
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">分隔符號設定</p>'
+                + '<div class="d-flex gap-2 sep-btn-grp" data-uid="' + uid + '">' + btns + '</div>';
+        }
+
+        /**
+         * 流水號設定面板。
+         * 每次提交時此計數器固定遞增，與 VersionBumpType 無關。
+         */
+        function _seqCfgHtml(seg) {
+            var uid = seg.uid;
+            var o = seg.options;
+            return '<p class="small fw-semibold text-muted text-uppercase mb-2">流水號設定</p>'
+                + '<div class="row g-2">'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">起始值</label>'
+                + '<input type="number" min="0" class="form-control form-control-sm"'
+                + ' value="' + _esc(o.StartValue || '1') + '"'
+                + ' onchange="SD.updateOption(' + uid + ',\'StartValue\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">位數（補位）</label>'
+                + '<input type="number" min="1" max="10" class="form-control form-control-sm"'
+                + ' value="' + _esc(o.Digits || '3') + '"'
+                + ' onchange="SD.updateOption(' + uid + ',\'Digits\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '<div class="col-6 col-md-2">'
+                + '<label class="form-label small mb-1">補位字元</label>'
+                + '<input type="text" maxlength="1" class="form-control form-control-sm font-monospace"'
+                + ' value="' + _esc(o.PadChar || '0') + '"'
+                + ' oninput="SD.updateOption(' + uid + ',\'PadChar\',this.value);SD.refreshPreview()">'
+                + '</div>'
+                + '</div>'
+                + '<div class="mt-2 p-2 bg-success-subtle rounded small text-success-emphasis">'
+                + '<i class="ri-information-line me-1"></i><strong>隱藏設定：</strong>'
+                + '每次提交版本時此計數器固定遞增（與「異動類型」無關）。'
+                + '</div>';
+        }
+
+        // ── 私有：部件 select 變更回調 ─────────────────────────────────────────────
+
+        /**
+         * 日期部件下拉選單變更回調。
+         * @@param {number} uid
+         * @@param {string} val  選取的部件代碼（'YYYY' | 'YYY' | 'MM' | 'DD'）
+         */
+        SD._onDatePartChange = function (uid, val) {
+            var seg = _segments.find(function (s) { return s.uid === uid; });
+            if (!seg) return;
+            seg.options.DateFormat = val;
+            renderTrack();
+            SD.refreshPreview();
+        };
+
+        /**
+         * 時間部件下拉選單變更回調。
+         * @@param {number} uid
+         * @@param {string} val  選取的部件代碼（'HH' | 'MM' | 'SS'）
+         */
+        SD._onTimePartChange = function (uid, val) {
+            var seg = _segments.find(function (s) { return s.uid === uid; });
+            if (!seg) return;
+            seg.options.TimeFormat = val;
+            renderTrack();
+            SD.refreshPreview();
+        };
+
+        /**
+         * 分隔符號按鈕點擊處理。
+         * @@param {number}      uid
+         * @@param {string}      symbol
+         * @@param {HTMLElement} btn
+         */
+        SD._selectSep = function (uid, symbol, btn) {
+            SD.updateOption(uid, 'Symbol', symbol);
+            var grp = btn.closest('.sep-btn-grp');
+            if (grp) {
+                grp.querySelectorAll('.sep-sym-btn').forEach(function (b) {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-secondary');
+                });
+            }
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-primary');
+            renderTrack();
+            SD.refreshPreview();
+        };
+
+        // ── 私有：初始化設定面板 Select.js ──────────────────────────────────────
+
+        /**
+         * 對 #segConfigBody 內動態注入的 <select> 初始化 Select2 實例。
+         */
+        function _initConfigSelect() {
+            $('#segConfigBody select').each(function () {
+                if (!$(this).data('select2')) {
+                    $(this).select2({
+                        minimumResultsForSearch: Infinity,
+                        width: '100%',
+                        dropdownParent: $('#segConfigBody')
+                    });
+                }
+            });
+        }
+
+        // ── 私有：工具 ────────────────────────────────────────────────────────────
+
+        /** HTML 跳脫（防 XSS，適用於字串屬性嵌入）*/
+        function _esc(v) {
+            return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+    })();
+</script>
+
+@* ═══════════════════════════════════════════════════════════════════════════
+    Script 2 — 版號預覽邏輯（依賴 API，與 Script 1 分離）
+    覆寫 SD.refreshPreview，使 Script 1 的核心邏輯不需知道 API URL。
+    父頁面需在此 partial 之前初始化 window._previewApiUrl。
+    ═══════════════════════════════════════════════════════════════════════════ *@
+<script>
+    (function () {
+        /** 覆寫 SD.refreshPreview，由此 script 負責呼叫後端 API */
+        SD.refreshPreview = function () {
+            var json = SD.collectRuleSetting();
+            if (!json) { document.getElementById('previewBadge').textContent = '—'; return; }
+
+            // _previewApiUrl 由父頁面在載入 partial 前設定
+            var url = window._previewApiUrl;
+            if (!url) { document.getElementById('previewBadge').textContent = '(未設定預覽 API)'; return; }
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ RuleSetting: json }),
+                success: function (res) {
+                    var preview = (res && res.Success && res.Data) ? (res.Data.Preview || '—') : '—';
+                    document.getElementById('previewBadge').textContent = preview;
+                },
+                error: function () {
+                    document.getElementById('previewBadge').textContent = '—';
+                },
+            });
+        };
+    })();
+</script>

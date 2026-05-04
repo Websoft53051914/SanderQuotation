@@ -1,0 +1,1123 @@
+﻿@model ViewModel.SysRoleVM
+@{
+    ViewBag.Title = "系統角色管理";
+    ViewBag.pTitle = "系統角色管理";
+    ViewBag.pageTitle = "系統管理";
+
+    var mapUrl = new
+    {
+        Create = $"{Configuration["BackendURL"]}/api/SysRole/Create",
+        Edit = $"{Configuration["BackendURL"]}/api/SysRole/Edit",
+        Delete = $"{Configuration["BackendURL"]}/api/SysRole/Delete",
+        Get = $"{Configuration["BackendURL"]}/api/SysRole/Get",
+        Enable = $"{Configuration["BackendURL"]}/api/SysRole/Enable",
+        GetFuncList = $"{Configuration["BackendURL"]}/api/SysFunc/GetSysFuncList",
+    };
+}
+
+<style>
+    /* ─── 權限表格樣式（Modal 內） ─── */
+    #authTable thead th {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    #authTable tbody td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+        #authTable tbody td:first-child {
+            text-align: left;
+        }
+
+    .col-action-header {
+        min-width: 68px;
+    }
+
+    .btn-row-all {
+        font-size: 0.72rem;
+        padding: 1px 5px;
+    }
+
+    .td-na {
+        color: #ccc;
+        font-size: 0.8rem;
+    }
+
+    #authTableWrapper {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    /* 表頭固定（捲動時不動） */
+    #authTable thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    /* select2 下拉選單的 z-index 需要高於 sticky header */
+    .select2-container {
+        z-index: 10 !important;
+    }
+</style>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal">
+                                <i class="ri-add-line align-bottom me-1"></i> 新增
+                            </button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()">
+                                <i class="ri-delete-bin-2-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-5 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="搜尋表格內容">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-3 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="角色名稱" id="RoleName" name="RoleName">
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <select class="form-control" id="Status" name="Status">
+                                <option value="">全部狀態</option>
+                                <option value="1">啟用</option>
+                                <option value="0">停用</option>
+                            </select>
+                        </div>
+                        <div class="col-xxl-2 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                篩選
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                <th data-sort="action">操作</th>
+                                <th data-sort="No">序號</th>
+                                <th class="sort" data-sort="RoleName">角色名稱</th>
+                                <th class="sort" data-sort="Memo">備註</th>
+                                <th class="sort" data-sort="Status">狀態</th>
+                                <th class="sort" data-sort="CreateTime">建立時間</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkAll" value="option1">
+                                    </div>
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            上一頁
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            下一頁
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>您即將刪除資料</h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        刪除後將無法復原
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            取消
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">確定刪除</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增角色</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯角色</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="RoleName" class="form-label required">角色名稱</label>
+                                <input type="text" name="RoleName" id="RoleName_Modal" class="form-control" placeholder="請輸入角色名稱" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="Status" class="form-label required">狀態</label>
+                                <select name="Status" id="Status_Modal" class="form-control" required>
+                                    <option value="1">啟用</option>
+                                    <option value="0">停用</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div>
+                                <label for="Memo" class="form-label">
+                                    備註
+                                </label>
+                                <textarea name="Memo" id="Memo" class="form-control" placeholder="備註" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- ── 分隔線 ── -->
+                        <div class="col-12">
+                            <hr class="my-1 mb-3">
+                            <h5>
+                                <i class="ri-shield-keyhole-line me-1"></i>權限設定
+                            </h5>
+                        </div>
+
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">搜尋功能名稱</label>
+                            <div class="search-box">
+                                <input type="text" id="funcNameSearch" class="form-control search bg-light border-light"
+                                       placeholder="搜尋功能名稱...">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-12">
+                            <!-- 預留空間或可放置其他篩選條件 -->
+                        </div>
+
+                        <!-- ── 權限表格（thead 由 JS 動態產生） ── -->
+                        <div class="col-12">
+                            <div class="table-responsive" id="authTableWrapper">
+                                <table class="table table-bordered table-hover table-sm align-middle mb-0" id="authTable">
+                                    <thead class="table-light" id="authTableHead">
+                                        <!-- ⭐ 由 buildAuthTableHeader() 動態產生 -->
+                                    </thead>
+                                    <tbody id="authTableBody">
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted py-3">
+                                                <i class="ri-loader-4-line me-1"></i>載入中…
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">確定</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // 全域查詢狀態
+        let queryState = {
+            pageIndex: 1,
+            pageSize: 10,
+            sortField: "CreateTime",
+            sortDir: "desc",
+            roleName: "",
+            status: "",
+        };
+
+        // 主載入函式
+        function loadDatas() {
+            showLoader();
+            $.ajax({
+                url: '@(Configuration["BackendURL"])/api/SysRole/GetPageList',
+                type: 'GET',
+                data: queryState,
+                success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: res.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+                    renderTable(res.Data.Data);
+                    renderPagination(res.Data.Total);
+                    document.getElementById("remove-actions").style.display = 'none';
+                },
+                error: function () {
+                    hideLoader();
+                    alert('載入資料失敗');
+                }
+            });
+        }
+
+        // 表格渲染
+        function renderTable(rows) {
+            const tbody = $('#data-list-data');
+            tbody.empty();
+
+            if (!rows || rows.length === 0) {
+                $('.noresult').show();
+                return;
+            }
+            $('.noresult').hide();
+
+            rows.forEach(data => {
+                const statusBadge = data.Status === 1 ?
+                    '<span class="badge bg-success-subtle text-success">啟用</span>' :
+                    '<span class="badge bg-secondary-subtle text-secondary">停用</span>';
+
+                tbody.append(`
+                    <tr data-id="${data.Id}">
+                        <th scope="row">
+                            <div class="form-check">
+                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">
+                            </div>
+                        </th>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                    <i class="ri-more-fill align-middle"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+
+                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.Status === 1 ? '0' : '1'}">
+                                        <i class="ri-${data.Status === 1 ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i>
+                                        ${data.Status === 1 ? '停用' : '啟用'}
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="No">${data.No}</td>
+                        <td class="RoleName">${data.RoleName || ''}</td>
+                        <td class="Memo">${data.Memo || ''}</td>
+                        <td class="Status">${statusBadge}</td>
+                        <td class="CreateTime">${data.CreateTime ? new Date(data.CreateTime).toLocaleString('zh-TW') : ''}</td>
+                    </tr>
+                `);
+            });
+            initDynamicDropdowns();
+        }
+
+        // 分頁渲染
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / queryState.pageSize);
+            const ul = $('.listjs-pagination');
+            ul.empty();
+
+            if (totalPages <= 1) return;
+
+            const maxPages = 5;
+            let startPage = Math.max(1, queryState.pageIndex - Math.floor(maxPages / 2));
+            let endPage = startPage + maxPages - 1;
+
+            if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            if (startPage > 1) {
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">第一頁</a></li>`);
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                ul.append(`<li class="page-item ${i === queryState.pageIndex ? 'active' : ''}"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a></li>`);
+            }
+
+            if (endPage < totalPages) {
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">最後一頁</a></li>`);
+            }
+
+            $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
+            $('.pagination-next').toggleClass('disabled', queryState.pageIndex === totalPages);
+
+            $('.pagination-prev').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex > 1) {
+                    queryState.pageIndex--;
+                    loadDatas();
+                }
+            });
+
+            $('.pagination-next').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex < totalPages) {
+                    queryState.pageIndex++;
+                    loadDatas();
+                }
+            });
+        }
+
+        function gotoPage(page) {
+            queryState.pageIndex = page;
+            loadDatas();
+        }
+
+        // 搜尋篩選
+        function SearchData() {
+            queryState.roleName = $('#RoleName').val();
+            queryState.status = $('#Status').val();
+            queryState.pageIndex = 1;
+            $('#globalSearchInput').val('').trigger('input');
+            loadDatas();
+        }
+
+        // ════════════════════════════════════════════
+        //  ⭐ 權限設定邏輯
+        // ════════════════════════════════════════════
+
+        // ⭐ ACTIONS 從 Method.GetPermissionCode() 固定取得
+        //    格式：[{ codeId: "1", codeName: "查詢" }, ...]
+        let ACTIONS = [
+            { codeId: "1", codeName: "查詢" },
+            { codeId: "2", codeName: "新增" },
+            { codeId: "3", codeName: "編輯" },
+            { codeId: "4", codeName: "作廢" }
+        ];
+
+        const URL_FUNC_LIST = '@Html.Raw(mapUrl.GetFuncList)';
+
+        let allRows = [];
+        let checkedFuncDetailIds = new Set();
+        let currentRoleId = null;
+
+        // ⭐ 動態產生 authTable thead
+        function buildAuthTableHeader() {
+            const thead = $('#authTableHead');
+            thead.empty();
+
+            let ths = `<th style="min-width:180px;">功能名稱</th>`;
+            ACTIONS.forEach(col => {
+                ths += `
+                    <th class="col-action-header">
+                        <div class="d-flex flex-column align-items-center gap-1">
+                            <small>${col.codeName}</small>
+                            <input type="checkbox" class="form-check-input col-all-check"
+                                   data-action="${col.codeId}" title="全選 ${col.codeName}">
+                        </div>
+                    </th>`;
+            });
+
+            thead.append(`<tr>${ths}</tr>`);
+        }
+
+        // Get the detail Id for a specific function row and action sequence
+        function getDetailIdForAction(row, actionSequence) {
+            if (!row.allowActionList || !Array.isArray(row.allowActionList)) {
+                return null;
+            }
+
+            // Try exact match first
+            let detail = row.allowActionList.find(a => String(a.Sequence) === String(actionSequence));
+
+            // Debug: Log mismatches for the first row
+            if (!detail && row.allowActionList.length > 0) {
+                const sequences = row.allowActionList.map(a => a.Sequence);
+                // Only log once per unique combination
+                if (!window.debuggedSequences) window.debuggedSequences = new Set();
+                const debugKey = `${actionSequence}-${sequences.join(',')}`;
+                if (!window.debuggedSequences.has(debugKey)) {
+                    window.debuggedSequences.add(debugKey);
+                }
+            }
+
+            return detail ? detail.Id : null;
+        }
+
+        // Check if an action is allowed for a function (has a detail with matching Sequence)
+        function isFuncActionAllowed(row, actionSequence) {
+            return getDetailIdForAction(row, actionSequence) !== null;
+        }
+
+        async function loadFuncList() {
+            const res = await $.ajax({ url: URL_FUNC_LIST, type: 'GET', dataType: 'json' });
+            if (!res.Success) throw new Error(res.Message || '無法取得功能清單');
+            const list = res.Data?.Data ?? res.Data ?? [];
+
+            allRows = list.filter(f => f.Status === 1).map(f => {
+                const allowActionList = f.AllowActionList ?? [];
+
+                // Debug: Log the first few items to check data structure
+                if (allRows.length < 3) {
+                }
+
+                return {
+                    Name: f.Name ?? '',
+                    ClassName: f.ClassName ?? '',
+                    allowActionList: allowActionList // Keep original array with {Id, Sequence}
+                };
+            });
+        }
+
+        async function loadAuthList(roleId) {
+            checkedFuncDetailIds.clear();
+            if (!roleId) {
+                renderAuthTable(allRows);
+                return;
+            }
+
+            currentRoleId = roleId;
+
+            // Get role data including FuncDetailIds
+            const res = await $.ajax({
+                url: '@mapUrl.Get',
+                type: 'POST',
+                data: { id: roleId }
+            });
+
+            if (res.Success && res.Data && res.Data.FuncDetailIds) {
+                res.Data.FuncDetailIds.forEach(id => {
+                    checkedFuncDetailIds.add(id);
+                });
+            }
+
+            renderAuthTable(allRows);
+        }
+
+        function renderAuthTable(rows) {
+            const tbody = $('#authTableBody');
+            tbody.empty();
+
+            const colSpan = ACTIONS.length + 1;
+
+            if (!rows.length) {
+                tbody.append(`<tr><td colspan="${colSpan}" class="text-center text-muted py-3">查無資料</td></tr>`);
+                syncColHeaderState();
+                return;
+            }
+
+            let hasAnyCheckbox = false;  // Track if any checkbox was created
+            let checkboxCount = 0;
+
+            rows.forEach((row, rowIndex) => {
+                let tds = '';
+                let rowHasCheckbox = false;
+
+                ACTIONS.forEach(col => {
+                    // Check if this action (by Sequence) is allowed for this function
+                    const detailId = getDetailIdForAction(row, col.codeId);
+
+                    if (detailId !== null) {
+                        // This action is allowed - create checkbox
+                        hasAnyCheckbox = true;
+                        rowHasCheckbox = true;
+                        checkboxCount++;
+                        const chk = checkedFuncDetailIds.has(detailId) ? 'checked' : '';
+                        tds += `<td><input type="checkbox" class="form-check-input action-check"
+                                    data-detailid="${detailId}" data-action="${col.codeId}"
+                                    data-rowindex="${rowIndex}" ${chk}></td>`;
+                    } else {
+                        // Action not allowed - show disabled cell
+                        tds += `<td class="td-na">－</td>`;
+                    }
+                });
+
+                tbody.append(`
+                    <tr data-rowindex="${rowIndex}">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-row-all"
+                                        data-rowindex="${rowIndex}" title="整列全選/取消">
+                                    <i class="ri-checkbox-multiple-line"></i>
+                                </button>
+                                <span class="fw-medium">${row.ClassName} - ${row.Name}</span>
+                            </div>
+                        </td>
+                        ${tds}
+                    </tr>
+                `);
+            });
+
+            // Debug: Check if any checkboxes were created
+            if (!hasAnyCheckbox) {
+                console.warn('警告：沒有產生任何 checkbox！請檢查 AllowActionList 的 Sequence 值是否與 ACTIONS 的 codeId 匹配。');
+            }
+
+            // 先重新建立乾淨的 header
+            buildAuthTableHeader();
+
+            // 確保 DOM 完全渲染後才同步狀態（350ms 確保 Bootstrap modal 動畫完成後再執行）
+            setTimeout(() => {
+                syncColHeaderState();
+                filterAuthTableByModule();
+            }, 350);
+        }
+
+        // ⭐ 根據 Function Name 篩選權限表格（透過隱藏/顯示 TR）
+        function filterAuthTableByModule() {
+            const funcNameKeyword = $('#funcNameSearch').val().toLowerCase().trim();
+
+            $('#authTableBody tr').each(function () {
+                const $row = $(this);
+                const rowModule = $row.data('module');
+                const rowFuncName = $row.find('.fw-medium').text().toLowerCase();
+                const rowFuncDetailId = $row.find('.text-muted').text().toLowerCase();
+
+                let showRow = true;
+
+
+                if (funcNameKeyword && showRow) {
+                    if (!rowFuncName.includes(funcNameKeyword) && !rowFuncDetailId.includes(funcNameKeyword)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    $row.show();
+                } else {
+                    $row.hide();
+                }
+            });
+
+            syncColHeaderState();
+        }
+
+        function resetAuthTable() {
+            checkedFuncDetailIds.clear();
+            currentRoleId = null;
+
+            $('#funcNameSearch').val('');
+
+            // 先渲染表格內容
+            renderAuthTable(allRows);
+        }
+
+        $(document).on('click', '.btn-row-all', function () {
+            const rowIndex = $(this).data('rowindex');
+            const $checks = $(`tr[data-rowindex="${rowIndex}"]`).find('.action-check');
+            const allChecked = $checks.length > 0 && $checks.length === $checks.filter(':checked').length;
+            $checks.prop('checked', !allChecked);
+            syncCheckedSet();
+            syncColHeaderState();
+        });
+
+        $(document).on('change', '.col-all-check', function () {
+            const action = $(this).data('action');
+            // ⭐ 修正：使用 .filter() 而不是屬性選擇器
+            $('.action-check').filter(function () {
+                return String($(this).data('action')) === String(action) && $(this).closest('tr').is(':visible');
+            }).prop('checked', this.checked);
+            syncCheckedSet();
+            syncColHeaderState();
+        });
+
+        $(document).on('change', '.action-check', function () {
+            syncCheckedSet();
+            syncColHeaderState();
+        });
+
+        function syncCheckedSet() {
+            checkedFuncDetailIds.clear();
+            $('#authTableBody .action-check:checked').each(function () {
+                const detailId = $(this).data('detailid');
+                if (detailId) {
+                    checkedFuncDetailIds.add(detailId);
+                }
+            });
+        }
+
+        function syncColHeaderState() {
+
+            ACTIONS.forEach(col => {
+                // 使用 filter 而不是屬性選擇器，確保類型匹配
+                const $all = $('.action-check').filter(function () {
+                    const dataAction = $(this).data('action');
+                    const isVisible = $(this).closest('tr').is(':visible');
+                    const matches = String(dataAction) === String(col.codeId);
+                    return matches && isVisible;
+                });
+
+                const total = $all.length;
+                const checked = $all.filter(':checked').length;
+                const $hdr = $('.col-all-check').filter(function() {
+                    const dataAction = $(this).data('action');
+                    const matches = String(dataAction) === String(col.codeId);
+                    return matches;
+                });
+
+                if ($hdr.length === 0) {
+                    console.warn(`  警告：找不到 header checkbox for action ${col.codeId}`);
+                    return;
+                }
+
+                if (total === 0) {
+                    // 沒有任何可用的 checkbox，禁用 header checkbox
+                    $hdr.prop('disabled', true).prop('checked', false).prop('indeterminate', false);
+                } else {
+                    // 有可用的 checkbox，啟用 header checkbox 並設定狀態
+                    const allChecked = (checked === total);
+                    const someChecked = (checked > 0 && checked < total);
+
+
+                    $hdr.prop('disabled', false)
+                        .prop('indeterminate', someChecked)
+                        .prop('checked', allChecked);
+                }
+            });
+        }
+
+        // 初始化
+        $(document).ready(async function () {
+            loadDatas();
+
+            $('#globalSearchInput').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+                $('#data-list-data tr').each(function () {
+                    const rowText = $(this).text().toLowerCase();
+                    $(this).toggle(rowText.includes(keyword));
+                });
+            });
+
+            // 初始化 Select2
+            $('#Status_Modal').select2({
+                minimumResultsForSearch: Infinity,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+
+            $('.sort').on('click', function () {
+                const field = $(this).data('sort');
+                if (queryState.sortField === field) {
+                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    queryState.sortField = field;
+                    queryState.sortDir = 'asc';
+                }
+                loadDatas();
+            });
+
+            // ⭐ 綁定 Function Name 搜尋框的 input 事件（即時篩選）
+            $('#funcNameSearch').on('input', function () {
+                filterAuthTableByModule();
+            });
+
+            // ⭐ Modal 完全顯示後（動畫結束）強制同步 header checkbox 狀態
+            $('#showModal').on('shown.bs.modal', function () {
+                syncColHeaderState();
+            });
+
+            try {
+                buildAuthTableHeader();
+                await loadFuncList();
+                renderAuthTable(allRows);
+            } catch (e) {
+                console.error('初始化失敗', e);
+            }
+        });
+
+        var postaction = 'create';
+        $("#btnShowModal").click(function () {
+            resetElement();
+            $('#exampleModalLabel_Create').show();
+            $('#exampleModalLabel_Edit').hide();
+            postaction = 'create';
+            currentRoleId = null;
+            resetAuthTable();
+        });
+
+        $("#submitForm").submit(function (e) {
+            e.preventDefault();
+            showLoader();
+
+            if ($(this).is(':invalid')) { hideLoader(); return; }
+
+            var postURL = postaction === 'create' ? '@mapUrl.Create' : '@mapUrl.Edit';
+
+            var data = {};
+            $.extend(data, $(this).serializeObject());
+            data.Id = currentId;
+
+            // Collect checked FuncDetailIds
+            syncCheckedSet();
+            data.FuncDetailIds = Array.from(checkedFuncDetailIds);
+
+            $.ajax({
+                type: "POST",
+                url: postURL,
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                cache: false,
+                success: function (response) {
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    const modal = bootstrap.Modal.getInstance(showModal);
+                    modal.hide();
+
+                    var successMsg = postaction === 'create' ? '新增成功' : '編輯成功';
+                    Swal.fire({
+                        icon: 'success',
+                        title: successMsg,
+                        confirmButtonText: '確定',
+                    }).then(() => {
+                        loadDatas();
+                    });
+
+                    resetElement();
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        var currentId;
+
+        // 刪除按鈕
+        $(document).on('click', '.remove-item-btn', function (e) {
+            e.preventDefault();
+            const $tr = $(this).closest('tr');
+            currentId = $tr.data('id');
+            if (!currentId) return;
+        });
+
+        $(document).on('click', '.edit-item-btn', function (e) {
+            $('#exampleModalLabel_Create').hide();
+            $('#exampleModalLabel_Edit').show();
+            postaction = 'edit';
+            e.preventDefault();
+
+            const $tr = $(this).closest('tr');
+            currentId = $tr.data('id');
+
+            if (!currentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '資料不存在',
+                    confirmButtonText: '確定',
+                });
+                const modal = bootstrap.Modal.getInstance(showModal);
+                modal.hide();
+                return;
+            }
+
+            showLoader();
+
+            $.ajax({
+                type: "POST",
+                url: '@mapUrl.Get',
+                dataType: "json",
+                data: { id: currentId },
+                cache: false,
+                success: function (response) {
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    $('#RoleName_Modal').val(response.Data.RoleName);
+                    $('#Memo').val(response.Data.Memo);
+
+                    $('#Status_Modal').val(String(response.Data.Status || '1')).trigger('change');
+
+                    currentRoleId = currentId;
+                    checkedFuncDetailIds.clear();
+
+                    if (response.Data.FuncDetailIds && response.Data.FuncDetailIds.length > 0) {
+                        response.Data.FuncDetailIds.forEach(function (id) {
+                            if (id) checkedFuncDetailIds.add(id);
+                        });
+                    }
+
+                    renderAuthTable(allRows);
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        // 啟用/停用
+        $(document).on('click', '.enable-item-btn', function (e) {
+            e.preventDefault();
+            const $tr = $(this).closest('tr');
+            const id = $tr.data('id');
+            const enable = $(this).data('enable');
+            const action = enable === 1 ? '啟用' : '停用';
+
+            Swal.fire({
+                title: `確定要${action}嗎？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '確定',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoader();
+                    $.ajax({
+                        type: "POST",
+                        url: '@mapUrl.Enable',
+                        data: { id: id, enable: enable },
+                        success: function (response) {
+                            if (response.Success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: response.Data,
+                                    confirmButtonText: '確定',
+                                }).then(() => {
+                                    loadDatas();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: response.Message,
+                                    confirmButtonText: '確定',
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '系統錯誤',
+                                confirmButtonText: '確定',
+                            });
+                        }
+                    }).always(function () {
+                        hideLoader();
+                    });
+                }
+            });
+        });
+
+        // 刪除確認
+        $("#delete-record").click(function () {
+            var ids = [currentId];
+            showLoader();
+
+            $.ajax({
+                type: "POST",
+                url: '@mapUrl.Delete',
+                dataType: "json",
+                data: { list: ids },
+                cache: false,
+                success: function (response) {
+                    const modal = bootstrap.Modal.getInstance(deleteOrder);
+                    modal.hide();
+
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    loadDatas();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '刪除成功',
+                        confirmButtonText: '確定',
+                    });
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        // 批次刪除
+        function deleteMultiple() {
+            let ids_array = [];
+            $('.form-check [value=option1]:checked').each(function () {
+                const $tr = $(this).closest('tr');
+                const id = $tr.data('id');
+                if (id) ids_array.push(id);
+            });
+
+            if (ids_array.length === 0) {
+                Swal.fire({
+                    title: '請至少選擇一筆資料',
+                    confirmButtonText: '確定',
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: "確定要刪除嗎？",
+                text: "刪除後將無法復原",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "確定刪除",
+                cancelButtonText: "取消",
+            }).then(function (result) {
+                if (result.value) {
+                    showLoader();
+                    $.ajax({
+                        type: "POST",
+                        url: '@mapUrl.Delete',
+                        dataType: "json",
+                        data: { list: ids_array },
+                        cache: false,
+                        success: function (response) {
+                            if (!response.Success) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: response.Message,
+                                    confirmButtonText: '確定',
+                                });
+                                return;
+                            }
+
+                            loadDatas();
+
+                            Swal.fire({
+                                title: '已刪除',
+                                text: '您的資料已被刪除',
+                                icon: 'success',
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '系統錯誤',
+                                confirmButtonText: '確定',
+                            });
+                        }
+                    }).always(function () {
+                        hideLoader();
+                    });
+                }
+            });
+        }
+
+        function resetElement() {
+            $('#showModal input').val('');
+            $('#showModal textarea').val('');
+            $('#showModal').find('[type="checkbox"]').prop('checked', false);
+
+            $('#showModal').find('select').each(function () {
+                if (this.multiple) {
+                    $(this).val(null).trigger('change');
+                } else {
+                    const firstValue = this.options[0]?.value;
+                    if (firstValue != null) {
+                        $(this).val(firstValue).trigger('change');
+                    }
+                }
+            });
+
+            currentRoleId = null;
+            resetAuthTable();
+        }
+
+        // 勾選相關
+        function toggleRemoveActions() {
+            if ($('.row-check:checked').length > 0)
+                $('#remove-actions').show();
+            else
+                $('#remove-actions').hide();
+        }
+
+        $(document).on('change', '.row-check', function () {
+            const total = $('.row-check').length;
+            const checked = $('.row-check:checked').length;
+            $('#checkAll').prop('checked', total === checked);
+            toggleRemoveActions();
+        });
+
+        $('#checkAll').on('change', function () {
+            $('.row-check').prop('checked', this.checked);
+            toggleRemoveActions();
+        });
+    </script>
+}

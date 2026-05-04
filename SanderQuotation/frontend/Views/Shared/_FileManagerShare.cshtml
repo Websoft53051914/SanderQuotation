@@ -1,0 +1,2011 @@
+﻿@model NasFileManagerScriptOptions
+@{
+    var mapUrl = new
+    {
+        NasList = $"{Configuration["BackendURL"]}/api/nas/list",
+        NasDownload = $"{Configuration["BackendURL"]}/api/nas/download",
+        NasDelete = $"{Configuration["BackendURL"]}/api/nas/delete",
+        NasCreateFolder = $"{Configuration["BackendURL"]}/api/nas/create_folder",
+        NasUpload = $"{Configuration["BackendURL"]}/api/nas/upload",
+        NasCancelUpload = $"{Configuration["BackendURL"]}/api/nas/cancel_upload",
+        ReName = $"{Configuration["BackendURL"]}/api/nas/rename",
+        Root = $"{Configuration["BackendURL"]}/api/nas/root",
+        Children = $"{Configuration["BackendURL"]}/api/nas/children",
+        DirSizeStart = $"{Configuration["BackendURL"]}/api/nas/start",
+        DirSizeStatus = $"{Configuration["BackendURL"]}/api/nas/status",
+        DirSizeStop = $"{Configuration["BackendURL"]}/api/nas/stop"
+    };
+
+    var mapText = new
+    {
+        Text_Uploading = (config.GetMessage("Uploading").ToHtmlString()),
+        Text_UploadingToNAS = (config.GetMessage("UploadingToNAS").ToHtmlString()),
+        Text_UploadCancelled = (config.GetMessage("UploadCancelled").ToHtmlString()),
+    };
+
+  
+    var reqTypeUrl = Model?.ReqTypeUrl ?? "";
+    var extraCode = Model?.ExtraCode ?? "";
+    var projectId = Model?.ProjectId ?? "";
+
+
+    string BuildUrl(string baseUrl, string reqType, string? extra = null)
+    {
+        if (string.IsNullOrWhiteSpace(extra))
+        {
+            return $"{baseUrl}{reqType}";
+        }
+        return $"{baseUrl}{reqType}?extraCode={extra}";
+    }
+
+    var rootUrl = BuildUrl(mapUrl.Root, reqTypeUrl, extraCode);
+    var childrenUrl = BuildUrl(mapUrl.Children, reqTypeUrl, extraCode);
+
+    var listUrl = BuildUrl(mapUrl.NasList, reqTypeUrl, extraCode);
+    var downloadUrl = BuildUrl(mapUrl.NasDownload, reqTypeUrl, extraCode);
+    var deleteUrl = BuildUrl(mapUrl.NasDelete, reqTypeUrl, extraCode);
+    var createFolderUrl = BuildUrl(mapUrl.NasCreateFolder, reqTypeUrl, extraCode);
+    var uploadUrl = BuildUrl(mapUrl.NasUpload, reqTypeUrl, extraCode);
+    var cancelUploadUrl = BuildUrl(mapUrl.NasCancelUpload, reqTypeUrl, extraCode);
+
+    var renameUrl = $"{mapUrl.ReName}{reqTypeUrl}";
+    var dirSizeStartUrl = $"{mapUrl.DirSizeStart}{reqTypeUrl}";
+    var dirSizeStatusUrl = $"{mapUrl.DirSizeStatus}{reqTypeUrl}";
+    var dirSizeStopUrl = $"{mapUrl.DirSizeStop}{reqTypeUrl}";
+}
+
+<style>
+    #uploadProgressContainer {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        width: 350px;
+        display: none;
+    }
+
+        #uploadProgressContainer .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    .fm-container {
+        display: flex;
+        flex-wrap: nowrap;
+        width: calc(100% + var(--vz-grid-gutter-width));
+        margin-left: calc(var(--vz-grid-gutter-width) * -0.5);
+        margin-right: calc(var(--vz-grid-gutter-width) * -0.5);
+        min-width: 0;
+        min-height: calc(100vh - 80px);
+        background-color: #f0f2f5;
+        gap: 0;
+    }
+
+    .fm-left {
+        flex: 1 0 0%;
+        min-width: 220px;
+        max-width: 20%;
+        background-color: #ffffff;
+        border-right: 1px solid #e9ebec;
+        overflow: hidden;
+    }
+
+    .fm-center {
+        flex: 8 0 0%;
+        min-width: 0;
+        max-width: 66%;
+        background-color: #ffffff;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .fm-center.fm-center-expanded {
+        max-width: 80%;
+        flex: 11 0 0%;
+    }
+
+    .btn-fm-toggle {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        background: transparent;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #6c757d;
+    }
+
+    .btn-fm-toggle:hover {
+        background-color: #f0f2f5;
+        color: #405189;
+    }
+
+    .btn-fm-toggle .toggle-chevron {
+        font-size: 20px;
+        line-height: 1;
+        transition: transform 0.25s;
+    }
+
+    .fm-right {
+        flex: 3 0 0%;
+        min-width: 0;
+        max-width: 17%;
+        background-color: #ffffff;
+        border-left: 1px solid #e9ebec;
+        overflow: hidden;
+    }
+
+    
+</style>
+
+<style>
+    /*資料夾Folder 排列*/
+    #folderlist-data {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .folder-card {
+        flex: 0 1 calc((100% - 110px) / 12);
+        min-width: 90px;
+        position: relative;
+    }
+    .folder-card .card {
+        transition: box-shadow 0.2s;
+        aspect-ratio: 1 / 1;
+        overflow: visible;
+    }
+    .folder-card .card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
+    }
+    .folder-card .card-body {
+        padding: 6px 8px 8px !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+    .folder-card .d-flex.mb-1 {
+        margin-bottom: 0px !important;
+        flex-shrink: 0;
+    }
+    .folder-card .dropdown {
+        position: static;
+    }
+    .folder-card .btn-ghost-primary.btn-icon.btn-sm {
+        width: 18px;
+        height: 18px;
+        line-height: 1;
+        padding: 0;
+        font-size: 11px;
+    }
+    .folder-card .ri-folder-2-fill {
+        font-size: 1.1rem !important;
+    }
+    .folder-card .mb-1 {
+        margin-bottom: 1px !important;
+    }
+    .folder-card .text-center.folder-link {
+        overflow: hidden;
+    }
+    .folder-card .fs-12.folder-name {
+        font-size: 9px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    .folder-card .hstack {
+        font-size: 8px !important;
+        margin-top: 2px !important;
+        flex-shrink: 0;
+    }
+    .folder-card .hstack .fileNumber,
+    .folder-card .hstack .folderSize {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 48%;
+    }
+    .folder-card .dropdown-menu {
+        font-size: 12px;
+        min-width: 100px;
+        z-index: 1050;
+        position: absolute;
+        right: 0;
+        top: 100%;
+    }
+    .folder-card .dropdown-menu .dropdown-item {
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+
+    .folder-link {
+        cursor: pointer;
+    }
+
+</style>
+<style>
+    #file-overview{
+        overflow:auto;
+    }
+    #folder-overview {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    #folder-overview h5 {
+        font-size: 14px;
+    }
+    #dept-overview-list h5.fs-15 {
+        font-size: 13px !important;
+    }
+    #dept-overview-list p.fs-12 {
+        font-size: 11px !important;
+    }
+    #dept-overview-list b {
+        font-size: 12px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        align-self: center;
+    }
+    #dept-overview-list .flex-grow-1 {
+        min-width: 0;
+        overflow: hidden;
+    }
+    #dept-overview-list h5,
+    #dept-overview-list p {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #dept-overview-list li {
+        margin-bottom: 4px;
+    }
+    #dept-overview-list .d-flex.align-items-center {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+    #dept-overview-list .avatar-xs {
+        flex-shrink: 0;
+    }
+    /* ApexCharts legend 在右側面板不換行堆疊 */
+    #simple_dount_chart .apexcharts-legend {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 4px 8px !important;
+    }
+    #simple_dount_chart .apexcharts-legend-series {
+        margin: 2px 4px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #simple_dount_chart .apexcharts-legend-text {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 80px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+    }
+    #simple_dount_chart .apexcharts-legend {
+        overflow: visible !important;
+    }
+    #simple_dount_chart {
+        overflow: visible;
+        max-width: 100%;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        position: relative;
+    }
+    #simple_dount_chart .apexcharts-canvas {
+        min-height: 0 !important;
+        height: auto !important;
+    }
+    #simple_dount_chart .apexcharts-canvas > svg {
+        height: auto !important;
+    }
+    #simple_dount_chart .apexcharts-inner {
+        margin-bottom: 0 !important;
+    }
+    /* Force legend to be in normal flow directly under the pie */
+    #simple_dount_chart .apexcharts-legend.apx-legend-position-bottom {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        width: 100% !important;
+        margin-top: 8px !important;
+        padding: 0 !important;
+    }
+    /* Collapse the ApexCharts wrapper div that usually gets a huge fixed height */
+    #simple_dount_chart > div[style] {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+</style>
+
+
+<style>
+     /*樹狀結構 排列*/
+
+       
+     .file-manager-menu {
+         padding: 0px 24px 0px;
+         display: flex;
+         flex-direction: column;
+         flex: 1 1 auto;
+         min-height: 0;
+         height: 100%;
+     }
+
+     .file-manager-menu > li {
+         display: flex;
+         flex-direction: column;
+         flex: 1 1 auto;
+         min-height: 0;
+     }
+
+  #folderTreeWrapper {
+    display: flex;
+    flex-direction: column;
+}
+#subFolder {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;   /* ⭐ 滾動只放這裡 */
+}
+
+    #subFolder,
+    #subFolder ul {
+        padding-left: 0;
+        margin-bottom: 0;
+         
+    }
+
+        #subFolder li {
+            list-style: none;
+            margin: 2px 0;
+        }
+
+            /*
+             * 讓 li.tree-item 使用 flex 布局：
+             *   - 使主題 .sub-menu li::before 偽元素（小點）與 tree-node 垂直置中對齊
+             *   - .tree-node  → flex: 1  填滿 ::before 以外的橫向空間
+             *   - .tree-children → flex: 0 0 100% 換行後佔滿完整寬度
+             * 最小修改：僅針對 .tree-item，不影響其他 sub-menu li
+             */
+            #subFolder li.tree-item {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                position: relative;
+            }
+
+            #subFolder li.tree-item > .tree-node {
+                flex: 1 1 0%;
+                min-width: 0;
+                flex-wrap: nowrap;
+            }
+
+              
+                #subFolder li.tree-item::before {
+                    position: static !important;
+                    top: unset !important;
+                    left: unset !important;
+                    transform: none !important;
+                    align-self: center;
+                    flex-shrink: 0;
+                }
+
+                /* tree-children 換行後佔滿完整寬度，避免與 tree-node 並排 */
+                #subFolder li.tree-item > .tree-children {
+                    flex: 0 0 100%;
+                    width: 100%;
+                }
+
+    .tree-node {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 3px;
+        border-radius: 6px;
+        cursor: pointer;
+        user-select: none;
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+
+        .tree-node:hover {
+            background-color: #f5f6f8;
+        }
+
+        /* [調整 Apps UI 風格] active 節點補上主題 primary 文字色 */
+        .tree-node.active {
+            background-color: #e9f2ff;
+            color: #405189;
+        }
+
+
+    .tree-label {
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 13px;
+    }
+
+    .tree-children {
+        display: none;
+    }
+
+    .tree-loading,
+    .tree-empty,
+    .tree-error {
+        padding: 4px 6px 4px 24px;
+        font-size: 13px;
+    }
+
+    .tree-loading {
+        color: #888;
+    }
+
+    .tree-empty {
+        color: #999;
+    }
+
+    .tree-error {
+        color: #dc3545;
+    }
+</style>
+
+<div class="fm-container">
+    <!-- 左欄 (3/12) -->
+    <div class="fm-left">
+        <div class="p-3 d-flex flex-column h-100">
+            <div class="mb-3" style="padding:15px 15px 3px;">
+                <h5 class="mb-0 fw-semibold">My Drive</h5>
+            </div>
+            <div class="search-box" style="padding:2px 10px;">
+                <input type="text" id="subFolderSearch" class="form-control bg-light border-light" placeholder="@config.GetMessage("EnterKeyword").ToHtmlString()">
+                <i class="ri-search-2-line search-icon"></i>
+            </div>
+
+            <div class="mt-3 mx-n4 px-4" style="flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column;">
+                <ul class="list-unstyled file-manager-menu" style="flex:1 1 auto; min-height:0; display:flex; flex-direction:column;">
+                    <li style="flex:1 1 auto; min-height:0; display:flex; flex-direction:column;">
+                        <a data-bs-toggle="collapse" style="cursor: default; pointer-events: none; flex-shrink:0;" role="button" aria-expanded="true" aria-controls="collapseExample">
+                            <i class="ri-folder-2-line align-bottom me-2"></i> <span class="file-list-link">My Drive</span>
+                        </a> 
+
+                        <div class="collapse show" id="folderTreeWrapper" style="flex:1 1 auto; min-height:0; overflow:hidden;">
+                            <ul id="subFolder" class="sub-menu list-unstyled mb-0"></ul>
+                        </div>
+
+
+                    </li>
+                </ul>
+            </div>
+           
+        </div>
+    </div>
+
+    <!-- 中欄 (7/12) -->
+   <div class="fm-center fm-center-expanded">
+        <button class="btn-fm-toggle" id="btnToggleFmRight" title="Toggle Panel">
+            <i class="toggle-chevron ri-arrow-left-s-line"></i>
+        </button>
+        <div class="card">
+            <div class="card-body">
+
+                @* Breadcrumb *@
+                <div class="mt-4 mb-4">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb m-0" id="tempbreadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="javascript:void(0);" id="breadcrumbHomeLink" data-path="/">
+                                    <i class="ri-home-line align-bottom me-1"></i>@(config.GetMessage("RootDirectory").ToHtmlString())
+                                </a>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+
+                @* Loading *@
+                <div id="loadingIndicator" class="text-center py-5" style="display:none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                @* Folders Section *@
+                <div id="folder-section" class="mb-4">
+                    <div class="d-flex align-items-center mb-3">
+
+                        <h5 class="flex-grow-1 fs-16 mb-0">
+                            @(config.GetMessage("Folder").ToHtmlString())
+                        </h5>
+                        <div class="col-xl-6 col-lg-5 col-sm-4 col-8 d-flex justify-content-sm-end gap-2">
+
+                            <input type="file" id="fileInput" style="display:none;" />
+                            <button id="btnAddFolder" class="btn btn-success" @* style="display:none" *@>
+                                <i class="ri-folder-add-line align-bottom me-1"></i>
+                                @(config.GetMessage("AddFolder").ToHtmlString())
+                            </button>
+                        </div>
+                    </div>
+                    <!-- [避免資料夾被壓縮並可自動換行] 移除 Bootstrap row g-3，改由 CSS #folderlist-data flex-wrap 控制排版 -->
+                    <div id="folderlist-data"></div>
+                    <div id="no-folders" class="text-center text-muted py-3" style="display:none;">
+                        <i class="ri-folder-open-line display-6 d-block mb-2"></i>
+                        @(config.GetMessage("No_Result_Found").ToHtmlString())
+                    </div>
+                </div>
+
+                @* Files Section *@
+                <div id="file-section">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="flex-grow-1 fs-16 mb-0">
+                            @(config.GetMessage("File").ToHtmlString())
+                        </h5>
+                        <div class="col-xl-6 col-lg-5 col-sm-4 col-8 d-flex justify-content-sm-end gap-2">
+                            <input type="file" id="fileInput" style="display:none;" />
+                            <button id="btnAddFile" class="btn btn-success" @* style="display:none" *@>
+                                <i class="ri-file-add-line align-bottom me-1"></i>
+                                @(config.GetMessage("AddFile").ToHtmlString())
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-nowrap table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:230px;">@(config.GetMessage("FileName").ToHtmlString())</th>
+                                    <th style="width:110px;">@(config.GetMessage("FileSize").ToHtmlString())</th>
+                                    <th style="width:140px;">@(config.GetMessage("UpdateDate").ToHtmlString())</th>
+                                    <th style="width:70px;" class="text-center">@(config.GetMessage("Action").ToHtmlString())</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-list-data"></tbody>
+                        </table>
+                    </div>
+                    <div id="no-files" class="text-center text-muted py-3" style="display:none;">
+                        <i class="ri-file-search-line display-6 d-block mb-2"></i>
+                        @(config.GetMessage("No_Result_Found").ToHtmlString())
+                    </div>
+                </div>
+
+                @* Overall No Result *@
+                <div class="noresult text-center py-5" style="display:none;">
+                    <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                               colors="primary:#121331,secondary:#08a88a"
+                               style="width:75px;height:75px"></lord-icon>
+                    <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 右欄 (2/12) -->
+    <div class="fm-right" style="display:none;">
+        <div class="mx-n3 pt-3 px-3 file-detail-content-scroll position-relative h-100" data-simplebar>
+            <div id="folder-overview">
+                    <div class="d-flex align-items-center pb-3 border-bottom border-bottom-dashed">
+                        <h5 class="flex-grow-1 fw-semibold mb-0">Overview</h5>
+
+                    </div>
+                    <div id="simple_dount_chart" data-colors='["--vz-info", "--vz-danger", "--vz-primary", "--vz-success", "--vz-warning"]' class="apex-charts mt-3" dir="ltr"></div>
+                    <div class="mt-2" id="dept-overviewDOM">
+                        <ul class="list-unstyled vstack gap-4" id="dept-overview-list">
+                        </ul>
+                    </div>
+
+                </div>
+
+            <div id="file-overview" class="h-100" style="display:none; z-index:2">
+                <div class="d-flex h-100 flex-column">
+                    <div id="fileOverviewHeader" class="d-flex align-items-center pb-3 border-bottom border-bottom-dashed mb-3 gap-2 px-2">
+                        <h5 class="flex-grow-1 fw-semibold mb-0">File Preview</h5>
+                        <div>
+                            @* <button type="button" class="btn btn-ghost-primary btn-icon btn-sm fs-16 favourite-btn">
+                                <i class="ri-star-fill align-bottom"></i>
+                            </button> *@
+                            <button id="closeFileOverView" type="button" class="btn btn-soft-danger btn-icon btn-sm fs-16">
+                                <i class="ri-close-fill align-bottom"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pb-3 border-bottom border-bottom-dashed mb-3">
+                        <div class="file-details-box bg-light p-3 text-center rounded-3 border border-light mb-3">
+                            <div class="display-4 file-icon">
+                                <i id="fileIcon" class=""></i>
+                            </div>
+                        </div>
+                        @* <button type="button" class="btn btn-icon btn-sm btn-ghost-success float-end fs-16"><i class="ri-share-forward-line"></i></button> *@
+                        <h5 class="fs-16 mb-1 file-name" style="word-break: break-all; padding: 0 8px;"></h5>
+                    </div>
+                    <div id="fileDetail" style="padding: 0 8px;">
+                        <h5 class="fs-12 text-uppercase text-muted mb-3">File Description :</h5>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless table-nowrap table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" style="width: 35%;">@(config.GetMessage("FileName").ToHtmlString()) :</th>
+                                        <td class="file-name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">@(config.GetMessage("FileType").ToHtmlString()) :</th>
+                                        <td class="file-type"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">@(config.GetMessage("FileSize").ToHtmlString()) :</th>
+                                        <td class="file-size"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">@(config.GetMessage("UpdateDate").ToHtmlString()) :</th>
+
+                                        <td class="update-date"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">@(config.GetMessage("FilePath").ToHtmlString()) :</th>
+                                        <td class="file-path"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="uploadProgressContainer">
+    <div class="card bg-light overflow-hidden shadow-none">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">
+                        <i class="ri-upload-cloud-line me-1"></i>
+                        <span id="uploadFileName">@mapText.Text_Uploading</span>
+                    </h6>
+                </div>
+                <div class="flex-shrink-0">
+                    <button type="button" class="btn-close btn-sm" id="cancelUpload" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">
+                    <span id="uploadedSize">0 MB</span> / <span id="totalSize">0 MB</span>
+                </small>
+                <small class="text-muted">
+                    <b class="text-primary" id="uploadPercent">0%</b>
+                </small>
+            </div>
+        </div>
+        <div class="progress bg-primary-subtle rounded-0" style="height:6px;">
+            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 id="uploadProgressBar"
+                 style="width:0%"
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/assets/libs/apexcharts/apexcharts.min.js"></script>
+<script>
+    (function () {
+        const $btn = $('#btnToggleFmRight');
+        const $right = $('.fm-right');
+        const $center = $('.fm-center');
+
+        const $chevron = $btn.find('.toggle-chevron');
+
+        $btn.on('click', function () {
+            const isHidden = $right.is(':hidden');
+            if (isHidden) {
+                $right.show();
+                $center.removeClass('fm-center-expanded');
+                $chevron.removeClass('ri-arrow-left-s-line').addClass('ri-arrow-right-s-line');
+            } else {
+                $right.hide();
+                $center.addClass('fm-center-expanded');
+                $chevron.removeClass('ri-arrow-right-s-line').addClass('ri-arrow-left-s-line');
+            }
+        });
+    })();
+</script>
+
+
+<script>
+    window.NasFileManagerOptions = {
+       
+         reqTypeUrl: '@Html.Raw(reqTypeUrl)',
+        extraCode: '@Html.Raw(extraCode)',
+
+
+       messages: {
+            errorTitle: '@(config.GetMessage("Error").ToHtmlString())',
+            failedLoadFolder: '@(config.GetMessage("Failed_to_load_folder").ToHtmlString())',
+            addFolder: '@(config.GetMessage("AddFolder").ToHtmlString())',
+            folderName: '@(config.GetMessage("FolderName").ToHtmlString())',
+            pleaseEnterFolderName: '@(config.GetMessage("Pleaseenterthefoldername").ToHtmlString())',
+            create: '@(config.GetMessage("Create").ToHtmlString())',
+            cancel: '@(config.GetMessage("Cancel").ToHtmlString())',
+            confirm: '@(config.GetMessage("Confirm").ToHtmlString())',
+            deleteConfirmation: '@(config.GetMessage("Deleteconfirmation").ToHtmlString())',
+            failedCreateFolder: '@(config.GetMessage("Failed_to_create_folder").ToHtmlString())',
+            failedDeleteFile: '@(config.GetMessage("Failed_to_delete_file").ToHtmlString())',
+            failedUploadFile: '@(config.GetMessage("Failed_to_upload_file").ToHtmlString())',
+            rename: '@(config.GetMessage("Rename").ToHtmlString())',
+            fileName: '@(config.GetMessage("FileName").ToHtmlString())',
+            successfullyRenamed: '@(config.GetMessage("SuccessfullyRenamed").ToHtmlString())',
+            systemError: '@(config.GetMessage("System_Error").ToHtmlString())',
+            open: '@(config.GetMessage("Open").ToHtmlString())',
+            deleteText: '@(config.GetMessage("Delete").ToHtmlString())',
+            download: '@(config.GetMessage("Download").ToHtmlString())',
+            view: '@(config.GetMessage("View").ToHtmlString())',
+            uploading: '@Html.Raw(mapText.Text_Uploading)',
+            uploadingToNAS: '@Html.Raw(mapText.Text_UploadingToNAS)',
+            uploadCancelled: '@Html.Raw(mapText.Text_UploadCancelled)'
+        },
+
+         apiUrls: {
+            root: '@Html.Raw(rootUrl)',
+            children: '@Html.Raw(childrenUrl)',
+            list: '@Html.Raw(listUrl)',
+            download: '@Html.Raw(downloadUrl)',
+            delete: '@Html.Raw(deleteUrl)',
+            createFolder: '@Html.Raw(createFolderUrl)',
+            upload: '@Html.Raw(uploadUrl)',
+            cancelUpload: '@Html.Raw(cancelUploadUrl)',
+            rename: '@Html.Raw(renameUrl)',
+            dirSizeStart: '@Html.Raw(dirSizeStartUrl)',
+            dirSizeStatus: '@Html.Raw(dirSizeStatusUrl)',
+            dirSizeStop: '@Html.Raw(dirSizeStopUrl)',
+            validateFileAction: '@Html.Raw($"{Configuration["BackendURL"]}/api/Common/IsValidProjectFileAction")'
+        },
+        projectId: '@Html.Raw(projectId)'
+    };
+</script>
+
+<script>
+    (() =>
+    {
+        const OPTIONS = window.NasFileManagerOptions
+        const MSG = OPTIONS.messages
+        const API_URLS = OPTIONS.apiUrls
+        const PROJECT_ID = OPTIONS.projectId || ''
+
+        const MESSAGES = {
+            uploading: MSG.uploading,
+            uploadingToNAS: MSG.uploadingToNAS,
+            uploadCancelled: MSG.uploadCancelled
+        }
+
+        const nasTreeApi = {
+            root: API_URLS.root,
+            children: API_URLS.children
+        }
+
+        const TreeNav = (() =>
+        {
+            const $tree = $('#subFolder')
+            const $breadcrumb = $('#tempbreadcrumb')
+
+            let currentPath = '/'
+            let baseRootPath = '/'
+            let rootFolderName = ''
+
+            const normalizePath = (p) =>
+            {
+                if (!p) return '/'
+                p = String(p).replace(/\/+/g, '/')
+                if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1)
+                if (!p.startsWith('/')) p = '/' + p
+                return p
+            }
+
+            const htmlEncode = (value) => $('<div />').text(value ?? '').html()
+
+            const postForm = (url, data) => $.ajax({ url, type: 'POST', data })
+
+            const ensureSuccess = (apiResponse) =>
+            {
+                if (!apiResponse?.Success)
+                {
+                    const msg = apiResponse?.NasErrorCode != null
+                        ? `[${apiResponse.NasErrorCode}] ${apiResponse?.Message ?? ''}`
+                        : (apiResponse?.Message ?? 'Error')
+                    Swal.fire(MSG.errorTitle, msg, 'error')
+                    return false
+                }
+                return true
+            }
+
+            const toRelativePath = (fullPath) =>
+            {
+                const base = normalizePath(baseRootPath)
+                const full = normalizePath(fullPath)
+
+                if (!base || base === '/') return full
+                if (full === base) return '/'
+
+                if (full.startsWith(base + '/'))
+                {
+                    return normalizePath(full.slice(base.length))
+                }
+                return full
+            }
+
+            const renderTreeNode = (node, options = {}, level = 1) =>
+            {
+                const fullPath = node.Path
+                let relPath = toRelativePath(fullPath)
+                if (options.isRoot) relPath = '/'
+
+                return $(`
+                    <li class="tree-item"
+                        data-path="${relPath}"
+                        data-full-path="${fullPath}"
+                        data-loaded="${node.Loaded}"
+                        data-has-children="${node.HasChildren}"
+                        data-expanded="${node.Expanded}"
+                        data-level="${level}">
+                        <div class="tree-node">
+                            <span class="tree-label folder-node-link file-list-link"
+                                  data-path="${relPath}"
+                                  data-full-path="${fullPath}"
+                                  data-name="${htmlEncode(node.Name)}"
+                                  title="${htmlEncode(node.Name)}">${htmlEncode(node.Name)}</span>
+                        </div>
+                        <ul class="tree-children list-unstyled"></ul>
+                    </li>
+                `)
+            }
+
+            const addBreadcrumb = (name, path) =>
+            {
+                const li = document.createElement('li')
+                li.className = 'breadcrumb-item'
+
+                const a = document.createElement('a')
+                a.href = 'javascript:void(0)'
+                a.textContent = name
+                a.dataset.path = path
+
+                li.appendChild(a)
+                $breadcrumb[0].appendChild(li)
+            }
+
+            const renderBreadcrumb = (relPath) =>
+            {
+                const path = normalizePath(relPath)
+                $breadcrumb.children('li').not(':first').remove()
+                if (rootFolderName) {
+                    $('#breadcrumbHomeLink').html('<i class="ri-home-line align-bottom me-1"></i>' + htmlEncode(rootFolderName))
+                }
+                if (path === '/') return
+
+                const parts = path.split('/').filter(Boolean)
+                let acc = ''
+                for (const part of parts)
+                {
+                    acc += '/' + part
+                    addBreadcrumb(part, acc)
+                }
+            }
+
+            const loadRootNodes = async () =>
+            {
+                $tree.html('<li class="tree-loading">載入中...</li>')
+                const relPath = currentPath ?? '/'
+
+                try
+                {
+                    const apiResponse = await postForm(nasTreeApi.root, { path: relPath })
+                    if (!ensureSuccess(apiResponse)) return
+
+                    const rootNode = apiResponse.Data
+                    $tree.empty()
+
+                    if (!rootNode || !rootNode.Path)
+                    {
+                        $tree.html('<li class="tree-empty">沒有資料夾</li>')
+                        return
+                    }
+
+                    baseRootPath = normalizePath(rootNode.Path)
+                    rootFolderName = rootNode.Name || ''
+                    currentPath = '/'
+
+                    $tree.append(renderTreeNode(rootNode, { isRoot: true }, 1))
+                    renderBreadcrumb(currentPath)
+                } catch (xhr)
+                {
+                    console.error("Error:", xhr.status, xhr.responseText)
+                    Swal.fire(MSG.errorTitle, MSG.failedLoadFolder, 'error')
+                    $tree.html('<li class="tree-error">載入失敗</li>')
+                }
+            }
+
+            const loadChildren = async ($li, path) =>
+            {
+                const $children = $li.children('.tree-children')
+                const childLevel = (parseInt($li.attr('data-level')) || 1) + 1
+
+                $children.html('<li class="tree-loading">載入中...</li>')
+
+                try
+                {
+                    const apiResponse = await postForm(nasTreeApi.children, { path })
+                    if (!ensureSuccess(apiResponse)) return
+
+                    const nodes = apiResponse.Data
+                    $li.attr('data-loaded', 'true')
+                    $children.empty()
+
+                    if (!nodes || nodes.length === 0)
+                    {
+                        $li.attr('data-has-children', 'false')
+                        $children.html('<li class="tree-empty">無子資料夾</li>')
+                        return
+                    }
+
+                    nodes.forEach(node => $children.append(renderTreeNode(node, {}, childLevel)))
+                } catch (err)
+                {
+                    console.error(err)
+                    Swal.fire(MSG.errorTitle, MSG.failedLoadFolder, 'error')
+                    $children.html('<li class="tree-error">載入子節點失敗</li>')
+                }
+            }
+
+            const bindEvents = () =>
+            {
+                $(document).on('click', '.tree-node', async function (e)
+                {
+                    e.stopPropagation()
+
+                    const $node = $(this)
+                    const $li = $node.closest('.tree-item')
+                    const $children = $li.children('.tree-children')
+
+                    const relPath = normalizePath($li.data('path'))
+                    const loaded = String($li.attr('data-loaded')) === 'true'
+                    const hasChildren = String($li.attr('data-has-children')) !== 'false'
+
+                    $('.tree-node').removeClass('active')
+                    $node.addClass('active')
+
+                    if (!hasChildren) return
+                    if (!loaded) await loadChildren($li, relPath)
+                    if (String($li.attr('data-has-children')) === 'false') return
+
+                    const $toggle = $li.find('> .tree-node > .tree-toggle')
+                    const isExpanded = $node.hasClass('expanded')
+
+                    if (isExpanded)
+                    {
+                        $node.removeClass('expanded')
+                        $li.attr('data-expanded', 'false')
+                        $children.slideUp(150)
+                    } else
+                    {
+                        $node.addClass('expanded')
+                        $li.attr('data-expanded', 'true')
+                        $children.slideDown(150)
+                    }
+                })
+                  
+                $('#subFolder').on('click', '.folder-node-link', function (e) {
+
+                  e.preventDefault();
+
+                  const $li = $(this).closest('.tree-item');
+                 
+                  const relPath = normalizePath($(this).data('path')); // 給 API 用
+                          
+                  const breadcrumbPath = normalizePath($(this).data('breadcrumb-path') || relPath); // 給 breadcrumb 用
+
+                          
+                  currentPath = relPath;
+
+                          
+                  renderBreadcrumb(breadcrumbPath);
+                          
+                  loadFilesAndFolders();
+
+                });
+                
+                $breadcrumb.on('click', 'a', function (e)
+                {
+                    e.preventDefault()
+                    const path = $(this).data('path')
+                    $(this).parent().nextAll().remove()
+                    currentPath = path
+                    loadFilesAndFolders()
+                })
+            }
+
+            const init = () =>
+            {
+                bindEvents()
+                loadRootNodes()
+            }
+
+            const getCurrentPath = () => currentPath
+            const setCurrentPath = (p) => { currentPath = normalizePath(p) }
+
+            return { init, getCurrentPath, setCurrentPath, renderBreadcrumb }
+        })()
+
+        window.TreeNav = TreeNav
+
+        const $el = {
+            loading: $('#loadingIndicator'),
+            folderList: $('#folderlist-data'),
+            fileTbody: $('#file-list-data'),
+            noFolders: $('#no-folders'),
+            noFiles: $('#no-files'),
+            breadcrumb: $('#tempbreadcrumb'),
+
+            uploadBox: $('#uploadProgressContainer'),
+            uploadFileName: $('#uploadFileName'),
+            totalSize: $('#totalSize'),
+            uploadedSize: $('#uploadedSize'),
+            uploadPercent: $('#uploadPercent'),
+            uploadBar: $('#uploadProgressBar'),
+
+            fileOverview: $('#file-overview'),
+            closeFileOverview: $('#closeFileOverView'),
+
+            fileName: $('.file-name'),
+            fileType: $('.file-type'),
+            fileSize: $('.file-size'),
+            updateDate: $('.update-date'),
+            filePath: $('.file-path'),
+            fileIcon: $('#fileIcon')
+        }
+
+        let originalGridData = []
+        let uploadXhr = null
+        let currentUploadId = null
+        let deptDonutChart = null
+
+        function ajaxPostJson(url, dataObj)
+        {
+            return $.ajax({
+                url,
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify(dataObj)
+            })
+        }
+
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+
+        function formatInt(n)
+        {
+            if (n == null || isNaN(n)) return '--'
+            return Number(n).toLocaleString()
+        }
+
+        function formatBytes(bytes)
+        {
+            if (bytes == null || isNaN(bytes)) return '--'
+            const units = ['B', 'KB', 'MB', 'GB', 'TB']
+            let size = Number(bytes), i = 0
+            while (size >= 1024 && i < units.length - 1) { size /= 1024; i++ }
+            return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+        }
+
+        const dirSizeStart = (path) => ajaxPostJson(API_URLS.dirSizeStart, { path })
+        const dirSizeStatus = (taskid) => ajaxPostJson(API_URLS.dirSizeStatus, { taskid })
+        const dirSizeStop = (taskid) => ajaxPostJson(API_URLS.dirSizeStop, { taskid })
+
+        async function fillDirSizeToCard(folderPath, $card, options = {})
+        {
+            const pollMs = options.pollMs ?? 800
+            const maxPoll = options.maxPoll ?? 40
+
+            const $fileNumber = $card.find('.fileNumber')
+            const $folderSize = $card.find('.folderSize')
+
+            $fileNumber.text('...')
+            $folderSize.text('...')
+
+            let taskid = null
+
+            try
+            {
+                const startResp = await dirSizeStart(folderPath)
+                if (!startResp?.Success)
+                {
+                    const code = startResp?.error?.code
+                    throw new Error(`start failed. code=${code}, msg=${startResp?.error?.message ?? ''}`)
+                }
+
+                taskid = startResp.data.taskid
+
+                for (let i = 0; i < maxPoll; i++)
+                {
+                    const st = await dirSizeStatus(taskid)
+
+                    if (!st?.Success)
+                    {
+                        const code = st?.error?.code
+
+                        if (code === 599)
+                        {
+                            const restart = await dirSizeStart(folderPath)
+                            if (!restart?.Success)
+                            {
+                                throw new Error(`restart failed. code=${restart?.error?.code}, msg=${restart?.error?.message ?? ''}`)
+                            }
+                            taskid = restart.data.taskid
+                            await sleep(pollMs)
+                            continue
+                        }
+
+                        if (code === 402)
+                        {
+                            await sleep(Math.min(2000, pollMs * 2))
+                            continue
+                        }
+
+                        throw new Error(`status failed. code=${code}, msg=${st?.error?.message ?? ''}`)
+                    }
+
+                    const data = st.data
+                    if (data?.finished)
+                    {
+                        $fileNumber.text(`${formatInt(data.num_file)} files`)
+                        $folderSize.text(formatBytes(data.total_size))
+                        return
+                    }
+
+                    await sleep(pollMs)
+                }
+
+                $fileNumber.text('--')
+                $folderSize.text('--')
+                $folderSize.attr('title', 'DirSize timeout (not finished).')
+            } catch (err)
+            {
+                console.error(err)
+                $fileNumber.text('--')
+                $folderSize.text('--')
+                $folderSize.attr('title', String(err?.message ?? err))
+            }
+        }
+
+        function getFileIcon(filename)
+        {
+            const ext = (filename.split('.').pop() || '').toLowerCase()
+            const map = {
+                jpg: 'ri-image-2-fill text-success',
+                jpeg: 'ri-image-2-fill text-success',
+                png: 'ri-image-2-fill text-success',
+                gif: 'ri-image-2-fill text-success',
+                bmp: 'ri-image-2-fill text-success',
+                webp: 'ri-image-2-fill text-success',
+                mp4: 'ri-movie-fill text-info',
+                avi: 'ri-movie-fill text-info',
+                mov: 'ri-movie-fill text-info',
+                pdf: 'ri-file-text-fill text-primary',
+                doc: 'ri-file-text-fill text-primary',
+                docx: 'ri-file-text-fill text-primary'
+            }
+            return map[ext] || 'ri-error-warning-line text-secondary'
+        }
+
+        const iconCategoryMap = {
+            'ri-image-2-fill text-success': { label: 'Images', icon: 'ri-image-2-line', bg: 'bg-success-subtle', text: 'text-success' },
+            'ri-movie-fill text-info': { label: 'Video', icon: 'ri-movie-line', bg: 'bg-info-subtle', text: 'text-info' },
+            'ri-file-text-fill text-primary': { label: 'Documents', icon: 'ri-file-text-line', bg: 'bg-secondary-subtle', text: 'text-secondary' },
+            'ri-error-warning-line text-secondary': { label: 'Others', icon: 'ri-error-warning-line', bg: 'bg-primary-subtle', text: 'text-primary' }
+        }
+
+        const fileCategoryOrder = { Documents: 1, Images: 2, Video: 3, Others: 99 }
+
+        function getFileCategory(name)
+        {
+            const iconKey = getFileIcon(name)
+            return iconCategoryMap[iconKey]?.label || 'Others'
+        }
+
+        function sortFiles(files)
+        {
+            return [...files].sort((a, b) =>
+            {
+                const ca = fileCategoryOrder[getFileCategory(a.name)] || 999
+                const cb = fileCategoryOrder[getFileCategory(b.name)] || 999
+                if (ca !== cb) return ca - cb
+
+                const an = (a.name || '').toLowerCase()
+                const bn = (b.name || '').toLowerCase()
+                return an.localeCompare(bn, 'zh-Hant')
+            })
+        }
+
+        function buildFolderCardHtml(item)
+        {
+            return `
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 col-6 folder-card"" data-path="${item.path}">
+                    <div class="card bg-light shadow-none mb-0 h-100">
+                        <div class="card-body p-3">
+                            <div class="d-flex mb-1">
+                                <div class="flex-grow-1"></div>
+                                <div class="dropdown">
+                                    <button class="btn btn-ghost-primary btn-icon btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ri-more-2-fill fs-16 align-bottom"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item folder-link" data-name="${item.name}" href="javascript:void(0);">
+                                                ${MSG.open}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item edit-item-btn folder" href="javascript:void(0);" data-path="${item.path}" data-name="${item.name}">
+                                                ${MSG.rename}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item delete-folder-btn" href="javascript:void(0);" data-path="${item.path}" data-name="${item.name}">
+                                                ${MSG.deleteText}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="text-center folder-link" data-name="${item.name}">
+                                <div class="mb-1"><i class="ri-folder-2-fill align-bottom text-warning fs-2"></i></div>
+                                <h6 class="fs-12 folder-name text-truncate mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="${item.name}">${item.name}</h6>
+                            </div>
+                            <div class="hstack mt-3 text-muted fs-12">
+                                <span class="me-auto text-truncate fileNumber" data-name="${item.name}" title="${item.fileNumber ?? ''}"></span>
+                                <span class="ms-2 flex-shrink-0 folderSize" data-name="${item.name}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+           
+        }
+
+
+        function renderFolders(folders)
+        {
+            $el.folderList.empty()
+
+            // if (!folders || folders.length === 0)
+            // {
+            //     $el.noFolders.show()
+            //     return
+            // }
+
+            // $el.noFolders.hide()
+
+            folders.forEach((item) =>
+            {
+                $el.folderList.append(buildFolderCardHtml(item))
+                initDynamicDropdowns();
+                const $card = $el.folderList.find(`.folder-card[data-path="${CSS.escape(item.path)}"]`).last()
+                $card.find('[data-bs-toggle="tooltip"]').each(function () { new bootstrap.Tooltip(this) })
+                fillDirSizeToCard(item.path, $card, { pollMs: 800, maxPoll: 40 })
+            })
+        }
+
+        function renderFiles(files)
+        {
+            $el.fileTbody.empty()
+
+            // if (!files || files.length === 0)
+            // {
+            //     $el.noFiles.show()
+            //     return
+            // }
+
+            // $el.noFiles.hide()
+
+            const sortedFiles = sortFiles(files)
+
+            sortedFiles.forEach((item) =>
+            {
+                const iconClass = getFileIcon(item.name)
+                const fileTypeLabel = iconCategoryMap[iconClass]?.label
+
+                $el.fileTbody.append(`
+                    <tr data-path="${item.path}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-3 flex-shrink-0">
+                                    <div class="avatar-title rounded bg-light">
+                                        <i class="${iconClass} fs-20"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h5 class="fs-14 mb-0 text-truncate">
+                                        <a href="javascript:void(0);" class="text-primary open-view"
+                                           data-path="${item.path}" data-name="${item.name}" data-size="${item.size}"
+                                           data-mtime="${item.mtime}" data-file-type="${fileTypeLabel}" data-icon="${iconClass}" title="${item.name}"
+                                           title="${item.name}">${item.name}</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted">${item.size}</td>
+                        <td class="text-muted">${item.mtime}</td>
+                        <td class="text-center">
+                            <div class="dropdown gap-3">
+                               <!--<button type="button" class="btn btn-ghost-primary btn-icon btn-sm fs-16 favourite-btn">
+                                    <i class="ri-star-fill align-bottom"></i>
+                                </button>-->
+                                <button class="btn btn-soft-secondary btn-icon btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ri-more-fill align-middle"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item view-item-btn" href="javascript:void(0);"
+                                           data-path="${item.path}" data-name="${item.name}" data-size="${item.size}"
+                                           data-mtime="${item.mtime}" data-file-type="${fileTypeLabel}" data-icon="${iconClass}">
+                                            ${MSG.view}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item download-file-btn" href="javascript:void(0);"
+                                           data-path="${item.path}" data-file-type="file">
+                                            ${MSG.download}
+                                        </a>
+                                    </li> 
+                                    <li>
+                                        <a class="dropdown-item edit-item-btn file" href="javascript:void(0);"
+                                           data-path="${item.path}" data-name="${item.name}" data-size="${item.size}">
+                                            ${MSG.rename}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item delete-btn" href="javascript:void(0);"
+                                           data-path="${item.path}" data-name="${item.name}" data-type="1">
+                                            ${MSG.deleteText}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                `)
+
+                initDynamicDropdowns()
+            })
+        }
+
+        function getChartColorsArray(chartId)
+        {
+            const el = document.getElementById(chartId)
+            if (!el) return null
+            const colors = JSON.parse(el.getAttribute('data-colors'))
+            return colors.map((value) =>
+            {
+                const newValue = value.replace(' ', '')
+                if (newValue.indexOf(',') === -1)
+                {
+                    const color = getComputedStyle(document.documentElement).getPropertyValue(newValue)
+                    return color ? color : newValue
+                }
+                const val = value.split(',')
+                if (val.length === 2)
+                {
+                    return 'rgba(' + getComputedStyle(document.documentElement).getPropertyValue(val[0]) + ',' + val[1] + ')'
+                }
+                return newValue
+            })
+        }
+
+        function updateDonutChart(data)
+        {
+            const files = data.filter(x => x.fileType === 1)
+
+            const sizeSums = {}
+            const countSums = {}
+            files.forEach((item) =>
+            {
+                const key = getFileIcon(item.name)
+                sizeSums[key] = (sizeSums[key] || 0) + (item.sizeBytes || 0)
+                countSums[key] = (countSums[key] || 0) + 1
+            })
+
+            const labels = []
+            const series = []
+            const $list = $('#dept-overview-list')
+            $list.empty()
+
+            Object.keys(iconCategoryMap).forEach((key) =>
+            {
+                const totalBytes = sizeSums[key]
+                if (!totalBytes) return
+
+                const cat = iconCategoryMap[key]
+                labels.push(cat.label)
+                series.push(totalBytes)
+
+                const cnt = countSums[key] || 0
+                $list.append(
+                    '<li>' +
+                    '<div class="d-flex align-items-center">' +
+                    '<div class="flex-shrink-0"><div class="avatar-xs">' +
+                    '<div class="avatar-title rounded ' + cat.bg + ' ' + cat.text + '">' +
+                    '<i class="' + cat.icon + ' fs-17"></i>' +
+                    '</div>' +
+                    '</div></div>' +
+                    '<div class="flex-grow-1 ms-3">' +
+                    '<h5 class="mb-1 fs-15">' + cat.label + '</h5>' +
+                    '<p class="mb-0 fs-12 text-muted">' + cnt + ' files</p>' +
+                    '</div>' +
+                    '<b>' + formatFileSize(totalBytes) + '</b>' +
+                    '</div>' +
+                    '</li>'
+                )
+            })
+
+            if (deptDonutChart)
+            {
+                deptDonutChart.destroy()
+                deptDonutChart = null
+            }
+
+            if (series.length === 0 || typeof ApexCharts === 'undefined') return
+
+            const chartColors = getChartColorsArray('simple_dount_chart')
+            if (!chartColors) return
+
+            deptDonutChart = new ApexCharts(document.querySelector('#simple_dount_chart'), {
+                series,
+                chart: { height: 280, type: 'donut' },
+                legend: {
+                  position: 'bottom', fontSize: '11px',
+                  itemMargin: { horizontal: 6, vertical: 4 }, floating: false, offsetY: 0,
+                  formatter: function (seriesName) {
+                    return '<span title="' + seriesName + '">' + seriesName + '</span>';
+                  }
+                },
+                labels,
+                dataLabels: { dropShadow: { enabled: false } },
+                colors: chartColors,
+                tooltip: { y: { formatter: (val) => formatFileSize(val) } },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    formatter: (w) =>
+                                    {
+                                        const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                        return formatFileSize(total)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            deptDonutChart.render()
+        }
+
+        function renderAll(data)
+        {
+            renderFolders(data.filter(x => x.fileType === 2))
+            renderFiles(data.filter(x => x.fileType === 1))
+            updateDonutChart(data)
+        }
+
+        function loadFilesAndFolders()
+        {
+            $el.loading.show()
+
+            $.ajax({
+                url: API_URLS.list,
+                type: 'POST',
+                data: { path: TreeNav.getCurrentPath() },
+                success: function (apiResponse)
+                {
+                    $el.loading.hide()
+
+                    if (!apiResponse.Success)
+                    {
+                        Swal.fire(MSG.errorTitle, apiResponse.Message, 'error')
+                        return
+                    }
+
+                    const gridData = []
+                    if (apiResponse.Data?.files)
+                    {
+                        apiResponse.Data.files.forEach((file) =>
+                        {
+                            const isFolder = file.isdir
+                            const sizeBytes = isFolder ? 0 : (file.additional?.size || 0)
+                            const mtimeTs = file.additional?.time?.mtime || 0
+                            const crtimeTs = file.additional?.time?.crtime || 0
+
+                            gridData.push({
+                                name: file.name,
+                                sizeBytes,
+                                size: isFolder ? "-" : formatFileSize(sizeBytes),
+                                mtimeTs,
+                                crtimeTs,
+                                mtime: formatDate(mtimeTs),
+                                crtime: formatDate(crtimeTs),
+                                fileType: isFolder ? 2 : 1,
+                                path: file.path
+                            })
+                        })
+                    }
+
+                    originalGridData = gridData
+                    renderAll(gridData)
+                },
+                error: function (xhr, status, error)
+                {
+                    $el.loading.hide()
+                    console.error('Error loading folder:', error)
+                    Swal.fire(MSG.errorTitle, MSG.failedLoadFolder, 'error')
+                }
+            })
+        }
+
+        window.loadFilesAndFolders = loadFilesAndFolders
+
+        $(document).on('click', '.folder-link', function (e)
+        {
+            e.preventDefault()
+            const folderName = $(this).data('name')
+            const cur = TreeNav.getCurrentPath()
+            const newPath = cur === '/' ? `/${folderName}` : `${cur}/${folderName}`
+
+            TreeNav.setCurrentPath(newPath)
+            TreeNav.renderBreadcrumb(newPath)
+            loadFilesAndFolders()
+        })
+
+
+        $('#btnAddFolder').on('click', function ()
+        {
+            Swal.fire({
+                title: MSG.addFolder,
+                input: 'text',
+                inputLabel: MSG.folderName,
+                inputPlaceholder: MSG.pleaseEnterFolderName,
+                showCancelButton: true,
+                confirmButtonText: MSG.create,
+                cancelButtonText: MSG.cancel
+            }).then(function (result)
+            {
+                if (result.isConfirmed && result.value)
+                {
+                    $.ajax({
+                        url: API_URLS.createFolder,
+                        type: 'POST',
+                        data: { folderPath: TreeNav.getCurrentPath(), folderName: result.value },
+                        success: function (apiResponse)
+                        {
+                            if (apiResponse.Success) loadFilesAndFolders()
+                            else Swal.fire(apiResponse.Message, '', 'error')
+                        },
+                        error: function ()
+                        {
+                            Swal.fire(MSG.errorTitle, MSG.failedCreateFolder, 'error')
+                        }
+                    })
+                }
+            })
+        })
+
+        $('#btnAddFile').on('click', async function ()
+        {
+            if (PROJECT_ID) {
+                try {
+                    const res = await $.post(API_URLS.validateFileAction, { action: 1, projectId: PROJECT_ID });
+                    if (!res.Success || !res.Data) {
+                        Swal.fire(MSG.errorTitle, '@(config.GetMessage("No_Permission").ToHtmlString())', 'warning');
+                        return;
+                    }
+                } catch {
+                    Swal.fire(MSG.errorTitle, MSG.systemError, 'error');
+                    return;
+                }
+            }
+            $('#fileInput').click()
+        })
+
+        $('#fileInput').on('change', function (e)
+        {
+            const file = e.target.files[0]
+            if (!file) return
+
+            currentUploadId = generateUUID()
+
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('path', TreeNav.getCurrentPath())
+            formData.append('uploadId', currentUploadId)
+
+            $el.uploadBox.fadeIn()
+            $el.uploadFileName.html('<i class="ri-upload-cloud-line me-1"></i>' + file.name)
+            $el.totalSize.text(formatFileSize(file.size))
+            $el.uploadedSize.text('0 Bytes')
+            $el.uploadPercent.text('0%')
+
+            $el.uploadBar
+                .css('width', '0%')
+                .attr('aria-valuenow', 0)
+                .addClass('progress-bar-striped progress-bar-animated')
+
+            uploadXhr = new XMLHttpRequest()
+
+            uploadXhr.upload.addEventListener('progress', function (ev)
+            {
+                if (!ev.lengthComputable) return
+
+                const percentComplete = Math.round((ev.loaded / ev.total) * 100)
+                const displayPercent = Math.min(percentComplete, 95)
+
+                $el.uploadBar.css('width', displayPercent + '%').attr('aria-valuenow', displayPercent)
+                $el.uploadPercent.text(displayPercent + '%')
+                $el.uploadedSize.text(formatFileSize(ev.loaded))
+
+                if (displayPercent >= 95)
+                {
+                    $el.uploadFileName.html('<i class="ri-server-line me-1"></i>' + MESSAGES.uploadingToNAS)
+                    $el.uploadBar.removeClass('progress-bar-striped progress-bar-animated')
+                }
+            })
+
+            uploadXhr.addEventListener('load', function ()
+            {
+                const finish = (ok, msg) =>
+                {
+                    if (!ok)
+                    {
+                        $el.uploadBox.fadeOut()
+                        Swal.fire(msg || MSG.failedUploadFile, '', 'error')
+                        $('#fileInput').val('')
+                        uploadXhr = null
+                        return
+                    }
+
+                    $el.uploadBar.css('width', '100%').attr('aria-valuenow', 100)
+                    $el.uploadPercent.text('100%')
+                    $el.uploadBar.removeClass('bg-primary').addClass('bg-success')
+                    $el.uploadPercent.removeClass('text-primary').addClass('text-success')
+
+                    setTimeout(function ()
+                    {
+                        $el.uploadBox.fadeOut(function ()
+                        {
+                            $el.uploadBar
+                                .removeClass('bg-success').addClass('bg-primary')
+                                .addClass('progress-bar-striped progress-bar-animated')
+                            $el.uploadPercent.removeClass('text-success').addClass('text-primary')
+                            $el.uploadFileName.html('<i class="ri-upload-cloud-line me-1"></i>' + MESSAGES.uploading)
+                        })
+                        loadFilesAndFolders()
+                    }, 1000)
+
+                    $('#fileInput').val('')
+                    uploadXhr = null
+                }
+
+                if (uploadXhr.status !== 200) return finish(false)
+
+                try
+                {
+                    const apiResponse = JSON.parse(uploadXhr.responseText)
+                    const ok = (apiResponse === true || apiResponse.Success)
+                    finish(ok, apiResponse?.Message)
+                } catch (err)
+                {
+                    finish(false)
+                }
+            })
+
+            uploadXhr.addEventListener('error', function ()
+            {
+                $el.uploadBox.fadeOut()
+                Swal.fire(MSG.errorTitle, MSG.failedUploadFile, 'error')
+                $('#fileInput').val('')
+                uploadXhr = null
+            })
+
+            uploadXhr.addEventListener('abort', function ()
+            {
+                $el.uploadBox.fadeOut()
+                Swal.fire(MESSAGES.uploadCancelled, '', 'info')
+                $('#fileInput').val('')
+                uploadXhr = null
+            })
+
+            uploadXhr.open('POST', API_URLS.upload, true)
+            uploadXhr.withCredentials = true
+            uploadXhr.send(formData)
+        })
+
+        $('#cancelUpload').on('click', function ()
+        {
+            if (uploadXhr) uploadXhr.abort()
+
+            if (!currentUploadId) return
+
+            $.ajax({
+                url: API_URLS.cancelUpload,
+                type: 'POST',
+                data: { uploadId: currentUploadId },
+                success: function (response) { console.log('已通知後端取消上傳:', response) },
+                error: function (xhr, status, error) { console.error('通知後端取消上傳失敗:', error) }
+            }).always(function ()
+            {
+                uploadXhr = null
+                currentUploadId = null
+            })
+        })
+         $('#subFolderSearch').on('input', function () {
+            const keyword = $(this).val().trim().toLowerCase();
+
+            if (!keyword) {
+                // Restore: show all tree-items, restore tree-children visibility by expanded state
+                $('#subFolder .tree-item').show();
+                $('#subFolder .tree-children').each(function () {
+                    const expanded = $(this).parent().attr('data-expanded') === 'true';
+                    $(this)[expanded ? 'show' : 'hide']();
+                });
+                return;
+            }
+
+            // Hide everything first
+            $('#subFolder .tree-item').hide();
+            $('#subFolder .tree-children').hide();
+
+            // Show matching items and their ancestor path
+            $('#subFolder .tree-item').each(function () {
+                const $li = $(this);
+                const name = $li.find('> .tree-node > .tree-label').text().trim().toLowerCase();
+                if (name.includes(keyword)) {
+                    $li.show();
+                    // Reveal all ancestor tree-item and tree-children containers
+                    $li.parents('.tree-item').show();
+                    $li.parents('.tree-children').show();
+                }
+            });
+        });
+
+
+        $(document).on('click', '.delete-btn, .delete-folder-btn', async function ()
+        {
+            if (PROJECT_ID) {
+                try {
+                    const res = await $.post(API_URLS.validateFileAction, { action: 2, projectId: PROJECT_ID });
+                    if (!res.Success || !res.Data) {
+                        Swal.fire(MSG.errorTitle, '@(config.GetMessage("No_Permission").ToHtmlString())', 'warning');
+                        return;
+                    }
+                } catch {
+                    Swal.fire(MSG.errorTitle, MSG.systemError, 'error');
+                    return;
+                }
+            }
+
+            const filePath = $(this).data('path')
+
+            Swal.fire({
+                title: MSG.deleteConfirmation,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: MSG.confirm,
+                cancelButtonText: MSG.cancel
+            }).then(function (result)
+            {
+                if (!result.isConfirmed) return
+
+                $.ajax({
+                    url: API_URLS.delete,
+                    type: 'POST',
+                    data: { path: filePath },
+                    success: function (apiResponse)
+                    {
+                        if (apiResponse.Success) loadFilesAndFolders()
+                        else Swal.fire(apiResponse.Message, '', 'error')
+                    },
+                    error: function ()
+                    {
+                        Swal.fire(MSG.errorTitle, MSG.failedDeleteFile, 'error')
+                    }
+                })
+            })
+        })
+
+        $(document).on('click', '.download-file-btn', function ()
+        {
+            const filePath = $(this).data('path')
+            const fileType = $(this).data('file-type')
+            const url = new URL(API_URLS.download, window.location.origin)
+            url.searchParams.append('path', filePath)
+            url.searchParams.append('type', fileType)
+            window.open(url.toString(), '_blank')
+        })
+
+         // View overlay + fill details + outside click close
+        function showFileOverview(trigger) {
+            openFileOverviewDOM();
+            $('#folder-overview').hide();
+            $el.fileOverview.show();
+
+            $el.fileName.text(trigger.dataset.name);
+            $el.fileType.text(trigger.dataset.fileType);
+            $el.fileSize.text(trigger.dataset.size);
+            $el.updateDate.text(trigger.dataset.mtime);
+            $el.filePath.text(trigger.dataset.path);
+            $el.fileIcon.attr('class', trigger.dataset.icon);
+        }
+
+        $(document).on('click', '.open-view', function (e) {
+            e.preventDefault();
+            openFileOverviewDOM();
+            $('#folder-overview').show();
+            $el.fileOverview.hide();
+        });
+
+        $(document).on('click', function (e) {
+             const trigger = e.target.closest('.view-item-btn');
+
+             if (trigger)
+             {
+                showFileOverview(trigger);
+                return;
+              }    
+        });
+
+        function openFileOverviewDOM(){
+            const $right = $('.fm-right');
+            $right.show();
+            $('.fm-center').removeClass('fm-center-expanded');
+            $('#btnToggleFmRight').find('.hamburger-icon').removeClass('open');
+        }
+   
+        // Close button
+        $el.closeFileOverview.on('click', function () {
+          $el.fileOverview.hide();
+          $('#folder-overview').show();
+        });
+        
+        $(document).on('click', '.edit-item-btn', function ()
+        {
+            const path = $(this).data('path')
+            const name = $(this).data('name')
+            const isFile = $(this).hasClass('file')
+
+            let baseName = name
+            let ext = ''
+
+            if (isFile)
+            {
+                const dotIdx = name.lastIndexOf('.')
+                if (dotIdx > 0)
+                {
+                    baseName = name.substring(0, dotIdx)
+                    ext = name.substring(dotIdx)
+                }
+            }
+
+            Swal.fire({
+                title: MSG.rename,
+                input: 'text',
+                inputLabel: isFile ? MSG.fileName : MSG.folderName,
+                inputValue: baseName,
+                inputPlaceholder: MSG.pleaseEnterFolderName,
+                showCancelButton: true,
+                confirmButtonText: MSG.confirm,
+                cancelButtonText: MSG.cancel
+            }).then(function (result)
+            {
+                if (result.isConfirmed && result.value)
+                {
+                    const newName = isFile ? result.value + ext : result.value
+                    renameFile(path, newName)
+                }
+            })
+        })
+
+        function renameFile(path, newName)
+        {
+            $.ajax({
+                url: API_URLS.rename,
+                type: 'POST',
+                data: {
+                    path: path,
+                    name: newName
+                },
+                success: function (res)
+                {
+                    if (res.Success)
+                    {
+                        Swal.fire({
+                            icon: "success",
+                            title: MSG.successfullyRenamed,
+                            confirmButtonText: MSG.confirm
+                        }).then(() => { loadFilesAndFolders() })
+                    } else
+                    {
+                        Swal.fire({
+                            icon: "error",
+                            title: res.Message || MSG.systemError,
+                            confirmButtonText: MSG.confirm
+                        })
+                    }
+                },
+                error: function ()
+                {
+                    Swal.fire({
+                        icon: "error",
+                        title: MSG.systemError,
+                        confirmButtonText: MSG.confirm
+                    })
+                }
+            })
+        }
+             // 當 folder-card 內的 dropdown 打開時，提升該卡片的 z-index，
+             // 避免被 DOM 後方的兄弟卡片遮住 dropdown-menu
+             $(document).on('show.bs.dropdown', '.folder-card .dropdown', function ()
+             {
+                 $(this).closest('.folder-card').css('z-index', 100)
+             })
+             $(document).on('hide.bs.dropdown', '.folder-card .dropdown', function ()
+             {
+                 $(this).closest('.folder-card').css('z-index', '')
+             })
+             
+            // 當檔案列表 table 內的 dropdown 打開時，解除 .table-responsive 的 overflow 限制，
+            // 避免 dropdown-menu 被容器裁切遮住
+            $(document).on('show.bs.dropdown', '#file-section .dropdown', function () {
+              $(this).closest('.table-responsive').css('overflow', 'visible');
+            });
+            $(document).on('hide.bs.dropdown', '#file-section .dropdown', function () {
+              $(this).closest('.table-responsive').css('overflow', '');
+            });
+                  
+             const reqTypeUrl = '@Model.ReqTypeUrl';
+             $(function ()
+             {
+
+                 if (["/1", "/3", "/4"].includes(reqTypeUrl)) {
+                     TreeNav.init();
+                     loadFilesAndFolders();
+                 }
+
+             })
+    })();
+</script>

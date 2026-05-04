@@ -1,0 +1,129 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<div class="row">
+    <div class="col-12">
+        <form class="needs-validation" novalidate="" method="post" id="submitForm">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="mb-3 mb-lg-0">
+                                <label class="col-form-label required" for="Name">
+                                    圖表資料名稱
+                                </label>
+                                <input class="form-control" name="Name" id="Name" placeholder="請輸入圖表資料名稱" required maxlength="100" />
+                                <div class="invalid-feedback">請輸入圖表資料名稱</div>
+                            </div>
+
+                        </div>
+
+                        <div class="col-lg-8">
+                            <div class="mb-3 mb-lg-0">
+                                <label class="col-form-label required" for="Description">
+                                    描述
+                                </label>
+                                <textarea rows="5" class="form-control" name="Description" id="Description" placeholder="請輸入描述" required maxlength="500"></textarea>
+                                <div class="invalid-feedback">請輸入描述</div>
+                            </div>
+                        </div>
+
+                      
+
+                    </div>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4">
+                            <div class="mb-3 mb-lg-0">
+                                <label class="col-form-label required" for="TableauUrl">
+                                    Tableau連結
+                                </label>
+                                <div class="input-group">
+                                    <input class="form-control" name="TableauUrl" id="TableauUrl" placeholder="請輸入Tableau連結" required maxlength="100" />
+                                    <button class="btn btn-outline-primary" type="button" id="previewTableauUrl" title="預覽">
+                                        <i class="ri-eye-line"></i> 預覽
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">請輸入Tableau連結</div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="mb-3 mb-lg-0">
+                                <div class="form-check form-switch form-switch-md">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="AutoRefresh" id="AutoRefresh"/>
+                                    <label class="form-check-label" for="AutoRefresh">是否自動更新</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2" id="autoRefreshIntervalGroup" style="display:none;">
+                            <div class="mb-3 mb-lg-0">
+                                <label class="col-form-label" for="AutoRefreshInterval">自動更新分鐘數</label>
+                                <input class="form-control" type="number" name="AutoRefreshInterval" id="AutoRefreshInterval" min="1" placeholder="請輸入分鐘數" />
+                            </div>
+                        </div>
+                    </div>
+                   
+                </div>
+            </div>
+        </form>
+        <div class="text-end mb-4">
+            <a href="@Url.Action("Index")" class="btn btn-secondary w-sm">返回</a>
+            <button type="submit" class="btn btn-success w-sm" form="submitForm">儲存</button>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header pb-0">
+                <h5>
+                    預覽Tableau圖表
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="canvas">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+<script type="module">
+
+    import {
+      TableauViz,
+    } from '@Url.Content("~/lib/tableau/tableau.embedding.3.latest.min.js")';
+    $(document).ready(function(){
+        $('#previewTableauUrl').on('click', function(){
+            const url = $('#TableauUrl').val().trim();
+            if(!url){
+                Swal.fire({ title: '請先輸入Tableau連結', icon: 'warning', confirmButtonText: '確定' });
+                return;
+            }
+            //預覽tableau 物件
+            const viz = new TableauViz();
+
+            viz.src = url;
+            viz.hideTabs = true;
+
+            // add the viz object to the DOM
+             document.getElementById('canvas').replaceChildren()
+            document.getElementById('canvas').appendChild(viz);
+        });
+
+        $('#AutoRefresh').on('change', function(){
+            if($(this).is(':checked')){
+                $('#autoRefreshIntervalGroup').show();
+            } else {
+                $('#autoRefreshIntervalGroup').hide();
+                $('#AutoRefreshInterval').val('');
+            }
+        });
+
+        
+
+    })
+</script>

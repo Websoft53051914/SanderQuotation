@@ -1,0 +1,1328 @@
+@model ViewModel.ESDbTransferMappingVM
+@{
+    ViewBag.Title = config.GetMessage("ESDbTransferMapping_PageTitle");
+    ViewBag.pTitle = config.GetMessage("ESDbTransferMapping_PageTitle");
+    ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
+
+    var mapUrl = new
+    {
+        Create = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/Create",
+        Edit = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/Edit",
+        Delete = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/Delete",
+        Get = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/Get",
+        GetColumns = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetColumns",
+        GetDbTransferList = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetDbTransferList",
+        GetSourceTables = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetSourceTables",
+        GetSourceColumns = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetSourceColumns",
+        GetTargetTables = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetTargetTables",
+        GetTargetColumns = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetTargetColumns",
+        GetDstDbTransferList = $"{Configuration["BackendURL"]}/api/ESDbTransferMapping/GetDbTransferList",
+    };
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn">
+                                <i class="ri-add-line align-bottom me-1"></i> @(config.GetMessage("Create").ToHtmlString())
+                            </button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onclick="deleteMultiple()">
+                                <i class="ri-delete-bin-2-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" id="globalSearchInput" class="form-control search bg-light border-light"
+                                       placeholder="@(config.GetMessage("SearchTableContent").ToHtmlString())">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+@*                         <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="form-control search bg-light border-light"
+                                       placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword1" name="Keyword1">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="form-control search bg-light border-light"
+                                       placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword2" name="Keyword2">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div> *@
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                @(config.GetMessage("Filters").ToHtmlString())
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                <th data-sort="action">Action</th>
+                                <th data-sort="No">@(config.GetMessage("No").ToHtmlString())</th>
+                                <th class="sort" data-sort="TransferMappingCode">@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())</th>
+                                <th class="sort" data-sort="SrcTransferName">@(config.GetMessage("ESDbTransferMapping_SrcDb").ToHtmlString())</th>
+                                <th class="sort" data-sort="SrcTableName">@(config.GetMessage("ESDbTransferMapping_SrcTable").ToHtmlString())</th>
+                                <th class="sort" data-sort="DstTransferName">@(config.GetMessage("ESDbTransferMapping_DstDb").ToHtmlString())</th>
+                                <th class="sort" data-sort="DstTableName">@(config.GetMessage("ESDbTransferMapping_DstTable").ToHtmlString())</th>
+                                <th>@(config.GetMessage("ESDbTransferMapping_ColumnCount").ToHtmlString())</th>
+                                <th class="sort" data-sort="Description">@(config.GetMessage("Description").ToHtmlString())</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkAll" value="option1">
+                                    </div>
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">@(config.GetMessage("Page_Previous").ToHtmlString())</a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">@(config.GetMessage("Page_Next").ToHtmlString())</a>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop"
+                                           colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>@(config.GetMessage("You_are_about_to_delete_a_data").ToHtmlString())</h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        @(config.GetMessage("Deleting_your_data_will_remove_all_of_your_information_from_our_database.").ToHtmlString())
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none"
+                                                id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            @(config.GetMessage("Close").ToHtmlString())
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">@(config.GetMessage("Yes_delete_it").ToHtmlString())</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">@(config.GetMessage("Create").ToHtmlString())</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">@(config.GetMessage("Edit").ToHtmlString())</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+
+                    <!-- TransferMappingCode -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-lg-4">
+                            <label for="TransferMappingCode" class="form-label required">@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())</label>
+                            <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
+                                   placeholder="@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())" />
+                        </div>
+                    </div>
+
+                    <!-- Source / Target Column Mapping Area -->
+                    <div class="row g-3 mb-3">
+                        <!-- Source DB -->
+                        <div class="col-lg-4">
+                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_SrcDb").ToHtmlString())</label>
+                            <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
+                                <option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>
+                            </select>
+                        </div>
+                        <!-- Source TABLE -->
+                        <div class="col-lg-4">
+                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_SrcTable").ToHtmlString())</label>
+                            <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Destination DB -->
+                        <div class="col-lg-4">
+                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_DstDb").ToHtmlString())</label>
+                            <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
+                                <option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>
+                            </select>
+                        </div>
+                        <!-- Target TABLE -->
+                        <div class="col-lg-4">
+                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_DstTable").ToHtmlString())</label>
+                            <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Column Mapping Area -->
+                    <div class="card border">
+                        <div class="card-header d-flex justify-content-between align-items-center py-2">
+                            <span class="fw-semibold">@(config.GetMessage("ESDbTransferMapping_ColumnMapping").ToHtmlString())</span>
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddMappingRow">
+                                <i class="ri-add-line"></i> @(config.GetMessage("ESDbTransferMapping_AddMapping").ToHtmlString())
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0" id="mappingTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:32%">@(config.GetMessage("ESDbTransferMapping_SrcColumn").ToHtmlString())</th>
+                                        <th style="width:32%">@(config.GetMessage("ESDbTransferMapping_DstColumn").ToHtmlString())</th>
+                                        <th style="width:12%" class="text-center">@(config.GetMessage("ESDbTransferMapping_IsEncrypt").ToHtmlString())</th>
+                                        <th style="width:12%" class="text-center">@(config.GetMessage("ESDbTransferMapping_IsPrimaryKey").ToHtmlString())</th>
+                                        <th style="width:12%">@(config.GetMessage("Action").ToHtmlString())</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mappingRows">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Filter Condition Area -->
+                    <div class="card border mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center py-2">
+                            <span class="fw-semibold">@(config.GetMessage("ESDbTransferMapping_FilterCondition").ToHtmlString())</span>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
+                                    <label class="form-check-label" for="filterModeBuilder">@(config.GetMessage("ESDbTransferMapping_FilterModeBuilder").ToHtmlString())</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
+                                    <label class="form-check-label" for="filterModeManual">@(config.GetMessage("ESDbTransferMapping_FilterModeManual").ToHtmlString())</label>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
+                                    <i class="ri-add-line"></i> @(config.GetMessage("ESDbTransferMapping_AddCondition").ToHtmlString())
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-2" id="filterBuilderArea">
+                            <table class="table table-sm table-bordered mb-0" id="filterTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:10%">@(config.GetMessage("ESDbTransferMapping_AndOr").ToHtmlString())</th>
+                                        <th style="width:30%">@(config.GetMessage("ESDbTransferMapping_SrcColumn").ToHtmlString())</th>
+                                        <th style="width:20%">@(config.GetMessage("Filters").ToHtmlString())</th>
+                                        <th style="width:30%">@(config.GetMessage("Content").ToHtmlString())</th>
+                                        <th style="width:10%">@(config.GetMessage("Action").ToHtmlString())</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filterRows"></tbody>
+                            </table>
+                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">@(config.GetMessage("ESDbTransferMapping_NoFilter").ToHtmlString())</div>
+                        </div>
+                        <div class="card-body p-2" id="filterManualArea" style="display:none;">
+                            <textarea id="FilterConditionManual" class="form-control font-monospace"
+                                      rows="3" placeholder="@(config.GetMessage("ESDbTransferMapping_FilterWhereHint").ToHtmlString())"></textarea>
+                            <div class="form-text">@(config.GetMessage("ESDbTransferMapping_FilterWhereHint").ToHtmlString())</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="row g-3 mt-1">
+                        <div class="col-lg-12">
+                            <label for="Description" class="form-label">@(config.GetMessage("Description").ToHtmlString())</label>
+                            <textarea name="Description" id="Description" class="form-control"
+                                      placeholder="@(config.GetMessage("Description").ToHtmlString())" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
+                        <button type="button" class="btn btn-success" id="btnSaveAll">@(config.GetMessage("Confirm").ToHtmlString())</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <style>
+        /* Select2 ֵחֳׂ¿ש»~¼ֻ¦¡ */
+        select.is-invalid + .select2-container .select2-selection {
+            border-color: #dc3545 !important;
+            background-color: #fff5f5;
+        }
+        select.is-invalid + .select2-container .select2-selection:focus {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+    </style>
+    <script>
+        // ¢w¢w URL ±`¼ֶ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        const API = {
+            GetPageList:      '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetPageList',
+            Get:              '@(mapUrl.Get)',
+            GetColumns:       '@(mapUrl.GetColumns)',
+            Create:           '@(mapUrl.Create)',
+            Edit:             '@(mapUrl.Edit)',
+            Delete:           '@(mapUrl.Delete)',
+            GetDbTransferList:'@(mapUrl.GetDbTransferList)',
+            GetDstDbTransferList:'@(mapUrl.GetDstDbTransferList)',
+            GetSourceTables:  '@(mapUrl.GetSourceTables)',
+            GetSourceColumns: '@(mapUrl.GetSourceColumns)',
+            GetTargetTables:  '@(mapUrl.GetTargetTables)',
+            GetTargetColumns: '@(mapUrl.GetTargetColumns)',
+        };
+
+        // ¢w¢w ¬d¸ß×¬÷A ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        let queryState = {
+            pageIndex: 1, pageSize: 10,
+            sortField: 'SrcTableName', sortDir: 'asc',
+            Keyword1: '', Keyword2: '',
+            Status: '', StartDate: '', EndDate: '',
+        };
+
+        // ¢w¢w §ײ¨ת ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        let srcColumnCache  = {};   // tableName ¡ק [col,¡K]
+        let dstColumnCache  = {};   // tableName ¡ק [col,¡K]
+        let currentId       = null;
+        let postaction      = 'create';
+        let isLoadingEditData = false;  // ½s¿ט¸ך®ֶ¸ü₪J₪₪¡A¸ץ¹L¬Û¦P¸ך®ֶ®wִµ§i
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ×ל©l₪ֶ
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        $(document).ready(function () {
+
+            loadDatas();
+            loadDbTransferList();
+            loadDstDbTransferList();
+
+            // ×ל©l₪ֶ Source Table ©M Target Table ×÷ select2
+            $('#SrcTableName, #DstTableName').each(function () {
+                if (!$(this).data('select2')) {
+                    $(this).select2({
+                        placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#showModal')
+                    });
+                }
+            });
+
+            $('#globalSearchInput').on('input', function () {
+                const kw = $(this).val().toLowerCase();
+                $('#data-list-data tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(kw));
+                });
+            });
+
+        });
+
+        // ₪ֱ´«¿z¿ן¼ׂ¦¡
+        $(document).on('change', 'input[name="filterMode"]', function () {
+            const isManual = $(this).val() === 'manual';
+            if (isManual) {
+                $('#filterBuilderArea').hide();
+                $('#btnAddFilterRow').hide();
+                $('#filterManualArea').show();
+            } else {
+                $('#filterBuilderArea').show();
+                $('#btnAddFilterRow').show();
+                $('#filterManualArea').hide();
+            }
+        });
+
+        // ¢w¢w ¸ü₪J¨׃·½¸ך®ֶ®w₪U©װ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        function loadDbTransferList() {
+            $.get(API.GetDbTransferList, function (res) {
+                if (!res.Success) return;
+                const $sel = $('#SrcDbTransferCode');
+                $sel.find('option:not(:first)').remove();
+                res.Data.forEach(x => {
+                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}¡]${x.DbHost} / ${x.DbName}¡^</option>`);
+                });
+            });
+        }
+
+        // ¢w¢w ¸ü₪J¥״×÷¸ך®ֶ®w₪U©װ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        function loadDstDbTransferList() {
+            $.get(API.GetDstDbTransferList, function (res) {
+                if (!res.Success) return;
+                const $sel = $('#DstDbTransferCode');
+                $sel.find('option:not(:first)').remove();
+                res.Data.forEach(x => {
+                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}¡]${x.DbHost} / ${x.DbName}¡^</option>`);
+                });
+            });
+        }
+
+        // ¢w¢w ¨׃·½¸ך®ֶ®wֵÜ§ף ¡ק ­«¸ü¨׃·½TABLE ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $(document).on('change', '#SrcDbTransferCode', function () {
+            const guid = $(this).val();
+            srcColumnCache = {};
+            const $tbl = $('#SrcTableName');
+
+            if (!guid) {
+                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                clearAllSrcColumns();
+                return;
+            }
+
+            // ֵד¥Ü¸ü₪J₪₪
+            $tbl.empty().append('<option value="">-- @(config.GetMessage("ESDbTransferMapping_Loading").ToHtmlString()) --</option>').trigger('change');
+
+            $.get(API.GetSourceTables, { dbTransferGuid: guid }, function (res) {
+                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>');
+                if (res.Success) {
+                    res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
+                } else {
+                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '½T©w' });
+                }
+                $tbl.val('').trigger('change');
+            });
+
+            clearAllSrcColumns();
+
+            // ְֻ¬d¬O§_»P¥״¼׀DB¬Û¦P¡]½s¿ט¸ü₪J´ֱ¶¡¸ץ¹L¡^
+            const dstGuid = $('#DstDbTransferCode').val();
+            if (!isLoadingEditData && dstGuid && guid === dstGuid) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '@(config.GetMessage("ESDbTransferMapping_SameDatabaseWarning").ToHtmlString())',
+                    showCancelButton: true,
+                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                    cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+                }).then(result => {
+                    if (!result.isConfirmed) {
+                        $('#SrcDbTransferCode').val('');
+                        $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                        clearAllSrcColumns();
+                    }
+                });
+            }
+        });
+
+        // ¢w¢w ¨׃·½TABLEֵÜ§ף ¡ק §ף·sִז¦ל¹ןְ³¦C & ¿z¿ן±ר¥ףִז¦ל₪U©װ¡]²־₪@¥ׁ¿z¿ן±ר¥ף°ֿ¶פ³B²z¡^¢w¢w
+        $(document).on('change', '#SrcTableName', function () {
+            const tbl = $(this).val();
+
+            // ²¾°£ֵחֳׂ¿ש»~¼ֻ¦¡
+            if (tbl) {
+                $(this).removeClass('is-invalid');
+            }
+
+            if (!tbl) {
+                clearAllSrcColumns();
+                $('#filterRows .filter-col').each(function () {
+                    const cur = $(this).val();
+                    $(this).html('<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>');
+                    if (cur) $(this).append(`<option value="${cur}" selected>${cur}</option>`);
+                });
+                return;
+            }
+
+            getSrcColumns(tbl, function (cols) {
+                // §ף·sִז¦ל¹ןְ³¦C
+                $('#mappingRows .src-col-select').each(function () {
+                    refreshColumnSelect($(this), cols, $(this).val());
+                });
+                // §ף·s¿z¿ן±ר¥ףִז¦ל₪U©װ
+                $('#filterRows .filter-col').each(function () {
+                    const cur = $(this).val();
+                    const opts = '<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>' +
+                        cols.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
+                    $(this).html(opts);
+                });
+            });
+        });
+
+        // ¢w¢w ¥״×÷¸ך®ֶ®wֵÜ§ף ¡ק ­«¸ü¥״×÷TABLE ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $(document).on('change', '#DstDbTransferCode', function () {
+            const guid = $(this).val();
+            dstColumnCache = {};
+            const $tbl = $('#DstTableName');
+
+            if (!guid) {
+                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                clearAllDstColumns();
+                return;
+            }
+
+            // ֵד¥Ü¸ü₪J₪₪
+            $tbl.empty().append('<option value="">-- @(config.GetMessage("ESDbTransferMapping_Loading").ToHtmlString()) --</option>').trigger('change');
+
+            $.get(API.GetTargetTables, { dbTransferGuid: guid }, function (res) {
+                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>');
+                if (res.Success) {
+                    res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
+                } else {
+                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '½T©w' });
+                }
+                $tbl.val('').trigger('change');
+            });
+
+            clearAllDstColumns();
+
+            // ְֻ¬d¬O§_»P¨׃·½DB¬Û¦P¡]½s¿ט¸ü₪J´ֱ¶¡¸ץ¹L¡^
+            const srcGuid = $('#SrcDbTransferCode').val();
+            if (!isLoadingEditData && srcGuid && guid === srcGuid) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '@(config.GetMessage("ESDbTransferMapping_SameDatabaseWarning").ToHtmlString())',
+                    showCancelButton: true,
+                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                    cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+                }).then(result => {
+                    if (!result.isConfirmed) {
+                        $('#DstDbTransferCode').val('');
+                        $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                        clearAllDstColumns();
+                    }
+                });
+            }
+        });
+
+        // ¢w¢w ¥״×÷TABLEֵÜ§ף ¡ק §ף·s¦U¦C×÷¥״¼׀ִז¦ל¿ן¶µ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $(document).on('change', '#DstTableName', function () {
+            const tbl = $(this).val();
+
+            // ²¾°£ֵחֳׂ¿ש»~¼ֻ¦¡
+            if (tbl) {
+                $(this).removeClass('is-invalid');
+            }
+
+            if (!tbl) { clearAllDstColumns(); return; }
+
+            getDstColumns(tbl, function (cols) {
+                $('#mappingRows .dst-col-select').each(function () {
+                    refreshColumnSelect($(this), cols, $(this).val());
+                });
+                refreshDstSelectOptions();
+            });
+        });
+
+        // ¥״¼׀ִז¦ל¿ן§ף§ן®ֹ ¡ק ¦P¨B©ׂ¦³¦C×÷ disabled ×¬÷A
+        $(document).on('change', '.dst-col-select', function () {
+            refreshDstSelectOptions();
+        });
+
+        // ­«·s­p÷ג©ׂ¦³ dst-col-select ×÷ disabled ¿ן¶µ¡]₪w³Q¨ה¥L¦C¿ן¥־×÷­ָ₪£¥i¦A¿ן¡^
+        function refreshDstSelectOptions() {
+            const usedVals = new Set();
+            $('#mappingRows .dst-col-select').each(function () {
+                const v = $(this).val();
+                if (v) usedVals.add(v);
+            });
+
+            $('#mappingRows .dst-col-select').each(function () {
+                const myVal = $(this).val();
+                $(this).find('option').each(function () {
+                    const optVal = $(this).val();
+                    if (!optVal) return;
+                    $(this).prop('disabled', usedVals.has(optVal) && optVal !== myVal);
+                });
+            });
+        }
+
+        // ¢w¢w ·s¼W¹ןְ³¦C ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $('#btnAddMappingRow').on('click', function () {
+            addMappingRow('', '', false, false);
+        });
+
+        function addMappingRow(srcVal, dstVal, isEncrypt, isPrimaryKey) {
+            const idx = $('#mappingRows tr').length;
+            const $tr = $(`
+                <tr data-row="${idx}">
+                    <td>
+                        <select class="form-select form-select-sm src-col-select" required>
+                            <option value="">@(config.GetMessage("ESDbTransferMapping_SelectSrcTableFirst").ToHtmlString())</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm dst-col-select" required>
+                            <option value="">@(config.GetMessage("ESDbTransferMapping_SelectDstTableFirst").ToHtmlString())</option>
+                        </select>
+                    </td>
+                    <td class="text-center">
+                        <div class="form-check d-flex justify-content-center mb-0">
+                            <input class="form-check-input is-encrypt-check" type="checkbox" ${isEncrypt ? 'checked' : ''}>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="form-check d-flex justify-content-center mb-0">
+                            <input class="form-check-input is-primary-key-check" type="checkbox" ${isPrimaryKey ? 'checked' : ''}>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-soft-danger btn-remove-row">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+
+            $('#mappingRows').append($tr);
+
+            // ¶ס¥R¨׃·½ִז¦ל
+            const srcTbl = $('#SrcTableName').val();
+            if (srcTbl) {
+                getSrcColumns(srcTbl, function (cols) {
+                    refreshColumnSelect($tr.find('.src-col-select'), cols, srcVal);
+                });
+            }
+
+            // ¶ס¥R¥״¼׀ִז¦ל¡]±ֶ°£₪w³Q¨ה¥L¦C¿ן¥־×÷­ָ¡^
+            const dstTbl = $('#DstTableName').val();
+            if (dstTbl) {
+                getDstColumns(dstTbl, function (cols) {
+                    refreshColumnSelect($tr.find('.dst-col-select'), cols, dstVal);
+                    refreshDstSelectOptions();
+                });
+            }
+        }
+
+        // ¢w¢w §R°£¹ןְ³¦C ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $(document).on('click', '.btn-remove-row', function () {
+            $(this).closest('tr').remove();
+            refreshDstSelectOptions();
+        });
+
+        // ¢w¢w ִז¦לֵחֳׂ¡]¥״¼׀ִז¦ל₪£¥i­«½ֶ¡A¨׃·½ִז¦ל₪¹³\­«½ֶ¡^¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        function validateNoDuplicateColumns() {
+            return true;
+        }
+
+        // ¢w¢w ְx¦s¡]₪@¦¸°e¥X¥D×ם + Columns °}¦C¡^¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        $('#btnSaveAll').on('click', function () {
+            const $form = $('#submitForm');
+
+            // ₪ג°Êֵחֳׂ¥²¶סִז¦ל
+            let isValid = true;
+            let firstInvalidField = null;
+
+            // ֵחֳׂ TransferMappingCode
+            if (!$('#TransferMappingCode').val().trim()) {
+                $('#TransferMappingCode').addClass('is-invalid');
+                if (!firstInvalidField) firstInvalidField = $('#TransferMappingCode');
+                isValid = false;
+            } else {
+                $('#TransferMappingCode').removeClass('is-invalid');
+            }
+
+            // ֵחֳׂ¨׃·½¸ך®ֶ®w
+            if (!$('#SrcDbTransferCode').val()) {
+                $('#SrcDbTransferCode').addClass('is-invalid');
+                if (!firstInvalidField) firstInvalidField = $('#SrcDbTransferCode');
+                isValid = false;
+            } else {
+                $('#SrcDbTransferCode').removeClass('is-invalid');
+            }
+
+            // ֵחֳׂ¨׃·½¸ך®ֶ×ם
+            const srcTableVal = $('#SrcTableName').val();
+            if (!srcTableVal) {
+                $('#SrcTableName').addClass('is-invalid');
+                if (!firstInvalidField) firstInvalidField = $('#SrcTableName');
+                isValid = false;
+            } else {
+                $('#SrcTableName').removeClass('is-invalid');
+            }
+
+            // ֵחֳׂ¥״¼׀¸ך®ֶ®w
+            if (!$('#DstDbTransferCode').val()) {
+                $('#DstDbTransferCode').addClass('is-invalid');
+                if (!firstInvalidField) firstInvalidField = $('#DstDbTransferCode');
+                isValid = false;
+            } else {
+                $('#DstDbTransferCode').removeClass('is-invalid');
+            }
+
+            // ֵחֳׂ¥״¼׀¸ך®ֶ×ם
+            const dstTableVal = $('#DstTableName').val();
+            if (!dstTableVal) {
+                $('#DstTableName').addClass('is-invalid');
+                if (!firstInvalidField) firstInvalidField = $('#DstTableName');
+                isValid = false;
+            } else {
+                $('#DstTableName').removeClass('is-invalid');
+            }
+
+            if (!isValid) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '½׀¶ס¼g©ׂ¦³¥²¶סִז¦ל',
+                    text: '½׀½T»{₪w¿ן¾Ü¨׃·½¸ך®ֶ®w¡B¨׃·½¸ך®ֶ×ם¡B¥״¼׀¸ך®ֶ®w₪־¥״¼׀¸ך®ֶ×ם',
+                    confirmButtonText: '½T©w'
+                });
+                // ±NµJֲI²¾¨ל²ִ₪@­׃µL®ִִז¦ל
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                }
+                return;
+            }
+
+            if ($('#mappingRows tr').length === 0) {
+                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_AtLeastOneMapping").ToHtmlString())', confirmButtonText: '½T©w' });
+                return;
+            }
+
+            if (!validateNoDuplicateColumns()) return;
+
+            const srcDbGuid    = $('#SrcDbTransferCode').val();
+            const dstDbGuid    = $('#DstDbTransferCode').val();
+            const srcTableName = $('#SrcTableName').val();
+            const dstTableName = $('#DstTableName').val();
+            const description  = $('#Description').val();
+
+            const columns = [];
+            let valid = true;
+            $('#mappingRows tr').each(function () {
+                const src = $(this).find('.src-col-select').val();
+                const dst = $(this).find('.dst-col-select').val();
+                const enc = $(this).find('.is-encrypt-check').prop('checked');
+                const isPk = $(this).find('.is-primary-key-check').prop('checked');
+                if (!src || !dst) { valid = false; return false; }
+                columns.push({ SrcColumnName: src, DstColumnName: dst, IsEncrypt: enc, IsPrimaryKey: isPk });
+            });
+
+            if (!valid) {
+                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_SelectAllColumns").ToHtmlString())', confirmButtonText: '½T©w' });
+                return;
+            }
+
+            showLoader();
+
+            const postURL = postaction === 'create' ? API.Create : API.Edit;
+            const filterData = collectFilterData();
+            const data = {
+                Id:              postaction === 'edit' ? currentId : '00000000-0000-0000-0000-000000000000',
+                TransferMappingCode:  $('#TransferMappingCode').val(),
+                SrcDbTransferCode:    srcDbGuid,
+                SrcTableName:      srcTableName,
+                DstDbTransferCode: dstDbGuid,
+                DstTableName:      dstTableName,
+                Description:       description,
+                FilterCondition:   JSON.stringify(filterData),
+                FilterMode:        filterData.mode,
+            };
+            columns.forEach((col, i) => {
+                data[`Columns[${i}][SrcColumnName]`] = col.SrcColumnName;
+                data[`Columns[${i}][DstColumnName]`] = col.DstColumnName;
+                data[`Columns[${i}][IsEncrypt]`]     = col.IsEncrypt;
+                data[`Columns[${i}][IsPrimaryKey]`]  = col.IsPrimaryKey;
+            });
+
+            $.ajax({
+                type: 'POST', url: postURL, dataType: 'json', data: data,
+                success: function (res) {
+                    if (!res.Success) {
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        return;
+                    }
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('showModal'));
+                    modal.hide();
+                    const msg = postaction === 'create'
+                        ? '@(config.GetMessage("Successfully_Added").ToHtmlString())'
+                        : '@(config.GetMessage("Successfully_Edited").ToHtmlString())';
+                    Swal.fire({ icon: 'success', title: msg, confirmButtonText: '½T©w' }).then(() => loadDatas());
+                    resetElement();
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                }
+            }).always(() => hideLoader());
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ¦C×ם¸ü₪J
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        function loadDatas() {
+            showLoader();
+            $.ajax({
+                url: API.GetPageList,
+                type: 'GET',
+                data: queryState,
+                success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: (res.Errors?.AlertLevel || 'warning').toLowerCase(),
+                            title: res.Errors?.ReturnCode,
+                            text: res.Errors?.ReturnMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                        return;
+                    }
+                    renderTable(res.Data.Data);
+                    renderPagination(res.Data.Total);
+                    document.getElementById('remove-actions').style.display = 'none';
+                },
+                error: function () { hideLoader(); alert('Failed to load data.'); }
+            });
+        }
+
+        function renderTable(rows) {
+            const tbody = $('#data-list-data');
+            tbody.empty();
+
+            if (!rows || rows.length === 0) { $('.noresult').show(); return; }
+            $('.noresult').hide();
+
+            rows.forEach(data => {
+                tbody.append(`
+                    <tr data-id="${data.Id}">
+                        <th scope="row">
+                            <div class="form-check">
+                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">
+                            </div>
+                        </th>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-soft-secondary btn-sm" type="button" data-bs-toggle="dropdown">
+                                    <i class="ri-more-fill align-middle"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Delete").ToHtmlString())</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="No">${data.No}</td>
+                        <td class="TransferMappingCode">${data.TransferMappingCode || ''}</td>
+                        <td class="SrcTransferName">${data.SrcTransferName || ''}</td>
+                        <td class="SrcTableName">${data.SrcTableName || ''}</td>
+                        <td class="DstTransferName">${data.DstTransferName || ''}</td>
+                        <td class="DstTableName">${data.DstTableName || ''}</td>
+                        <td><span class="badge bg-primary-subtle text-primary">${(data.Columns && data.Columns.length) || 0} @(config.GetMessage("ESDbTransferMapping_CountUnit").ToHtmlString())</span></td>
+                        <td class="Description">${data.Description || ''}</td>
+                    </tr>
+                `);
+            });
+            initDynamicDropdowns();
+        }
+
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / queryState.pageSize);
+            const ul = $('.listjs-pagination');
+            ul.empty();
+            if (totalPages <= 1) return;
+
+            const maxPages = 5;
+            let startPage = Math.max(1, queryState.pageIndex - Math.floor(maxPages / 2));
+            let endPage = Math.min(totalPages, startPage + maxPages - 1);
+            if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
+
+            if (startPage > 1) {
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a></li>`);
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+                ul.append(`<li class="page-item ${i === queryState.pageIndex ? 'active' : ''}"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a></li>`);
+            }
+            if (endPage < totalPages) {
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a></li>`);
+            }
+
+            $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
+            $('.pagination-next').toggleClass('disabled', queryState.pageIndex === totalPages);
+
+            $('.pagination-prev').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex > 1) { queryState.pageIndex--; loadDatas(); }
+            });
+            $('.pagination-next').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex < totalPages) { queryState.pageIndex++; loadDatas(); }
+            });
+        }
+
+        function gotoPage(page) { queryState.pageIndex = page; loadDatas(); }
+
+        function SearchData() {
+            queryState.Keyword1 = $('#Keyword1').val();
+            queryState.Keyword2 = $('#Keyword2').val();
+            queryState.pageIndex = 1;
+            $('#globalSearchInput').val('').trigger('input');
+            loadDatas();
+        }
+
+        $('.sort').on('click', function () {
+            const field = $(this).data('sort');
+            if (queryState.sortField === field)
+                queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+            else { queryState.sortField = field; queryState.sortDir = 'asc'; }
+            loadDatas();
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ₪ִ¿ן / ¥‏¿ן
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        function toggleRemoveActions() {
+            $('#remove-actions').toggle($('.row-check:checked').length > 0);
+        }
+        $(document).on('change', '.row-check', function () {
+            $('#checkAll').prop('checked', $('.row-check').length === $('.row-check:checked').length);
+            toggleRemoveActions();
+        });
+        $('#checkAll').on('change', function () {
+            $('.row-check').prop('checked', this.checked);
+            toggleRemoveActions();
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ·s¼W«צ¶s
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        $('#btnShowModal').on('click', function () {
+            resetElement();
+            $('#exampleModalLabel_Create').show();
+            $('#exampleModalLabel_Edit').hide();
+            postaction = 'create';
+            currentId = null;
+            new bootstrap.Modal(document.getElementById('showModal'), { backdrop: 'static', keyboard: false }).show();
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ½s¿ט«צ¶s
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        $(document).on('click', '.edit-item-btn', function (e) {
+            e.preventDefault();
+            $('#exampleModalLabel_Create').hide();
+            $('#exampleModalLabel_Edit').show();
+            postaction = 'edit';
+            currentId = $(this).closest('tr').data('id');
+
+            if (!currentId) {
+                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_DataNotFound").ToHtmlString())', confirmButtonText: '½T©w' });
+                return;
+            }
+
+            new bootstrap.Modal(document.getElementById('showModal'), { backdrop: 'static', keyboard: false }).show();
+
+            showLoader();
+            $.ajax({
+                type: 'POST', url: API.Get, dataType: 'json', data: { id: currentId },
+                success: function (res) {
+                    if (!res.Success) {
+                        hideLoader();
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        return;
+                    }
+                    const d = res.Data;
+
+                    // ¼׀°O½s¿ט¸ך®ֶ¸ü₪J₪₪¡Aֱ׳§Kִ²µo¬Û¦P¸ך®ֶ®wִµ§i
+                    isLoadingEditData = true;
+
+                    // ¶ס₪J TransferMappingCode
+                    $('#TransferMappingCode').val(d.TransferMappingCode);
+
+                    // ³]©w¨׃·½DB¡Aִ²µo TABLE ₪U©װ­«¸ü
+                    $('#SrcDbTransferCode').val(d.SrcDbTransferCode).trigger('change');
+                    // ³]©w¥״×÷DB¡Aִ²µo TABLE ₪U©װ­«¸ü
+                    $('#DstDbTransferCode').val(d.DstDbTransferCode).trigger('change');
+
+                    setTimeout(function () {
+                        isLoadingEditData = false;
+
+                        // ³]©w¨׃·½×ם®ז
+                        const $srcTbl = $('#SrcTableName');
+                        $srcTbl.val(d.SrcTableName).trigger('change');
+
+                        // ³]©w¥״¼׀×ם®ז
+                        const $dstTbl = $('#DstTableName');
+                        $dstTbl.val(d.DstTableName).trigger('change');
+
+                        $('#Description').val(d.Description);
+
+                        // ©I¥s GetColumns ¨ת±o₪l×םִז¦ל¹ןְ³¡A³v¦C¶ס₪J
+                        const colPromise = $.get(API.GetColumns, { TransferMappingCode: d.TransferMappingCode }, function (colRes) {
+                            $('#mappingRows').empty();
+                            if (colRes.Success && colRes.Data?.length > 0) {
+                                setTimeout(function () {
+                                    colRes.Data.forEach(col => addMappingRow(col.SrcColumnName, col.DstColumnName, col.IsEncrypt, col.IsPrimaryKey));
+                                }, 400);
+                            }
+                        });
+
+                        // ¸ü₪J¿z¿ן±ר¥ף¡]₪ג¼g SQL ¼ׂ¦¡₪£»Ý­nִז¦ל§ײ¨ת¡A¥i×½±µ¸ü₪J¡Fbuilder ¼ׂ¦¡₪~»Ýµ¥«Ý§ײ¨ת¡^
+                        let filterPromise;
+                        if (d.FilterCondition) {
+                            let fc;
+                            try { fc = JSON.parse(d.FilterCondition); } catch { fc = null; }
+                            const needCols = fc && (fc.mode || d.FilterMode || 'builder') !== 'manual';
+                            if (needCols) {
+                                filterPromise = $.Deferred();
+                                getSrcColumns(d.SrcTableName, function () {
+                                    loadFilterCondition(d.FilterCondition, d.FilterMode);
+                                    filterPromise.resolve();
+                                });
+                            } else {
+                                loadFilterCondition(d.FilterCondition, d.FilterMode);
+                                filterPromise = $.Deferred().resolve();
+                            }
+                        } else {
+                            loadFilterCondition(null, null);
+                            filterPromise = $.Deferred().resolve();
+                        }
+
+                        $.when(colPromise, filterPromise).always(function () {
+                            hideLoader();
+                        });
+                    }, 600);
+                },
+                error: function () {
+                    hideLoader();
+                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                }
+            });
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // §R°£¡]³זµ§¡^
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        $(document).on('click', '.remove-item-btn', function (e) {
+            e.preventDefault();
+            currentId = $(this).closest('tr').data('id');
+        });
+
+        $('#delete-record').on('click', function () {
+            $.ajax({
+                type: 'POST', url: API.Delete, dataType: 'json', data: { list: [currentId] },
+                success: function (res) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteOrder')).hide();
+                    if (!res.Success) {
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        return;
+                    }
+                    loadDatas();
+                    Swal.fire({ icon: 'success', title: '@(config.GetMessage("Successfully_Deleted").ToHtmlString())', confirmButtonText: '½T©w' });
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                }
+            }).always(() => hideLoader());
+        });
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // §R°£¡]¦hµ§¡^
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        function deleteMultiple() {
+            const ids = [];
+            document.querySelectorAll('.form-check [value=option1]').forEach(el => {
+                if (el.checked) {
+                    const id = el.closest('tr')?.querySelector('[data-id]')?.getAttribute('data-id');
+                    if (id) ids.push(id);
+                }
+            });
+
+            if (!ids.length) {
+                Swal.fire({ title: 'Please select at least one checkbox', confirmButtonClass: 'btn btn-info', buttonsStyling: false, showCloseButton: true });
+                return;
+            }
+
+            Swal.fire({
+                title: '@(config.GetMessage("Are_you_sure").ToHtmlString())',
+                text: '@(config.GetMessage("You_wont_be_able_to_revert_this").ToHtmlString())',
+                icon: 'warning', showCancelButton: true,
+                customClass: { confirmButton: 'btn btn-primary w-xs me-2 mt-2', cancelButton: 'btn btn-danger w-xs mt-2' },
+                confirmButtonText: '@(config.GetMessage("Yes_delete_it").ToHtmlString())',
+                cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())',
+                buttonsStyling: false, showCloseButton: true
+            }).then(function (result) {
+                if (!result.value) return;
+                showLoader();
+                $.ajax({
+                    type: 'POST', url: API.Delete, dataType: 'json', data: { list: ids },
+                    success: function (res) {
+                        if (!res.Success) {
+                            Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                            return;
+                        }
+                        loadDatas();
+                        Swal.fire({ title: '@(config.GetMessage("Deleted").ToHtmlString())', text: '@(config.GetMessage("Your_data_has_been_deleted").ToHtmlString())', icon: 'success', customClass: { confirmButton: 'btn btn-info w-xs mt-2' }, buttonsStyling: false });
+                    },
+                    error: function () {
+                        Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                    }
+                }).always(() => hideLoader());
+            });
+        }
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // »²§U¡Gִז¦ל§ײ¨ת & ¶ס¥R Select
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        function getSrcColumns(tableName, cb) {
+            if (srcColumnCache[tableName]) { cb(srcColumnCache[tableName]); return; }
+            const guid = $('#SrcDbTransferCode').val();
+            $.get(API.GetSourceColumns, { dbTransferGuid: guid, tableName: tableName }, function (res) {
+                if (res.Success) {
+                    srcColumnCache[tableName] = res.Data;
+                    cb(res.Data);
+                } else {
+                        hideLoader();
+                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '½T©w' });
+                    cb([]);
+                }
+            }).fail(function () {
+                Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                cb([]);
+            });
+        }
+
+        function getDstColumns(tableName, cb) {
+            if (dstColumnCache[tableName]) { cb(dstColumnCache[tableName]); return; }
+            const guid = $('#DstDbTransferCode').val();
+            $.get(API.GetTargetColumns, { dbTransferGuid: guid, tableName: tableName }, function (res) {
+                if (res.Success) {
+                    dstColumnCache[tableName] = res.Data;
+                    cb(res.Data);
+                } else {
+                        hideLoader();
+                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '½T©w' });
+                    cb([]);
+                }
+            }).fail(function () {
+                Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '½T©w' });
+                cb([]);
+            });
+        }
+
+        function refreshColumnSelect($sel, cols, selectedVal) {
+            const prev = selectedVal || $sel.val() || '';
+            $sel.html('<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>');
+            cols.forEach(c => $sel.append(`<option value="${c}" ${c === prev ? 'selected' : ''}>${c}</option>`));
+        }
+
+        function clearAllSrcColumns() {
+            $('#mappingRows .src-col-select').html('<option value="">@(config.GetMessage("ESDbTransferMapping_SelectSrcTableFirst").ToHtmlString())</option>');
+        }
+
+        function clearAllDstColumns() {
+            $('#mappingRows .dst-col-select').html('<option value="">@(config.GetMessage("ESDbTransferMapping_SelectDstTableFirst").ToHtmlString())</option>');
+        }
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ¿z¿ן±ר¥ף
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        const FILTER_OPERATORS = [
+            { value: '=',           label: '@(config.GetMessage("ESDbTransferMapping_OpEq").ToHtmlString())' },
+            { value: '!=',          label: '@(config.GetMessage("ESDbTransferMapping_OpNeq").ToHtmlString())' },
+            { value: '>',           label: '@(config.GetMessage("ESDbTransferMapping_OpGt").ToHtmlString())' },
+            { value: '>=',          label: '@(config.GetMessage("ESDbTransferMapping_OpGte").ToHtmlString())' },
+            { value: '<',           label: '@(config.GetMessage("ESDbTransferMapping_OpLt").ToHtmlString())' },
+            { value: '<=',          label: '@(config.GetMessage("ESDbTransferMapping_OpLte").ToHtmlString())' },
+            { value: 'LIKE',        label: '@(config.GetMessage("ESDbTransferMapping_OpLike").ToHtmlString())' },
+            { value: 'NOT LIKE',    label: '@(config.GetMessage("ESDbTransferMapping_OpNotLike").ToHtmlString())' },
+            { value: 'IS NULL',     label: '@(config.GetMessage("ESDbTransferMapping_OpIsNull").ToHtmlString())' },
+            { value: 'IS NOT NULL', label: '@(config.GetMessage("ESDbTransferMapping_OpIsNotNull").ToHtmlString())' },
+            // { value: 'IN',          label: '@(config.GetMessage("ESDbTransferMapping_OpIn").ToHtmlString())' },
+        ];
+
+        // ·s¼W±ר¥ף¦C
+        $('#btnAddFilterRow').on('click', function () {
+            addFilterRow('AND', '', '=', '');
+        });
+
+        function addFilterRow(logic, column, operator_, value) {
+            const isFirst = $('#filterRows tr').length === 0;
+            const srcCols = getSrcColumnOptions();
+            const opOptions = FILTER_OPERATORS.map(o =>
+                `<option value="${o.value}" ${o.value === operator_ ? 'selected' : ''}>${o.label}</option>`
+            ).join('');
+            const noValueOps = ['IS NULL', 'IS NOT NULL'];
+            const hideVal = noValueOps.includes(operator_);
+
+            const $tr = $(`
+                <tr>
+                    <td>
+                    ${isFirst
+                            ? `<span class="text-muted small ps-1">@(config.GetMessage("ESDbTransferMapping_Where").ToHtmlString())</span>`
+                            : `<select class="form-select form-select-sm filter-logic">
+                                   <option value="AND" ${logic === 'AND' ? 'selected' : ''}>AND</option>
+                                   <option value="OR"  ${logic === 'OR'  ? 'selected' : ''}>OR</option>
+                               </select>`
+                        }
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm filter-col">
+                            <option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>
+                            ${srcCols}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm filter-op">
+                            ${opOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm filter-val"
+                               value="${escHtml(value)}" ${hideVal ? 'style="display:none"' : ''}>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-soft-danger btn-remove-filter">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+
+            if (column) $tr.find('.filter-col').val(column);
+            $('#filterRows').append($tr);
+            updateFilterEmpty();
+        }
+
+        // ¹B÷ג₪l§ןֵÜ®ֱֹפֲֳ/ֵד¥Ü­ָ¿י₪J®״
+        $(document).on('change', '.filter-op', function () {
+            const noVal = ['IS NULL', 'IS NOT NULL'].includes($(this).val());
+            $(this).closest('tr').find('.filter-val').toggle(!noVal);
+        });
+
+        // §R°£±ר¥ף¦C
+        $(document).on('click', '.btn-remove-filter', function () {
+            $(this).closest('tr').remove();
+            updateFilterEmpty();
+        });
+
+        function updateFilterEmpty() {
+            const hasRows = $('#filterRows tr').length > 0;
+            $('#filterEmpty').toggle(!hasRows);
+        }
+
+        function getSrcColumnOptions() {
+            const tbl = $('#SrcTableName').val();
+            if (!tbl || !srcColumnCache[tbl]) return '';
+            return srcColumnCache[tbl].map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        // ¦¬¶°¿z¿ן±ר¥ף
+        function collectFilterData() {
+            const mode = $('input[name="filterMode"]:checked').val();
+            if (mode === 'manual') {
+                return { mode: 'manual', sql: $('#FilterConditionManual').val().trim(), rows: [] };
+            }
+            const rows = [];
+            $('#filterRows tr').each(function (i) {
+                const $logicSel = $(this).find('.filter-logic');
+                const logic = $logicSel.length ? $logicSel.val() : '';
+                const col   = $(this).find('.filter-col').val();
+                const op    = $(this).find('.filter-op').val();
+                const val   = $(this).find('.filter-val').val();
+                if (col) rows.push({ logic: i === 0 ? '' : logic, col, op, val });
+            });
+            return { mode: 'builder', sql: '', rows };
+        }
+
+        // ¸ü₪J¿z¿ן±ר¥ף¡]½s¿ט®ֹ¡^
+        function loadFilterCondition(filterCondition, filterMode) {
+            $('#filterRows').empty();
+            $('#FilterConditionManual').val('');
+
+            if (!filterCondition) { updateFilterEmpty(); return; }
+
+            try {
+                const fc = JSON.parse(filterCondition);
+                const mode = filterMode || fc.mode || 'builder';
+
+                if (mode === 'manual') {
+                    $('input[name="filterMode"][value="manual"]').prop('checked', true);
+                    $('#filterBuilderArea').hide();
+                    $('#btnAddFilterRow').hide();
+                    $('#filterManualArea').show();
+                    $('#FilterConditionManual').val(fc.sql || filterCondition);
+                } else {
+                    $('input[name="filterMode"][value="builder"]').prop('checked', true);
+                    $('#filterBuilderArea').show();
+                    $('#btnAddFilterRow').show();
+                    $('#filterManualArea').hide();
+                    (fc.rows || []).forEach((r, i) => addFilterRow(i === 0 ? 'AND' : r.logic, r.col, r.op, r.val));
+                }
+            } catch {
+                // ¯ֲ₪ו¦rµר¬°₪ג¼g SQL
+                $('input[name="filterMode"][value="manual"]').prop('checked', true);
+                $('#filterBuilderArea').hide();
+                $('#btnAddFilterRow').hide();
+                $('#filterManualArea').show();
+                $('#FilterConditionManual').val(filterCondition);
+            }
+            updateFilterEmpty();
+        }
+
+        function escHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ­«¸m Modal
+        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        function resetElement() {
+            $('#submitForm input:not([type="radio"]):not([type="checkbox"])').val('');
+            $('#submitForm textarea').val('');
+            $('#TransferMappingCode').val('');
+            $('#SrcDbTransferCode').val('');
+            $('#DstDbTransferCode').val('');
+
+            // ­«¸m Source Table ©M Target Table
+            const $srcTbl = $('#SrcTableName');
+            const $dstTbl = $('#DstTableName');
+                const defaultMsg = '@(config.GetMessage("Please_Select").ToHtmlString())';
+
+            $srcTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');
+            $dstTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');
+
+            $('#mappingRows').empty();
+            $('#filterRows').empty();
+            $('#FilterConditionManual').val('');
+            $('input[name="filterMode"][value="builder"]').prop('checked', true);
+            $('#filterBuilderArea').show();
+            $('#btnAddFilterRow').show();
+            $('#filterManualArea').hide();
+            updateFilterEmpty();
+            srcColumnCache = {};
+            dstColumnCache = {};
+        }
+    </script>
+}

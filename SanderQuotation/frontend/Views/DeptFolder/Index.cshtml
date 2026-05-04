@@ -1,0 +1,576 @@
+﻿@{
+
+    ViewBag.Title = (config.GetMessage("DepartmentFolder").ToHtmlString());
+    ViewBag.pTitle = (config.GetMessage("DepartmentFolder").ToHtmlString());
+    ViewBag.pageTitle = (config.GetMessage("FolderManagement").ToHtmlString());
+
+
+
+    var deptCode = ViewData["dept"]?.ToString();
+
+var mapText = new
+{
+    Text_CreateDate = (config.GetMessage("CreateDate").ToHtmlString()),
+    Text_CreateUser = (config.GetMessage("CreateUser").ToHtmlString()),
+    Text_Uploading = (config.GetMessage("Uploading").ToHtmlString()),
+    Text_UploadingToNAS = (config.GetMessage("UploadingToNAS").ToHtmlString()),
+    Text_UploadCancelled = (config.GetMessage("UploadCancelled").ToHtmlString()),
+};
+
+    var mapAttr = new
+    {
+        IdBtnCreate = Guid.NewGuid(),
+        IdGrid = Guid.NewGuid(),
+        IdBtnSearch = Guid.NewGuid(),
+        IdSearchForm = Guid.NewGuid(),
+
+        IdGrid2 = Guid.NewGuid(),
+        IdBtnSearch2 = Guid.NewGuid(),
+        IdSearchForm2 = Guid.NewGuid(),
+    };
+
+    var mapUrl = new
+    {
+        NasList = $"{Configuration["BackendURL"]}/api/nas/list",
+        NasDownload = $"{Configuration["BackendURL"]}/api/nas/download",
+        NasDelete = $"{Configuration["BackendURL"]}/api/nas/delete",
+        NasCreateFolder = $"{Configuration["BackendURL"]}/api/nas/create_folder",
+        NasUpload = $"{Configuration["BackendURL"]}/api/nas/upload",
+        NasGetUploadUrl = $"{Configuration["BackendURL"]}/api/nas/get_upload_url",
+        NasCancelUpload = $"{Configuration["BackendURL"]}/api/nas/cancel_upload",
+    };
+
+    string reqTypeUrl = "/3";
+}
+<style>
+    span.select2-container.select2-container--default.select2-container--open {
+        z-index: 999999;
+    }
+
+    #uploadProgressContainer {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        width: 350px;
+        display: none;
+    }
+
+        #uploadProgressContainer .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+</style>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="smb-5px">
+                    <div class="row none_hover">
+                        <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-2">
+                            <label class="form-label">@(config.GetMessage("KeywordSearch").ToHtmlString())</label>
+                            <input type="text" class="form-control focusinput" id="Keyword" placeholder="@(config.GetMessage("Enter_file_or_folder_name").ToHtmlString())" />
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <button class="btn btn-primary" id="btn-search">@(config.GetMessage("Search").ToHtmlString())</button>
+                        </div>
+                        <div class="col-sm-6  websoft-function-row-copy d-flex justify-content-end gap-2">
+                            <input type="file" id="fileInput" style="display:none;" />
+                            <button id="btnAddFile" class="btn btn-success me-2">
+                                <i class="ri-file-add-line"></i> @(config.GetMessage("AddFile").ToHtmlString())
+                            </button>
+                            <button id="btnAddFolder" class="btn btn-primary">
+                                <i class="ri-folder-add-line"></i> @(config.GetMessage("AddFolder").ToHtmlString())
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <div class="page-title-right">
+                                <ol class="breadcrumb m-0" id="tempbreadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="javascript:void(0);" data-path="/">@(config.GetMessage("RootDirectory").ToHtmlString())</a>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="table-gridjs"></div>
+            </div>
+        </div>
+    </div>
+    <!-- end col -->
+</div>
+
+<!-- 上傳進度條 (右上角固定位置) -->
+<div id="uploadProgressContainer">
+    <div class="card bg-light overflow-hidden shadow-none">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">
+                        <i class="ri-upload-cloud-line me-1"></i>
+                        <span id="uploadFileName">@mapText.Text_Uploading</span>
+                    </h6>
+                </div>
+                <div class="flex-shrink-0">
+                    <button type="button" class="btn-close btn-sm" id="cancelUpload" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">
+                    <span id="uploadedSize">0 MB</span> / <span id="totalSize">0 MB</span>
+                </small>
+                <small class="text-muted">
+                    <b class="text-primary" id="uploadPercent">0%</b>
+                </small>
+            </div>
+        </div>
+        <div class="progress bg-primary-subtle rounded-0" style="height: 6px;">
+            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 id="uploadProgressBar"
+                 style="width: 0%"
+                 aria-valuenow="0"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const MESSAGES = {
+        uploading: '@Html.Raw(mapText.Text_Uploading)',
+        uploadingToNAS: '@Html.Raw(mapText.Text_UploadingToNAS)',
+        uploadCancelled: '@Html.Raw(mapText.Text_UploadCancelled)'
+    };
+
+    const API_URLS = {
+        list: '@Html.Raw(mapUrl.NasList)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        download: '@Html.Raw(mapUrl.NasDownload)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        delete: '@Html.Raw(mapUrl.NasDelete)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        createFolder: '@Html.Raw(mapUrl.NasCreateFolder)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        upload: '@Html.Raw(mapUrl.NasUpload)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        getUploadUrl: '@Html.Raw(mapUrl.NasGetUploadUrl)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode',
+        cancelUpload: '@Html.Raw(mapUrl.NasCancelUpload)' + '@reqTypeUrl.ToHtmlString()' + '?extraCode=@deptCode'
+    };
+
+    let currentPath = "/";
+    let grid = null;
+    let originalGridData = [];
+    let uploadXhr = null;
+    let currentUploadId = null;
+
+    $(function(){
+        grid = new gridjs.Grid({
+            columns: [
+                {
+                    name: '@(config.GetMessage("FileName").ToHtmlString())',
+                    id: 'name',
+                    data: (row) => row,
+                    formatter: (cell) => {
+                        if (cell.fileType === 1) {
+                            return gridjs.html(`
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-file-line me-2" style="font-size:20px"></i>
+                                    <span class="download-file text-primary"
+                                          style="cursor:pointer"
+                                          data-name="${cell.name}">
+                                        ${cell.name}
+                                    </span>
+                                </div>
+                            `);
+                        } else {
+                            return gridjs.html(`
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-folders-line me-2" style="font-size:20px"></i>
+                                    <a href="javascript:void(0)"
+                                       class="folder-link"
+                                       data-name="${cell.name}">
+                                        ${cell.name}
+                                    </a>
+                                </div>
+                            `);
+                        }
+                    }
+                },
+                {
+                    name: '@(config.GetMessage("FileSize").ToHtmlString())',
+                    id: 'size',
+                    width: "100px",
+                    data: (row) => row,
+                    formatter: (cell) => cell.size
+                },
+                {
+                    name: '@(config.GetMessage("Creator").ToHtmlString())',
+                    id: 'owner',
+                    width: "120px",
+                    data: (row) => row,
+                    formatter: (cell) => cell.owner
+                },
+                {
+                    name: '@(config.GetMessage("UpdateDate").ToHtmlString())',
+                    id: 'mtime',
+                    width: "120px",
+                    data: (row) => row,
+                    formatter: (cell) => cell.mtime
+                },
+                {
+                    name: '@(config.GetMessage("CreateDate").ToHtmlString())',
+                    id: 'crtime',
+                    width: "120px",
+                    data: (row) => row,
+                    formatter: (cell) => cell.crtime
+                },
+                {
+                    name: '@(config.GetMessage("Action").ToHtmlString())',
+                    id: 'action',
+                    width: "50px",
+                    data: (row) => row,
+                    formatter: (cell) => {
+                        const downloadBtn = `
+                            <a class="ri-download-2-line download-file-btn text-primary"
+                               href="javascript:void(0)"
+                               title="@(config.GetMessage("Download").ToHtmlString())"
+                               data-path="${cell.path}"
+                               data-file-type="${cell.fileType === 1 ? 'file' : 'dir'}"> </a>
+                        `;
+                        return gridjs.html(`
+                            <div style="display:flex; gap:10px;font-size: 20px;">
+                                ${downloadBtn}
+                                <a class="ri-delete-bin-line delete-btn text-danger"
+                                   href="javascript:void(0)"
+                                   title="@(config.GetMessage("Delete").ToHtmlString())"
+                                   data-name="${cell.name}"
+                                   data-type="${cell.fileType}" data-path="${cell.path}"> </a>
+                            </div>
+                        `);
+                    }
+                },
+                {
+                    name: 'fileType',
+                    id: 'fileType',
+                    hidden: true
+                }
+            ],
+            data: () => {
+                return new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: API_URLS.list,
+                        type: 'POST',
+                        data: {
+                            path: currentPath
+                        },
+                        success: function(apiResponse) {
+                            const gridData = [];
+
+                            if(!apiResponse.Success){
+                                Swal.fire('@(config.GetMessage("Error").ToHtmlString())', apiResponse.Message, 'error');
+                                resolve(gridData);
+                                return;
+                            }
+
+                            if (apiResponse.Data.files) {
+                                apiResponse.Data.files.forEach(file => {
+                                    const isFolder = file.isdir;
+                                    gridData.push({
+                                        checkbox: null,
+                                        name: file.name,
+                                        size: isFolder ? "-" : formatFileSize(file.additional?.size || 0),
+                                        owner: file.additional?.owner?.user || "-",
+                                        mtime: formatDate(file.additional?.time?.mtime),
+                                        crtime: formatDate(file.additional?.time?.crtime),
+                                        action: null,
+                                        fileType: isFolder ? 2 : 1,
+                                        path: file.path
+                                    });
+                                });
+                            }
+
+                            originalGridData = gridData;
+                            resolve(gridData);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error loading folder:', error);
+                            Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_load_folder").ToHtmlString())', 'error');
+                            reject(error);
+                        }
+                    });
+                });
+            },
+            pagination: false
+        });
+        grid.render($("#table-gridjs")[0]);
+    });
+
+    function reloadCurrentGrid(){
+        grid.forceRender();
+    }
+
+    $(document).on('click', '.folder-link', function(e) {
+            e.preventDefault();
+            const folderName = $(this).data('name');
+            const newPath = currentPath === "/" ? `/${folderName}` : `${currentPath}/${folderName}`;
+            currentPath = newPath;
+            addBreadcrumb(folderName, newPath);
+            grid.forceRender();
+        });
+
+        $("#tempbreadcrumb").on("click", "a", function(e){
+            e.preventDefault();
+            const path = $(this).data("path");
+            $(this).parent().nextAll().remove();
+            currentPath = path;
+            grid.forceRender();
+        });
+
+        function addBreadcrumb(name, path) {
+            const ul = $("#tempbreadcrumb")[0];
+
+            const li = document.createElement("li");
+            li.className = "breadcrumb-item";
+
+            const a = document.createElement("a");
+            a.href = "javascript:void(0)";
+            a.textContent = name;
+            a.dataset.path = path;
+
+            li.appendChild(a);
+            ul.appendChild(li);
+
+            console.log(li)
+            console.log(ul)
+        }
+
+        $("#btnAddFile").on('click', function(){
+            $("#fileInput").click();
+        });
+
+        $("#fileInput").on('change', function(e){
+            const file = e.target.files[0];
+            if(!file){
+                return;
+            }
+
+            currentUploadId = generateUUID();
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('path', currentPath);
+            formData.append('uploadId', currentUploadId);
+
+            $("#uploadProgressContainer").fadeIn();
+            $("#uploadFileName").html('<i class="ri-upload-cloud-line me-1"></i>' + file.name);
+            $("#totalSize").text(formatFileSize(file.size));
+            $("#uploadedSize").text('0 Bytes');
+            $("#uploadPercent").text('0%');
+            $("#uploadProgressBar").css('width', '0%').attr('aria-valuenow', 0).addClass('progress-bar-striped progress-bar-animated');
+
+            uploadXhr = new XMLHttpRequest();
+
+            uploadXhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    const displayPercent = Math.min(percentComplete, 95);
+                    $("#uploadProgressBar").css('width', displayPercent + '%').attr('aria-valuenow', displayPercent);
+                    $("#uploadPercent").text(displayPercent + '%');
+                    $("#uploadedSize").text(formatFileSize(e.loaded));
+
+                    if (displayPercent >= 95) {
+                        $("#uploadFileName").html('<i class="ri-server-line me-1"></i>' + MESSAGES.uploadingToNAS);
+                        $("#uploadProgressBar").removeClass('progress-bar-striped progress-bar-animated');
+                    }
+                }
+            });
+
+            uploadXhr.addEventListener('load', function() {
+                if (uploadXhr.status === 200) {
+                    try {
+                        const apiResponse = JSON.parse(uploadXhr.responseText);
+                        if(apiResponse === true || apiResponse.Success) {
+                            $("#uploadProgressBar").css('width', '100%').attr('aria-valuenow', 100);
+                            $("#uploadPercent").text('100%');
+                            $("#uploadProgressBar").removeClass('bg-primary').addClass('bg-success');
+                            $("#uploadPercent").removeClass('text-primary').addClass('text-success');
+
+                            setTimeout(function() {
+                                $("#uploadProgressContainer").fadeOut(function() {
+                                    $("#uploadProgressBar").removeClass('bg-success').addClass('bg-primary').addClass('progress-bar-striped progress-bar-animated');
+                                    $("#uploadPercent").removeClass('text-success').addClass('text-primary');
+                                    $("#uploadFileName").html('<i class="ri-upload-cloud-line me-1"></i>' + MESSAGES.uploading);
+                                });
+                                reloadCurrentGrid();
+                            }, 1000);
+                        } else {
+                            $("#uploadProgressContainer").fadeOut();
+                            Swal.fire(apiResponse.Message || '@(config.GetMessage("Failed_to_upload_file").ToHtmlString())', '', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing response:', error);
+                        $("#uploadProgressContainer").fadeOut();
+                        Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_upload_file").ToHtmlString())', 'error');
+                    }
+                } else {
+                    $("#uploadProgressContainer").fadeOut();
+                    Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_upload_file").ToHtmlString())', 'error');
+                }
+                $("#fileInput").val('');
+                uploadXhr = null;
+            });
+
+            uploadXhr.addEventListener('error', function() {
+                $("#uploadProgressContainer").fadeOut();
+                Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_upload_file").ToHtmlString())', 'error');
+                $("#fileInput").val('');
+                uploadXhr = null;
+            });
+
+            uploadXhr.addEventListener('abort', function() {
+                $("#uploadProgressContainer").fadeOut();
+                Swal.fire(MESSAGES.uploadCancelled, '', 'info');
+                $("#fileInput").val('');
+                uploadXhr = null;
+            });
+
+            uploadXhr.open('POST', API_URLS.upload, true);
+            uploadXhr.withCredentials = true;
+            uploadXhr.send(formData);
+        });
+
+        $("#cancelUpload").on('click', function() {
+            if (uploadXhr) {
+                uploadXhr.abort();
+            }
+
+            if (currentUploadId) {
+                $.ajax({
+                    url: API_URLS.cancelUpload,
+                    type: 'POST',
+                    data: {
+                        uploadId: currentUploadId
+                    },
+                    success: function(response) {
+                        console.log('已通知後端取消上傳:', response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('通知後端取消上傳失敗:', error);
+                    }
+                }).always(function() {
+                    uploadXhr = null;
+                    currentUploadId = null;
+                });
+            }
+        });
+
+        $(document).on('click','.delete-btn', function(){
+            const filePath = $(this).data('path');
+            Swal.fire({
+                title: '@(config.GetMessage("Deleteconfirmation").ToHtmlString())',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: API_URLS.delete,
+                        type: 'POST',
+                        data: {
+                            path: filePath
+                        },
+                        success: function(apiResponse) {
+                            if(apiResponse.Success) {
+                                reloadCurrentGrid();
+                            } else {
+                                Swal.fire(apiResponse.Message ,'', 'error');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error deleting file:', error);
+                            Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_delete_file").ToHtmlString())', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
+        $("#btnAddFolder").on('click',function(){
+            Swal.fire({
+                title: '@(config.GetMessage("AddFolder").ToHtmlString())',
+                input: 'text',
+                inputLabel: '@(config.GetMessage("FolderName").ToHtmlString())',
+                inputPlaceholder: '@(config.GetMessage("Pleaseenterthefoldername").ToHtmlString())',
+                showCancelButton: true,
+                confirmButtonText: '@(config.GetMessage("Create").ToHtmlString())',
+                cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const folderName = result.value;
+                    $.ajax({
+                        url: API_URLS.createFolder,
+                        type: 'POST',
+                        data: {
+                            folderPath:currentPath,
+                            folderName:folderName
+                        },
+                        success: function(apiResponse) {
+                            if(apiResponse.Success) {
+                                reloadCurrentGrid();
+                            } else {
+                                Swal.fire(apiResponse.Message ,'', 'error');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error creating folder:', error);
+                            Swal.fire('@(config.GetMessage("Error").ToHtmlString())', '@(config.GetMessage("Failed_to_create_folder").ToHtmlString())', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
+        $(document).on('click', '.download-file-btn', function(){
+            const filePath = $(this).data('path');
+            const fileType = $(this).data('file-type');
+            const url = new URL(API_URLS.download, window.location.origin);
+            url.searchParams.append('path', filePath);
+            url.searchParams.append('type', fileType);
+            window.open(url.toString(), '_blank');
+        });
+
+         // 搜尋功能 - 根據檔案/資料夾名稱過濾
+        $("#btn-search").on('click', function(){
+            performSearch();
+        });
+
+        // 支援 Enter 鍵搜尋
+        $("#Keyword").on('keypress', function(e){
+            if(e.which === 13){
+                performSearch();
+            }
+        });
+
+        function performSearch(){
+            const keyword = $("#Keyword").val().trim().toLowerCase();
+
+            if(!keyword){
+                // 如果搜尋關鍵字為空，顯示所有原始資料
+                grid.updateConfig({
+                    data: originalGridData
+                }).forceRender();
+                return;
+            }
+
+            // 過濾資料：根據 name 欄位進行搜尋
+            const filteredData = originalGridData.filter(item => {
+                return item.name.toLowerCase().includes(keyword);
+            });
+
+            // 更新 Grid 顯示過濾後的資料
+            grid.updateConfig({
+                data: filteredData
+            }).forceRender();
+        }
+</script>
+

@@ -1,0 +1,487 @@
+﻿@using System.Globalization
+
+<!doctype html>
+<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable" data-theme="default" data-theme-colors="default">
+<head>
+    <!-- gridjs css -->
+    <link rel="stylesheet" href="~/assets/libs/gridjs/theme/mermaid.min.css">
+    @Html.Partial("~/Views/Shared/_title_meta.cshtml")
+    @RenderSection("styles", required: false)
+    @Html.Partial("~/Views/Shared/_head_css.cshtml")
+    @* <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> *@
+    <link href="/lib/select2/select2.min.css" rel="stylesheet" />
+
+    <link href="~/assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/assets/libs/flatpickr/flatpickr.min.css" rel="stylesheet" type="text/css" />
+
+    <link rel="stylesheet" href="~/assets/libs/@('@')simonwep/pickr/themes/classic.min.css" /> <!-- 'classic' theme -->
+    <link rel="stylesheet" href="~/assets/libs/@('@')simonwep/pickr/themes/monolith.min.css" /> <!-- 'monolith' theme -->
+    <link rel="stylesheet" href="~/assets/libs/@('@')simonwep/pickr/themes/nano.min.css" /> <!-- 'nano' theme -->
+
+    <link rel="stylesheet" href="~/assets/css/app.css" />
+    <link rel="stylesheet" href="~/css/site.css?20260304" />
+
+    <style>
+        .page-content {
+            padding: calc(50px + var(--vz-grid-gutter-width)) calc(var(--vz-grid-gutter-width) * 0.5) 60px calc(var(--vz-grid-gutter-width) * 0.5);
+        }
+
+        button.select2-selection__clear {
+            font-size: 2em !important;
+        }
+
+        .page-size-wrapper {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 16px; /* 與分頁按鈕保持距離 */
+            font-size: 14px;
+            color: #374151;
+        }
+
+            .page-size-wrapper label {
+                margin-right: 6px;
+            }
+
+            .page-size-wrapper select {
+                padding: 4px 8px;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                background-color: #f9fafb;
+                color: #374151;
+                font-size: 14px;
+            }
+
+                .page-size-wrapper select:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 1px #3b82f6;
+                }
+
+        .select2-container--default .select2-selection--single {
+            /*             height: 37.5px !important;
+                    padding: 5px; */
+        }
+
+            .select2-container--default .select2-selection--single .select2-selection__arrow {
+                /* top: 7px !important; */
+                right: 10px !important;
+            }
+
+        .col-form-label.required:after {
+            content: '*';
+            color: red;
+        }
+
+        .form-label.required:after {
+            content: '*';
+            color: red;
+        }
+        /* select2帶有clear時，選擇一個項目後X會跟下拉標重疊，隱藏下拉標示 */
+        .select2-selection--clearable span.select2-selection__arrow {
+            display: none;
+        }
+
+        a.ri-delete-bin-line.delete-btn {
+            color: red;
+        }
+
+        .toast {
+            min-width: 300px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .toast-body i {
+            font-size: 1.2rem;
+        }
+
+        a.logo .logo-lg img {
+            filter: brightness(0) invert(1);
+        }
+
+        a.logo span.logo-sm img {
+            filter: brightness(0) invert(1);
+        }
+
+
+        .gridjs-td {
+            white-space: normal !important; 
+            word-break: break-all; 
+            overflow-wrap: break-word; 
+        }
+
+
+        .was-validated .select2-validation:invalid + .select2 .select2-selection {
+            border-color: var(--vz-form-invalid-border-color) !important;
+        }
+
+        .was-validated .select2-validation:valid + .select2 .select2-selection {
+            border-color: var(--vz-form-valid-border-color) !important;
+        }
+
+    </style>
+</head>
+<body>
+    @* <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script> *@
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/jquery.serialize-object.min.js"></script>
+
+    @* <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> *@
+    <script src="~/lib/select2/select2.min.js"></script>
+    <script src="~/lib/jsCookie/js.cookie.min.js"></script>
+
+    <script src="~/assets/js/pages/form-validation.init.js"></script>
+
+    <!-- prismjs plugin -->
+    <script src="~/assets/libs/prismjs/prism.js"></script>
+
+    <!-- gridjs js -->
+    <script src="~/assets/libs/gridjs/gridjs.umd.js"></script>
+    @* <script src="https://cdnjs.cloudflare.com/ajax/libs/gridjs/6.2.0/gridjs.umd.js" ></script> *@
+
+    <script src="~/assets/libs/sweetalert2/sweetalert2.min.js"></script>
+
+    <script src="~/assets/libs/@('@')simonwep/pickr/pickr.min.js"></script>
+
+    <script src="~/assets/libs/flatpickr/flatpickr.min.js"></script>
+    <script src="~/assets/libs/flatpickr/l10n/zh-tw.js"></script>
+
+    <script src="~/js/common.js?20260320"></script>
+    <script src="~/js/site.js?20260416"></script>
+
+    <script>
+
+
+        function SetGridInfoCookieForEdit(name) {
+            var cookieObj = JSON.parse(Cookies.get(name) ?? JSON.stringify({}));
+            cookieObj.FromEdit = true;
+            Cookies.set(name, JSON.stringify(cookieObj), { expires: 1 });
+        }
+
+        function GetEditData(url,successCallBack = ()=>{} , errorCallBack= ()=>{}) {
+            $.ajax({
+                url: url,
+                type: "GET",
+                success: function (data) {
+                    successCallBack(data);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    const statusCode = jqXHR.status;
+                    let errorMsg = "";
+                    let icon = 'error';
+                    if(statusCode == 404){
+                        errorMsg = '@(config.GetMessage("Data_Not_Found").ToHtmlString())';
+                        icon = 'info';
+                    } else {
+                        errorMsg = '@(config.GetMessage("System_Error").ToHtmlString())';
+                    }
+
+                    Swal.fire({
+                        icon: icon,
+                        title: errorMsg,
+                        confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                    }).then(() => {
+                        errorCallBack();
+                    });
+                }
+            });
+        }
+
+        /**
+         * Call Common Controller 
+         */
+        async function GetCommon(method){
+            try {
+                const result = await $.ajax({
+                    url: `@(Configuration["BackendURL"])/api/Common/${method}`,
+                    type: "GET",
+                });
+                return result; 
+            } catch (error) {
+                console.error("請求出錯了：", error);
+                throw error; 
+            }
+        }
+
+        /**
+         * Call Common Controller for Multiple Methods
+         */
+        async function GetCommonMultiple(methods) {
+            // 1. 將 method 陣列轉換成多個 AJAX 請求（Promise 陣列）
+            const requests = methods.map(method => {
+                return $.ajax({
+                    url: `@(Configuration["BackendURL"])/api/Common/${method}`,
+                    type: "GET",
+                });
+            });
+
+            // 2. 使用 Promise.all 等待所有請求完成
+            try {
+                const results = await Promise.all(requests);
+                return results; 
+            } catch (error) {
+                console.error("請求出錯了：", error);
+                throw error; 
+            }
+        }
+
+        /**
+         * 渲染 Select Option
+         */
+        function RenderOptions(id, list) {
+            const $select = $(`#${id}`);
+    
+            // 先清空現有的選項（保留第一個可能是「請選擇」的選項，如果有的話）
+            // $select.empty(); // 如果要全清空用這個
+            $select.find('option:not([value=""])').remove(); 
+
+            // 建立 DocumentFragment 效能較好
+            const items = list.map(item => {
+                const text = item.Text;
+                const value = item.Value;
+                const type = item.Type ?? '';
+
+                return `<option value="${value}" data-type="${type}" >${text}</option>`;
+            });
+
+            $select.append(items.join(''));
+        }
+
+        if("@(CultureInfo.CurrentUICulture.Name?.ToLower().ToHtmlString())" === "zh-tw"){
+            flatpickr.localize(flatpickr.l10ns.zh_tw);
+        }
+
+
+        const pageSizeWrapper = $('<div>', { class: 'page-size-wrapper' }).append(
+            $('<label>', {
+                for: 'pageSize',
+                text: '@(config.GetMessage("Items_Per_Page").ToHtmlString())：',
+                style: 'margin-top: 8px;'
+            }),
+            $('<select>', { id: 'pageSize' }).append(
+                [10, 20, 50, 100].map(val =>
+                    $('<option>', { value: val, text: val })
+                )
+            )
+        );
+
+    </script>
+
+    <partial name="_Loader">
+
+    <!-- Begin page -->
+    <div id="layout-wrapper">
+        @Html.Partial("~/Views/Shared/_menu.cshtml")
+        .
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+
+            <div class="page-content">
+                <div class="container-fluid">
+                    @Html.Partial("~/Views/Shared/_page_title.cshtml")
+
+                    @RenderBody()
+                    <!-- Toast 容器固定在右下角 -->
+                    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+
+                </div>
+            </div>
+
+            @RenderSection("externalhtml", required: false)
+            @Html.Partial("~/Views/Shared/_footer.cshtml")
+        </div>
+
+    </div>
+    <!-- END layout-wrapper -->
+    @Html.Partial("~/Views/Shared/_customizer.cshtml")
+
+    @Html.Partial("~/Views/Shared/_vendor_scripts.cshtml")
+
+    @RenderSection("scripts", required: false)
+
+    <!-- App js -->
+    <script src="~/assets/js/app.js?20260323"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+
+    <script>
+        var hasout = false;
+
+        $("#chkAll").on('change',function(){
+            var isChecked = $(this).is(":checked");
+            $("input[type='checkbox'].row-check").prop("checked",isChecked).trigger('change');
+        });
+
+        $(document)
+            $.ajaxSetup({
+                xhrFields: { 
+                    withCredentials: true //帶入jwt cooke
+                },
+                headers: {
+                },
+                beforeSend:function(xhr){
+                },
+                complete: function (x, e) {
+                    if (x.status === 440 || x.status == 401) {
+                        if (hasout == false) {
+                            hasout = true;
+                            alert('已登出，請重新登入');
+                            var oldURL = encodeURIComponent(window.location.href);
+                            window.location.href = '@Url.Action("Index", "Login")';
+                        }
+                    } else if (x.status === 403) {
+                        alert("無權限執行此動作");
+                    }
+                },
+                error: function (xhr) {
+                  if (xhr.status === 423) {
+                    window.location.href = '/Lock';
+                  }
+                }
+            });
+
+        const gridLangZhTW = {
+          search: {
+            placeholder: "搜尋..."
+          },
+          pagination: {
+            previous: "上一頁",
+            next: "下一頁",
+            showing: "顯示",
+            of: "筆，共",
+            to: "到",
+            results: "筆資料"
+          },
+          loading: "載入中...",
+          noRecordsFound: "查無資料",
+          error: "資料載入失敗"
+        };
+
+        const gridLangEnUS = {};
+
+        // const SignalRConn = new signalR.HubConnectionBuilder().withUrl("/SignalRHub").build();
+
+        
+
+        $(function () {
+ 
+        })
+                
+        function showNotification({title, message, type = 'info', link = '#', delay = 5000}) {
+            const toastContainer = document.getElementById('toastContainer');
+
+            const typeMap = {
+                info:    {bg: 'bg-primary', icon: 'ri-mail-line'},
+                success: {bg: 'bg-success', icon: 'ri-mail-line'},
+                warning: {bg: 'bg-warning', icon: 'ri-mail-line'},
+                danger:  {bg: 'bg-danger', icon: 'ri-mail-line'}
+            };
+
+            const {bg, icon} = typeMap[type] || typeMap.info;
+
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white ${bg} border-0`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="${icon} me-2"></i>
+                        <strong>${title}:</strong> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+
+            // 點擊 toast 跳轉，但排除關閉按鈕
+            toastEl.addEventListener('click', (e) => {
+                if (!e.target.closest('.btn-close')) {
+                    window.location.href = link;
+                }
+            });
+
+            toastContainer.appendChild(toastEl);
+
+            const toast = new bootstrap.Toast(toastEl, {delay: delay});
+            toast.show();
+
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        }
+                        
+        function showResponseWarningAlert(message) {                            
+            Swal.fire({                                
+                icon: 'warning',                                
+                html: "<div style='text-align:center'>" + (message || '').replace(/\n/g, "<br>") + "</div>",                                
+                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())'                            
+            });                        
+        }
+
+                        
+        // function showResponseResultAlert(response, successMessage, callback) {                            
+        //     var isSuccess = ((response && response.Data && response.Data.IsSuccess) || '').toLowerCase() === 'y';                            
+        //     var alertIcon = isSuccess ? 'success' : ((response && response.Data && response.Data.AlertLevel) || 'error').toLowerCase();                            
+        //     var title     = (response && response.Data && response.Data.ReturnCode)                                                
+        //     || (isSuccess ? successMessage : '@(config.GetMessage("System_Error").ToHtmlString())');                           
+        //     var text      = (response && response.Data && response.Data.ReturnMsg) || '';                            
+        //     Swal.fire({                                
+        //         icon:alertIcon,                                
+        //         title:title,                                
+        //         text:text,                                
+        //         confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())'                            
+        //     }).then(function () {                               
+        //         if (typeof callback === 'function') callback();                            
+        //     });                        
+        // }
+
+                                
+        function showResponseResultAlert(response, defaultMsg, callback) {
+                        // 1. 決定資料來源（優先 Data，其次 Error）
+                        
+                                            var result = (response && response.Data)
+                                                      || (response && response.Errors)
+                                                      || {};
+
+                                            // 2. 判斷成功
+                                                var isSuccess = response.Success==true;
+
+                                            // 3. icon
+                                            var alertIcon = isSuccess
+                                                ? 'success'
+                                                : (result.AlertLevel || 'error').toLowerCase();
+
+                                            // 4. title
+                                            // var title = result.ReturnCode || defaultMsg;
+
+                                            // 5. text
+                                                    var text = response.Data || '';
+
+                                            Swal.fire({
+                                                icon: alertIcon,
+                                                // title: title,
+                                                text: text,
+                                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())'
+                                            }).then(function () {
+                                                if (typeof callback === 'function') callback();
+                                            });
+                                        
+        }
+                            
+
+                                
+       
+
+    </script>
+    <script>
+        $(document).ready(function(){
+
+        })
+    </script>
+</body>
+</html>

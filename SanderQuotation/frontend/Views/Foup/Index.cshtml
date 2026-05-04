@@ -1,0 +1,336 @@
+﻿@{
+    ViewData["Title"] = "FOUP Viewer";
+    var lotId    = ViewBag.LotId    as string;
+    var location = ViewBag.Location as string;
+}
+
+@if (!string.IsNullOrEmpty(lotId))
+{
+    <!-- Breadcrumb / back button -->
+    <div class="row mb-3">
+        <div class="col-12 d-flex align-items-center gap-3">
+            <a href="@Url.Action("Index","FoupLot")" class="btn btn-sm btn-soft-secondary">
+                <i class="ri-arrow-left-line me-1"></i>返回批次列表
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ri-layout-grid-line text-secondary"></i>
+                <span class="fw-semibold">@lotId</span>
+                @if (!string.IsNullOrEmpty(location))
+                {
+                    <span class="badge bg-secondary-subtle text-secondary border">@location</span>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* ── FOUP Container (拆批同款) ── */
+    .foup-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .foup-body {
+        width: 280px;
+        border: 3px solid #6c757d;
+        border-radius: 8px;
+        background: #f8f9fa;
+        padding: 6px;
+        position: relative;
+    }
+
+    .foup-body::before {
+        content: '';
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 14px;
+        background: #6c757d;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .foup-slot {
+        display: flex;
+        align-items: center;
+        height: 26px;
+        margin: 1px 0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all .15s;
+        padding: 0 8px;
+        font-size: 12px;
+        font-weight: 500;
+        user-select: none;
+        border: 1px solid transparent;
+    }
+
+    .foup-slot .slot-no {
+        width: 24px;
+        color: #495057;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .foup-slot .slot-bar {
+        flex: 1;
+        height: 10px;
+        border-radius: 3px;
+        margin: 0 6px;
+    }
+
+    .foup-slot .slot-label { display: none; }
+
+    .slot-unset { background: #e9ecef; border-color: #dee2e6; }
+    .slot-unset .slot-bar { background: #ced4da; }
+    .slot-unset:hover { background: #dee2e6; border-color: #adb5bd; }
+
+    .slot-good { background: #d1e7dd; border-color: #a3cfbb; }
+    .slot-good .slot-bar { background: #198754; }
+    .slot-good:hover { background: #b9e0cc; border-color: #198754; }
+
+    .slot-defect { background: #f8d7da; border-color: #f1aeb5; }
+    .slot-defect .slot-bar { background: #dc3545; }
+    .slot-defect:hover { background: #f0bbbf; border-color: #dc3545; }
+
+    .slot-active { box-shadow: 0 0 0 2px rgba(13,110,253,.45); border-color: #0d6efd !important; }
+
+    .info-panel {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .panel-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .panel-card h2 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #444;
+        margin: 0 0 12px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 8px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #444;
+        cursor: pointer;
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1.5px solid #eee;
+        background: #fafafa;
+        transition: background 0.2s, border-color 0.2s;
+        margin-bottom: 6px;
+    }
+    .legend-item:hover { background: #f0f4ff; border-color: #c0c8e8; }
+    .legend-item:last-child { margin-bottom: 0; }
+
+    .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+    .dot-unset  { background: #adb5bd; }
+    .dot-good   { background: #198754; }
+    .dot-defect { background: #dc3545; }
+
+    .selected-info {
+        background: #fffbf2;
+        border: 1.5px solid #f0c060;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 13px;
+        color: #444;
+        min-height: 80px;
+    }
+    .selected-info strong { color: #b07800; display: block; margin-bottom: 6px; font-size: 14px; }
+
+    .state-btn-group { display: flex; gap: 6px; margin-top: 10px; }
+    .state-btn {
+        flex: 1; padding: 5px 4px; font-size: 11px; border: none;
+        border-radius: 6px; cursor: pointer; font-weight: 600;
+        transition: opacity 0.2s, transform 0.1s;
+    }
+    .state-btn:hover { opacity: 0.82; transform: translateY(-1px); }
+    .btn-unset  { background: #adb5bd; color: #fff; }
+    .btn-good   { background: #198754; color: #fff; }
+    .btn-defect { background: #dc3545; color: #fff; }
+
+    .slot-list-tabs {
+        display: flex; gap: 0; margin-bottom: 12px;
+        border-radius: 10px; overflow: hidden; border: 1.5px solid #e8e8e8;
+    }
+    .slot-tab {
+        flex: 1; display: flex; align-items: center; justify-content: space-between;
+        padding: 9px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+        background: #fafafa; color: #888; border: none;
+        border-right: 1.5px solid #e8e8e8; transition: background 0.18s, color 0.18s;
+    }
+    .slot-tab:last-child { border-right: none; }
+    .slot-tab .tab-label { display: flex; align-items: center; gap: 6px; }
+    .slot-tab .tab-count { font-size: 15px; font-weight: 700; min-width: 24px; text-align: right; }
+    .slot-tab.active-good   { background: #edfaf3; color: #198754; }
+    .slot-tab.active-defect { background: #fef2f2; color: #dc3545; }
+
+    .slot-tag-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px; }
+    .slot-tag {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        cursor: pointer; transition: opacity 0.15s; border: 1.5px solid; line-height: 1;
+    }
+    .slot-tag:hover { opacity: 0.72; }
+    .slot-tag.tag-good   { background: #d1e7dd; color: #198754; border-color: #a3cfbb; }
+    .slot-tag.tag-defect { background: #f8d7da; color: #dc3545; border-color: #f1aeb5; }
+    .slot-list-empty { font-size: 12px; color: #aaa; padding: 4px 0; }
+</style>
+
+<div class="d-flex gap-4 align-items-flex-start justify-content-center flex-wrap" style="padding: 32px 20px;">
+
+    <!-- FOUP 垂直槽位 -->
+    <div class="foup-wrapper">
+        <div class="foup-body" id="foupBody"></div>
+        
+    </div>
+
+    <!-- 右側面板 -->
+    <div class="info-panel">
+
+        <!-- 快速設定 -->
+        <div class="panel-card">
+            <h2>快速設定</h2>
+            <div class="legend-item" onclick="setAllState('unset')">
+                <div class="legend-dot dot-unset"></div><span>全部未設定</span>
+            </div>
+            <div class="legend-item" onclick="setAllState('good')">
+                <div class="legend-dot dot-good"></div><span>全部良品</span>
+            </div>
+            <div class="legend-item" onclick="setAllState('defect')">
+                <div class="legend-dot dot-defect"></div><span>全部不良品</span>
+            </div>
+        </div>
+
+        <!-- Wafer 詳細 -->
+        <div class="panel-card">
+            <h2>Wafer 詳細</h2>
+            <div class="selected-info" id="selectedInfo">
+                <strong>選擇 Wafer</strong>點擊任意槽位查看詳細
+            </div>
+        </div>
+
+        <!-- 統計 + Slot 清單 -->
+        <div class="panel-card">
+            <h2>統計 &amp; Slot 清單</h2>
+            <div class="slot-list-tabs">
+                <button class="slot-tab active-good" id="tabGood" onclick="switchSlotTab('good')">
+                    <span class="tab-label"><span style="width:10px;height:10px;border-radius:50%;background:#198754;display:inline-block;"></span>良品</span>
+                    <span class="tab-count" id="cntGood">0</span>
+                </button>
+                <button class="slot-tab" id="tabDefect" onclick="switchSlotTab('defect')">
+                    <span class="tab-label"><span style="width:10px;height:10px;border-radius:50%;background:#dc3545;display:inline-block;"></span>不良品</span>
+                    <span class="tab-count" id="cntDefect">0</span>
+                </button>
+            </div>
+            <div class="slot-tag-list" id="slotTagList"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const TOTAL_SLOTS = 25;
+    const waferStates = Array(TOTAL_SLOTS).fill('unset');
+    let selectedSlot = null;
+
+    const stateLabel = { unset: '未設定', good: '良品', defect: '不良品' };
+
+    function buildFoup() {
+        const body = document.getElementById('foupBody');
+        body.innerHTML = '';
+        for (let i = TOTAL_SLOTS; i >= 1; i--) {
+            const idx = i - 1;
+            const div = document.createElement('div');
+            div.id = `fslot-${idx}`;
+            div.className = `foup-slot slot-${waferStates[idx]}${selectedSlot === idx ? ' slot-active' : ''}`;
+            div.innerHTML = `
+                <span class="slot-no">${String(i).padStart(2, '0')}</span>
+                <span class="slot-bar"></span>
+
+            `;
+            div.addEventListener('click', () => onSlotClick(idx));
+            body.appendChild(div);
+        }
+        updateStats();
+    }
+
+    function onSlotClick(idx) {
+        selectedSlot = (selectedSlot === idx) ? null : idx;
+        buildFoup();
+        if (selectedSlot !== null) showSlotInfo(selectedSlot);
+        else document.getElementById('selectedInfo').innerHTML = '<strong>選擇 Wafer</strong>點擊任意槽位查看詳細';
+    }
+
+    function showSlotInfo(idx) {
+        document.getElementById('selectedInfo').innerHTML = `
+            <strong>Slot ${idx + 1} / ${TOTAL_SLOTS}</strong>
+            狀態：${stateLabel[waferStates[idx]]}
+            <div class="state-btn-group">
+                <button class="state-btn btn-unset"  onclick="setSlotState(${idx},'unset')">未設定</button>
+                <button class="state-btn btn-good"   onclick="setSlotState(${idx},'good')">良品</button>
+                <button class="state-btn btn-defect" onclick="setSlotState(${idx},'defect')">不良品</button>
+            </div>`;
+    }
+
+    function setSlotState(idx, state) {
+        waferStates[idx] = state;
+        buildFoup();
+        if (selectedSlot === idx) showSlotInfo(idx);
+    }
+
+    function setAllState(state) {
+        for (let i = 0; i < TOTAL_SLOTS; i++) waferStates[i] = state;
+        selectedSlot = null;
+        buildFoup();
+        document.getElementById('selectedInfo').innerHTML = '<strong>選擇 Wafer</strong>點擊任意槽位查看詳細';
+    }
+
+    function updateStats() {
+        const c = { unset: 0, good: 0, defect: 0 };
+        waferStates.forEach(s => c[s]++);
+        document.getElementById('cntGood').textContent   = c.good;
+        document.getElementById('cntDefect').textContent = c.defect;
+        updateSlotList();
+    }
+
+    let activeSlotTab = 'good';
+    function switchSlotTab(type) {
+        activeSlotTab = type;
+        document.getElementById('tabGood').className   = 'slot-tab' + (type === 'good'   ? ' active-good'   : '');
+        document.getElementById('tabDefect').className = 'slot-tab' + (type === 'defect' ? ' active-defect' : '');
+        updateSlotList();
+    }
+
+    function updateSlotList() {
+        const list = document.getElementById('slotTagList');
+        const matched = waferStates.map((s, i) => ({ s, i })).filter(x => x.s === activeSlotTab);
+        if (matched.length === 0) {
+            list.innerHTML = `<span class="slot-list-empty">目前無${activeSlotTab === 'good' ? '良品' : '不良品'}</span>`;
+            return;
+        }
+        list.innerHTML = matched.map(x =>
+            `<span class="slot-tag tag-${activeSlotTab}" onclick="onSlotClick(${x.i})" title="點擊查看">S${String(x.i+1).padStart(2,'0')}</span>`
+        ).join('');
+    }
+
+    buildFoup();
+</script>

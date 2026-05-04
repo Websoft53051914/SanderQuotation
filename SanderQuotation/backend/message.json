@@ -1,0 +1,316 @@
+{
+
+  "Message": {
+    "zh-tw": {
+      "NAS_verification_failed": "NAS驗證失敗",
+      "AD_verification_failed": "AD驗證失敗",
+      "Please_Select_Status": "請選擇狀態",
+
+      "FuncCodeIsExist": "Func Code 已存在",
+      "TpcLibIDIsExist": "題庫編號不可重複",
+      "AnnPostIDIsExist": "公告編號不可重複",
+
+      "TpcLibAnnPostBound": "已綁定公告（不可更動）",
+      "TpcLibAnnPostNotBound": "未綁定公告",
+
+      "Enable": "啟用",
+      "Disable": "停用",
+
+      "Data_Not_Found": "查無資料",
+      "System_Error": "系統錯誤，請聯絡系統管理員",
+      "Successfully_Added": "新增成功",
+      "Successfully_Deleted": "刪除成功",
+      "ProcessCodeIsExist": "流程代碼已存在",
+      "ProcessNameIsExist": "流程名稱已存在",
+      "ESDbTransferMapping_DstDuplicate": "目標資料庫與目標資料表的組合已存在，不可重複建立。",
+
+      "TimeRuleWeekdayRequired": "請回傳正確的星期值，例: 週一、週二",
+      "TimeRuleDateRequired": "請回傳正確的日期值 (年月日)，例: 2026-01-01",
+
+      "Nas_100": "錯誤代碼 100：未知錯誤",
+      "Nas_101": "錯誤代碼 101：缺少API、方法或版本參數",
+      "Nas_102": "錯誤代碼 102：請求的API不存在",
+      "Nas_103": "錯誤代碼 103：請求的方法不存在",
+      "Nas_104": "錯誤代碼 104：請求的版本不支援此功能",
+      "Nas_105": "錯誤代碼 105：登入的會話沒有權限",
+      "Nas_106": "錯誤代碼 106：會話超時",
+      "Nas_107": "錯誤代碼 107：會話因重複登入而中斷",
+      "Nas_119": "錯誤代碼 119：找不到SID",
+      "Nas_400": "錯誤代碼 400：檔案操作的參數無效",
+      "Nas_401": "錯誤代碼 401：檔案操作的未知錯誤",
+      "Nas_402": "錯誤代碼 402：系統過於繁忙",
+      "Nas_403": "錯誤代碼 403：無效的使用者進行此檔案操作",
+      "Nas_404": "錯誤代碼 404：無效的群組進行此檔案操作",
+      "Nas_405": "錯誤代碼 405：無效的使用者和群組進行此檔案操作",
+      "Nas_406": "錯誤代碼 406：無法從帳號伺服器取得使用者/群組資訊",
+      "Nas_407": "錯誤代碼 407：不允許的操作",
+      "Nas_408": "錯誤代碼 408：沒有此檔案或目錄",
+      "Nas_409": "錯誤代碼 409：不支援的檔案系統",
+      "Nas_410": "錯誤代碼 410：無法連接到網路型檔案系統(例如CIFS)",
+      "Nas_411": "錯誤代碼 411：唯讀檔案系統",
+      "Nas_412": "錯誤代碼 412：非加密檔案系統中的檔案名稱過長",
+      "Nas_413": "錯誤代碼 413：加密檔案系統中的檔案名稱過長",
+      "Nas_414": "錯誤代碼 414：檔案或資料夾已存在",
+      "Nas_415": "錯誤代碼 415：超出磁碟配額",
+      "Nas_416": "錯誤代碼 416：裝置上沒有剩餘空間",
+      "Nas_417": "錯誤代碼 417：輸入/輸出錯誤",
+      "Nas_418": "錯誤代碼 418：非法名稱或路徑",
+      "Nas_419": "錯誤代碼 419：非法檔案名稱",
+      "Nas_420": "錯誤代碼 420：FAT檔案系統上的非法檔案名稱",
+      "Nas_421": "錯誤代碼 421：裝置或資源忙碌中",
+      "Nas_599": "錯誤代碼 599：沒有此檔案操作的任務",
+      "NasError": "Nas錯誤，",
+      "NasErrorCode": "錯誤代碼：",
+
+      "Nas_Sid_Missing": "尚未登入，請重新登入",
+      "Nas_Cookie_Not_Found": "NAS Cookie 不存在，請重新登入",
+      "Nas_Api_Not_Found": "找不到 API 資訊",
+      "Nas_Api_Cache_Missing": "API 資訊快取不存在，請重新登入",
+      "Nas_DirSize_TaskId_Missing": "DirSize 任務 ID 取得失敗",
+
+      "TotalTasks": "總任務數",
+
+      "ConflictTime": "借用時段已重疊，已申請的時段如下",
+      "Msg_Exceed_Max_Duration_Hrs": "目前借用總時數{actualHours}小時，已超過最大可借用時數{maxDurationHrs}小時",
+      "Msg_ApplyIDNotAlter": "申請單{ApplyID}狀態不為草稿狀態，不可更動。",
+      "Msg_WFWDisabled": "此類別申請單，沒有綁定簽核流程，不可送出簽核。",
+
+
+      "ApplyTimeRule": {
+        "Invalid": "申請時間不符合規則。"
+      },
+
+
+      "Msg_ProjectTask_Start_Date": "任務開始日期不得早於專案開始日期(專案開始日期:{0})",
+
+      "Project_Delete_InProgress": "執行中專案不可刪除",
+      "Project_Delete_Closed": "結案專案不可刪除",
+
+      "TpcCategory_LibBound": "題庫類別已綁定題庫,不能刪除",
+
+      "SysResObject_HasResApply": "此資源已有會議室、停車場、設備領用或設備租借相關申請單引用，不可刪除",
+
+      "MSG_Insert_Success": "MSG_INSERT_SUCCESS",
+      "MSG_Update_Success": "MSG_UPDATE_SUCCESS",
+      "MSG_Delete_Success": "MSG_DELETE_SUCCESS",
+
+      "AnnPost_Status_NotPublished": "未發布",
+      "AnnPost_Status_Publishing": "發布中",
+      "AnnPost_Status_Withdrawn": "已撤下",
+
+      "AnnPost_PostNotFound": "找不到公告",
+      "AnnPost_AlreadyPublished": "公告已發布，請勿重複操作",
+      "AnnPost_ScopeNotFound": "找不到發布範圍",
+      "AnnPost_NotYetPublished": "尚未發布，無法撤下",
+      "AnnPost_AlreadyWithdrawn": "公告已撤下",
+      "AnnPost_NotForReply": "此公告無需回覆",
+      "AnnPost_LibIDInvalid": "公告未綁定題庫",
+      "AnnPost_AlreadyReplied": "您已完成回覆，不可重複填答",
+      "AnnPost_QuestionNotInLib": "題目不屬於此題庫",
+      "AnnPost_OptionNotInQuestion": "選項不屬於此題目",
+      "AnnPost_RequiredNotFilled": "必填題目尚未作答",
+      "AnnPost_NumberInvalid": "數值題型須為整數",
+
+      "NAS_Login_Error": "NAS登入異常",
+      "AD_Login_Success": "AD驗證成功",
+      "PINCode_Update_Success": "Pin Code變更成功",
+      "OKCode": "Ok",
+      "OriginalUser": "原簽核人",
+      "Delegater": "代理人",
+      "SigningExpiredCount": "過期的申請單數量",
+      "SigningNotExpiredCount": "未過期的申請單數量",
+      "ClosedCount": "已核准的申請單數量",
+      "TotalApplyCount": "總申請單數量",
+      "ApplyClosed": "已核准申請單",
+      "ApplyIsNotExpired": "未過期申請單",
+      "ApplyIsExpired": "過期申請單",
+
+      "AnnRead_IsFinished_Yes": "是",
+      "AnnRead_IsFinished_No": "否",
+      "AnnRead_FinishedAt_NA": "N/A",
+      "AnnRead_Export_FileName": "公告讀取紀錄",
+      "AnnRead_Export_Header_No": "項次",
+      "AnnRead_Export_Header_PostID": "公告編號",
+      "AnnRead_Export_Header_Title": "公告標題",
+      "AnnRead_Export_Header_UserAccount": "使用者帳號",
+      "AnnRead_Export_Header_IsFinished": "是否閱讀",
+      "AnnRead_Export_Header_FinishedAt": "閱讀時間",
+      "AnnRead_Export_Header_CreatedAt": "建立時間",
+
+      "AnnReply_Export_FileName": "回覆紀錄",
+      "AnnReply_Export_Header_No": "項次",
+      "AnnReply_Export_Header_PostID": "公告編號",
+      "AnnReply_Export_Header_LibID": "題庫編號",
+      "AnnReply_Export_Header_LibName": "題庫名稱",
+
+      "AnnReply_Export_Header_UserAccount": "使用者帳號",
+      "AnnReply_Export_Header_FilledAt": "填答時間",
+
+      "ScheduleCycleCode": "週期代碼不可重複",
+
+      "Upload_No_File": "沒有上傳檔案",
+      "Upload_Image_Only": "只允許圖片檔",
+      "Upload_Format_Not_Supported": "檔案格式不支援",
+      "Upload_Please_Select_File": "請選擇檔案",
+      "Upload_Excel_Format_Only": "僅支援 .xlsx、.xls 或 .csv 格式",
+      "Upload_Failed": "上傳失敗",
+      "MainConnection_Not_Set": "MainConnection 連線字串未設定",
+      "Please_Input_Table_Name": "請輸入資料表名稱",
+
+      "Schedule_Triggered": "排程已觸發"
+
+    },
+    "en-us": {
+      "AD_verification_failed": "AD verification failed",
+      "NAS_verification_failed": "NAS verification failed",
+      "Please_Select_Status": "Please select status",
+
+      "FuncCodeIsExist": "Func Code is exist",
+      "TpcLibIDIsExist": "Library ID already exists",
+      "AnnPostIDIsExist": "Post ID already exists",
+      "TpcLibAnnPostBound": "Bound to Announcement (Read-only)",
+      "TpcLibAnnPostNotBound": "Not Bound to Announcement",
+
+      "Enable": "Enable",
+      "Disable": "Disable",
+
+      "Data_Not_Found": "Data Not Found",
+      "System_Error": "System error, please contact the system administrator",
+      "Successfully_Added": "Successfully Added",
+      "Successfully_Deleted": "Successfully Deleted",
+      "ProcessCodeIsExist": "Process Code is exist",
+      "ProcessNameIsExist": "Process Name is exist",
+      "ESDbTransferMapping_DstDuplicate": "The combination of target database and target table already exists and cannot be created again.",
+
+      "Nas_100": "error code 100 Unknown error",
+      "Nas_101": "error code 101 No parameter of API, method or version",
+      "Nas_102": "error code 102 The requested API does not exist",
+      "Nas_103": "error code 103 The requested method does not exist",
+      "Nas_104": "error code 104 The requested version does not support the functionality",
+      "Nas_105": "error code 105 The logged in session does not have permission",
+      "Nas_106": "error code 106 Session timeout",
+      "Nas_107": "error code 107 Session interrupted by duplicate login",
+      "Nas_119": "error code 119 SID not found",
+      "Nas_400": "error code 400 Invalid parameter of file operation",
+      "Nas_401": "error code 401 Unknown error of file operation",
+      "Nas_402": "error code 402 System is too busy",
+      "Nas_403": "error code 403 Invalid user does this file operation",
+      "Nas_404": "error code 404 Invalid group does this file operation",
+      "Nas_405": "error code 405 Invalid user and group does this file operation",
+      "Nas_406": "error code 406 Can't get user/group information from the account server",
+      "Nas_407": "error code 407 Operation not permitted",
+      "Nas_408": "error code 408 No such file or directory",
+      "Nas_409": "error code 409 Non-supported file system",
+      "Nas_410": "error code 410 Failed to connect internet-based file system (e.g., CIFS)",
+      "Nas_411": "error code 411 Read-only file system",
+      "Nas_412": "error code 412 Filename too long in the non-encrypted file system",
+      "Nas_413": "error code 413 Filename too long in the encrypted file system",
+      "Nas_414": "error code 414 File or directory already exists",
+      "Nas_415": "error code 415 Disk quota exceeded",
+      "Nas_416": "error code 416 No space left on device",
+      "Nas_417": "error code 417 Input/output error",
+      "Nas_418": "error code 418 Illegal name or path",
+      "Nas_419": "error code 419 Illegal file name",
+      "Nas_420": "error code 420 Illegal file name on FAT file system",
+      "Nas_421": "error code 421 Device or resource busy",
+      "Nas_599": "error code 599 No such task of the file operation",
+      "NasError": "Nas error, ",
+      "NasErrorCode": "error code: ",
+
+      "Nas_Sid_Missing": "Not logged in, please log in again",
+      "Nas_Cookie_Not_Found": "NAS Cookie not found, please log in again",
+      "Nas_Api_Not_Found": "API information not found",
+      "Nas_Api_Cache_Missing": "API cache missing, please log in again",
+      "Nas_DirSize_TaskId_Missing": "DirSize task ID missing",
+      "TotalTasks": "Total Tasks",
+      "ConflictTime": "The borrowing time overlaps. Existing applications are listed below.",
+      "Msg_Exceed_Max_Duration_Hrs": "The total requested duration {actualHours} Hours exceeds the maximum allowed duration {maxDurationHrs} Hours.",
+      "Msg_ApplyIDNotAlter": "The application {ApplyID} is not in draft status and cannot be modified.",
+      "Msg_WFWDisabled": "This category of application is not associated with an approval workflow and cannot be submitted for approval.",
+
+
+      "ApplyTimeRule": {
+        "Invalid": "Apply Time is invalid."
+      },
+
+      "Msg_ProjectTask_Start_Date": "Task start date cannot be less than project start date.(Project start date:{0})",
+
+      "Project_Delete_InProgress": "In-progress projects cannot be deleted",
+      "Project_Delete_Closed": "Closed projects cannot be deleted",
+
+      "TpcCategory_LibBound": "This topic category is bound to a topic library and cannot be deleted",
+
+      "SysResObject_HasResApply": "This resource is referenced by meeting room, parking, equipment issuance, or equipment rental applications and cannot be deleted",
+
+      "MSG_Insert_Success": "MSG_INSERT_SUCCESS",
+      "MSG_Update_Success": "MSG_UPDATE_SUCCESS",
+      "MSG_Delete_Success": "MSG_DELETE_SUCCESS",
+
+      "AnnPost_Status_NotPublished": "Not Published",
+      "AnnPost_Status_Publishing": "Publishing",
+      "AnnPost_Status_Withdrawn": "Withdrawn",
+
+      "AnnPost_PostNotFound": "Announcement not found",
+      "AnnPost_AlreadyPublished": "Announcement is already published",
+      "AnnPost_ScopeNotFound": "Announcement scope not found",
+      "AnnPost_NotYetPublished": "Announcement is not yet published, cannot withdraw",
+      "AnnPost_AlreadyWithdrawn": "Announcement has already been withdrawn",
+      "AnnPost_NotForReply": "This announcement does not require a reply",
+      "AnnPost_LibIDInvalid": "Announcement is not linked to a question library",
+      "AnnPost_AlreadyReplied": "You have already submitted a reply",
+      "AnnPost_QuestionNotInLib": "Question does not belong to this library",
+      "AnnPost_OptionNotInQuestion": "Option does not belong to this question",
+      "AnnPost_RequiredNotFilled": "Required question has not been answered",
+      "AnnPost_NumberInvalid": "Numeric question must be an integer",
+
+      "NAS_Login_Error": "NAS login error",
+      "AD_Login_Success": "AD verification successful",
+      "PINCode_Update_Success": "PIN Code updated successfully",
+      "OKCode": "OK",
+      "OriginalUser": "Original User",
+      "Delegater": "Delegate",
+      "SigningExpiredCount": "Sigining Expired Count",
+      "SigningNotExpiredCount": "Signing Not Expired Count",
+      "ClosedCount": "Closed Count",
+      "TotalApplyCount": "Total Apply Count",
+      "ApplyClosed": "Closed Apply",
+      "ApplyIsNotExpired": "Not Expired Apply",
+      "ApplyIsExpired": "Expired Apply",
+
+      "AnnRead_IsFinished_Yes": "Yes",
+      "AnnRead_IsFinished_No": "No",
+      "AnnRead_FinishedAt_NA": "N/A",
+      "AnnRead_Export_FileName": "Read Record",
+      "AnnRead_Export_Header_No": "No",
+      "AnnRead_Export_Header_PostID": "Post ID",
+      "AnnRead_Export_Header_Title": "Post Title",
+      "AnnRead_Export_Header_UserAccount": "User Account",
+      "AnnRead_Export_Header_IsFinished": "Is Finished",
+      "AnnRead_Export_Header_FinishedAt": "Finished At",
+      "AnnRead_Export_Header_CreatedAt": "Created At",
+
+      "AnnReply_Export_FileName": "Reply Record",
+      "AnnReply_Export_Header_No": "No",
+      "AnnReply_Export_Header_PostID": "Post ID",
+      "AnnReply_Export_Header_LibID": "Library ID",
+      "AnnReply_Export_Header_LibName": "Library Name",
+
+      "AnnReply_Export_Header_UserAccount": "User Account",
+      "AnnReply_Export_Header_FilledAt": "Filled At",
+
+      "ScheduleCycleCode": "Schedule Cycle Code is exist",
+
+      "Upload_No_File": "No file uploaded",
+      "Upload_Image_Only": "Only image files are allowed",
+      "Upload_Format_Not_Supported": "File format not supported",
+      "Upload_Please_Select_File": "Please select a file",
+      "Upload_Excel_Format_Only": "Only .xlsx, .xls or .csv formats are supported",
+      "Upload_Failed": "Upload failed",
+      "MainConnection_Not_Set": "MainConnection string is not configured",
+      "Please_Input_Table_Name": "Please enter a table name",
+
+      "Schedule_Triggered": "Schedule triggered"
+
+    }
+  }
+}

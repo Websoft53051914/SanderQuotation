@@ -1,0 +1,372 @@
+﻿@{
+    ViewBag.Title = (config.GetMessage("LogQuery").ToHtmlString());
+    ViewBag.pTitle = (config.GetMessage("LogQuery").ToHtmlString());
+    ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
+
+    var statusList = ViewData["StatusList"] as List<SelectListItem>;
+
+    var mapUrl = new
+    {
+        GetPageList = $"{Configuration["BackendURL"]}/api/ControlLog/GetPageList",
+        GetException = $"{Configuration["BackendURL"]}/api/ControlLog/GetException",
+    };
+}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">@config.GetMessage("LogQuery").ToHtmlString()</h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                   <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="@config.GetMessage("SearchTableContent").ToHtmlString()">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light"
+                                   placeholder="@(config.GetMessage("Account").ToHtmlString()) / @(config.GetMessage("Name").ToHtmlString())"
+                                   id="KeywordSearch">
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="date" class="form-control bg-light border-light" id="DateGteSearch">
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="date" class="form-control bg-light border-light" id="DateLteSearch">
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <select class="form-control" id="StatusSearch">
+                                <option value="">@(config.GetMessage("AllStatus").ToHtmlString())</option>
+                                @if (statusList != null)
+                                {
+                                    foreach (var item in statusList)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                @(config.GetMessage("Filters").ToHtmlString())
+                            </button>
+                        </div>
+                        <!--end col-->
+                    </div>
+                </form>
+            </div>
+            <!--end card-body-->
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>@(config.GetMessage("No").ToHtmlString())</th>
+                                <th data-sort="LogTime">@(config.GetMessage("Logtime").ToHtmlString())</th>
+                                <th data-sort="Account">@(config.GetMessage("Account").ToHtmlString())</th>
+                                <th data-sort="Name">@(config.GetMessage("Name").ToHtmlString())</th>
+                                <th data-sort="Status">@(config.GetMessage("Status").ToHtmlString())</th>
+                                <th data-sort="ControllerName">Controller</th>
+                                <th data-sort="ActionName">Action</th>
+
+                                <th data-sort="ActionStr">執行動作</th>
+
+                                <th data-sort="DataId">lot 資料</th>
+                                <th>Exception</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                            @* <p class="text-muted mb-0">We've searched more than 150+ Datas We did not find any Datas for you search.</p> *@
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            @(config.GetMessage("Page_Previous").ToHtmlString())
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            @(config.GetMessage("Page_Next").ToHtmlString())
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!--end card-body-->
+        </div>
+        <!--end card-->
+    </div>
+    <!--end col-->
+</div>
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Sign">@(config.GetMessage("View").ToHtmlString())</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        
+                        <div class="col-lg-12">
+                            <div>
+                                <label for="ExceptionContent" class="col-form-label">
+                                    @(config.GetMessage("ExceptionContent").ToHtmlString())
+                                </label>
+                                <textarea name="ExceptionContent" id="ExceptionContent" class="form-control" rows="30" disabled></textarea>
+                            </div>
+                        </div>
+                        @*                         <div class="col-lg-12">
+                        <label for="Attributes" class="col-form-label">
+                        @(config.GetMessage("Attributes").ToHtmlString())
+                        </label>
+                        <textarea name="Attributes" id="Attributes" class="form-control" placeholder="@(config.GetMessage("Attributes").ToHtmlString())" rows="5"></textarea>
+
+                        </div> *@
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
+                        <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!--end row-->
+@section scripts{
+
+    <script>
+        // ⭐ 全域查詢狀態
+        let queryState = {
+            pageIndex: 1,
+            pageSize: 40,
+            sortField: "LogTime",
+            sortDir: "desc",
+            keyword: "",
+            status: "",
+            dateGte: "",
+            dateLte: "",
+        };
+
+        // ⭐ 主載入函式
+        function loadDatas() {
+            showLoader();
+            $.ajax({
+                url: '@(mapUrl.GetPageList)',
+                type: 'GET',
+                cache: false,
+                data: queryState,
+                success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        let codeMsg = res.Errors.ReturnCode + "\n" + res.Errors.ReturnMsg;
+                        Swal.fire({
+                            icon: (res.Errors.AlertLevel || '').toLowerCase(),
+                            title: codeMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                        return;
+                    }
+                    renderTable(res.Data.Data);
+                    renderPagination(res.Data.Total);
+                },
+                error: function () {
+                    hideLoader();
+                    Swal.fire({
+                        title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                        icon: 'error',
+                        confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                    });
+                }
+            });
+        }
+
+        // ⭐ 表格渲染
+        function renderTable(rows) {
+            const tbody = $('#data-list-data');
+            tbody.empty();
+
+            if (!rows || rows.length === 0) {
+                $('.noresult').show();
+                return;
+            }
+            $('.noresult').hide();
+
+            rows.forEach(data => {
+                const hasException = data.Status!=1;
+                const statusBadge = hasException
+                    ? `<span class="badge bg-danger-subtle text-danger">${data.StatusDescription || ''}</span>`
+                    : `<span class="badge bg-success-subtle text-success">${data.StatusDescription || ''}</span>`;
+
+                const actionEl = hasException ? `
+                    <button class="btn btn-soft-secondary btn-sm view-exception-btn" type="button" data-bs-toggle="modal" data-bs-target="#showModal">
+                        <i class="ri-eye-line align-bottom me-1"></i>
+                        @(config.GetMessage("ViewExceptionDetails").ToHtmlString())
+                    </button>` : '';
+
+                tbody.append(`
+                    <tr data-id="${data.Id}">
+                        <td>${data.No}</td>
+                        <td>${data.LogTime || ''}</td>
+                        <td>${data.Account || ''}</td>
+                        <td>${data.Name || ''}</td>
+                        <td>${data.StatusName}</td>
+                        <td>${data.ControllerName || ''}</td>
+                        <td>${data.ActionName || ''}</td>
+
+                        <td>${data.ActionStr || ''}</td>
+                        
+                        <td>${data.DataId || ''}</td>
+                        <td>${actionEl}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        // ⭐ 分頁渲染
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / queryState.pageSize);
+            const ul = $('.listjs-pagination');
+            ul.empty();
+
+            if (totalPages <= 1) return;
+
+            const maxPages = 5;
+            let startPage = Math.max(1, queryState.pageIndex - Math.floor(maxPages / 2));
+            let endPage = startPage + maxPages - 1;
+
+            if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            if (startPage > 1) {
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a></li>`);
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                ul.append(`<li class="page-item ${i === queryState.pageIndex ? 'active' : ''}"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a></li>`);
+            }
+
+            if (endPage < totalPages) {
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a></li>`);
+            }
+
+            $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
+            $('.pagination-next').toggleClass('disabled', queryState.pageIndex === totalPages);
+
+            $('.pagination-prev').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex > 1) { queryState.pageIndex--; loadDatas(); }
+            });
+
+            $('.pagination-next').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex < totalPages) { queryState.pageIndex++; loadDatas(); }
+            });
+        }
+
+        function gotoPage(page) {
+            queryState.pageIndex = page;
+            $('#globalSearchInput').val('');
+            loadDatas();
+        }
+
+        // ⭐ 搜尋 + 篩選
+        function SearchData() {
+            queryState.keyword = $('#KeywordSearch').val();
+            queryState.dateGte = $('#DateGteSearch').val();
+            queryState.dateLte = $('#DateLteSearch').val();
+            queryState.status = $('#StatusSearch').val();
+            queryState.pageIndex = 1;
+            $('#globalSearchInput').val('');
+            loadDatas();
+        }
+
+        // ⭐ 初始化
+        $(document).ready(function () {
+            loadDatas();
+
+            // 查看 Exception
+            $(document).on('click', '.view-exception-btn', function (e) {
+                const $tr = $(this).closest('tr');
+                const id = $tr.data('id');
+                $.ajax({
+                    url: '@(mapUrl.GetException)',
+                    type: 'GET',
+                    data: { id: id },
+                    success: function (response) {
+                        if (!response.Success) {
+                            let codeMsg = response.Errors.ReturnCode + "\n" + response.Errors.ReturnMsg;
+                            Swal.fire({
+                                icon: (response.Errors.AlertLevel || '').toLowerCase(),
+                                title: codeMsg,
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            });
+                            return;
+                        }
+                        $('#ExceptionContent').val(response.Data);
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                });
+            });
+
+            // 排序
+            $('.sort').on('click', function () {
+                const field = $(this).data('sort');
+                if (queryState.sortField === field) {
+                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    queryState.sortField = field;
+                    queryState.sortDir = 'asc';
+                }
+                loadDatas();
+            });
+
+            // 本地搜尋
+            $('#globalSearchInput').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+                $('#data-list-data tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(keyword));
+                });
+            });
+        });
+    </script>
+}

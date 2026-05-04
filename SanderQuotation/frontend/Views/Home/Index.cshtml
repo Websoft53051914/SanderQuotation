@@ -1,0 +1,10 @@
+@{
+    ViewBag.Title = (config.GetMessage("Home").ToHtmlString());
+    ViewBag.pTitle = (config.GetMessage("Home").ToHtmlString());
+    ViewBag.pageTitle = (config.GetMessage("Home").ToHtmlString());
+
+    ViewData["Title"] = (config.GetMessage("Home").ToHtmlString());
+}
+<div class="row">
+    @* <partial name="_PersonalAnnPost" /> *@
+</div>

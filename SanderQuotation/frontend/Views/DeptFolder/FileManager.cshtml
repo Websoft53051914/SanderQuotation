@@ -1,0 +1,20 @@
+@using frontend.Models
+
+@{
+    ViewBag.Title = (config.GetMessage("DepartmentFolder").ToHtmlString());
+    ViewBag.pTitle = (config.GetMessage("DepartmentFolder").ToHtmlString());
+    ViewBag.pageTitle = (config.GetMessage("FolderManagement").ToHtmlString());
+
+    var deptCode = ViewData["dept"]?.ToString();
+
+
+    //string reqTypeUrl = "/3";
+}
+
+
+@await Html.PartialAsync("_FileManagerShare", new NasFileManagerScriptOptions
+{
+    ReqTypeUrl = "/3",
+    ExtraCode = deptCode
+
+})

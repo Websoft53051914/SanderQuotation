@@ -1,0 +1,373 @@
+@{
+    ViewBag.Title = "併批";
+    ViewBag.pTitle = "併批";
+    ViewBag.pageTitle = "EMS";
+    var lotId = ViewBag.LotId as string ?? "LOT-DEMO-001";
+}
+
+<style>
+    .foup-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .foup-body {
+        width: 260px;
+        border: 3px solid #6c757d;
+        border-radius: 8px;
+        background: #f8f9fa;
+        padding: 6px;
+        position: relative;
+    }
+
+    .foup-body::before {
+        content: '';
+        position: absolute;
+        top: -14px; left: 50%; transform: translateX(-50%);
+        width: 80px; height: 14px;
+        background: #6c757d;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .foup-slot {
+        display: flex;
+        align-items: center;
+        height: 26px;
+        margin: 1px 0;
+        border-radius: 4px;
+        padding: 0 8px;
+        font-size: 12px;
+        font-weight: 500;
+        user-select: none;
+        border: 1px solid transparent;
+        transition: all .15s;
+    }
+
+    .foup-slot .slot-no {
+        width: 22px;
+        color: #495057;
+        font-size: 11px;
+    }
+
+    .foup-slot .slot-bar {
+        flex: 1;
+        height: 10px;
+        border-radius: 3px;
+        margin: 0 4px;
+    }
+
+    .slot-empty    { background: #e9ecef; border-color: #dee2e6; }
+    .slot-empty    .slot-bar { background: #ced4da; }
+
+    .slot-occupied { background: #d1e7dd; border-color: #a3cfbb; }
+    .slot-occupied .slot-bar { background: #198754; }
+
+    .slot-source   { background: #cfe2ff; border-color: #9ec5fe; cursor: pointer; }
+    .slot-source   .slot-bar { background: #0d6efd; }
+    .slot-source:hover { background: #b6d4fe; }
+
+    .slot-selected { background: #fff3cd; border-color: #ffc107; box-shadow: 0 0 0 2px rgba(255,193,7,.3); cursor: pointer; }
+    .slot-selected .slot-bar { background: #ffc107; }
+    .slot-selected:hover { background: #ffe69c; }
+
+    .slot-conflict { background: #f8d7da; border-color: #f1aeb5; animation: blink .8s step-start infinite; }
+    .slot-conflict .slot-bar { background: #dc3545; }
+
+    .slot-merged   { background: #d1e7dd; border-color: #a3cfbb; }
+    .slot-merged   .slot-bar { background: #0f5132; }
+
+    @@keyframes blink { 50% { opacity: .45; } }
+
+    .foup-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .foup-bottom-label {
+        font-size: 11px;
+        color: #adb5bd;
+        margin-top: 4px;
+        text-align: center;
+    }
+
+    .lot-card {
+        cursor: pointer;
+        transition: all .15s;
+        border: 2px solid transparent;
+    }
+
+    .lot-card:hover { border-color: #0d6efd; background: #f0f5ff; }
+    .lot-card.selected { border-color: #0d6efd; background: #e8f0ff; }
+
+    .conflict-alert {
+        display: none;
+        border-left: 4px solid #dc3545;
+    }
+</style>
+
+<!-- Back button -->
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="@Url.Action("Index", "FoupLot")" class="btn btn-sm btn-soft-secondary">
+            <i class="ri-arrow-left-line me-1"></i>返回批次列表
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top: source lot selection (horizontal) -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header border-0 pb-1">
+                <h6 class="card-title mb-0">
+                    <i class="ri-list-check me-1 text-info"></i>選擇要合併的批次
+                    <small class="text-muted fw-normal ms-2">點擊批次以預覽合併結果</small>
+                </h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-flex gap-3 flex-wrap" id="lotCandidateList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: FOUP preview + merge result -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <!-- Conflict warning -->
+                <div class="alert alert-danger conflict-alert" id="conflictAlert" role="alert">
+                    <i class="ri-error-warning-line me-2"></i>
+                    <strong>偵測到槽位衝突！</strong>
+                    <span class="text-danger fw-bold">紅色</span> 標示的槽位兩批次均有晶圓，請解決衝突後再確認合併。
+                </div>
+
+                <!-- FOUP visual row -->
+                <div class="d-flex align-items-center justify-content-start gap-4 flex-wrap">
+
+                    <!-- Target FOUP -->
+                    <div class="foup-wrapper">
+                        <div class="foup-label"><span>@lotId</span><br><small class="text-muted">目標 FOUP</small></div>
+                        <div class="foup-body" id="targetFoup"></div>
+                        <span class="badge bg-success-subtle text-success mt-2" id="targetCount" style="display:none;">0 片</span>
+                    </div>
+
+                    <!-- Plus -->
+                    <div style="font-size:36px;color:#6c757d;font-weight:300;">+</div>
+
+                    <!-- Source FOUP -->
+                    <div class="foup-wrapper">
+                        <div class="foup-label"><span id="sourceLotLabel" class="text-muted">— 請選擇批次 —</span><br><small class="text-muted">來源 FOUP（點擊選取晶圓）</small></div>
+                        <div class="foup-body" id="sourceFoup"></div>
+                        <span class="badge bg-warning-subtle text-warning mt-2" id="sourceCount" style="display:none;">—</span>
+                    </div>
+
+                    <!-- Arrow -->
+                    <i class="ri-arrow-right-line" style="font-size:28px;color:#6c757d;"></i>
+
+                    <!-- Result FOUP -->
+                    <div class="foup-wrapper">
+                        <div class="foup-label"><span>合併預覽</span><br><small class="text-muted">結果 FOUP</small></div>
+                        <div class="foup-body" id="resultFoup"></div>
+                        <span class="badge bg-dark-subtle text-dark mt-2" id="resultCount" style="display:none;">—</span>
+                    </div>
+
+                    <!-- Info panel -->
+                    <div class="border rounded p-3" style="background:#f8f9fa;width:280px;flex-shrink:0;align-self:flex-start;">
+                        <h5 class="fw-semibold mb-3"><i class="ri-file-list-3-line me-1 text-info"></i>本次異動資訊</h5>
+                        <div class="mb-1 d-flex gap-2 align-items-center">
+                            <span class="text-muted" style="width:70px;">目標批號</span>
+                            <span class="fw-semibold fs-6">@lotId</span>
+                        </div>
+                        <div class="mb-1 d-flex gap-2 align-items-center">
+                            <span class="text-muted" style="width:70px;">來源批號</span>
+                            <span class="fw-semibold fs-6" id="infoSource">—</span>
+                        </div>
+                        <div class="mb-3 d-flex gap-2 align-items-center">
+                            <span class="text-muted" style="width:70px;">選取片數</span>
+                            <span class="badge bg-warning-subtle text-warning" style="font-size:14px;" id="infoSelectedCount">0 片</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="mb-2 fw-semibold fs-6">併入目標的 Wafer</div>
+                        <div id="mergeWaferList">
+                            <span class="text-muted">尚未選取任何晶圓</span>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                    <a href="@Url.Action("Index", "FoupLot")" class="btn btn-light">取消</a>
+                    <button class="btn btn-info" id="btnConfirmMerge" disabled>
+                        <i class="ri-merge-cells-horizontal me-1"></i>確認併批
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+(function () {
+    const TOTAL = 25;
+
+    // ── Demo lots ──────────────────────────────────────────────────────────────
+    // targetLot = current lot (slots 1-15 occupied)
+    const targetOccupied = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+
+    const CANDIDATE_LOTS = [
+        { Id: '2', LotId: 'LOT-2024-002', Product: 'PROD-B', occupied: [16,17,18,19,20],
+          waferIds: { 16:'W-002-016', 17:'W-002-017', 18:'W-002-018', 19:'W-002-019', 20:'W-002-020' } },
+        { Id: '4', LotId: 'LOT-2024-004', Product: 'PROD-C', occupied: [10,11,21,22,23],
+          waferIds: { 10:'W-004-010', 11:'W-004-011', 21:'W-004-021', 22:'W-004-022', 23:'W-004-023' } },
+        { Id: '5', LotId: 'LOT-2024-005', Product: 'PROD-B', occupied: [16,17,18,19,20,21,22],
+          waferIds: { 16:'W-005-016', 17:'W-005-017', 18:'W-005-018', 19:'W-005-019', 20:'W-005-020', 21:'W-005-021', 22:'W-005-022' } },
+    ];
+
+    let selectedLot = null;
+    let selectedSourceSlots = new Set();
+
+    // ── Render candidate lot list ──────────────────────────────────────────────
+    function renderCandidates() {
+        const container = document.getElementById('lotCandidateList');
+        container.innerHTML = '';
+        CANDIDATE_LOTS.forEach(lot => {
+            const div = document.createElement('div');
+            div.className = 'lot-card card card-body p-3';
+            div.style.cssText = 'min-width:180px;max-width:220px;flex:0 0 auto;';
+            div.dataset.id = lot.Id;
+            div.innerHTML = `
+                <div class="fw-semibold text-primary mb-1">${lot.LotId}</div>
+                <div class="text-muted" style="font-size:13px;">${lot.Product}</div>
+                <div class="mt-1"><span class="badge bg-success-subtle text-success">${lot.occupied.length} 片</span></div>
+            `;
+            div.addEventListener('click', () => selectLot(lot));
+            container.appendChild(div);
+        });
+    }
+
+    // ── Render a FOUP ────────────────────────────────────────────────────────
+    function renderFoup(containerId, slots, clickable) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        for (let i = TOTAL; i >= 1; i--) {
+            const s = slots[i - 1];
+            const div = document.createElement('div');
+            div.className = `foup-slot slot-${s.state}`;
+            div.dataset.slot = s.slot;
+            div.innerHTML = `<span class="slot-no">${String(s.slot).padStart(2, '0')}</span><span class="slot-bar"></span>`;
+            if (clickable && (s.state === 'source' || s.state === 'selected')) {
+                div.addEventListener('click', () => toggleSourceSlot(s.slot));
+            }
+            container.appendChild(div);
+        }
+    }
+
+    // ── Build source slots with selection state ────────────────────────────────
+    function makeSourceSlots(occupiedSet, selSet) {
+        return Array.from({ length: TOTAL }, (_, i) => ({
+            slot: i + 1,
+            state: occupiedSet.has(i + 1) ? (selSet.has(i + 1) ? 'selected' : 'source') : 'empty'
+        }));
+    }
+
+    function toggleSourceSlot(slotNo) {
+        if (selectedSourceSlots.has(slotNo)) selectedSourceSlots.delete(slotNo);
+        else selectedSourceSlots.add(slotNo);
+        updateMergePreview();
+    }
+
+    function updateMergePreview() {
+        if (!selectedLot) return;
+        const sourceOcc = new Set(selectedLot.occupied);
+        renderFoup('sourceFoup', makeSourceSlots(sourceOcc, selectedSourceSlots), true);
+        const { result, conflicts } = computeResult(targetOccupied, selectedSourceSlots);
+        renderFoup('resultFoup', result, false);
+        const total = result.filter(s => s.state !== 'empty').length;
+        document.getElementById('resultCount').textContent = `${total} 片${conflicts > 0 ? ` （${conflicts} 衝突）` : ''}`;
+        document.getElementById('conflictAlert').style.display = conflicts > 0 ? '' : 'none';
+        document.getElementById('btnConfirmMerge').disabled = conflicts > 0 || selectedSourceSlots.size === 0;
+        updateInfoPanel();
+    }
+
+    function updateInfoPanel() {
+        const count = selectedSourceSlots.size;
+        document.getElementById('infoSelectedCount').textContent = count + ' 片';
+        const list = document.getElementById('mergeWaferList');
+        if (count === 0) {
+            list.innerHTML = '<span class="text-muted">尚未選取任何晶圓</span>';
+            return;
+        }
+        const wIds = selectedLot ? selectedLot.waferIds : {};
+        list.innerHTML = '<table class="table table-sm table-bordered mb-0" style="font-size:13px;">'
+            + '<thead class="table-light"><tr><th style="width:60px">Slot</th><th>Wafer ID</th></tr></thead><tbody>'
+            + [...selectedSourceSlots].sort((a, b) => a - b).map(s =>
+                `<tr><td class="text-center fw-semibold">${String(s).padStart(2, '0')}</td><td>${wIds[s] || '—'}</td></tr>`
+            ).join('')
+            + '</tbody></table>';
+    }
+
+    // ── Build slot arrays ──────────────────────────────────────────────────────
+    function makeSlots(occupiedSet, stateIfOccupied) {
+        return Array.from({ length: TOTAL }, (_, i) => ({
+            slot: i + 1,
+            state: occupiedSet.has(i + 1) ? stateIfOccupied : 'empty'
+        }));
+    }
+
+    function computeResult(targetOcc, sourceOcc) {
+        const result = [];
+        let conflicts = 0;
+        for (let i = 1; i <= TOTAL; i++) {
+            const inTarget = targetOcc.has(i);
+            const inSource = sourceOcc.has(i);
+            let state = 'empty';
+            if (inTarget && inSource) { state = 'conflict'; conflicts++; }
+            else if (inTarget || inSource) state = 'merged';
+            result.push({ slot: i, state });
+        }
+        return { result, conflicts };
+    }
+
+    // ── Select a source lot ────────────────────────────────────────────────────
+    function selectLot(lot) {
+        selectedLot = lot;
+        selectedSourceSlots = new Set(); // reset on lot switch
+        document.querySelectorAll('.lot-card').forEach(c => c.classList.toggle('selected', c.dataset.id === lot.Id));
+        document.getElementById('sourceLotLabel').textContent = lot.LotId;
+        document.getElementById('infoSource').textContent = lot.LotId;
+        const sourceOcc = new Set(lot.occupied);
+        renderFoup('sourceFoup', makeSourceSlots(sourceOcc, selectedSourceSlots), true);
+        renderFoup('resultFoup', makeSlots(new Set(), 'empty'), false);
+        document.getElementById('resultCount').textContent = '—';
+        document.getElementById('conflictAlert').style.display = 'none';
+        document.getElementById('btnConfirmMerge').disabled = true;
+        updateInfoPanel();
+    }
+
+    // ── Confirm merge ──────────────────────────────────────────────────────────
+    document.getElementById('btnConfirmMerge').addEventListener('click', () => {
+        if (!selectedLot) return;
+        const total = new Set([...targetOccupied, ...selectedLot.occupied]).size;
+        Swal.fire({
+            icon: 'success',
+            title: '併批已送出（Demo）',
+            html: `已將 <b>${selectedLot.LotId}</b> 合併至 <b>@lotId</b>。<br>合計晶圓：<b>${total}</b> 片。<br><small class="text-muted">此為 Demo，未呼叫後端。</small>`,
+            confirmButtonText: '返回列表'
+        }).then(() => { window.location.href = '@Url.Action("Index", "FoupLot")'; });
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    renderCandidates();
+    renderFoup('targetFoup', makeSlots(targetOccupied, 'occupied'), false);
+    renderFoup('sourceFoup', makeSlots(new Set(), 'empty'), false);
+    renderFoup('resultFoup', makeSlots(new Set(), 'empty'), false);
+})();
+</script>
+}

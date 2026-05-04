@@ -1,0 +1,711 @@
+@model ViewModel.SysFuncClassVM
+@{
+    ViewBag.Title = "功能類別管理";
+    ViewBag.pTitle = "功能類別管理";
+    ViewBag.pageTitle = "系統管理";
+
+    var mapUrl = new
+    {
+        Create = $"{Configuration["BackendURL"]}/api/SysFuncClass/Create",
+        Edit = $"{Configuration["BackendURL"]}/api/SysFuncClass/Edit",
+        Delete = $"{Configuration["BackendURL"]}/api/SysFuncClass/Delete",
+        Get = $"{Configuration["BackendURL"]}/api/SysFuncClass/Get",
+        Enable = $"{Configuration["BackendURL"]}/api/SysFuncClass/Enable",
+    };
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal">
+                                <i class="ri-add-line align-bottom me-1"></i> 新增
+                            </button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()">
+                                <i class="ri-delete-bin-2-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-5 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="搜尋表格內容">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-3 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="類別名稱" id="ClassName" name="ClassName">
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <select class="form-control" id="Status" name="Status">
+                                <option value="">全部狀態</option>
+                                <option value="1">啟用</option>
+                                <option value="0">停用</option>
+                            </select>
+                        </div>
+                        <div class="col-xxl-2 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                篩選
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                <th data-sort="action">操作</th>
+                                <th data-sort="No">序號</th>
+                                <th class="sort" data-sort="Sequence">排序</th>
+                                <th class="sort" data-sort="ClassName">類別名稱</th>
+                                <th class="sort" data-sort="Memo">備註</th>
+                                <th class="sort" data-sort="Status">狀態</th>
+                                <th class="sort" data-sort="CreateTime">建立時間</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkAll" value="option1">
+                                    </div>
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            上一頁
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            下一頁
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>您即將刪除資料</h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        刪除後將無法復原
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            取消
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">確定刪除</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增功能類別</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯功能類別</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="ClassName" class="form-label required">類別名稱</label>
+                                <input type="text" name="ClassName" id="ClassName_Modal" class="form-control" placeholder="請輸入類別名稱" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="Sequence" class="form-label">排序</label>
+                                <input type="number" name="Sequence" id="Sequence_Modal" class="form-control" placeholder="請輸入排序值" />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="Status" class="form-label required">狀態</label>
+                                <select name="Status" id="Status_Modal" class="form-control" required>
+                                    <option value="1">啟用</option>
+                                    <option value="0">停用</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div>
+                                <label for="Memo" class="form-label">
+                                    備註
+                                </label>
+                                <textarea name="Memo" id="Memo" class="form-control" placeholder="備註" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">確定</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // 全域查詢狀態
+        let queryState = {
+            pageIndex: 1,
+            pageSize: 10,
+            sortField: "CreateTime",
+            sortDir: "desc",
+            className: "",
+            status: "",
+        };
+
+        // 主載入函式
+        function loadDatas() {
+            showLoader();
+            $.ajax({
+                url: '@(Configuration["BackendURL"])/api/SysFuncClass/GetPageList',
+                type: 'GET',
+                data: queryState,
+                success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: res.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+                    renderTable(res.Data.Data);
+                    renderPagination(res.Data.Total);
+                    document.getElementById("remove-actions").style.display = 'none';
+                },
+                error: function () {
+                    hideLoader();
+                    alert('載入資料失敗');
+                }
+            });
+        }
+
+        // 表格渲染
+        function renderTable(rows) {
+            const tbody = $('#data-list-data');
+            tbody.empty();
+
+            if (!rows || rows.length === 0) {
+                $('.noresult').show();
+                return;
+            }
+            $('.noresult').hide();
+
+            rows.forEach(data => {
+                const statusBadge = data.Status === 1 ? 
+                    '<span class="badge bg-success-subtle text-success">啟用</span>' : 
+                    '<span class="badge bg-secondary-subtle text-secondary">停用</span>';
+
+                tbody.append(`
+                    <tr data-id="${data.Id}">
+                        <th scope="row">
+                            <div class="form-check">
+                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">
+                            </div>
+                        </th>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                    <i class="ri-more-fill align-middle"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.Status === 1 ? '0' : '1'}">
+                                        <i class="ri-${data.Status === 1 ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i> 
+                                        ${data.Status === 1 ? '停用' : '啟用'}
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="No">${data.No}</td>
+                        <td class="Sequence">${data.Sequence ?? ''}</td>
+                        <td class="ClassName">${data.ClassName || ''}</td>
+                        <td class="Memo">${data.Memo || ''}</td>
+                        <td class="Status">${statusBadge}</td>
+                        <td class="CreateTime">${data.CreateTime ? new Date(data.CreateTime).toLocaleString('zh-TW') : ''}</td>
+                    </tr>
+                `);
+            });
+            initDynamicDropdowns();
+        }
+
+        // 分頁渲染
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / queryState.pageSize);
+            const ul = $('.listjs-pagination');
+            ul.empty();
+
+            if (totalPages <= 1) return;
+
+            const maxPages = 5;
+            let startPage = Math.max(1, queryState.pageIndex - Math.floor(maxPages / 2));
+            let endPage = startPage + maxPages - 1;
+
+            if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            if (startPage > 1) {
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">第一頁</a></li>`);
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                ul.append(`<li class="page-item ${i === queryState.pageIndex ? 'active' : ''}"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a></li>`);
+            }
+
+            if (endPage < totalPages) {
+                ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">最後一頁</a></li>`);
+            }
+
+            $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
+            $('.pagination-next').toggleClass('disabled', queryState.pageIndex === totalPages);
+
+            $('.pagination-prev').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex > 1) {
+                    queryState.pageIndex--;
+                    loadDatas();
+                }
+            });
+
+            $('.pagination-next').off('click').on('click', function (e) {
+                e.preventDefault();
+                if (queryState.pageIndex < totalPages) {
+                    queryState.pageIndex++;
+                    loadDatas();
+                }
+            });
+        }
+
+        function gotoPage(page) {
+            queryState.pageIndex = page;
+            loadDatas();
+        }
+
+        // 搜尋篩選
+        function SearchData() {
+            queryState.className = $('#ClassName').val();
+            queryState.status = $('#Status').val();
+            queryState.pageIndex = 1;
+            $('#globalSearchInput').val('').trigger('input');
+            loadDatas();
+        }
+
+        // 初始化
+        $(document).ready(function () {
+            loadDatas();
+
+            $('#globalSearchInput').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+                $('#data-list-data tr').each(function () {
+                    const rowText = $(this).text().toLowerCase();
+                    $(this).toggle(rowText.includes(keyword));
+                });
+            });
+
+            // 初始化 Select2
+            $('#Status_Modal').select2({
+                minimumResultsForSearch: Infinity,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+
+            $('.sort').on('click', function () {
+                const field = $(this).data('sort');
+                if (queryState.sortField === field) {
+                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    queryState.sortField = field;
+                    queryState.sortDir = 'asc';
+                }
+                loadDatas();
+            });
+        });
+
+        // 新增按鈕
+        var postaction = 'create';
+        $("#btnShowModal").click(function () {
+            resetElement();
+            $('#exampleModalLabel_Create').show();
+            $('#exampleModalLabel_Edit').hide();
+            postaction = 'create';
+        });
+
+        // 表單提交
+        $("#submitForm").submit(function (e) {
+            e.preventDefault();
+            showLoader();
+
+            var postURL = postaction === 'create' ? '@mapUrl.Create' : '@mapUrl.Edit';
+            var data = {};
+            $.extend(data, $(this).serializeObject());
+            data.Id = currentId;
+
+            $.ajax({
+                type: "POST",
+                url: postURL,
+                dataType: "json",
+                data: data,
+                cache: false,
+                success: function (response) {
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    const modal = bootstrap.Modal.getInstance(showModal);
+                    modal.hide();
+
+                    var successMsg = postaction === 'create' ? '新增成功' : '編輯成功';
+                    Swal.fire({
+                        icon: 'success',
+                        title: successMsg,
+                        confirmButtonText: '確定',
+                    }).then(() => {
+                        loadDatas();
+                    });
+
+                    resetElement();
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        var currentId;
+
+        // 刪除按鈕
+        $(document).on('click', '.remove-item-btn', function (e) {
+            e.preventDefault();
+            const $tr = $(this).closest('tr');
+            currentId = $tr.data('id');
+            if (!currentId) return;
+        });
+
+        // 編輯按鈕
+        $(document).on('click', '.edit-item-btn', function (e) {
+            $('#exampleModalLabel_Create').hide();
+            $('#exampleModalLabel_Edit').show();
+            postaction = 'edit';
+            e.preventDefault();
+
+            const $tr = $(this).closest('tr');
+            currentId = $tr.data('id');
+
+            if (!currentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '資料不存在',
+                    confirmButtonText: '確定',
+                });
+                const modal = bootstrap.Modal.getInstance(showModal);
+                modal.hide();
+                return;
+            }
+
+            showLoader();
+
+            $.ajax({
+                type: "POST",
+                url: '@mapUrl.Get',
+                dataType: "json",
+                data: { id: currentId },
+                cache: false,
+                success: function (response) {
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    $('#ClassName_Modal').val(response.Data.ClassName);
+                    $('#Sequence_Modal').val(response.Data.Sequence ?? '');
+                    $('#Memo').val(response.Data.Memo);
+
+                    $('#Status_Modal').val(String(response.Data.Status || '1')).trigger('change');
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        // 啟用/停用
+        $(document).on('click', '.enable-item-btn', function (e) {
+            e.preventDefault();
+            const $tr = $(this).closest('tr');
+            const id = $tr.data('id');
+            const enable = $(this).data('enable');
+            const action = enable === 1 ? '啟用' : '停用';
+
+            Swal.fire({
+                title: `確定要${action}嗎？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '確定',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoader();
+                    $.ajax({
+                        type: "POST",
+                        url: '@mapUrl.Enable',
+                        data: { id: id, enable: enable },
+                        success: function (response) {
+                            if (response.Success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: response.Data,
+                                    confirmButtonText: '確定',
+                                }).then(() => {
+                                    loadDatas();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: response.Message,
+                                    confirmButtonText: '確定',
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '系統錯誤',
+                                confirmButtonText: '確定',
+                            });
+                        }
+                    }).always(function () {
+                        hideLoader();
+                    });
+                }
+            });
+        });
+
+        // 刪除確認
+        $("#delete-record").click(function () {
+            var ids = [currentId];
+            showLoader();
+
+            $.ajax({
+                type: "POST",
+                url: '@mapUrl.Delete',
+                dataType: "json",
+                data: { list: ids },
+                cache: false,
+                success: function (response) {
+                    const modal = bootstrap.Modal.getInstance(deleteOrder);
+                    modal.hide();
+
+                    if (!response.Success) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
+
+                    loadDatas();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '刪除成功',
+                        confirmButtonText: '確定',
+                    });
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '系統錯誤',
+                        confirmButtonText: '確定',
+                    });
+                }
+            }).always(function () {
+                hideLoader();
+            });
+        });
+
+        // 批次刪除
+        function deleteMultiple() {
+            let ids_array = [];
+            $('.form-check [value=option1]:checked').each(function () {
+                const $tr = $(this).closest('tr');
+                const id = $tr.data('id');
+                if (id) ids_array.push(id);
+            });
+
+            if (ids_array.length === 0) {
+                Swal.fire({
+                    title: '請至少選擇一筆資料',
+                    confirmButtonText: '確定',
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: "確定要刪除嗎？",
+                text: "刪除後將無法復原",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "確定刪除",
+                cancelButtonText: "取消",
+            }).then(function (result) {
+                if (result.value) {
+                    showLoader();
+                    $.ajax({
+                        type: "POST",
+                        url: '@mapUrl.Delete',
+                        dataType: "json",
+                        data: { list: ids_array },
+                        cache: false,
+                        success: function (response) {
+                            if (!response.Success) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: response.Message,
+                                    confirmButtonText: '確定',
+                                });
+                                return;
+                            }
+
+                            loadDatas();
+
+                            Swal.fire({
+                                title: '已刪除',
+                                text: '您的資料已被刪除',
+                                icon: 'success',
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '系統錯誤',
+                                confirmButtonText: '確定',
+                            });
+                        }
+                    }).always(function () {
+                        hideLoader();
+                    });
+                }
+            });
+        }
+
+        // 重置表單
+        function resetElement() {
+            $('#showModal input').val('');
+            $('#showModal textarea').val('');
+            $('#Sequence_Modal').val('');
+            $('#showModal').find('[type="checkbox"]').prop('checked', false);
+
+            $('#showModal').find('select').each(function () {
+                if (this.multiple) {
+                    $(this).val(null).trigger('change');
+                } else {
+                    const firstValue = this.options[0]?.value;
+                    if (firstValue != null) {
+                        $(this).val(firstValue).trigger('change');
+                    }
+                }
+            });
+        }
+
+        // 勾選相關
+        function toggleRemoveActions() {
+            if ($('.row-check:checked').length > 0)
+                $('#remove-actions').show();
+            else
+                $('#remove-actions').hide();
+        }
+
+        $(document).on('change', '.row-check', function () {
+            const total = $('.row-check').length;
+            const checked = $('.row-check:checked').length;
+            $('#checkAll').prop('checked', total === checked);
+            toggleRemoveActions();
+        });
+
+        $('#checkAll').on('change', function () {
+            $('.row-check').prop('checked', this.checked);
+            toggleRemoveActions();
+        });
+    </script>
+}

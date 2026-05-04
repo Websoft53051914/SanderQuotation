@@ -1,0 +1,158 @@
+﻿@{
+    ViewBag.Title = (config.GetMessage("Personal_Data_Change").ToHtmlString());
+    ViewBag.pTitle = (config.GetMessage("Personal_Data_Change").ToHtmlString());
+    ViewBag.pageTitle = (config.GetMessage("Account_Function").ToHtmlString());
+
+    var name = ViewData["name"] as string;
+    var acc = ViewData["acc"] as string;
+}
+
+@section styles {
+}
+
+<style>
+
+</style>
+<div class="container-fluid">
+    <div class="position-relative mx-n4 mt-n4">
+        <div class="profile-wid-bg profile-setting-img" style="height: 80px;">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xxl-12">
+            <div class="card mt-n5">
+                <div class="card-body p-4">
+                    <div class="text-center">
+                        <div class="profile-user position-relative d-inline-block mx-auto  mb-4">
+                            <img id="myImg" src="~/assets/images/users/user-dummy-img.jpg" class="rounded-circle avatar-xl img-thumbnail user-profile-image material-shadow" alt="user-profile-image">
+                            <div class="avatar-xs p-0 rounded-circle profile-photo-edit">
+                                <input id="profile-img-file-input" type="file" class="profile-img-file-input">
+                                <label for="profile-img-file-input" class="profile-photo-edit avatar-xs">
+                                    <span class="avatar-title rounded-circle bg-light text-body material-shadow">
+                                        <i class="ri-camera-fill"></i>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <h5 class="fs-16 mb-1">@(acc)</h5>
+                        <p class="text-muted mb-0">@(name)</p>
+                    </div>
+                </div>
+            </div>
+            <!--end card-->
+        </div>
+
+        <!--end col-->
+    </div>
+    <!--end row-->
+</div>
+
+
+@section scripts {
+
+    <script>
+        function GetProfileImage(imgElement) {
+            $.ajax({
+                type: 'POST',
+                url: '@(config.GetBackendUrl() + "/api" + Url.Action("ShowPic300", "SysUser"))',
+                xhrFields: {
+                    withCredentials: true
+                },
+                dataType: "binary",
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwt')
+                },
+                xhr: function () {
+                    var xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState == 2) {
+                            if (xhr.status == 200) {
+                                xhr.responseType = "blob";
+                            } else {
+                                xhr.responseType = "text";
+                            }
+                        }
+                    };
+                    return xhr;
+                },
+                success: function (response, status, xhr) {
+                    const blob = new Blob([response], { type: xhr.getResponseHeader('content-type') });
+                    const url = URL.createObjectURL(blob);
+                    // 修正點：在 onload 事件觸發後才釋放 URL
+                    imgElement.onload = function () {
+                        URL.revokeObjectURL(url);
+                    };
+
+                    imgElement.src = url;
+                },
+                error: function (xhr, status, error) {
+                    if(xhr.status == 404){//沒有圖片
+                        Swal.fire({
+                            title: '@(config.GetMessage("FileNotFound").ToHtmlString())',
+                            icon: 'error',
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                    else{
+                        Swal.fire({
+                            title: xhr.responseText,
+                            icon: 'error',
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                }
+            })
+        }
+        $(document).ready(function () {
+
+            const imgElement = document.getElementById('myImg');
+            GetProfileImage(imgElement)
+        
+
+            $('#profile-img-file-input').on('change', function () {
+                // 括號修正：if 應該在 function 內部完全閉合
+                if (this.files && this.files.length > 0) {
+                    let formData = new FormData();
+                    formData.append('File', this.files[0]);
+                    showLoader();
+                    $.ajax({
+                        url: '@(config.GetBackendUrl() + "/api" + Url.Action("Upload", "SysUser"))',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,  // 告訴 jQuery 不要處理發送的資料
+                        contentType: false,  // 告訴 jQuery 不要設置 Content-Type 請求頭
+                        xhrFields: {
+                            withCredentials: true // 對應 fetch 的 credentials: 'include'
+                        },
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwt')
+                        },
+                        success: function (res) {
+                            hideLoader();
+                            if (res.Success) {
+                                Swal.fire({
+                                    title: '@(config.GetMessage("Successfully_Uploaded").ToHtmlString())',
+                                    icon: 'success',
+                                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                                });
+                                GetProfileImage(imgElement);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            hideLoader();
+
+                            Swal.fire({
+                                title: xhr.responseText,
+                                icon: 'error',
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            });
+                        }
+                    });
+                    
+                } // <-- if 的結束括號
+            }); // <-- function 與 on('change') 的結束括號
+        })
+        
+    </script>
+
+}

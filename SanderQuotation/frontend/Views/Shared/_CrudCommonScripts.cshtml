@@ -1,0 +1,705 @@
+@*
+    _CrudCommonScripts.cshtml
+    共用 CRUD 列表頁面的 CSS 樣式與 JavaScript 函式。
+
+    ── 使用前，頁面必須在 <script> 區塊內定義下列全域變數/函式 ──
+
+    【必要】
+      pageUrls      : { GetPageList, Create, Edit, Delete, Get }
+      queryState    : { page, pageSize, sortField, sortDir, ... }
+      renderTable(rows) : 表格渲染函式
+
+    【選用（依頁面需求實作）】
+      prepareSubmitData($form)   → 回傳 $.ajax config 子集 { data, contentType?, dataType? }
+      beforeSubmitValidation()   → 回傳 false 可中斷送出
+      onBeforeCreate()           → 新增按鈕按下時額外邏輯
+      onAfterEditFill(data)      → 編輯填入表單後額外邏輯
+      onSearchData()             → SearchData 額外查詢參數
+      initDropdownList()         → document.ready 時呼叫
+      onDocumentReady()          → document.ready 額外初始化
+      initPageSelect()          → 自訂 Select.js 初始化（未定義則預設 initSelect）
+*@
+
+<style>
+    /* Select2 驗證樣式 */
+    select.is-invalid + .select2-container .select2-selection {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    /* 排序箭頭空間 */
+    #dataTable .sort {
+        padding-right: 1.5rem;
+    }
+
+    /* 排序箭頭垂直置中 */
+    #dataTable .sort::after {
+        top: 65%;
+        transform: translateY(calc(-100% - 1px));
+    }
+
+    #dataTable .sort::before {
+        top: 35%;
+        transform: translateY(1px);
+    }
+</style>
+
+<script>
+    // ========================================
+    // 頁面共用訊息
+    // ========================================
+    const pageConfig = {
+        messages: {
+            confirm: '@(config.GetMessage("Confirm").ToHtmlString())',
+            close: '@(config.GetMessage("Close").ToHtmlString())',
+            systemError: '@(config.GetMessage("System_Error").ToHtmlString())',
+            successAdded: '@(config.GetMessage("Successfully_Added").ToHtmlString())',
+            noResult: '@(config.GetMessage("No_Result_Found").ToHtmlString())',
+            delete: '@(config.GetMessage("Delete").ToHtmlString())',
+            confirmDeletion: '@(config.GetMessage("ConfirmDeletion").ToHtmlString())',
+            youAreAboutToDeleteData: '@(config.GetMessage("You_are_about_to_delete_a_data").ToHtmlString())',
+            yesDeleteIt: '@(config.GetMessage("Yes_delete_it").ToHtmlString())',
+            successDeleted: '@(config.GetMessage("Successfully_Deleted").ToHtmlString())',
+            pleaseSelectOne: 'Please select at least one checkbox'
+        }
+    };
+
+    // ========================================
+    // 全域狀態
+    // ========================================
+    var currentId;
+    var postaction = 'create';
+
+    // ========================================
+    // Select.js 輔助函式
+    // ========================================
+    function initSelect(selector) {
+        $(selector).each(function () {
+            if (!$(this).data('select2')) {
+                $(this).select2({
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: $(this).data('placeholder') || '',
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : $(document.body)
+                });
+
+                $(this).on('change', function () {
+                    $(this).removeClass('is-invalid');
+                });
+            }
+        });
+    }
+
+    function validateSelectFields(formSelector) {
+        let isValid = true;
+        $(`${formSelector} select[required]`).each(function () {
+            const value = $(this).val();
+            const isEmpty = !value || (Array.isArray(value) && value.length === 0);
+
+            if (isEmpty) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        return isValid;
+    }
+
+    // 初始化 Select.js（頁面可透過 initPageSelect 自訂）
+    if (typeof initPageSelect === 'function') {
+        initPageSelect();
+    } else {
+        initSelect('#showModal select');
+    }
+
+    // ========================================
+    // 表單填寫 / 重置
+    // ========================================
+    function fillForm(data) {
+        
+        Object.keys(data).forEach(function (key) {
+            var element = $('#' + key);
+            if (element.length === 0) return;
+
+            var value = data[key] ?? '';
+
+            // checkbox
+            if (element.attr('type') === 'checkbox') {
+                element.prop('checked', value === true || value === "true" || value === 1);
+            }
+            // select
+            else if (element.is('select')) {
+                if (element[0].multiple) {
+                    let values = value;
+
+                    if (!Array.isArray(values)) {
+                        try {
+                            values = JSON.parse(values);
+                        } catch {
+                            values = String(values).split(',');
+                        }
+                    }
+
+                    element.val(values).trigger('change');
+                } else {
+                    element.val(String(value)).trigger('change');
+                }
+
+                element.removeClass('is-invalid');
+            }
+            // input / textarea
+            else {
+                element.val(value);
+            }
+        });
+    }
+
+    function resetFormAndSelect(formSelector) {
+        $(`${formSelector} input:not([type="checkbox"]):not([type="radio"])`).val('');
+        $(`${formSelector} textarea`).val('');
+
+        $(`${formSelector}`).find('select').each(function () {
+            if (this.multiple) {
+                $(this).val([]).trigger('change');
+            } else {
+                const firstValue = this.options[0]?.value;
+                $(this).val(firstValue != null ? firstValue : null).trigger('change');
+            }
+
+            $(this).removeClass('is-invalid');
+        });
+
+        $(formSelector).removeClass('was-validated');
+    }
+
+    // ========================================
+    // 資料載入
+    // ========================================
+    function loadDatas() {
+        $.ajax({
+            url: pageUrls.GetPageList,
+            type: 'GET',
+            data: queryState,
+            success: function (res) {
+                if (res.Success) {
+                    renderTable(res.Data.Data);
+                    renderPagination(res.Data.Total);
+                    document.getElementById("remove-actions").style.display = 'none';
+                } else {
+                    Swal.fire({
+                        icon: (res?.Errors?.AlertLevel ?? "error").toLowerCase(),
+                        title: res?.Errors?.ReturnCode ?? pageConfig.messages.systemError,
+                        text: res?.Errors?.ReturnMsg ?? "",
+                        confirmButtonText: pageConfig.messages.confirm,
+                    });
+                }
+            },
+            error: function () {
+                alert('Failed to load data.');
+            }
+        });
+    }
+
+    // ========================================
+    // 分頁渲染
+    // ========================================
+    function renderPagination(total) {
+        const totalPages = Math.ceil(total / queryState.pageSize);
+        const ul = $('.listjs-pagination');
+        ul.empty();
+        if (totalPages <= 1) return;
+
+        const maxPages = 5;
+
+        let startPage = Math.max(1, queryState.page - Math.floor(maxPages / 2));
+        let endPage = startPage + maxPages - 1;
+
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxPages + 1);
+        }
+
+        if (startPage > 1) {
+            ul.append(`
+                <li class="page-item">
+                    <a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a>
+                </li>
+            `);
+
+            ul.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            ul.append(`
+                <li class="page-item ${i === queryState.page ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a>
+                </li>
+            `);
+        }
+
+        if (endPage < totalPages) {
+            ul.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+
+            ul.append(`
+                <li class="page-item">
+                    <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a>
+                </li>
+            `);
+        }
+
+        $('.pagination-prev').toggleClass('disabled', queryState.page === 1);
+        $('.pagination-next').toggleClass('disabled', queryState.page === totalPages);
+
+        $('.pagination-prev').off('click').on('click', function (e) {
+            e.preventDefault();
+            if (queryState.page > 1) {
+                queryState.page--;
+                $('#globalSearchInput').val('').trigger('input');
+                loadDatas();
+            }
+        });
+
+        $('.pagination-next').off('click').on('click', function (e) {
+            e.preventDefault();
+            if (queryState.page < totalPages) {
+                queryState.page++;
+                $('#globalSearchInput').val('').trigger('input');
+                loadDatas();
+            }
+        });
+    }
+
+    function gotoPage(page) {
+        queryState.page = page;
+        $('#globalSearchInput').val('').trigger('input');
+        loadDatas();
+    }
+
+    // ========================================
+    // 搜尋 + 篩選
+    // ========================================
+    function SearchData() {
+        queryState.Keyword1 = $('#Keyword1').val();
+        queryState.Keyword2 = $('#Keyword2').val();
+        if (typeof onSearchData === 'function') onSearchData();
+        queryState.page = 1;
+        $('#globalSearchInput').val('').trigger('input');
+        loadDatas();
+    }
+
+    // ========================================
+    // 排序
+    // ========================================
+    $('.sort').on('click', function () {
+        console.log("a")
+        const field = $(this).data('sort');
+
+        if (queryState.sortField === field) {
+            queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            queryState.sortField = field;
+            queryState.sortDir = 'asc';
+        }
+
+        loadDatas();
+    });
+
+    // ========================================
+    // 狀態樣式
+    // ========================================
+    function getStatusBadge(status) {
+        switch (String(status)) {
+            case '1': return 'bg-success-subtle text-success';
+            case '0': return 'bg-secondary-subtle text-secondary';
+            default: return 'bg-light text-dark';
+        }
+    }
+
+    // ========================================
+    // 勾選框控制
+    // ========================================
+    function toggleRemoveActions() {
+        if ($('.row-check:checked').length > 0)
+            $('#remove-actions').show();
+        else
+            $('#remove-actions').hide();
+    }
+
+    $(document).on('change', '.row-check', function () {
+        const total = $('.row-check').length;
+        const checked = $('.row-check:checked').length;
+
+        $('#checkAll').prop('checked', total === checked);
+        toggleRemoveActions();
+    });
+
+    $('#checkAll').on('change', function () {
+        $('.row-check').prop('checked', this.checked);
+        toggleRemoveActions();
+    });
+
+    // ========================================
+    // 結果提示
+    // ========================================
+
+    function showResponseWarningAlert(message) {
+        Swal.fire({
+            icon: 'warning',
+            html: "<div style='text-align:center'>" + (message || '').replace(/\n/g, "<br>") + "</div>",
+            confirmButtonText: pageConfig.messages.confirm
+        });
+    }
+    function showResponseResultAlert(response, successMessage, callback) {
+        const isSuccess =response?.Success==true;
+        const alertIcon = isSuccess ? 'success' : (response?.Data?.AlertLevel || 'error').toLowerCase();
+        const title = response?.Data?.ReturnCode || (isSuccess ? successMessage : pageConfig.messages.systemError);
+        const text = response?.Data?.ReturnMsg || '';
+
+        Swal.fire({
+            icon: alertIcon,
+            title: title,
+            text: text,
+            confirmButtonText: pageConfig.messages.confirm
+        }).then(function () {
+            if (typeof callback === 'function') callback();
+        });
+    }
+
+    function handleSaveSuccess(response) {
+        if (response.Success === false) {
+            showResponseWarningAlert(response.Message);
+            return;
+        }
+
+        const isSuccess=response?.Success==true;
+        showResponseResultAlert(response, pageConfig.messages.successAdded, function () {
+            if (isSuccess) {
+                const modalEl = document.querySelector('#showModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+
+                resetFormAndSelect('#submitForm');
+                loadDatas();
+            }
+        });
+    }
+
+    function handleDeleteSuccess(response) {
+        const modal = bootstrap.Modal.getInstance(deleteOrder);
+        if (modal) {
+            modal.hide();
+        }
+
+        if (response.Success === false) {
+            showResponseWarningAlert(response.Message);
+            return;
+        }
+
+        const isSuccess =response?.Success==true;
+        
+        showResponseResultAlert(response, pageConfig.messages.successDeleted, function () {
+            if (isSuccess) {
+                loadDatas();
+            }
+        });
+    }
+
+    // ========================================
+    // 批次刪除
+    // ========================================
+    function deleteMultiple() {
+        ids_array = [];
+        var items = document.querySelectorAll('.form-check [value=option1]');
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].checked == true) {
+                var trNode = items[i].parentNode.parentNode.parentNode;
+                var tdDataId = trNode.querySelector("th [data-id]");
+                var id = tdDataId.getAttribute("data-id");
+                ids_array.push(id);
+            }
+        }
+        if (typeof ids_array !== 'undefined' && ids_array.length > 0) {
+            if (typeof validateDeleteMultiple === 'function') {
+                const validateMsg = validateDeleteMultiple(ids_array);
+                if (validateMsg) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: validateMsg,
+                        confirmButtonText: pageConfig.messages.confirm,
+                        buttonsStyling: false
+                    });
+                    return;
+                }
+            }
+
+            var messageTemplate = "@(config.GetMessage("Are_you_sure_you_want_to_delete_the_selected_items?").ToHtmlString())";
+            var titleText = messageTemplate.replace("{N}", ids_array.length);
+
+            Swal.fire({
+                title: titleText,
+                icon: "warning",
+                showCancelButton: true,
+                customClass: {
+                    confirmButton: "btn btn-primary w-xs me-2 mt-2",
+                    cancelButton: "btn btn-danger w-xs mt-2"
+                },
+                confirmButtonText: "@(config.GetMessage("Yes_delete_it").ToHtmlString())",
+                cancelButtonText: "@(config.GetMessage("Cancel").ToHtmlString())",
+                buttonsStyling: false,
+                showCloseButton: true
+            }).then(function (result) {
+                if (result.value) {
+                    $.ajax({
+                        type: "POST",
+                        url: pageUrls.Delete,
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        data: JSON.stringify(ids_array),
+                        cache: false,
+                        success: function (response) {
+                            handleDeleteSuccess(response);
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: pageConfig.messages.systemError,
+                                button: pageConfig.messages.confirm,
+                            });
+                        }
+                    }).always(function () {
+                        hideLoader();
+                    });
+
+                    loadDatas();
+                }
+            });
+        } else {
+            Swal.fire({
+                title: pageConfig.messages.pleaseSelectOne,
+                confirmButtonClass: 'btn btn-info',
+                buttonsStyling: false,
+                showCloseButton: true
+            });
+        }
+    }
+
+    // ========================================
+    // 新增按鈕
+    // ========================================
+    $("#btnShowModal").click(function () {
+        $('#exampleModalLabel_Create').hide();
+        $('#exampleModalLabel_Edit').hide();
+
+        $('#exampleModalLabel_Create').show();
+        postaction = 'create';
+
+        resetFormAndSelect('#submitForm');
+        $('#submitForm').removeClass('was-validated');
+
+        if (typeof onBeforeCreate === 'function') onBeforeCreate();
+    });
+
+    // ========================================
+    // 表單送出
+    // ========================================
+    $("#submitForm").submit(function (e) {
+        e.preventDefault();
+        showLoader();
+
+        var isSelectValid = validateSelectFields('#submitForm');
+
+        if ($(this).is(':invalid') || !isSelectValid) {
+            hideLoader();
+            return;
+        }
+
+        if (typeof beforeSubmitValidation === 'function' && !beforeSubmitValidation()) {
+            hideLoader();
+            return;
+        }
+
+        var postURL = postaction == 'create' ? pageUrls.Create : pageUrls.Edit;
+
+        var ajaxConfig = {
+            type: "POST",
+            url: postURL,
+            cache: false,
+            success: function (response) {
+                handleSaveSuccess(response);
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: pageConfig.messages.systemError,
+                    button: pageConfig.messages.confirm,
+                });
+            }
+        };
+
+        if (typeof prepareSubmitData === 'function') {
+            var submitOptions = prepareSubmitData($(this));
+            $.extend(ajaxConfig, submitOptions);
+        } else {
+            var data = {};
+            $.extend(data, $(this).serializeObject());
+            data.Id = currentId;
+            ajaxConfig.data = data;
+        }
+
+        $.ajax(ajaxConfig).always(function () {
+            hideLoader();
+        });
+    });
+
+    // ========================================
+    // 動態列事件
+    // ========================================
+    $(document).on('click', '.remove-item-btn', function (e) {
+        e.preventDefault();
+        const $tr = $(this).closest('tr');
+        currentId = $tr.data('id');
+        if (!currentId) return;
+    });
+
+    $(document).on('click', '.view-item-btn', function (e) {
+        e.preventDefault();
+        const $tr = $(this).closest('tr');
+        var id = $tr.data('id');
+        var controller = $(this).data('controller');
+        openDetailView(controller, id);
+        e.preventDefault();
+    });
+
+    $(document).on('click', '.edit-item-btn', function (e) {
+        $('#exampleModalLabel_Create').hide();
+        $('#exampleModalLabel_Edit').hide();
+
+        $('#exampleModalLabel_Edit').show();
+        postaction = 'edit';
+        e.preventDefault();
+
+        $('#submitForm').removeClass('was-validated');
+
+        const $tr = $(this).closest('tr');
+        currentId = $tr.data('id');
+
+        if (!currentId) {
+            Swal.fire({
+                icon: 'warning',
+                title: '查無資料',
+                confirmButtonText: pageConfig.messages.confirm,
+            });
+
+            const modal = bootstrap.Modal.getInstance(showModal);
+            modal.hide();
+            return;
+        };
+
+        showLoader();
+
+        $.ajax({
+            type: "GET",
+            url: pageUrls.Get,
+            dataType: "json",
+            data: { id: currentId },
+            cache: false,
+            success: function (response) {
+                if (!response.Success) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: response.Message,
+                        confirmButtonText: pageConfig.messages.confirm,
+                    });
+                    return;
+                };
+
+                fillForm(response.Data);
+
+                if (typeof onAfterEditFill === 'function') onAfterEditFill(response.Data);
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: pageConfig.messages.systemError,
+                    button: pageConfig.messages.confirm,
+                });
+            }
+        }).always(function () {
+            hideLoader();
+        });
+    });
+
+    // ========================================
+    // 單筆刪除確認
+    // ========================================
+    $("#delete-record").click(function () {
+        var ids = [currentId];
+
+        $.ajax({
+            type: "POST",
+            url: pageUrls.Delete,
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(ids),
+            cache: false,
+            success: function (response) {
+                handleDeleteSuccess(response);
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: pageConfig.messages.systemError,
+                    button: pageConfig.messages.confirm,
+                });
+            }
+        }).always(function () {
+            hideLoader();
+        });
+    });
+
+    // ========================================
+    // 頁面初始化
+    // ========================================
+    $(document).ready(function () {
+        loadDatas();
+
+        if (typeof initDropdownList === 'function') initDropdownList();
+        if (typeof onDocumentReady === 'function') onDocumentReady();
+
+        $('#globalSearchInput').on('input', function () {
+            const keyword = $(this).val().toLowerCase();
+            $('#data-list-data tr').each(function () {
+                const rowText = $(this).text().toLowerCase();
+                $(this).toggle(rowText.includes(keyword));
+            });
+        });
+
+        $(".number").on("input", function() {
+            this.value = numberOnly(this.value);
+        });
+         
+        $(".number").on("blur", function(){
+                let value = this.value
+                    
+                this.value = value.replace(/^0+/, '')
+
+                // 強制最小為 1
+                if (value === '')
+                {
+                    return ''
+                }            
+        })
+
+            
+       
+    });
+</script>

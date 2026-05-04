@@ -1,0 +1,34 @@
+﻿@model IEnumerable<TemplateVM>
+
+<h3>⚙ 流程模板管理</h3>
+
+<a class="btn btn-primary mb-2" href="/Template/Edit">＋ 新增模板</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>代碼</th>
+            <th>名稱</th>
+            <th>模組</th>
+            <th>啟用</th>
+            <th>說明</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Code</td>
+                <td>@t.Name</td>
+                <td>@t.Module</td>
+                <td>@(t.IsEnabled ? "✔" : "✖")</td>
+                <td>@t.Description</td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary"
+                       href="/Template/Edit/@t.Id">編輯</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

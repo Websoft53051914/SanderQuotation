@@ -1,0 +1,246 @@
+﻿@{
+    ViewData["Title"] = "OCAP 流程設計";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ocap-flow.css" />
+}
+
+<div id="ocap-wrapper">
+
+    <!-- ══ LEFT TOOLBAR ══ -->
+    <div id="ocap-toolbar">
+        <h6>節點類型 (拖曳)</h6>
+        <div class="node-palette" draggable="true" data-type="start">   <span class="icon">🟢</span> 開始</div>
+        <div class="node-palette" draggable="true" data-type="action">  <span class="icon">🔷</span> 動作</div>
+        <div class="node-palette" draggable="true" data-type="decision"><span class="icon">🔶</span> 決策</div>
+        <div class="node-palette" draggable="true" data-type="end">     <span class="icon">🔴</span> 結束</div>
+
+        <hr class="toolbar-sep" />
+        <h6>操作</h6>
+        <button class="toolbar-btn secondary" id="btn-clear">清除全部</button>
+        <button class="toolbar-btn danger" id="btn-del-sel">刪除選取</button>
+
+        <hr class="toolbar-sep" />
+        <h6>JSON</h6>
+        <button class="toolbar-btn primary" id="btn-export">匯出 JSON</button>
+        <button class="toolbar-btn secondary" id="btn-import">匯入 JSON</button>
+    </div>
+
+    <!-- ══ CANVAS ══ -->
+    <div id="ocap-canvas-wrap">
+        <div id="ocap-canvas"></div>
+    </div>
+
+    <!-- ══ RIGHT PANEL ══ -->
+    <div id="ocap-panel">
+        <h6>屬性面板</h6>
+        <div id="panel-none">請選取一個節點或連線</div>
+        <div id="panel-conn-fields" style="display:none; flex-direction:column; gap:8px;">
+            <div>
+                <label>連線標籤</label>
+                <input id="prop-conn-label" type="text" placeholder="輸入標籤 (可留空)" />
+            </div>
+            <button class="toolbar-btn primary" id="btn-apply-conn" style="margin-top:4px;">✔ 套用</button>
+            <button class="toolbar-btn danger" id="btn-del-conn" style="margin-top:2px;">❌ 刪除此連線</button>
+        </div>
+        <div id="panel-fields" style="display:none; flex-direction:column; gap:8px;">
+            <div>
+                <label>節點 ID</label>
+                <input id="prop-id" type="text" readonly />
+            </div>
+            <div>
+                <label>節點名稱</label>
+                <input id="prop-label" type="text" placeholder="輸入名稱" />
+            </div>
+            <div>
+                <label>描述 / 指引</label>
+                <textarea id="prop-desc" placeholder="輸入說明文字…"></textarea>
+            </div>
+            <div>
+                <label>節點圖片</label>
+                <input id="prop-image-file" type="file" accept="image/*" style="width:100%;font-size:11px;padding:4px 6px;" />
+                <img id="prop-img-preview" style="display:none;max-width:100%;border-radius:5px;margin-top:6px;border:1px solid #dde1e7;" alt="預覽" />
+                <button id="btn-clear-image" type="button" class="toolbar-btn danger" style="display:none;margin-top:4px;font-size:11px;">✕ 移除圖片</button>
+            </div>
+            <div>
+                <label>類型</label>
+                <input id="prop-type" type="text" readonly />
+            </div>
+            <button class="toolbar-btn primary" id="btn-apply-props" style="margin-top:4px;">✔ 套用</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ INFO MODAL ══ -->
+<div class="modal fade" id="info-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    ℹ️ <span id="info-modal-title"></span>
+                    <span id="info-modal-type" class="badge bg-secondary ms-2" style="font-size:11px;font-weight:400;"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="info-modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ JSON MODAL ══ -->
+<div class="modal fade" id="json-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="json-modal-title">JSON</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="json-textarea" class="form-control" spellcheck="false"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btn-modal-ok">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js"></script>
+    <script src="~/js/ocap-core.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            function labelForType(t) {
+                return ({ start: "開始", end: "結束", action: "動作", decision: "決策" })[t] || t;
+            }
+
+            OcapCore.init("ocap-canvas", "ocap-canvas-wrap", false, function () {
+                var jp         = OcapCore.getJp();
+                var canvasWrap = OcapCore.getCanvasWrap();
+
+                /* ── 圖片上傳 ── */
+                var pendingImageBase64 = undefined; // undefined=無變動, null=清除, string=新圖片
+
+                OcapCore.setNodeSelectedCallback(function () {
+                    pendingImageBase64 = undefined;
+                });
+
+                document.getElementById("prop-image-file").addEventListener("change", function () {
+                    var file = this.files[0];
+                    if (!file) return;
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        pendingImageBase64 = e.target.result;
+                        var preview = document.getElementById("prop-img-preview");
+                        preview.src = pendingImageBase64;
+                        preview.style.display = "block";
+                        document.getElementById("btn-clear-image").style.display = "flex";
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                document.getElementById("btn-clear-image").addEventListener("click", function () {
+                    pendingImageBase64 = null;
+                    var preview = document.getElementById("prop-img-preview");
+                    preview.src = "";
+                    preview.style.display = "none";
+                    document.getElementById("prop-image-file").value = "";
+                    this.style.display = "none";
+                });
+
+                /* ── 拖曳新增節點 ── */
+                var dragType = null;
+                document.querySelectorAll(".node-palette").forEach(function (el) {
+                    el.addEventListener("dragstart", function (e) {
+                        dragType = this.dataset.type;
+                        e.dataTransfer.setData("text/plain", dragType);
+                        e.dataTransfer.effectAllowed = "copy";
+                    });
+                });
+                canvasWrap.addEventListener("dragover", function (e) { e.preventDefault(); });
+                canvasWrap.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    if (!dragType) return;
+                    var rect = canvasWrap.getBoundingClientRect();
+                    var x    = e.clientX - rect.left  + canvasWrap.scrollLeft;
+                    var y    = e.clientY - rect.top   + canvasWrap.scrollTop;
+                    OcapCore.addNode(dragType, labelForType(dragType), Math.round(x), Math.round(y));
+                    dragType = null;
+                });
+
+                /* ── 套用節點屬性 ── */
+                document.getElementById("btn-apply-props").addEventListener("click", function () {
+                    var id = OcapCore.getSelectedId();
+                    if (!id) return;
+                    var n  = OcapCore.getNodes()[id];
+                    n.label = document.getElementById("prop-label").value || n.label;
+                    n.desc  = document.getElementById("prop-desc").value;
+                    if (pendingImageBase64 !== undefined) {
+                        n.image = pendingImageBase64 || "";
+                        pendingImageBase64 = undefined;
+                    }
+                    document.getElementById(id).querySelector(".node-text").textContent = n.label;
+                    jp.revalidate(id);
+                    OcapCore.refreshInfoBtn(id);
+                });
+
+                /* ── 套用連線標籤 ── */
+                document.getElementById("btn-apply-conn").addEventListener("click", function () {
+                    var conn = OcapCore.getSelectedConn();
+                    if (!conn) return;
+                    var label = document.getElementById("prop-conn-label").value;
+                    conn.removeOverlay("lbl");
+                    if (label) conn.addOverlay(["Label", { label: label, id: "lbl", cssClass: "jtk-overlay", location: 0.5 }]);
+                    conn.label = label;
+                });
+
+                /* ── 刪除選取 ── */
+                function deleteSelected() {
+                    if (OcapCore.getSelectedConn()) { OcapCore.deleteSelectedConn(); return; }
+                    var id = OcapCore.getSelectedId();
+                    if (!id) return;
+                    OcapCore.removeNode(id);
+                    OcapCore.selectNode(null);
+                }
+
+                document.getElementById("btn-del-sel").addEventListener("click", deleteSelected);
+
+                document.addEventListener("keydown", function (e) {
+                    if (e.key !== "Delete" && e.key !== "Backspace") return;
+                    var tag = document.activeElement && document.activeElement.tagName;
+                    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                    deleteSelected();
+                });
+
+                document.getElementById("btn-del-conn").addEventListener("click", function () {
+                    OcapCore.deleteSelectedConn();
+                });
+
+                /* ── 清除全部 ── */
+                document.getElementById("btn-clear").addEventListener("click", function () {
+                    if (!confirm("確定清除全部節點？")) return;
+                    OcapCore.clearAll();
+                });
+
+                /* ── 匯出 JSON ── */
+                document.getElementById("btn-export").addEventListener("click", function () {
+                    OcapCore.openJsonModal("匯出 JSON", JSON.stringify(OcapCore.exportFlow(), null, 2), false);
+                });
+
+                /* ── 匯入 JSON ── */
+                document.getElementById("btn-import").addEventListener("click", function () {
+                    OcapCore.openJsonModal("匯入 JSON", "", true);
+                });
+
+                OcapCore.bindJsonModal();
+            });
+        })();
+    </script>
+}

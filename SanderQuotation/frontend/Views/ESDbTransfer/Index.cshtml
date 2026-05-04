@@ -1,0 +1,840 @@
+﻿@model ViewModel.ESDbTransferVM
+@{
+    ViewBag.Title = config.GetMessage("ESDbTransfer_PageTitle");
+    ViewBag.pTitle = config.GetMessage("ESDbTransfer_PageTitle");
+    ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
+
+    var mapUrl = new
+    {
+        Create = $"{Configuration["BackendURL"]}/api/ESDbTransfer/Create",
+        Edit = $"{Configuration["BackendURL"]}/api/ESDbTransfer/Edit",
+        Delete = $"{Configuration["BackendURL"]}/api/ESDbTransfer/Delete",
+        Get = $"{Configuration["BackendURL"]}/api/ESDbTransfer/Get",
+    };
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> @(config.GetMessage("Create").ToHtmlString())</button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    @* *** 篩選條件 *@
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="@(config.GetMessage("SearchTableContent").ToHtmlString())">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+@*                         <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="form-control search bg-light border-light" placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword1" name="Keyword1">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="form-control search bg-light border-light" placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword2" name="Keyword2">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div> *@
+                        <!--end col-->
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                @(config.GetMessage("Filters").ToHtmlString())
+                            </button>
+                        </div>
+                        <!--end col-->
+                    </div>
+                    <!--end row-->
+                </form>
+            </div>
+            <!--end card-body-->
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                @* *** 顯示欄位 *@
+                                <th data-sort="action">Action</th>@* 功能名稱 *@
+                                <th data-sort="No">@(config.GetMessage("No").ToHtmlString())</th>
+                                <th class="sort" data-sort="TransferCode">@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())</th>
+                                <th class="sort" data-sort="TransferName">@(config.GetMessage("ESDbTransfer_TransferName").ToHtmlString())</th>
+                                <th class="sort" data-sort="DbHost">@(config.GetMessage("ESDbTransfer_DbHost").ToHtmlString())</th>
+                                <th class="sort" data-sort="DbName">@(config.GetMessage("ESDbTransfer_DbName").ToHtmlString())</th>
+                                <th class="sort" data-sort="DbUser">@(config.GetMessage("ESDbTransfer_DbUser").ToHtmlString())</th>
+                                <th class="sort" data-sort="Description">@(config.GetMessage("Description").ToHtmlString())</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkAll" value="option1">
+                                    </div>
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                            @* <p class="text-muted mb-0">We've searched more than 150+ Datas We did not find any Datas for you search.</p> *@
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            @(config.GetMessage("Page_Previous").ToHtmlString())
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            @(config.GetMessage("Page_Next").ToHtmlString())
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>
+                                        @(config.GetMessage("You_are_about_to_delete_a_data").ToHtmlString())
+                                    </h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        @(config.GetMessage("Deleting_your_data_will_remove_all_of_your_information_from_our_database.").ToHtmlString())
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            @(config.GetMessage("Close").ToHtmlString())
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">@(config.GetMessage("Yes_delete_it").ToHtmlString())</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end modal -->
+            </div>
+            <!--end card-body-->
+        </div>
+        <!--end card-->
+    </div>
+    <!--end col-->
+</div>
+<!--end row-->
+
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">@(config.GetMessage("Create").ToHtmlString())</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">@(config.GetMessage("Edit").ToHtmlString())</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="TransferCode" class="form-label required">@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())</label>
+                                <input type="text" name="TransferCode" id="TransferCode" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="TransferName" class="form-label required">@(config.GetMessage("ESDbTransfer_TransferName").ToHtmlString())</label>
+                                <input type="text" name="TransferName" id="TransferName" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderName").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            <div>
+                                <label for="DbHost" class="form-label required">@(config.GetMessage("ESDbTransfer_DbHost").ToHtmlString())</label>
+                                <input type="text" name="DbHost" id="DbHost" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderHost").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div>
+                                <label for="DbPort" class="form-label">@(config.GetMessage("ESDbTransfer_DbPort").ToHtmlString())</label>
+                                <input type="text" name="DbPort" id="DbPort" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderPort").ToHtmlString())" />
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div>
+                                <label for="DbName" class="form-label required">@(config.GetMessage("ESDbTransfer_DbName").ToHtmlString())</label>
+                                <input type="text" name="DbName" id="DbName" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderDbName").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="DbUser" class="form-label required">@(config.GetMessage("ESDbTransfer_DbUser").ToHtmlString())</label>
+                                <input type="text" name="DbUser" id="DbUser" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderAccount").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="DbPassword" class="form-label required">@(config.GetMessage("ESDbTransfer_DbPassword").ToHtmlString())</label>
+                                <input type="password" name="DbPassword" id="DbPassword" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderPassword").ToHtmlString())" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div>
+                                <label for="Description" class="form-label">
+                                    @(config.GetMessage("Description").ToHtmlString())
+                                </label>
+                                <textarea name="Description" id="Description" class="form-control" placeholder="@(config.GetMessage("Description").ToHtmlString())" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">@(config.GetMessage("Confirm").ToHtmlString())</button>
+                        <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+
+    <script>
+            // ⭐ 全域查詢狀態（完全由前端控制）
+            let queryState = {
+                pageIndex: 1,
+                pageSize: 10,
+                sortField: "TransferName", //*** 頁面預設排序欄位，必須是TABLE內欄位
+                sortDir: "asc",
+
+                //*** 篩選條件
+                Keyword1: "",
+                Keyword2: "",
+                Status: "",
+                StartDate: "",
+                EndDate: "",
+            };
+
+            // ⭐ 主載入函式（分頁 / 搜尋 / 排序 都走這裡）
+            function loadDatas() {
+                showLoader();
+                $.ajax({
+                    url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
+                    type: 'GET',
+                    data: queryState,
+                    success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: (res.Errors.AlertLevel || '').toLowerCase(),
+                            title: res.Errors.ReturnCode,
+                            text: res.Errors.ReturnMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                        return;
+                    };
+                        renderTable(res.Data.Data);
+                        renderPagination(res.Data.Total);
+                        document.getElementById("remove-actions").style.display = 'none';
+                    },
+                    error: function () {
+                        alert('Failed to load data.');
+                    }
+                });
+            }
+
+            // ⭐ 表格渲染
+            function renderTable(rows) {
+                const tbody = $('#data-list-data');
+                tbody.empty();
+
+                if (!rows || rows.length === 0) {
+                    $('.noresult').show();
+                    return;
+                }
+                $('.noresult').hide();
+
+                //*** 取得後端資料後產生tr
+                rows.forEach(data => {
+                    tbody.append(`
+                        <tr data-id="${data.Id}">
+                            <th scope="row">
+                                <div class="form-check">
+                                    <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value=option1>
+                                </div>
+                            </th>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                        <i class="ri-more-fill align-middle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
+                                        <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Delete").ToHtmlString())</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            <td class="No">${data.No}</td>
+                            <td class="TransferCode">${data.TransferCode}</td>
+                            <td class="TransferName">${data.TransferName}</td>
+                            <td class="DbHost">${data.DbHost}</td>
+                            <td class="DbName">${data.DbName}</td>
+                            <td class="DbUser">${data.DbUser}</td>
+                            <td class="Description">${data.Description}</td>
+                        </tr>
+                    `);
+                });
+                initDynamicDropdowns();
+            }
+
+            // ⭐ 分頁渲染
+            function renderPagination(total) {
+                const totalPages = Math.ceil(total / queryState.pageSize);
+                const ul = $('.listjs-pagination');
+                ul.empty();
+
+                if (totalPages <= 1) return;
+
+                const maxPages = 5;
+
+                let startPage = Math.max(1, queryState.pageIndex- Math.floor(maxPages / 2));
+                let endPage = startPage + maxPages - 1;
+
+                if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                }
+
+                // ⭐ 前面有隱藏 → 第一頁 …
+                if (startPage > 1) {
+                    ul.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a>
+                        </li>
+                    `);
+
+                    ul.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 中間連續頁碼（最多5頁）
+                for (let i = startPage; i <= endPage; i++) {
+                    ul.append(`
+                        <li class="page-item ${i === queryState.pageIndex? 'active' : ''}">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 後面有隱藏 → … 最後一頁
+                if (endPage < totalPages) {
+                    ul.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    `);
+
+                    ul.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 上一頁 / 下一頁狀態
+                $('.pagination-prev').toggleClass('disabled', queryState.pageIndex=== 1);
+                $('.pagination-next').toggleClass('disabled', queryState.pageIndex=== totalPages);
+
+                // ⭐ 上一頁
+                $('.pagination-prev').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    if (queryState.pageIndex> 1) {
+                        queryState.pageIndex--;
+                        loadDatas();
+                    }
+                });
+
+                // ⭐ 下一頁
+                $('.pagination-next').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    if (queryState.pageIndex< totalPages) {
+                        queryState.pageIndex++;
+                        loadDatas();
+                    }
+                });
+            }
+
+            function gotoPage(page) {
+                queryState.pageIndex= page;
+                loadDatas();
+            }
+
+            // ⭐ 搜尋 + 篩選
+            function SearchData() {
+
+                //*** 篩選條件
+                queryState.Keyword1 = $('#Keyword1').val();
+                queryState.Keyword2 = $('#Keyword2').val();
+
+                queryState.pageIndex= 1;
+                $('#globalSearchInput').val('').trigger('input');
+                loadDatas();
+            }
+
+            // ⭐ 點擊排序（完全用你原本的 class="sort"）
+            $('.sort').on('click', function () {
+                const field = $(this).data('sort');
+
+                if (queryState.sortField === field) {
+                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    queryState.sortField = field;
+                    queryState.sortDir = 'asc';
+                }
+
+                loadDatas();
+            });
+
+            // ⭐ 狀態樣式（沿用你原邏輯）
+            function getStatusBadge(status) {
+                switch(String(status)) {
+                    case '1': return 'bg-success-subtle text-success';
+                    case '0': return 'bg-secondary-subtle text-secondary';
+                    default: return 'bg-light text-dark';
+                }
+            }
+
+            // 顯示 / 隱藏刪除區塊
+            function toggleRemoveActions() {
+                if($('.row-check:checked').length > 0)
+                    $('#remove-actions').show();
+                else
+                    $('#remove-actions').hide();
+            }
+
+            // ⭐ 單筆勾選
+            $(document).on('change', '.row-check', function () {
+
+                const total = $('.row-check').length;
+                const checked = $('.row-check:checked').length;
+
+                // header checkbox 狀態同步
+                $('#checkAll').prop('checked', total === checked);
+
+                toggleRemoveActions();
+            });
+
+            // ⭐ 全選 / 取消全選
+            $('#checkAll').on('change', function () {
+                $('.row-check').prop('checked', this.checked);
+                toggleRemoveActions();
+            });
+
+            // ⭐ 初始化
+            $(document).ready(function () {
+                loadDatas();
+
+                $('#globalSearchInput').on('input', function () {
+                    const keyword = $(this).val().toLowerCase();
+                    $('#data-list-data tr').each(function () {
+                        const rowText = $(this).text().toLowerCase();
+                        $(this).toggle(rowText.includes(keyword));
+                    });
+                });
+
+                var CodeType='';
+
+                //func尾
+            });
+
+            function getDateRange() {
+                const fp = document.querySelector("#range-datepicker")._flatpickr;
+
+                if (!fp || fp.selectedDates.length === 0) {
+                    return { startDate: null, endDate: null };
+                }
+
+                const format = d => fp.formatDate(d, "Y-m-d");
+
+                return {
+                    startDate: format(fp.selectedDates[0]),
+                    endDate: fp.selectedDates[1] ? format(fp.selectedDates[1]) : null
+                };
+            }
+
+            function deleteMultiple() {
+                ids_array = [];
+                var items = document.querySelectorAll('.form-check [value=option1]');
+                for (i = 0; i < items.length; i++) {
+                    if (items[i].checked == true) {
+                        var trNode = items[i].parentNode.parentNode.parentNode;
+                        var tdDataId = trNode.querySelector("th [data-id]");
+                        var id = tdDataId.getAttribute("data-id");
+                        ids_array.push(id);
+                    }
+                }
+                if (typeof ids_array !== 'undefined' && ids_array.length > 0) {
+                    Swal.fire({
+                        title: "@(config.GetMessage("Are_you_sure").ToHtmlString())",
+                        text: "@(config.GetMessage("You_wont_be_able_to_revert_this").ToHtmlString())",
+                        icon: "warning",
+                        showCancelButton: true,
+                        customClass:
+                        {
+                            confirmButton:"btn btn-primary w-xs me-2 mt-2",
+                            cancelButton:"btn btn-danger w-xs mt-2"
+                        },
+                        confirmButtonText: "@(config.GetMessage("Yes_delete_it").ToHtmlString())",
+                        cancelButtonText:"@(config.GetMessage("Cancel").ToHtmlString())",
+                        buttonsStyling: false,
+                        showCloseButton: true
+                    }).then(function (result) {
+                        if (result.value) {
+                            //呼叫刪除API
+
+                            //***刪除資料的ACTION
+                            $.ajax({
+                                type: "POST",
+                                url: '@(mapUrl.Delete)',
+                                dataType: "json",   // ⭐ 期望回傳 JSON
+                                data: { list: ids_array },
+                                cache: false,
+                                success: function (response) {
+
+                                    if (!response.Success) {
+                                        Swal.fire({
+                                            icon: 'warning',
+                                            title: response.Message,
+                                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                                        });
+                                      return;
+                                    };
+
+                                        loadDatas();
+
+                                    var successMsg = '@(config.GetMessage("Successfully_Deleted").ToHtmlString())';
+
+                                        Swal.fire({
+                                            title: '@(config.GetMessage("Deleted").ToHtmlString())',
+                                            text: '@(config.GetMessage("Your_data_has_been_deleted").ToHtmlString())',
+                                            icon: 'success',
+                                            customClass:
+                                            {
+                                                confirmButton:"btn btn-info w-xs mt-2",
+                                            },
+                                            buttonsStyling: false
+                                        });
+                                },
+                                error: function (xhr, status, error) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                                        button: '@(config.GetMessage("Confirm").ToHtmlString())',
+                                    });
+                                }
+                            }).always(function () {
+                                hideLoader();
+                            });
+
+                            loadDatas();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Please select at least one checkbox',
+                        confirmButtonClass: 'btn btn-info',
+                        buttonsStyling: false,
+                        showCloseButton: true
+                    });
+                }
+            }
+
+            // 初始化 select2 
+            $('#showModal select').each(function () {
+                if (!$(this).data('select2')) {
+                    const isMultiple = this.multiple;
+
+                    $(this).select2({
+                        placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#showModal')
+                    });
+                }
+            });
+
+            var postaction='create';
+            $("#btnShowModal").click(function () {
+                        resetElement();
+
+                $('#exampleModalLabel_Create').hide();
+                $('#exampleModalLabel_Edit').hide();
+
+                $('#exampleModalLabel_Create').show();
+                postaction='create';
+
+                //呼叫新增API
+
+            });
+
+            $("#submitForm").submit(function (e) {
+                e.preventDefault();
+                showLoader();
+
+                if ($(this).is(':invalid')) {
+                    hideLoader();
+                    return;
+                }
+
+                //*** 新增編輯資料的ACTION
+                var postURL = postaction=='create'?'@(mapUrl.Create.ToHtmlString())':'@(mapUrl.Edit.ToHtmlString())';
+
+                var data = {};
+                $.extend(data, $(this).serializeObject());
+
+                data.Id=currentId;
+
+                $.ajax({
+                    type: "POST",
+                    url: postURL,
+                    dataType: "json",   // ⭐ 期望回傳 JSON
+                    data: data,         // ⭐ 轉字串
+
+                    cache: false,
+                    success: function (response) {
+                        if (!response.Success) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: response.Message,
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            });
+                          return;
+                        };
+
+                        const modal = bootstrap.Modal.getInstance(showModal);
+                        modal.hide();
+
+                        var successMsg = postaction=='create'?'@(config.GetMessage("Successfully_Added").ToHtmlString())':'@(config.GetMessage("Successfully_Edited").ToHtmlString())';
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: successMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        }).then(() => {
+
+                            loadDatas();
+
+                        });
+
+                        resetElement();
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                            button: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                }).always(function () {
+                    hideLoader();
+                });
+            });
+
+            var currentId;
+
+            // 使用 event delegation，支援動態新增 tr
+            $(document).on('click', '.remove-item-btn', function(e){
+                e.preventDefault();
+
+                // 找到所在的 tr
+                const $tr = $(this).closest('tr');
+
+                // 取得 data-id 或 value（依你的 HTML）
+                currentId = $tr.data('id');
+
+                if (!currentId) return;
+            });
+
+            // 使用 event delegation，支援動態新增 tr
+            $(document).on('click', '.edit-item-btn', function(e){
+                $('#exampleModalLabel_Create').hide();
+                $('#exampleModalLabel_Edit').hide();
+
+                $('#exampleModalLabel_Edit').show();
+                postaction='edit';
+                e.preventDefault();
+
+                // 找到所在的 tr
+                const $tr = $(this).closest('tr');
+
+                // 取得 data-id 或 value（依你的 HTML）
+                currentId = $tr.data('id');
+
+                    if (!currentId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '@(config.GetMessage("Data_Not_Found").ToHtmlString())',
+                        confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                    });
+
+                    const modal = bootstrap.Modal.getInstance(showModal);
+                    modal.hide();
+                    return;
+                };
+
+                showLoader();
+
+                $.ajax({
+                    type: "POST",
+                    url: '@(mapUrl.Get)',
+                    dataType: "json",   // ⭐ 期望回傳 JSON
+                    data: { id: currentId },
+                    cache: false,
+                    success: function (response) {
+                        if (!response.Success) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: response.Message,
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            });
+                          return;
+                        };
+
+                        // 對應每個 select 與 response.Data 的欄位
+                        const selectMap = [
+                            { id: 'DbType', value: response.Data.DbType },
+                        ];
+
+                        selectMap.forEach(item => {
+                            const $select = $('#' + item.id);
+                            const val = String(item.value || ''); // 轉字串並保險處理 null/undefined
+
+                            // 使用 select2 設定值
+                            $select.val(val).trigger('change');
+                        });
+
+                        $('#TransferCode').val(response.Data.TransferCode);
+                        $('#TransferName').val(response.Data.TransferName);
+                        $('#DbHost').val(response.Data.DbHost);
+                        $('#DbPort').val(response.Data.DbPort);
+                        $('#DbName').val(response.Data.DbName);
+                        $('#DbUser').val(response.Data.DbUser);
+                        $('#DbPassword').val(response.Data.DbPassword);
+                        $('#Description').val(response.Data.Description);
+
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                            button: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                }).always(function () {
+                    hideLoader();
+                });
+            });
+
+            $("#delete-record").click(function () {
+                //呼叫刪除API
+                var ids=[currentId];
+
+                //*** 刪除資料的ACTION
+                $.ajax({
+                    type: "POST",
+                    url: '@(mapUrl.Delete)',
+                    dataType: "json",   // ⭐ 期望回傳 JSON
+                    data: { list: ids },
+                    cache: false,
+                    success: function (response) {
+            const modal = bootstrap.Modal.getInstance(deleteOrder);
+            modal.hide();
+
+                        if (!response.Success) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: response.Message,
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            });
+                          return;
+                        };
+
+                            loadDatas();
+
+                        var successMsg = '@(config.GetMessage("Successfully_Deleted").ToHtmlString())';
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: successMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        }).then(() => {
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                            button: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                    }
+                }).always(function () {
+                    hideLoader();
+                });
+            });
+
+        function resetElement(){
+
+                    //***  新增要清空內容恢復初始值 */
+                    $('#showModal input').val('')
+                    $('#showModal textarea').val('')
+
+                    $('#showModal').find('[type="checkbox"]').prop('checked',false);
+
+                    // 使用 select2 清空選項
+                    $('#showModal').find('select').each(function () {
+                      const firstValue = this.options[0]?.value;
+                      if (firstValue == null) return;
+
+                      const isMultiple = this.multiple;
+                      if (isMultiple) {
+                          $(this).val(null).trigger('change');
+                          return;
+                      }
+
+                      $(this).val(firstValue).trigger('change');
+                    });
+        }
+    </script>
+}

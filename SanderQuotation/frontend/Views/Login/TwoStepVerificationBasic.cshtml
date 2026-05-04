@@ -1,0 +1,168 @@
+﻿@{
+    ViewBag.Title = (config.GetMessage("Two-Step_Verification").ToHtmlString());
+    Layout = null;
+}
+
+<!doctype html>
+<html lang="en" data-layout="vertical" data-topbar="light" data-sidebar="ladylip" data-sidebar-size="lg">
+<head>
+    @Html.Partial("~/Views/Shared/_title_meta.cshtml")
+    @Html.Partial("~/Views/Shared/_head_css.cshtml")
+    <link href="~/assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        .mlr-20{
+            margin: 0px 20px 0px 20px;
+        }
+    </style>
+</head>
+<body style="overflow:hidden;">
+
+    <div class="auth-page-wrapper pt-5">
+        <!-- auth page bg -->
+        <div class="auth-one-bg-position auth-one-bg" id="auth-particles">
+            <div></div>
+             <div class="bg-overlay"></div> 
+
+             <div class="shape">
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1440 120">
+                    <path d="M 0,36 C 144,53.6 432,123.2 720,124 C 1008,124.8 1296,56.8 1440,40L1440 140L0 140z"></path>
+                </svg>
+            </div> 
+        </div>
+
+        <!-- auth page content -->
+        <div class="auth-page-content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="text-center mt-sm-5 mb-4 text-white-50">
+                            <div>
+                                <img src="~/assets/images/logo.svg" alt="" style="filter: brightness(0) invert(1);">
+                                @* <img src="~/assets/images/logo-light.png" alt="" height="20"> *@
+@*                                 <a href="@Url.Action("Index", "Home")" class="d-inline-block auth-logo">
+                                </a> *@
+                            </div>
+                            @* <p class="mt-3 fs-16 fw-semibold">Premium Admin & Dashboard Template</p> *@
+                        </div>
+                    </div>
+                </div>
+                <!-- end row -->
+
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6 col-xl-5">
+                        <div class="card mt-4 card-bg-fill">
+
+                            <div class="card-body p-4">
+                                <div class="mb-4">
+                                    <div class="avatar-lg mx-auto">
+                                        <div class="avatar-title bg-light text-primary display-5 rounded-circle">
+                                            <i class="ri-key-fill"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-2 mt-4">
+                                    <div class="text-muted text-center mb-4 mx-lg-3">
+                                        <h4>
+                                            @(config.GetMessage("Please_enter_your_PIN_CODE").ToHtmlString())
+                                        </h4>
+                                    </div>
+
+                                    <form autocomplete="off">
+                                        <div class="row">
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit1-input" class="visually-hidden">Digit 1</label>
+                                                    <input type="text" class="form-control form-control-lg bg-light border-light text-center focusinput" onkeyup="moveToNext(1, event)" maxLength="1" id="digit1-input">
+                                                </div>
+                                            </div><!-- end col -->
+
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit2-input" class="visually-hidden">Digit 2</label>
+                                                    <input type="text" class="form-control form-control-lg bg-light border-light text-center" onkeyup="moveToNext(2, event)" maxLength="1" id="digit2-input">
+                                                </div>
+                                            </div><!-- end col -->
+
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit3-input" class="visually-hidden">Digit 3</label>
+                                                    <input type="text" class="form-control form-control-lg bg-light border-light text-center" onkeyup="moveToNext(3, event)" maxLength="1" id="digit3-input">
+                                                </div>
+                                            </div><!-- end col -->
+
+                                            <div class="col-3">
+                                                <div class="mb-3 mlr-20">
+                                                    <label for="digit4-input" class="visually-hidden">Digit 4</label>
+                                                    <input type="text" class="form-control form-control-lg bg-light border-light text-center" onkeyup="moveToNext(4, event)" maxLength="1" id="digit4-input">
+                                                </div>
+                                            </div><!-- end col -->
+                                        </div>
+                                    </form><!-- end form -->
+                                    <div class="float-end">
+                                        <a href="@Url.Action("PinCodeReset", "Login")" class="text-muted">
+                                            @(config.GetMessage("Forgot_Pin_Code").ToHtmlString())?
+                                        </a>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-success w-100" id="btnSubmit">
+                                            @(config.GetMessage("Confirm").ToHtmlString())
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end card body -->
+                        </div>
+                        <!-- end card -->
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end container -->
+        </div>
+        <!-- end auth page content -->
+        <!-- footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- end Footer -->
+    </div>
+    <!-- end auth-page-wrapper -->
+
+    @Html.Partial("~/Views/Shared/_vendor_scripts.cshtml")
+
+    <!-- particles js -->
+    <script src="~/assets/libs/particles.js/particles.js"></script>
+    <!-- particles app js -->
+    <script src="~/assets/js/pages/particles.app.js"></script>
+    <!-- two-step-verification js -->
+    <script src="~/assets/js/pages/two-step-verification.init.js"></script>
+
+    <script src="~/assets/libs/sweetalert2/sweetalert2.min.js"></script>
+    <script> 
+        if (document.getElementById("btnSubmit"))
+            document.getElementById("btnSubmit").addEventListener("click", function () {
+                if((document.getElementById("digit1-input").value+document.getElementById("digit2-input").value+document.getElementById("digit3-input").value+document.getElementById("digit4-input").value).length!=4){
+                    Swal.fire({
+                        title: '@(config.GetMessage("Please_enter_your_PIN_CODE").ToHtmlString())',
+                        customClass: {
+                            confirmButton: 'btn btn-primary w-xs mt-2',
+                        },
+                        buttonsStyling: false,
+                                confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        showCloseButton: true
+                    });
+                    return;
+                }
+
+                location.href = '@Url.Action("Index", "Home")';
+            });
+    </script>
+    <script src="~/js/common.js"></script>
+</body>
+</html>

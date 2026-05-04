@@ -1,0 +1,186 @@
+@* 版本歷程 PartialView — 由 Edit.cshtml 透過 Ajax 取得資料後動態渲染 *@
+
+<div id="versionHistoryPane">
+    <div id="versionTimeline" class="ver-timeline">
+        <!-- 版本卡片由 JS 動態插入 -->
+    </div>
+
+    <div class="noresult-version text-center text-muted py-4" style="display:none;">
+        <i class="ri-folder-open-line" style="font-size:40px;opacity:.2;"></i>
+        <p class="mt-2">尚無版本紀錄</p>
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Views/RecipeMgmt/_RecipeDiff.cshtml")
+
+<style>
+    .ver-timeline { position: relative; padding-left: 28px; }
+    .ver-timeline::before {
+        content: '';
+        position: absolute; left: 9px; top: 0; bottom: 0;
+        width: 2px; background: var(--vz-border-color, #ddd);
+    }
+    .ver-item {
+        position: relative; margin-bottom: 14px;
+        background: #fff;
+        border: 1px solid var(--vz-border-color, #ddd);
+        border-radius: 8px;
+        padding: 12px 14px;
+        transition: border-color .15s;
+    }
+    .ver-item.current-ver { border-color: var(--vz-primary, #405189); }
+    .ver-dot {
+        position: absolute; left: -24px; top: 16px;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: var(--vz-border-color, #ddd);
+        border: 2px solid #fff;
+        z-index: 1;
+    }
+    .ver-item.current-ver .ver-dot { background: var(--vz-primary, #405189); }
+    .ver-item-top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .ver-number { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+    .ver-date { font-size: 11px; color: #888; margin-left: auto; }
+    .ver-log { font-size: 12px; color: #444; margin-bottom: 4px; }
+    .ver-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .btn-ver { font-size: 11px; padding: 2px 8px; }
+</style>
+
+<script>
+    (function () {
+        var recipeId   = @(ViewBag.RecipeId ?? 0);
+        var versionCount = 0;
+        var versionDataMap      = {};   // id -> version object
+        var currentVersionContent = ''; // IsCurrent 版本的 RecipeContent
+
+        var apiSetCurrent = '@(Configuration["BackendURL"])/api/RecipeMgmt/SetCurrentVersion';
+
+        function escapeHtml(value) {
+            return $('<div>').text(value ?? '').html();
+        }
+
+        // ── 載入版本清單 ─────────────────────────────────────────────────────
+        function loadVersions() {
+            if (!recipeId) return;
+            showLoader();
+            $.ajax({
+                url:  '@(Configuration["BackendURL"])/api/RecipeMgmt/GetVersionList',
+                type: 'GET',
+                data: { recipeId: recipeId },
+                success: function (res) {
+                    if (!res.Success) return;
+                    renderVersions(res.Data || []);
+                },
+                complete: function () { hideLoader(); }
+            });
+        }
+
+        function renderVersions(list) {
+            versionCount = list.length;
+            versionDataMap = {};
+            currentVersionContent = '';
+
+            var $tl = $('#versionTimeline').empty();
+            var $nr = $('.noresult-version');
+
+            if (!list.length) { $nr.show(); return; }
+            $nr.hide();
+
+            list.forEach(function (v) {
+                versionDataMap[v.Id] = v;
+                if (v.IsCurrent) currentVersionContent = v.RecipeContent || '';
+                $tl.append(buildVerCard(v));
+            });
+        }
+
+        function buildVerCard(v) {
+            var currentCls   = v.IsCurrent ? 'current-ver' : '';
+            var currentBadge = v.IsCurrent
+                ? '<span class="badge bg-success-subtle text-success">現行</span>'
+                : '';
+            var setCurBtn = !v.IsCurrent
+                ? `<button class="btn btn-soft-primary btn-ver set-current-btn" data-id="${v.Id}">
+                       <i class="ri-check-line me-1"></i>設為現行
+                   </button>`
+                : '';
+            var compareBtn = !v.IsCurrent
+                ? `<button class="btn btn-soft-primary btn-ver ver-compare-btn" data-id="${v.Id}">
+                       <i class="ri-git-compare-line me-1"></i>與現行比對
+                   </button>`
+                : '';
+
+            return `<div class="ver-item ${currentCls}" data-id="${v.Id}">
+                <div class="ver-dot"></div>
+                <div class="ver-item-top">
+                    <span class="ver-number">${escapeHtml(v.VersionNo)}</span>
+                    ${currentBadge}
+                    <span class="${v.VersionBumpTypeCss}" style="font-size:10px;">${escapeHtml(v.VersionBumpType)}</span>
+                    <span class="ver-date">${escapeHtml(v.CreateTime)}</span>
+                </div>
+                <p class="ver-log mb-1">${escapeHtml(v.VersionLog)}</p>
+                <p class="mb-1"><small class="text-muted">提交人：${escapeHtml(v.UpdaterName || v.CreatorName)}</small></p>
+                <div class="ver-actions">
+                    <button class="btn btn-soft-secondary btn-ver ver-view-btn" data-id="${v.Id}">
+                        <i class="ri-eye-line me-1"></i>檢視內容
+                    </button>
+                    ${compareBtn}
+                    ${setCurBtn}
+                </div>
+            </div>`;
+        }
+
+        // ── 設為現行版本 ─────────────────────────────────────────────────────
+        $(document).on('click', '.set-current-btn', function () {
+            var versionId = $(this).data('id');
+            showLoader();
+            $.ajax({
+                url:         apiSetCurrent,
+                type:        'POST',
+                contentType: 'application/json',
+                data:        JSON.stringify({ VersionId: versionId }),
+                success: function (res) {
+                    showResponseResultAlert(res, '設定', function () { loadVersions(); });
+                },
+                error: function () { showSysError(); },
+                complete: function () { hideLoader(); }
+            });
+        });
+
+        // ── 檢視版本內容 ─────────────────────────────────────────────────────
+        $(document).on('click', '.ver-view-btn', function () {
+            var id = $(this).data('id');
+            var v  = versionDataMap[id];
+            if (!v) return;
+            if (typeof window.openViewContentModal === 'function') {
+                window.openViewContentModal(v.RecipeContent || '', v.VersionNo + '  配方內容');
+            }
+        });
+
+        // ── 與現行版本比對 ────────────────────────────────────────────────────
+        $(document).on('click', '.ver-compare-btn', function () {
+            var id = $(this).data('id');
+            var v  = versionDataMap[id];
+            if (!v) return;
+            if (typeof window.openDiffModal === 'function') {
+                window.openDiffModal(
+                    v.RecipeContent || '',
+                    currentVersionContent,
+                    v.VersionNo,
+                    '現行版本'
+                );
+            }
+        });
+
+        // ── 對外暴露 ─────────────────────────────────────────────────────────
+        window.getVersionCount         = function () { return versionCount; };
+        window.getCurrentVersionContent = function () { return currentVersionContent; };
+        window.reloadVersions          = loadVersions;
+
+        function showSysError() {
+            Swal.fire({ icon: 'error', title: '系統錯誤', text: '操作失敗，請稍後再試。' });
+        }
+
+        // 初始載入
+        loadVersions();
+    })();
+</script>

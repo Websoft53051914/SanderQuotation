@@ -1,0 +1,163 @@
+[
+  {
+    "Controller": "",
+    "View": "",
+    "Elements": [
+      {
+        "ElementId": "Id"
+      }
+    ]
+  },
+  {
+    "Controller": "",
+    "View": "",
+    "Elements": [
+      {
+        "ElementId": "No"
+      },
+      {
+        "ElementId": "LogTime"
+      },
+      {
+        "ElementId": "Name"
+      },
+      {
+        "ElementId": "Account"
+      },
+      {
+        "ElementId": "Status"
+      },
+      {
+        "ElementId": "StatusDescription"
+      },
+      {
+        "ElementId": "Id"
+      }
+    ]
+  },
+  {
+    "Controller": "Product",
+    "View": "Edit",
+    "Elements": [
+      {
+        "ElementId": "Name",
+        "IsRequired": true,
+        "Maxlength": 20,
+        "Placeholder": "產品名稱",
+        "InvalidText": "9999999999999",
+        "Class": "form-control"
+      },
+      {
+        "ElementId": "Price",
+        "IsRequired": true,
+        "Placeholder": "價格",
+        "InvalidText": "請輸入價格_FROM_JSON",
+        "Class": "form-control"
+      },
+      {
+        "ElementId": "ProductionDate",
+        "IsRequired": true,
+        "Placeholder": "生產日期",
+        "InvalidText": "請輸入生產日期_FROM_JSON",
+        "Class": "form-control required-text"
+      },
+      {
+        "ElementId": "ValidDate",
+        "IsRequired": true,
+        "Placeholder": "有效日期",
+        "InvalidText": "請輸入有效日期_FROM_JSON",
+        "Class": "form-control required-text"
+      },
+      {
+        "ElementId": "Id"
+      }
+    ]
+  },
+  {
+    "Controller": "",
+    "View": "",
+    "Elements": [
+      {
+        "ElementId": "Name"
+      },
+      {
+        "ElementId": "FuncId"
+      },
+      {
+        "ElementId": "Sequence"
+      },
+      {
+        "ElementId": "PermissionCode"
+      },
+      {
+        "ElementId": "Status"
+      },
+      {
+        "ElementId": "FuncName"
+      },
+      {
+        "ElementId": "PerCodes"
+      },
+      {
+        "ElementId": "Codes"
+      },
+      {
+        "ElementId": "HideFuncName"
+      },
+      {
+        "ElementId": "Id"
+      }
+    ]
+  },
+  {
+    "Controller": "",
+    "View": "",
+    "Elements": [
+      {
+        "ElementId": "No"
+      },
+      {
+        "ElementId": "RoleName"
+      },
+      {
+        "ElementId": "Memo"
+      },
+      {
+        "ElementId": "PageTitle"
+      },
+      {
+        "ElementId": "Status"
+      },
+      {
+        "ElementId": "StatusName"
+      },
+      {
+        "ElementId": "PerCodes"
+      },
+      {
+        "ElementId": "CompanyName"
+      },
+      {
+        "ElementId": "IsDefault"
+      },
+      {
+        "ElementId": "HRPermissionList"
+      },
+      {
+        "ElementId": "HRPermissionListStr"
+      },
+      {
+        "ElementId": "Organization_Name"
+      },
+      {
+        "ElementId": "Selected"
+      },
+      {
+        "ElementId": "FuncClassName"
+      },
+      {
+        "ElementId": "Id"
+      }
+    ]
+  }
+]

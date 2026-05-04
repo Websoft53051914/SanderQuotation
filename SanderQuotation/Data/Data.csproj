@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="UnitOfWork\UnitOfWorkOracle.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Core.8.Utility" Version="3.26.428.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.1" />
+    <PackageReference Include="Unity" Version="5.11.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CommonClass\CommonClass.csproj" />
+    <ProjectReference Include="..\Const\Const.csproj" />
+  </ItemGroup>
+
+</Project>

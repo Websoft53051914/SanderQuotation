@@ -1,0 +1,253 @@
+﻿@model TemplateVM
+@{
+    ViewData["Title"] = "流程模板編輯";
+}
+
+<h3>📝 流程模板編輯 @(string.IsNullOrEmpty(Model.Id) ? "新增" : "編輯")</h3>
+<hr />
+
+<form method="post" action="/Template/Edit">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label>模板代碼</label>
+        <input class="form-control" asp-for="Code" required />
+    </div>
+
+    <div class="mb-3">
+        <label>模板名稱</label>
+        <input class="form-control" asp-for="Name" required />
+    </div>
+
+    <div class="mb-3">
+        <label>所屬模組</label>
+        <select class="form-select" asp-for="Module">
+            <option>HRM</option>
+            <option>LMS</option>
+            <option>SYS</option>
+            <option>MAT</option>
+            <option>PMG</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>說明</label>
+        <textarea class="form-control" asp-for="Description" rows="2"></textarea>
+    </div>
+
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" asp-for="IsEnabled">
+        <label class="form-check-label">是否啟用</label>
+    </div>
+
+    <hr />
+    <h4>節點設計</h4>
+    <div id="stage-list">
+        @for (int i = 0; i < Model.Stages.Count; i++)
+        {
+            <div class="card mb-2 p-2">
+                <input type="hidden" name="Stages[@i].StageId" value="@Model.Stages[i].StageId" />
+                <div class="mb-2">
+                    <label>節點名稱</label>
+                    <input class="form-control" name="Stages[@i].StageName" value="@Model.Stages[i].StageName" />
+                </div>
+                <div class="mb-2">
+                    <label>順序</label>
+                    <input type="number" class="form-control" name="Stages[@i].Sequence" value="@Model.Stages[i].Sequence" />
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="Stages[@i].IsStart" @(Model.Stages[i].IsStart ? "checked" : "")>
+                    <label class="form-check-label">起始節點</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="Stages[@i].IsEnd" @(Model.Stages[i].IsEnd ? "checked" : "")>
+                    <label class="form-check-label">結束節點</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="Stages[@i].AllowAddSign" @(Model.Stages[i].AllowAddSign ? "checked" : "")>
+                    <label class="form-check-label">加簽</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="Stages[@i].AllowCoSign" @(Model.Stages[i].AllowCoSign ? "checked" : "")>
+                    <label class="form-check-label">會簽</label>
+                </div>
+
+                <!-- 簽核人規則 -->
+                <h5 class="mt-2">簽核人規則</h5>
+                <div class="participant-list" data-stage-index="@i">
+                    @for (int j = 0; j < Model.Stages[i].ParticipantRules.Count; j++)
+                    {
+                        <div class="card mb-1 p-1">
+                            <input type="hidden" name="Stages[@i].ParticipantRules[@j].RuleId" value="@Model.Stages[i].ParticipantRules[j].RuleId" />
+                            <div class="mb-1">
+                                <label>類型</label>
+                                <select class="form-select" asp-for="Stages[@i].ParticipantRules[j].Type" asp-items="Model.Stages[@i].ParticipantTypes">
+                                </select>
+                            </div>
+                            <div class="mb-1">
+                                <label>值</label>
+                                <input class="form-control" name="Stages[@i].ParticipantRules[@j].Value" value="@Model.Stages[i].ParticipantRules[j].Value" />
+                            </div>
+                            <div class="mb-1">
+                                <label>條件 JSON</label>
+                                <textarea class="form-control font-monospace" name="Stages[@i].ParticipantRules[@j].ConditionJson" rows="2">@Model.Stages[i].ParticipantRules[j].ConditionJson</textarea>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addParticipant(@i)">➕ 新增簽核人規則</button>
+
+                <!-- 節點路由 -->
+                <h5 class="mt-2">節點路由</h5>
+                <div class="route-list" data-stage-index="@i">
+                    @for (int k = 0; k < Model.Stages[i].Routes.Count; k++)
+                    {
+                        <div class="card mb-1 p-1">
+                            <input type="hidden" name="Stages[@i].Routes[@k].RouteId" value="@Model.Stages[i].Routes[k].RouteId" />
+                            <div class="mb-1">
+                                <label>下一節點ID</label>
+                                <input class="form-control" name="Stages[@i].Routes[@k].NextStageId" value="@Model.Stages[i].Routes[k].NextStageId" />
+                            </div>
+                            <div class="mb-1">
+                                <label>條件 JSON</label>
+                                <textarea class="form-control font-monospace" name="Stages[@i].Routes[@k].ConditionJson" rows="2">@Model.Stages[i].Routes[k].ConditionJson</textarea>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addRoute(@i)">➕ 新增路由</button>
+            </div>
+        }
+    </div>
+
+    <button type="button" class="btn btn-secondary mb-3" onclick="addStage()">➕ 新增節點</button>
+
+
+    <hr />
+    <h4>流程條件</h4>
+    <div id="condition-list">
+        @for (int i = 0; i < Model.Conditions.Count; i++)
+        {
+            <div class="card mb-2 p-2">
+                <input type="hidden" name="Conditions[@i].Id" value="@Model.Conditions[i].Id" />
+                <div class="mb-2">
+                    <label>條件名稱</label>
+                    <input class="form-control" name="Conditions[@i].Name" value="@Model.Conditions[i].Name" />
+                </div>
+                <div class="mb-2">
+                    <label>JSON規則</label>
+                    <textarea class="form-control font-monospace" name="Conditions[@i].ConditionJson" rows="3">@Model.Conditions[i].ConditionJson</textarea>
+                </div>
+                <div class="mb-2">
+                    <label>影響摘要</label>
+                    <input class="form-control" name="Conditions[@i].EffectSummary" value="@Model.Conditions[i].EffectSummary" />
+                </div>
+            </div>
+        }
+    </div>
+
+    <button type="button" class="btn btn-secondary mb-3" onclick="addCondition()">➕ 新增條件</button>
+
+    <hr />
+    <button type="submit" class="btn btn-primary">💾 儲存模板</button>
+    <a href="/Template" class="btn btn-secondary">@(config.GetMessage("Return").ToHtmlString())</a>
+</form>
+
+@section Scripts {
+    <script>
+        function addStage() {
+            const index = document.querySelectorAll('#stage-list .card').length;
+            const container = document.getElementById('stage-list');
+            const html = `<div class="card mb-2 p-2">
+                            <div class="mb-2">
+                                <label>節點名稱</label>
+                                <input class="form-control" name="Stages[${index}].StageName" />
+                            </div>
+                            <div class="mb-2">
+                                <label>順序</label>
+                                <input type="number" class="form-control" name="Stages[${index}].Sequence" value="${index+1}" />
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="Stages[${index}].IsStart">
+                                <label class="form-check-label">起始節點</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="Stages[${index}].IsEnd">
+                                <label class="form-check-label">結束節點</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="Stages[${index}].AllowAddSign">
+                                <label class="form-check-label">加簽</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="Stages[${index}].AllowCoSign">
+                                <label class="form-check-label">會簽</label>
+                            </div>
+                        </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function addCondition() {
+            const index = document.querySelectorAll('#condition-list .card').length;
+            const container = document.getElementById('condition-list');
+            const html = `<div class="card mb-2 p-2">
+                            <div class="mb-2">
+                                <label>條件名稱</label>
+                                <input class="form-control" name="Conditions[${index}].Name" />
+                            </div>
+                            <div class="mb-2">
+                                <label>JSON規則</label>
+                                <textarea class="form-control font-monospace" name="Conditions[${index}].ConditionJson" rows="3"></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label>影響摘要</label>
+                                <input class="form-control" name="Conditions[${index}].EffectSummary" />
+                            </div>
+                        </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function addParticipant(stageIndex) {
+            const container = document.querySelector(`.participant-list[data-stage-index='${stageIndex}']`);
+            const index = container.querySelectorAll('.card').length;
+            const html = `<div class="card mb-1 p-1">
+                            <div class="mb-1">
+                                <label>類型</label>
+                                <select class="form-select" name="Stages[${stageIndex}].ParticipantRules[${index}].Type">
+                                    <option value="FixedUser">固定人員</option>
+                                    <option value="Role">角色/職務</option>
+                                    <option value="Supervisor">部門主管</option>
+                                    <option value="UpperLevel">上階主管</option>
+                                    <option value="Condition">條件式</option>
+                                </select>
+                            </div>
+                            <div class="mb-1">
+                                <label>值</label>
+                                <input class="form-control" name="Stages[${stageIndex}].ParticipantRules[${index}].Value" />
+                            </div>
+                            <div class="mb-1">
+                                <label>條件 JSON</label>
+                                <textarea class="form-control font-monospace" name="Stages[${stageIndex}].ParticipantRules[${index}].ConditionJson" rows="2"></textarea>
+                            </div>
+                          </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function addRoute(stageIndex) {
+            const container = document.querySelector(`.route-list[data-stage-index='${stageIndex}']`);
+            const index = container.querySelectorAll('.card').length;
+            const html = `<div class="card mb-1 p-1">
+                            <div class="mb-1">
+                                <label>下一節點ID</label>
+                                <input class="form-control" name="Stages[${stageIndex}].Routes[${index}].NextStageId" />
+                            </div>
+                            <div class="mb-1">
+                                <label>條件 JSON</label>
+                                <textarea class="form-control font-monospace" name="Stages[${stageIndex}].Routes[${index}].ConditionJson" rows="2"></textarea>
+                            </div>
+                          </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+    </script>
+}

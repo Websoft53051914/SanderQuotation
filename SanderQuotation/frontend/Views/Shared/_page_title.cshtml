@@ -1,0 +1,44 @@
+﻿<!-- start page title -->
+@{
+    var mapAttr =
+            new
+            {
+                idBreadcrumbContainer = Guid.NewGuid()
+            };
+}
+<div class="row" id="_page_title_row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between bg-galaxy-transparent">
+            <h4 class="mb-sm-0" id="header-pTitle"></h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0" id="@mapAttr.idBreadcrumbContainer">
+
+                </ol>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- end page title -->
+<script>
+    $(document).ready(function () {
+        const breadcrumb=Cookies.get('Breadcrumb')
+        const controllerName = '@ViewContext.RouteData.Values["controller"]'
+        const actionName = '@ViewContext.RouteData.Values["action"]'
+        if (breadcrumb && controllerName.toLowerCase()!='home') {
+            const bList=breadcrumb.split('>')
+            $('#header-pTitle').text(bList.at(-1));
+            const bElList = []
+            for(let i=0;i<bList.length;i++){
+                if(i!=bList.length-1){
+                    bElList.push(`<li class="breadcrumb-item"><a href="javascript: void(0);">${bList[i]}</a></li>`)
+                }
+                else{
+                    bElList.push(`<li class="breadcrumb-item active">${bList[i]}</li>`)
+                }
+            }
+            $(`#${'@mapAttr.idBreadcrumbContainer'}`).html(bElList.join(''));
+        }
+    });
+</script>

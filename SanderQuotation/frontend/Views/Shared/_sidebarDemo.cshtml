@@ -1,0 +1,161 @@
+@using System.Net.Http.Headers
+@using System.Text
+@using System.Text.Json
+@using Microsoft.AspNetCore.WebUtilities;
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@{  
+    // 定義遞迴函式
+    void RenderMenu(List<DispatcherData_Menu> menus, int level = 1)
+    {
+        if (menus == null || !menus.Any()) return;
+
+        foreach (var item in menus)
+        {
+            if (item.IsVisible != true) continue;
+
+            bool hasSubMenu = item.SubMenu != null && item.SubMenu.Count > 0;
+            string collapseId = $"sidebar-{item.MenuCode}";
+
+            if (!hasSubMenu)
+            {
+                string url = string.IsNullOrEmpty(item.Url) ? "#" : $"{item.Url}";
+                var queryParams = new Dictionary<string, string>
+                {
+                    // { "systemCode", item.SystemCode },
+                    { "moduleCode", item.ModuleCode },
+                    { "breadcrumb", item.Breadcrumb },
+                    { "menuCode", item.MenuCode }
+                };
+                url = QueryHelpers.AddQueryString(url, queryParams);    
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="@url" data-menu="@item.MenuCode">
+                        @if (level == 1) { <i class="@item.Icon"></i> }
+                        <span data-key="t-@item.MenuCode">@item.MenuName</span>
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(level == 1 ? "menu-link" : "")" 
+                       href="#@collapseId" 
+                       data-bs-toggle="collapse" 
+                       role="button"
+                       aria-expanded="false" 
+                       aria-controls="@collapseId">
+                        @if (level == 1) { <i class="@item.Icon"></i> }
+                        <span data-key="t-@item.MenuCode">@item.MenuName</span>
+                    </a>
+
+                    <div class="collapse menu-dropdown" id="@collapseId">
+                        <ul class="nav nav-sm flex-column">
+                            @{
+                                RenderMenu(item.SubMenu, level + 1);
+                            }
+                        </ul>
+                    </div>
+                </li>
+            }
+        }
+    }
+
+    // 初始化 model
+    DispatcherResponse_Menu_Shell menuModel_Shell = new();
+    DispatcherResponse_Menu menuModel = new DispatcherResponse_Menu() { Data = new List<DispatcherData_Menu>() };
+    var apiUrl = Configuration.GetValue<string>("BackendUrl") + "/api/Menu1/GetMAIN";
+
+    try
+    {
+        var client = HttpClientFactory.CreateClient();
+
+        var requestContent = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        var responseTask = client.PostAsync(apiUrl, requestContent);
+        responseTask.Wait();
+        var response = responseTask.Result;
+
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonStringTask = response.Content.ReadAsStringAsync();
+            jsonStringTask.Wait();
+            var jsonString = jsonStringTask.Result;
+
+            menuModel_Shell = JsonSerializer.Deserialize<DispatcherResponse_Menu_Shell>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (menuModel_Shell != null && menuModel_Shell.Success == true)
+            {
+                menuModel = menuModel_Shell.Data;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+    }
+}
+<!-- ========== App Menu ========== -->
+<div class="app-menu navbar-menu">
+    <!-- LOGO -->
+    <div class="navbar-brand-box" style="margin-top:10px;">
+        @*<!-- Dark Logo-->
+        <a href="@Url.Action("Index", "Home")" class="logo logo-dark">
+            <span class="logo-sm">
+                <img src="" alt="" height="60">
+            </span>
+            <span class="logo-lg">
+                <img src="" alt="" height="60">
+            </span>
+        </a>
+        <!-- Light Logo-->
+        <a href="@Url.Action("Index", "Home")" class="logo logo-light">
+            <span class="logo-sm">
+                <img src="" alt="" height="60">
+            </span>
+            <span class="logo-lg">
+                <img src="" alt="" height="60">
+            </span>
+        </a>*@
+        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
+            <i class="ri-record-circle-line"></i>
+        </button>
+    </div>
+
+    <div id="scrollbar">
+        <div class="container-fluid">
+
+            <div id="two-column-menu">
+            </div>
+            <ul class="navbar-nav" id="navbar-nav">
+                
+                @if (menuModel != null) {
+
+                    RenderMenu(menuModel.Data);
+                }
+            </ul>
+        </div>
+        <!-- Sidebar -->
+    </div>
+    <div class="sidebar-background"></div>
+</div>
+<!-- Left Sidebar End -->
+<!-- Vertical Overlay-->
+<div class="vertical-overlay"></div>
+<script>
+    $(document).ready(function () {
+        var currentPath = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+        if (currentPath === '/home' || currentPath === '/home/index' || currentPath === '' || currentPath === '/') {
+            $('#navbar-nav a.nav-link.menu-link[data-bs-toggle="collapse"]').each(function () {
+                var $this = $(this);
+                var targetId = $this.attr('href');
+                if (targetId && targetId.startsWith('#')) {
+                    var $collapseDiv = $(targetId);
+                    if ($collapseDiv.length > 0) {
+                        $collapseDiv.addClass('show');
+                        $this.attr('aria-expanded', 'true');
+                    }
+                }
+            });
+        }
+    });
+</script>
