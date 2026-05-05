@@ -12,7 +12,7 @@
                     <h5 class="card-title mb-0 flex-grow-1"></h5>
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
-                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> @(config.GetMessage("Create").ToHtmlString())</button>
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
                             <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
                         </div>
                     </div>
@@ -27,20 +27,14 @@
                                 <input type="text"
                                        id="globalSearchInput"
                                        class="form-control search bg-light border-light"
-                                       placeholder="@config.GetMessage("SearchTableContent").ToHtmlString()">
+                                       placeholder="請輸入關鍵字">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
-@*                         <div class="col-xxl-3 col-sm-12">
-                            <div class="search-box">
-                                <input type="text" class="form-control search bg-light border-light" placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword1" name="Keyword1">
-                                <i class="ri-search-line search-icon"></i>
-                            </div>
-                        </div> *@
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>
-                                @(config.GetMessage("Filters").ToHtmlString())
+                                篩選
                             </button>
                         </div>
                     </div>
@@ -58,15 +52,14 @@
                                     </div>
                                 </th>
                                 <th>Action</th>
-                                <th>@(config.GetMessage("No").ToHtmlString())</th>
+                                <th>項次</th>
 
-                                <th class="sort" data-sort="CycleName">@(config.GetMessage("CycleName").ToHtmlString())</th>
-                                <th class="sort" data-sort="CycleType">@(config.GetMessage("CycleType").ToHtmlString())</th>
-                                <th class="sort" data-sort="CronExpression">@(config.GetMessage("CronExpression").ToHtmlString())</th>
-                                <th class="sort" data-sort="Status">@(config.GetMessage("Enable").ToHtmlString())</th>
-                                <th data-sort="DBTransferSettings">@(config.GetMessage("ESDbTransfer_PageTitle").ToHtmlString())</th>
-                                <th data-sort="DbCsvTransferSettings">@(config.GetMessage("ESDbTransfer_CSV_PageTitle").ToHtmlString())</th>
-                                <th data-sort="FileTransferSettings">@(config.GetMessage("TableExcel_PageTitle").ToHtmlString())</th>
+                                <th class="sort" data-sort="CycleName">週期名稱</th>
+                                <th class="sort" data-sort="CycleType">週期類型</th>
+                                <th class="sort" data-sort="CronExpression">Cron 表達式</th>
+                                <th class="sort" data-sort="Status">啟用</th>
+                                <th data-sort="DBTransferSettings">資料庫轉檔設定</th>
+                                <th data-sort="FileTransferSettings">檔案轉入資料表對應設定</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -82,18 +75,18 @@
                     <div class="noresult" style="display: none">
                         <div class="text-center">
                             <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                            <h5 class="mt-2">抱歉! 查無資料</h5>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end mt-2">
                     <div class="pagination-wrap hstack gap-2">
                         <a class="page-item pagination-prev disabled" href="#">
-                            @(config.GetMessage("Page_Previous").ToHtmlString())
+                            上一頁
                         </a>
                         <ul class="pagination listjs-pagination mb-0"></ul>
                         <a class="page-item pagination-next" href="#">
-                            @(config.GetMessage("Page_Next").ToHtmlString())
+                            下一頁
                         </a>
                     </div>
                 </div>
@@ -106,15 +99,15 @@
                                 <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
                                     <h4>
-                                        @(config.GetMessage("Are_you_sure_you_want_to_delete_this_item?").ToHtmlString())
+                                        您確定要刪除此項目嗎？
                                     </h4>
 
                                     <div class="hstack gap-2 justify-content-center remove">
                                         <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            @(config.GetMessage("Close").ToHtmlString())
+                                            關閉
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">@(config.GetMessage("Yes_delete_it").ToHtmlString())</button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它！</button>
                                     </div>
                                 </div>
                             </div>
@@ -128,16 +121,16 @@
                             <div class="modal-body p-5 text-center">
                                 <lord-icon src="https://cdn.lordicon.com/uukerzzv.json" trigger="loop" colors="primary:#405189,secondary:#08a88a" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
-                                    <h4>@(config.GetMessage("ExecuteNow_Confirm_Title").ToHtmlString())</h4>
-                                    <p class="text-muted">@(config.GetMessage("ExecuteNow_Confirm_Text").ToHtmlString())</p>
+                                    <h4>確認立即執行</h4>
+                                    <p class="text-muted">確定要立即執行此排程嗎？</p>
                                     <div class="hstack gap-2 justify-content-center">
                                         <button class="btn btn-link link-danger fw-medium text-decoration-none" id="executeNow-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            @(config.GetMessage("Close").ToHtmlString())
+                                            關閉
                                         </button>
                                         <button class="btn btn-primary" id="executeNow-confirm">
                                             <i class="ri-play-circle-line me-1 align-middle"></i>
-                                            @(config.GetMessage("ExecuteNow").ToHtmlString())
+                                            立即執行
                                         </button>
                                     </div>
                                 </div>
@@ -155,8 +148,8 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
-                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">@(config.GetMessage("Create").ToHtmlString())</h5>
-                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">@(config.GetMessage("Edit").ToHtmlString())</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
             <form class="needs-validation" novalidate="" method="post" id="submitForm">
@@ -165,47 +158,58 @@
 
                         <!-- ── 區塊一：基本資訊 ── -->
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">@(config.GetMessage("ScheduleCycleCode").ToHtmlString())</label>
+                            <label class="col-form-label required pt-0">週期代碼</label>
                             <input type="text" name="ScheduleCycleCode" id="ScheduleCycleCode" class="form-control" maxlength="50" required />
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">@(config.GetMessage("CycleName").ToHtmlString())</label>
+                            <label class="col-form-label required pt-0">週期名稱</label>
                             <input type="text" name="CycleName" id="CycleName" class="form-control" maxlength="100"
-                                   placeholder="@config.GetMessage("CycleName").ToHtmlString()" required />
+                                   placeholder="週期名稱" required />
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">@(config.GetMessage("ESDbTransfer_PageTitle").ToHtmlString())</label>
+                            <label class="col-form-label pt-0">資料庫轉檔設定</label>
                             <select class="form-control" id="DBTransferSettings" name="DBTransferSettings" multiple>
                             </select>
-                        </div> 
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="col-form-label pt-0">其他任務</label>
+                            <select class="form-control" id="OtherTaskSettings" name="OtherTaskSettings" multiple>
+                                <option value="1">查價</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="col-form-label pt-0">檔案轉入資料表對應設定</label>
+                            <select class="form-control" id="FileTransferSettings" name="FileTransferSettings" multiple>
+                            </select>
+                        </div>
                         <div class="col-lg-6">
                             <label class="col-form-label pt-0 d-block">&nbsp;</label>
                             <div class="form-check mt-2">
                                 <input type="checkbox" class="form-check-input" id="IsEnabled" name="IsEnabled" checked>
-                                <label class="form-check-label" for="IsEnabled">@(config.GetMessage("Enable").ToHtmlString())</label>
+                                <label class="form-check-label" for="IsEnabled">啟用</label>
                             </div>
                         </div>
                         <div class="col-lg-12">
-                            <label class="col-form-label pt-0">@(config.GetMessage("Description").ToHtmlString())</label>
+                            <label class="col-form-label pt-0">說明</label>
                             <textarea name="Description" id="Description" class="form-control" maxlength="500"
-                                      placeholder="@config.GetMessage("Description").ToHtmlString()" rows="2"></textarea>
+                                      placeholder="說明" rows="2"></textarea>
                         </div>
 
                         <!-- ── 分隔線 ── -->
                         <div class="col-12"><hr class="my-1"></div>
-                        <div class="col-12"><small class="text-muted">@(config.GetMessage("CycleTypeSectionTitle").ToHtmlString())</small></div>
+                        <div class="col-12"><small class="text-muted">週期類型設定</small></div>
 
                         <!-- ── 區塊二：週期類型選擇 ── -->
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">@(config.GetMessage("CycleType").ToHtmlString())</label>
+                            <label class="col-form-label required pt-0">週期類型</label>
                             <select name="CycleType" id="CycleType" class="form-control" required>
-                                <option value="">@(config.GetMessage("Please_Select").ToHtmlString())</option>
-                                <option value="SECOND">@(config.GetMessage("Cycle_SECOND").ToHtmlString())</option>
-                                <option value="MINUTE">@(config.GetMessage("Cycle_MINUTE").ToHtmlString())</option>
-                                <option value="HOUR">@(config.GetMessage("Cycle_HOUR").ToHtmlString())</option>
-                                <option value="DAY">@(config.GetMessage("Cycle_DAY").ToHtmlString())</option>
-                                <option value="WEEK">@(config.GetMessage("Cycle_WEEK").ToHtmlString())</option>
-                                <option value="MONTH">@(config.GetMessage("Cycle_MONTH").ToHtmlString())</option>
+                                <option value="">請選擇</option>
+                                <option value="SECOND">每秒</option>
+                                <option value="MINUTE">每分鐘</option>
+                                <option value="HOUR">每小時</option>
+                                <option value="DAY">每日</option>
+                                <option value="WEEK">每週</option>
+                                <option value="MONTH">每月</option>
                             </select>
                         </div>
 
@@ -214,12 +218,12 @@
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_EveryInterval").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">每隔</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="SecondInterval" name="SecondInterval"
-                                                   class="form-control" min="1" max="59" value="1" placeholder="@config.GetMessage("Cycle_SECOND").ToHtmlString()">
+                                                   class="form-control" min="1" max="59" value="1" placeholder="每秒">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Second_Unit").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">秒執行一次</label></div>
                                     </div>
                                 </div>
                             </div>
@@ -230,17 +234,17 @@
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_EveryInterval").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">每隔</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="MinuteInterval" name="MinuteInterval"
-                                                   class="form-control" min="1" max="59" value="1" placeholder="@config.GetMessage("Cycle_MINUTE").ToHtmlString()">
+                                                   class="form-control" min="1" max="59" value="1" placeholder="每分鐘">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Minute_At").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">分鐘，第</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="MinuteAtSecond" name="MinuteAtSecond"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="@config.GetMessage("Cycle_SECOND").ToHtmlString()">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="每秒">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_AtSecond").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">秒時執行</label></div>
                                     </div>
                                 </div>
                             </div>
@@ -251,22 +255,22 @@
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_EveryInterval").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">每隔</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourInterval" name="HourInterval"
-                                                   class="form-control" min="1" max="23" value="1" placeholder="@config.GetMessage("Cycle_HOUR").ToHtmlString()">
+                                                   class="form-control" min="1" max="23" value="1" placeholder="每小時">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Hour_At").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">小時，於</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourAtMinute" name="HourAtMinute"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="@config.GetMessage("Cycle_Min").ToHtmlString()">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="分">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Min").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">分</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourAtSecond" name="HourAtSecond"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="@config.GetMessage("Cycle_SECOND").ToHtmlString()">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="每秒">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_AtSecond").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">秒時執行</label></div>
                                     </div>
                                 </div>
                             </div>
@@ -277,17 +281,17 @@
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_EveryInterval").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">每隔</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="DayInterval" name="DayInterval"
-                                                   class="form-control" min="1" max="31" value="1" placeholder="@config.GetMessage("Cycle_DAY").ToHtmlString()">
+                                                   class="form-control" min="1" max="31" value="1" placeholder="每日">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Day_At").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">天，於</label></div>
                                         <div class="col-lg-3">
                                             <input type="time" id="DayAtTime" name="DayAtTime"
                                                    class="form-control" value="08:00">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_Execute").ToHtmlString())</label></div>
+                                        <div class="col-auto"><label class="col-form-label">執行</label></div>
                                     </div>
                                 </div>
                             </div>
@@ -299,41 +303,41 @@
                                 <div class="card-body pb-2">
                                     <div class="row g-2">
                                         <div class="col-12">
-                                            <label class="col-form-label">@(config.GetMessage("Cycle_Week_DayLabel").ToHtmlString())</label>
+                                            <label class="col-form-label">星期幾執行</label>
                                             <div class="d-flex flex-wrap gap-3 mt-1">
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdSun" value="0">
-                                                    <label class="form-check-label" for="wdSun">@(config.GetMessage("Sunday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdSun">日</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdMon" value="1">
-                                                    <label class="form-check-label" for="wdMon">@(config.GetMessage("Monday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdMon">一</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdTue" value="2">
-                                                    <label class="form-check-label" for="wdTue">@(config.GetMessage("Tuesday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdTue">二</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdWed" value="3">
-                                                    <label class="form-check-label" for="wdWed">@(config.GetMessage("Wednesday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdWed">三</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdThu" value="4">
-                                                    <label class="form-check-label" for="wdThu">@(config.GetMessage("Thursday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdThu">四</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdFri" value="5">
-                                                    <label class="form-check-label" for="wdFri">@(config.GetMessage("Friday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdFri">五</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdSat" value="6">
-                                                    <label class="form-check-label" for="wdSat">@(config.GetMessage("Saturday").ToHtmlString())</label>
+                                                    <label class="form-check-label" for="wdSat">六</label>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-2 align-items-center">
-                                                <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_ExecuteTime").ToHtmlString())</label></div>
+                                                <div class="col-auto"><label class="col-form-label">執行時間</label></div>
                                                 <div class="col-lg-3">
                                                     <input type="time" id="WeekAtTime" name="WeekAtTime"
                                                            class="form-control" value="08:00">
@@ -351,7 +355,7 @@
                                 <div class="card-body pb-2">
                                     <div class="row g-2">
                                         <div class="col-12">
-                                            <label class="col-form-label">@(config.GetMessage("Cycle_Month_DateLabel").ToHtmlString())</label>
+                                            <label class="col-form-label">選擇每月執行日期（可多選）</label>
                                             <div class="d-flex flex-wrap gap-1 mt-1">
                                                 @for (int d = 1; d <= 31; d++)
                                                 {
@@ -365,7 +369,7 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-2 align-items-center">
-                                                <div class="col-auto"><label class="col-form-label">@(config.GetMessage("Cycle_ExecuteTime").ToHtmlString())</label></div>
+                                                <div class="col-auto"><label class="col-form-label">執行時間</label></div>
                                                 <div class="col-lg-3">
                                                     <input type="time" id="MonthAtTime" name="MonthAtTime"
                                                            class="form-control" value="08:00">
@@ -379,11 +383,11 @@
 
                         <!-- Cron 預覽 -->
                         <div class="col-12">
-                            <label class="col-form-label pt-0">@(config.GetMessage("CronExpressionPreview").ToHtmlString())</label>
+                            <label class="col-form-label pt-0">Cron 表達式預覽</label>
                             <div class="input-group">
                                 <input type="text" id="CronExpression" name="CronExpression"
-                                       class="form-control font-monospace" readonly placeholder="@config.GetMessage("CronExpression_Placeholder").ToHtmlString()">
-                                <button type="button" class="btn btn-outline-secondary" onclick="buildCron()" title="@config.GetMessage("CronExpression_Regenerate").ToHtmlString()">
+                                       class="form-control font-monospace" readonly placeholder="請先選擇週期類型">
+                                <button type="button" class="btn btn-outline-secondary" onclick="buildCron()" title="重新產生">
                                     <i class="ri-refresh-line"></i>
                                 </button>
                             </div>
@@ -394,8 +398,8 @@
                 </div>
                 <div class="modal-footer">
                     <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
-                        <button type="submit" class="btn btn-success" id="add-btn">@(config.GetMessage("Save").ToHtmlString())</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">儲存</button>
                     </div>
                 </div>
             </form>
@@ -421,7 +425,7 @@
         };
 
         var queryState = {
-            pageIndex: 1,
+            page: 1,
             pageSize: 40,
             sortField: 'ScheduleCycleCode',
             sortDir: 'asc',
@@ -429,26 +433,20 @@
         };
 
         // 讓 _CrudCommonScripts 呼叫，避免重複初始化
-        function initPageSelect() {
-            // 初始化 select2 for CycleType
-            if (!$('#CycleType').data('select2')) {
-                $('#CycleType').select2({
-                    placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
-                    allowClear: false,
-                    minimumResultsForSearch: Infinity,
-                    width: '100%',
-                    dropdownParent: $('#showModal')
-                });
-            }
-            // 初始化 select2 for DBTransferSettings
-            if (!$('#DBTransferSettings').data('select2')) {
-                $('#DBTransferSettings').select2({
-                    placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
+        function initPageChoices() {
+            $('#CycleType').select2({
+                minimumResultsForSearch: Infinity,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+            ['#DBTransferSettings', '#OtherTaskSettings', '#FileTransferSettings'].forEach(function(id) {
+                $(id).select2({
+                    placeholder: '請選擇',
                     allowClear: true,
                     width: '100%',
                     dropdownParent: $('#showModal')
                 });
-            }
+            });
             loadSelectOptions();
         }
 
@@ -470,25 +468,28 @@
                 fileTransferLabelMap = {};
 
                 // 填充 DBTransferSettings
-                var $dbEl = $('#DBTransferSettings');
-                if ($dbEl.length) {
-                    $dbEl.empty();
+                var dbEl = document.getElementById('DBTransferSettings');
+                if (dbEl) {
+                    var $dbSel = $('#DBTransferSettings');
+                    $dbSel.find('option').remove();
                     (data.dbSelectList || []).forEach(function(item) {
                         dbTransferLabelMap[item.Value] = item.Text;
-                        $dbEl.append(new Option(item.Text, item.Value));
+                        $dbSel.append('<option value="' + item.Value + '">' + item.Text + '</option>');
                     });
-                    $dbEl.trigger('change');
+                    $dbSel.trigger('change');
                 }
 
-                // 填充 DbCsvTransferSettings（label map 供 renderTagList 使用）
-                (data.dbCSVSelectList || []).forEach(function(item) {
-                    dbCsvTransferLabelMap[item.Value] = item.Text;
-                });
-
-                // 填充 FileTransferSettings（label map 供 renderTagList 使用）
-                (data.fileSelectList || []).forEach(function(item) {
-                    fileTransferLabelMap[item.Value] = item.Text;
-                });
+                // 填充 FileTransferSettings
+                var fileEl = document.getElementById('FileTransferSettings');
+                if (fileEl) {
+                    var $fileSel = $('#FileTransferSettings');
+                    $fileSel.find('option').remove();
+                    (data.fileSelectList || []).forEach(function(item) {
+                        fileTransferLabelMap[item.Value] = item.Text;
+                        $fileSel.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                    });
+                    $fileSel.trigger('change');
+                }
 
                 if (typeof callback === 'function') callback();
             });
@@ -534,10 +535,10 @@
                     : '<span class="badge bg-danger-subtle text-danger"><i class="ri-close-circle-line me-1"></i>@(config.GetMessage("Disable").ToHtmlString())</span>';
                 const canDelete = true;
                 tbody.append(`
-                    <tr data-id="${data.Id}" data-can-delete="${canDelete}">
+                    <tr data-id="${data.RowGuid}" data-can-delete="${canDelete}">
                             <th scope="row">
                             <div class="form-check">
-                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value=option1 ${canDelete ? '' : 'disabled'}>
+                                <input class="form-check-input row-check" type="checkbox" data-id="${data.RowGuid}" value=option1 ${canDelete ? '' : 'disabled'}>
                             </div>
                         </th>
                         <td>
@@ -549,7 +550,7 @@
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
                                     <li><a class="dropdown-item execute-now-btn${data.IsEnabled ? '' : ' disabled'}"
                                            href="javascript:void(0)"
-                                           ${data.IsEnabled ? `data-id="${data.Id}"` : 'tabindex="-1" aria-disabled="true"'}>
+                                           ${data.IsEnabled ? `data-id="${data.RowGuid}"` : 'tabindex="-1" aria-disabled="true"'}>
                                         <i class="ri-play-circle-line align-bottom me-2 text-muted"></i> @(config.GetMessage("ExecuteNow").ToHtmlString())
                                     </a></li>
                                     <li>
@@ -567,7 +568,6 @@
                         <td class="CronExpression"><code>${data.CronExpression ?? ''}</code><br><small class="text-muted">${cronDescFromData(data)}</small></td>
                         <td class="IsEnabled">${enabledBadge}</td>
                         <td class="DBTransferSettings">${renderTagList(data.DBTransferSettings)}</td>
-                        <td class="DbCsvTransferSettings">${renderTagList(data.DbCsvTransferSettings)}</td>
                         <td class="FileTransferSettings">${renderTagList(data.FileTransferSettings)}</td>
                     </tr>
                 `);
@@ -643,7 +643,10 @@
             $('#IsEnabled').prop('checked', true);
             $('#ScheduleCycleCode').prop('readonly', false);  // 新增時允許輸入
             // 重置週期類型
-            $('#CycleType').val('').trigger('change');
+            var cycleTypeEl = document.getElementById('CycleType');
+            if (cycleTypeEl) {
+                $('#CycleType').val('').trigger('change');
+            }
             // 強制清除週/月所有 checkbox（reset() 不會清 checked=false 的預設）
             ['wdSun','wdMon','wdTue','wdWed','wdThu','wdFri','wdSat'].forEach(function(id) {
                 document.getElementById(id).checked = false;
@@ -651,10 +654,12 @@
             for (var d = 1; d <= 31; d++) {
                 document.getElementById('md' + d).checked = false;
             }
-            resetSelect2('#DBTransferSettings');
+            resetChoices('#DBTransferSettings');
+            resetChoices('#OtherTaskSettings');
+            resetChoices('#FileTransferSettings');
         }
 
-        function resetSelect2(selector) {
+        function resetChoices(selector) {
             $(selector).val(null).trigger('change');
         }
 
@@ -882,7 +887,7 @@
             var weekDays  = getCheckedWeekDays();
             var monthDays = getCheckedMonthDays();
             var data = {
-                Id:             currentId || '00000000-0000-0000-0000-000000000000',
+                RowGuid:             currentId || '00000000-0000-0000-0000-000000000000',
                 ScheduleCycleCode:   $('#ScheduleCycleCode').val(),
                 CycleName:           $('#CycleName').val(),
                 CycleType:           $('#CycleType').val(),
@@ -938,7 +943,10 @@
                 $('#MonthAtTime').val(data.MonthAtTime || '08:00');
 
                 // 週期類型 → 顯示對應 block
-                $('#CycleType').val(data.CycleType || '').trigger('change');
+                var cycleTypeEl = document.getElementById('CycleType');
+                if (cycleTypeEl) {
+                    $('#CycleType').val(data.CycleType || '').trigger('change');
+                }
                 onCycleTypeChange();
 
                 // 還原週/月 checkbox（用 ID 精確設定）
@@ -956,13 +964,23 @@
                     });
                 }
 
-                // select2 多選
+                // Choices 多選
                 if (data.DBTransferSettings && data.DBTransferSettings.length) {
-                    $('#DBTransferSettings').val(data.DBTransferSettings).trigger('change');
+                    setChoicesValues('#DBTransferSettings', data.DBTransferSettings);
+                }
+                if (data.OtherTaskSettings && data.OtherTaskSettings.length) {
+                    setChoicesValues('#OtherTaskSettings', data.OtherTaskSettings);
+                }
+                if (data.FileTransferSettings && data.FileTransferSettings.length) {
+                    setChoicesValues('#FileTransferSettings', data.FileTransferSettings);
                 }
 
                 buildCron();
             });
+        }
+
+        function setChoicesValues(selector, values) {
+            $(selector).val(values).trigger('change');
         }
 
         // ========================================
@@ -982,6 +1000,9 @@
             for (var d = 1; d <= 31; d++) {
                 document.getElementById('md' + d).addEventListener('change', buildCron);
             }
+
+            // 初始化 Choices.js
+            // 已由頁面頂端的 initPageChoices() 統一初始化，此處不重複執行
 
             // 立即執行（事件委派）
             $(document).on('click', '.execute-now-btn', function () {

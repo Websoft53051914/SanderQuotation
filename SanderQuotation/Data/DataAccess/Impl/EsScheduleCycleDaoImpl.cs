@@ -12,44 +12,36 @@ namespace Data.DataAccess.Impl
 {
     public class EsScheduleCycleDaoImpl : Core.Utility.Base.Data.GuidId.BaseImpl<EsScheduleCycleEntity>, IEsScheduleCycleDAO
     {
-        public PageResult<EsScheduleCycleDTO> GetPageList(PageEntity pageEntity, EsScheduleCycleDTO dto)
+        public PageResult<EsScheduleCycleEntity> GetPageList(CommonSearchQuery query)
         {
             var paras = new Dictionary<string, object>();
             string whereSql = "";
-             
-            string sql = $@"";
-             
-            string originSQL = $@"
 
-SELECT * FROM esScheduleCycle WHERE 1=1 
-{whereSql}
+//            if (!string.IsNullOrWhiteSpace(query.Keyword1))
+//            {
+//                paras["@Keyword1"] = $"%{query.Keyword1}%";
+//                whereSql += $@" AND (
+//    {nameof(EsScheduleCycleEntity.CycleName)} LIKE @Keyword1 OR
+//    {nameof(EsScheduleCycleEntity.CronExpression)} LIKE @Keyword1 OR
+//    {nameof(EsScheduleCycleEntity.ScheduleCycleCode)} LIKE @Keyword1 OR
+//    {nameof(EsScheduleCycleEntity.Description)} LIKE @Keyword1
+//)";
+//            }
 
-";
+            string sql = $@"SELECT * FROM esScheduleCycle WHERE 1=1 {whereSql}";
 
-            string qrySQL = @"
+            string countSql = @"
+SELECT count(0)
+FROM (
+" + sql + @"
+) AS pageData WHERE 1=1";
 
-  SELECT  pageData.*
-  FROM 
-  (
-" + originSQL + @"
-) as pageData  
- where 1=1 
+            string orderBy = !string.IsNullOrWhiteSpace(query.SortField)
+                ? $"{query.SortField} {query.SortDir}"
+                : $"{nameof(EsScheduleCycleEntity.ScheduleCycleCode)} ASC";
 
-";
-
-            string countSQL = @"
-  SELECT  
-    count(0)
-  FROM 
-  (
-" + originSQL + @"
-) as pageData
- where 1=1 
-";
-
-
-            return DbHelper.FindPageList<EsScheduleCycleDTO>(qrySQL, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, " id ");
-        } 
+            return DbHelper.FindPageList<EsScheduleCycleEntity>(sql, countSql, query.Page, query.PageSize, paras, orderBy);
+        }
     }
 
     public class EsScheduleCycleWeekDayDaoImpl : Core.Utility.Base.Data.GuidId.BaseImpl<EsScheduleCycleWeekDayEntity>, IEsScheduleCycleWeekDayDAO

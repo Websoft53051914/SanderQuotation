@@ -9,7 +9,7 @@ namespace Data.DataAccess.Dao
 {
     public interface IEsScheduleCycleDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<EsScheduleCycleEntity>
     {
-        PageResult<EsScheduleCycleDTO> GetPageList(PageEntity pageEntity, EsScheduleCycleDTO dto);
+        PageResult<EsScheduleCycleEntity> GetPageList(CommonSearchQuery query);
     }
     public interface IEsScheduleCycleWeekDayDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<EsScheduleCycleWeekDayEntity>
     {

@@ -1,18 +1,13 @@
 using AutoMapper;
+using backend.Common;
+using backend.MESSource;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
-using Core.Utility.Helper.DB.Entity;
-using Core.Utility.Utility;
-using Core.Utility.Web.EX;
-using backend.Common;
-using backend.MESSource;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using MySqlX.XDevAPI.Common;
 using System.Globalization;
 using ViewModel;
-using static Const.Enums;
 namespace backend.Controllers
 {
     [Route("api/cycle-settings")]
@@ -21,13 +16,13 @@ namespace backend.Controllers
         private readonly IConfiguration _config;
         private readonly IMapper _mapper;
         private readonly HangfireSchedulerHelper _hangfireSchedulerHelper;
-        private readonly TransferJob _transferJob;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public CycleSettingsController(IConfiguration config, HangfireSchedulerHelper hangfireSchedulerHelper, TransferJob transferJob) : base(config)
+        public CycleSettingsController(IConfiguration config, HangfireSchedulerHelper hangfireSchedulerHelper, IServiceScopeFactory scopeFactory):base(config)
         {
             _config = config;
             _hangfireSchedulerHelper = hangfireSchedulerHelper;
-            _transferJob = transferJob;
+            _scopeFactory = scopeFactory;
             var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AllowNullCollections = true;
@@ -46,19 +41,15 @@ namespace backend.Controllers
 
         // GET api/cycle-settings/GetPageList
         [HttpGet("GetPageList")]
-        public IActionResult GetPageList([FromQuery] DataSourceRequest request, EsScheduleCycleVM vm)
+        public IActionResult GetPageList([FromQuery] CommonSearchQuery query)
         {
             try
             {
-                PageEntity pageEntity = base.GetPageEntity(request);
-                IMapper mapper = CommonUtility.CreateMapper<EsScheduleCycleVM, EsScheduleCycleDM>();
-                EsScheduleCycleDM dm = mapper.Map<EsScheduleCycleDM>(vm);
-                var pageResult = GetBL().GetPageList(pageEntity, dm);
+                var pageResult = GetBL().GetPageList(query);
                 var list = _mapper.Map<List<EsScheduleCycleVM>>(pageResult.Results);
                 for (int i = 0; i < list.Count; i++)
                 {
-                    var item = list[i];
-                    item.No = (request.pageIndex - 1) * request.pageSize + i + 1;
+                    list[i].No = (query.Page - 1) * query.PageSize + i + 1;
                     list[i].IsEnabled = list[i].Status == "1";
                 }
 
@@ -94,7 +85,8 @@ namespace backend.Controllers
             {
                 LogError(ex);
                 Response.StatusCode = 500;
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                //return JsonValidFail(HandleError(ex));
+                return JsonValidFail(ex.Message);
             }
         }
 
@@ -105,15 +97,28 @@ namespace backend.Controllers
             try
             {
                 var dm = _mapper.Map<EsScheduleCycleDM>(vm);
-                var guid = GetBL().Create(dm);
-                LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("新增成功");
+                var result = GetBL().Create(dm);
+                if (result.IsSuccess == "Y")
+                {
+                    result.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
+                    result.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Insert_Success"];
+
+                    if (vm.IsEnabled)
+                        _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
+
+                    return JsonSuccess(result);
+                }
+                else
+                {
+                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentCulture.Name}:ScheduleCycleCode"]);
+                }
+
             }
             catch (Exception ex)
             {
                 LogError(ex);
                 Response.StatusCode = 500;
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                return JsonValidFail(ex.Message);
             }
         }
 
@@ -124,9 +129,25 @@ namespace backend.Controllers
             try
             {
                 var dm = _mapper.Map<EsScheduleCycleDM>(vm);
-                GetBL().Edit(dm);
-                LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("編輯成功");
+                var result = GetBL().Edit(dm);
+
+                if (result.IsSuccess == "Y")
+                {
+                    result.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
+                    result.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Update_Success"];
+
+                    _hangfireSchedulerHelper.RemoveRecurringJob(dm.ScheduleCycleCode);
+                    if (vm.IsEnabled)
+                    {
+                        _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
+                    }
+
+                    return JsonSuccess(result);
+                }
+                else
+                {
+                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentCulture.Name}:ScheduleCycleCode"]);
+                }
             }
             catch (Exception ex)
             {
@@ -146,16 +167,21 @@ namespace backend.Controllers
                     return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:Data_Not_Found"]);
 
                 var result = GetBL().Delete(rowGuids);
-                foreach (var item in rowGuids)
+                if (result.Item1.IsSuccess == "Y")
                 {
-                    LogSuccess(item, LogAction.Delete);
+                    result.Item1.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
+                    result.Item1.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Delete_Success"];
+                    foreach (var code in result.Item2)
+                    {
+                        _hangfireSchedulerHelper.RemoveRecurringJob(code);
+                    }
                 }
-                return JsonSuccess("刪除成功");
+                return JsonSuccess(result.Item1);
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                return JsonValidFail(ex.Message);
             }
         }
 
@@ -167,18 +193,22 @@ namespace backend.Controllers
             {
                 var bl = GetBLInstance<EsScheduleCycleBL>();
                 var dbOptions = bl.GetDbTransferOptions();
-                //var fileOptions = bl.GetFileTransferOptions();
+                var fileOptions = bl.GetFileTransferOptions();
 
                 return JsonSuccess(new
                 {
                     dbSelectList = dbOptions.Select(o => new SelectListItem { Value = o.Value, Text = o.Text }).ToList(),
-                    //fileSelectList = fileOptions.Select(o => new SelectListItem { Value = o.Value, Text = o.Text }).ToList()
+                    fileSelectList = fileOptions.Select(o => new SelectListItem { Value = o.Value, Text = o.Text }).ToList(),
+                    dbCSVSelectList = new List<SelectListItem>
+                    {
+                       
+                    }
                 });
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                return JsonValidFail(ex.Message);
             }
         }
 
@@ -189,13 +219,27 @@ namespace backend.Controllers
             {
                 var bl = GetBLInstance<EsScheduleCycleBL>();
                 var dm = bl.Get(rowGuid);
-                _ = _transferJob.ExecuteTask(dm.ScheduleCycleCode, "Manual");
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var transferJob = scope.ServiceProvider.GetRequiredService<TransferJob>();
+                        await transferJob.ExecuteTask(dm.ScheduleCycleCode, "Manual");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogError(ex);
+                    }
+                });
+
                 return JsonSuccess(_config[$"message:{CultureInfo.CurrentCulture.Name}:Schedule_Triggered"]);
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                return JsonValidFail(ex.Message);
             }
         }
     }

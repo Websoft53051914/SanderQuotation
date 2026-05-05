@@ -7,7 +7,6 @@ using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
-using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 
 namespace Business.BusinessLogic
@@ -25,9 +24,8 @@ namespace Business.BusinessLogic
             {
                 c.AllowNullCollections = true;
                 c.CreateMap<EsScheduleCycleEntity, EsScheduleCycleDM>().ReverseMap();
-                c.CreateMap<EsScheduleCycleDTO, EsScheduleCycleDM>().ReverseMap();
-                c.CreateMap<EsTransferErrorLogDM, EsTransferErrorLogEntity>().ReverseMap();
-                c.CreateMap<EsTransferErrorLogDM, EsScheduleCycleDTO>().ReverseMap();
+                c.CreateMap<EsTransferErrorLogDM, EsTransferErrorLogEntity>();
+                c.CreateMap<EsTransferErrorLogEntity, EsTransferErrorLogDM>();
             });
             _mapper = cfg.CreateMapper();
         }
@@ -41,17 +39,16 @@ namespace Business.BusinessLogic
         private IEsScheduleCycleWeekDayDAO GetWeekDao() => _unitOfWork.Repository<IEsScheduleCycleWeekDayDAO>();
         private IEsScheduleCycleMonthDayDAO GetMonthDao() => _unitOfWork.Repository<IEsScheduleCycleMonthDayDAO>();
         private IEsScheduleCycleDbTransferDAO GetTransferDao() => _unitOfWork.Repository<IEsScheduleCycleDbTransferDAO>();
-        //private IEsScheduleCycleDbCsvTransferDAO GetDbCsvTransferDao() => _unitOfWork.Repository<IEsScheduleCycleDbCsvTransferDAO>();
-        //private IEsScheduleCycleExcelDAO GetExcelDao() => _unitOfWork.Repository<IEsScheduleCycleExcelDAO>();
+        private IEsScheduleCycleDbCsvTransferDAO GetDbCsvTransferDao() => _unitOfWork.Repository<IEsScheduleCycleDbCsvTransferDAO>();
+        private IEsScheduleCycleExcelDAO GetExcelDao() => _unitOfWork.Repository<IEsScheduleCycleExcelDAO>();
     }
 
     public partial class EsScheduleCycleBL
     {
         // ── 列表查詢 ────────────────────────────────────────────
-        public PageResult<EsScheduleCycleDM> GetPageList(PageEntity pageEntity, EsScheduleCycleDM dm)
+        public PageResult<EsScheduleCycleDM> GetPageList(CommonSearchQuery query)
         {
-            var dto = _mapper.Map<EsScheduleCycleDTO>(dm);
-            var pageResult = GetDao().GetPageList(pageEntity, dto);
+            var pageResult = GetDao().GetPageList(query);
 
             var dms = _mapper.Map<List<EsScheduleCycleDM>>(pageResult.Results);
 
@@ -67,9 +64,9 @@ namespace Business.BusinessLogic
         }
 
         // ── 單筆查詢 ────────────────────────────────────────────
-        public EsScheduleCycleDM? Get(Guid Id)
+        public EsScheduleCycleDM? Get(Guid rowGuid)
         {
-            var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), Id);
+            var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), rowGuid);
             if (entity == null) return null;
 
             var dm = _mapper.Map<EsScheduleCycleDM>(entity);
@@ -87,15 +84,15 @@ namespace Business.BusinessLogic
         }
 
         // ── 新增 ────────────────────────────────────────────────
-        public Guid Create(EsScheduleCycleDM dm)
+        public DispatcherReturnMsg Create(EsScheduleCycleDM dm)
         {
             // 唯一碼檢查
             if (GetDao().IsExist(nameof(EsScheduleCycleEntity.ScheduleCycleCode), dm.ScheduleCycleCode))
-                return Guid.Empty;
+                return Fail("");
 
             var now = DateTime.Now;
             var entity = _mapper.Map<EsScheduleCycleEntity>(dm);
-            //entity.Id   = Guid.NewGuid();
+            //entity.RowGuid = Guid.NewGuid();
             entity.Status = dm.IsEnabled ? 1 : 0;
             entity.CreatedAt = now;
             entity.UpdatedAt = now;
@@ -106,19 +103,19 @@ namespace Business.BusinessLogic
             SaveSubTables(dm, now);
             _unitOfWork.Commit();
 
-            return entity.Id;
+            return Ok();
         }
 
         // ── 編輯 ────────────────────────────────────────────────
-        public void Edit(EsScheduleCycleDM dm)
+        public DispatcherReturnMsg Edit(EsScheduleCycleDM dm)
         {
             var existing = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), dm.Id);
-            if (existing == null) return;
+            if (existing == null) return Fail("");
 
             var now = DateTime.Now;
             var entity = _mapper.Map<EsScheduleCycleEntity>(dm);
             // 保留建立資訊
-            entity.Id = existing.Id;
+            //entity.RowGuid = existing.RowGuid;
             entity.SortNo = existing.SortNo;
             entity.Priority = existing.Priority;
             entity.CreatedAt = existing.CreatedAt;
@@ -134,29 +131,31 @@ namespace Business.BusinessLogic
             DeleteSubTables(existing.ScheduleCycleCode);
             SaveSubTables(dm, now);
             _unitOfWork.Commit();
+
+            return Ok();
         }
 
         // ── 刪除（支援多筆）────────────────────────────────────
-        public List<string> Delete(List<Guid> Ids)
+        public (DispatcherReturnMsg, List<string>) Delete(List<Guid> rowGuids)
         {
             List<string> cycleCodes = new();
-            foreach (var Id in Ids)
+            foreach (var rowGuid in rowGuids)
             {
-                var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), Id);
+                var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), rowGuid);
                 if (entity == null) continue;
 
                 DeleteSubTables(entity.ScheduleCycleCode);
-                GetDao().Delete(Id);
+                GetDao().Delete(rowGuid);
                 cycleCodes.Add(entity.ScheduleCycleCode);
             }
 
             _unitOfWork.Commit();
-            return cycleCodes;
+            return (Ok(), cycleCodes);
         }
 
         public List<EsScheduleCycleDM> GetAllActive()
         {
-            var entities = GetDao().FindListByProperty(nameof(EsScheduleCycleEntity.Status), 1);
+            var entities = GetDao().FindListByProperty(nameof(EsScheduleCycleEntity.Status), "1");
             var dms = _mapper.Map<List<EsScheduleCycleDM>>(entities);
             return dms;
         }
@@ -172,8 +171,7 @@ namespace Business.BusinessLogic
             var weekDays = GetWeekDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
             var monthDays = GetMonthDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
             var transfers = GetTransferDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
-            //var csvTransfers = GetDbCsvTransferDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
-            //var excels = GetExcelDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
+            var excels = GetExcelDao().GetByCodes(codes).ToLookup(x => x.ScheduleCycleCode);
 
             foreach (var dm in dms)
             {
@@ -181,8 +179,7 @@ namespace Business.BusinessLogic
                 dm.WeekDays = weekDays[code].Select(x => x.WeekDay.ToString()).ToList();
                 dm.MonthDays = monthDays[code].Select(x => x.MonthDay.ToString()).ToList();
                 dm.DBTransferSettings = transfers[code].Select(x => x.TransferCode).ToList();
-                //dm.DbCsvTransferSettings = csvTransfers[code].Select(x => x.TransferCode).ToList();
-                //dm.FileTransferSettings = excels[code].Select(x => x.TransferCode).ToList();
+                dm.FileTransferSettings = excels[code].Select(x => x.TransferCode).ToList();
             }
         }
 
@@ -201,13 +198,13 @@ namespace Business.BusinessLogic
                 .FindListByProperty(nameof(EsScheduleCycleDbTransferEntity.ScheduleCycleCode), code)
                 .Select(x => x.TransferCode).ToList();
 
-            //dm.DbCsvTransferSettings = GetDbCsvTransferDao()
-            //    .FindListByProperty(nameof(EsScheduleCycleDbCsvTransferEntity.ScheduleCycleCode), code)
-            //    .Select(x => x.TransferCode).ToList();
+            dm.DbCsvTransferSettings = GetDbCsvTransferDao()
+                .FindListByProperty(nameof(EsScheduleCycleDbCsvTransferEntity.ScheduleCycleCode), code)
+                .Select(x => x.TransferCode).ToList();
 
-            //dm.FileTransferSettings = GetExcelDao()
-            //    .FindListByProperty(nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code)
-            //    .Select(x => x.TransferCode).ToList();
+            dm.FileTransferSettings = GetExcelDao()
+                .FindListByProperty(nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code)
+                .Select(x => x.TransferCode).ToList();
         }
 
         private void SaveSubTables(EsScheduleCycleDM dm, DateTime now)
@@ -253,31 +250,31 @@ namespace Business.BusinessLogic
                 });
             }
 
-            //foreach (var csv in dm.DbCsvTransferSettings.Where(x => !string.IsNullOrEmpty(x)))
-            //{
-            //    GetDbCsvTransferDao().InsertAction(new EsScheduleCycleDbCsvTransferEntity
-            //    {
-            //        ScheduleCycleCode = code,
-            //        TransferCode = csv,
-            //        CreatedAt = now,
-            //        UpdatedAt = now,
-            //        CreatedBy = UserInfo?.UserAccount,
-            //        UpdatedBy = UserInfo?.UserAccount
-            //    });
-            //}
+            foreach (var csv in dm.DbCsvTransferSettings.Where(x => !string.IsNullOrEmpty(x)))
+            {
+                GetDbCsvTransferDao().InsertAction(new EsScheduleCycleDbCsvTransferEntity
+                {
+                    ScheduleCycleCode = code,
+                    TransferCode = csv,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    CreatedBy = UserInfo?.UserAccount,
+                    UpdatedBy = UserInfo?.UserAccount
+                });
+            }
 
-            //foreach (var ic in dm.FileTransferSettings.Where(x => !string.IsNullOrEmpty(x)))
-            //{
-            //    GetExcelDao().InsertAction(new EsScheduleCycleFileTransferEntity
-            //    {
-            //        ScheduleCycleCode = code,
-            //        TransferCode = ic,
-            //        CreatedAt = now,
-            //        UpdatedAt = now,
-            //        CreatedBy = UserInfo?.UserAccount,
-            //        UpdatedBy = UserInfo?.UserAccount
-            //    });
-            //}
+            foreach (var ic in dm.FileTransferSettings.Where(x => !string.IsNullOrEmpty(x)))
+            {
+                GetExcelDao().InsertAction(new EsScheduleCycleFileTransferEntity
+                {
+                    ScheduleCycleCode = code,
+                    TransferCode = ic,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    CreatedBy = UserInfo?.UserAccount,
+                    UpdatedBy = UserInfo?.UserAccount
+                });
+            }
         }
 
         private void DeleteSubTables(string code)
@@ -285,8 +282,8 @@ namespace Business.BusinessLogic
             GetWeekDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleWeekDayEntity.ScheduleCycleCode), code } });
             GetMonthDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleMonthDayEntity.ScheduleCycleCode), code } });
             GetTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleDbTransferEntity.ScheduleCycleCode), code } });
-            //GetDbCsvTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleDbCsvTransferEntity.ScheduleCycleCode), code } });
-            //GetExcelDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code } });
+            GetDbCsvTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleDbCsvTransferEntity.ScheduleCycleCode), code } });
+            GetExcelDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code } });
         }
 
         public List<(string Value, string Text)> GetDbTransferOptions()
@@ -298,5 +295,20 @@ namespace Business.BusinessLogic
                     Text: x.TransferMappingCode
                 )).ToList();
         }
+
+        public List<(string Value, string Text)> GetFileTransferOptions()
+        {
+            var dao = _unitOfWork.Repository<IEsFileTransferMappingDAO>();
+            return dao.FindByAll()
+                .Select(x => (
+                    Value: x.TransferMappingCode,
+                    Text: x.TransferMappingCode
+                )).ToList();
+        }
+
+
+
+        private static DispatcherReturnMsg Ok() => new() { IsSuccess = "Y", ReturnMsg = "" };
+        private static DispatcherReturnMsg Fail(string msg) => new() { IsSuccess = "N", ReturnMsg = msg };
     }
 }
