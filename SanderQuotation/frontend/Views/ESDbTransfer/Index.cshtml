@@ -1,7 +1,7 @@
 ﻿@model ViewModel.ESDbTransferVM
 @{
-    ViewBag.Title = config.GetMessage("ESDbTransfer_PageTitle");
-    ViewBag.pTitle = config.GetMessage("ESDbTransfer_PageTitle");
+    ViewBag.Title = "資料庫轉檔設定";
+    ViewBag.pTitle = "資料庫轉檔設定";
     ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
 
     var mapUrl = new
@@ -21,7 +21,7 @@
                     <h5 class="card-title mb-0 flex-grow-1"></h5>
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
-                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> @(config.GetMessage("Create").ToHtmlString())</button>
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
                             <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
                         </div>
                     </div>
@@ -36,27 +36,15 @@
                                 <input type="text"
                                        id="globalSearchInput"
                                        class="form-control search bg-light border-light"
-                                       placeholder="@(config.GetMessage("SearchTableContent").ToHtmlString())">
+                                       placeholder="請輸入關鍵字">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
-@*                         <div class="col-xxl-3 col-sm-12">
-                            <div class="search-box">
-                                <input type="text" class="form-control search bg-light border-light" placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword1" name="Keyword1">
-                                <i class="ri-search-line search-icon"></i>
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-sm-12">
-                            <div class="search-box">
-                                <input type="text" class="form-control search bg-light border-light" placeholder="@(config.GetMessage("EnterKeyword").ToHtmlString())" id="Keyword2" name="Keyword2">
-                                <i class="ri-search-line search-icon"></i>
-                            </div>
-                        </div> *@
                         <!--end col-->
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>
-                                @(config.GetMessage("Filters").ToHtmlString())
+                                篩選
                             </button>
                         </div>
                         <!--end col-->
@@ -77,13 +65,14 @@
                                 </th>
                                 @* *** 顯示欄位 *@
                                 <th data-sort="action">Action</th>@* 功能名稱 *@
-                                <th data-sort="No">@(config.GetMessage("No").ToHtmlString())</th>
-                                <th class="sort" data-sort="TransferCode">@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())</th>
-                                <th class="sort" data-sort="TransferName">@(config.GetMessage("ESDbTransfer_TransferName").ToHtmlString())</th>
-                                <th class="sort" data-sort="DbHost">@(config.GetMessage("ESDbTransfer_DbHost").ToHtmlString())</th>
-                                <th class="sort" data-sort="DbName">@(config.GetMessage("ESDbTransfer_DbName").ToHtmlString())</th>
-                                <th class="sort" data-sort="DbUser">@(config.GetMessage("ESDbTransfer_DbUser").ToHtmlString())</th>
-                                <th class="sort" data-sort="Description">@(config.GetMessage("Description").ToHtmlString())</th>
+                                <th data-sort="No">項次</th>
+                                <th class="sort" data-sort="TransferCode">資料庫轉檔代碼</th>
+                                <th class="sort" data-sort="TransferName">名稱</th>
+                                <th class="sort" data-sort="DbHost">主機/IP</th>
+                                <th class="sort" data-sort="DbName">資料庫名稱</th>
+                                <th class="sort" data-sort="DbType">資料庫類型</th>
+                                <th class="sort" data-sort="DbUser">帳號</th>
+                                <th class="sort" data-sort="Description">描述</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -98,8 +87,8 @@
                     </table>
                     <div class="noresult" style="display: none">
                         <div class="text-center">
-                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
                             @* <p class="text-muted mb-0">We've searched more than 150+ Datas We did not find any Datas for you search.</p> *@
                         </div>
                     </div>
@@ -107,11 +96,11 @@
                 <div class="d-flex justify-content-end mt-2">
                     <div class="pagination-wrap hstack gap-2">
                         <a class="page-item pagination-prev disabled" href="#">
-                            @(config.GetMessage("Page_Previous").ToHtmlString())
+                            上一頁
                         </a>
                         <ul class="pagination listjs-pagination mb-0"></ul>
                         <a class="page-item pagination-next" href="#">
-                            @(config.GetMessage("Page_Next").ToHtmlString())
+                            下一頁
                         </a>
                     </div>
                 </div>
@@ -121,20 +110,20 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-body p-5 text-center">
-                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
                                     <h4>
-                                        @(config.GetMessage("You_are_about_to_delete_a_data").ToHtmlString())
+                                        您即將刪除一筆資料
                                     </h4>
                                     <p class="text-muted fs-14 mb-4">
-                                        @(config.GetMessage("Deleting_your_data_will_remove_all_of_your_information_from_our_database.").ToHtmlString())
+                                        刪除您的資料將會把所有資訊從我們的資料庫中移除。
                                     </p>
                                     <div class="hstack gap-2 justify-content-center remove">
                                         <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            @(config.GetMessage("Close").ToHtmlString())
+                                            關閉
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">@(config.GetMessage("Yes_delete_it").ToHtmlString())</button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它!</button>
                                     </div>
                                 </div>
                             </div>
@@ -155,8 +144,8 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
-                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">@(config.GetMessage("Create").ToHtmlString())</h5>
-                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">@(config.GetMessage("Edit").ToHtmlString())</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
             <form class="needs-validation" novalidate="" method="post" id="submitForm">
@@ -164,60 +153,69 @@
                     <div class="row g-3">
                         <div class="col-lg-6">
                             <div>
-                                <label for="TransferCode" class="form-label required">@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())</label>
-                                <input type="text" name="TransferCode" id="TransferCode" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_TransferCode").ToHtmlString())" required />
+                                <label for="TransferCode" class="form-label required">資料庫轉檔代碼</label>
+                                <input type="text" name="TransferCode" id="TransferCode" class="form-control" placeholder="請輸入資料庫轉檔代碼" required />
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
-                                <label for="TransferName" class="form-label required">@(config.GetMessage("ESDbTransfer_TransferName").ToHtmlString())</label>
-                                <input type="text" name="TransferName" id="TransferName" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderName").ToHtmlString())" required />
+                                <label for="TransferName" class="form-label required">名稱</label>
+                                <input type="text" name="TransferName" id="TransferName" class="form-control" placeholder="請輸入名稱" required />
                             </div>
                         </div>
                         <div class="col-lg-8">
                             <div>
-                                <label for="DbHost" class="form-label required">@(config.GetMessage("ESDbTransfer_DbHost").ToHtmlString())</label>
-                                <input type="text" name="DbHost" id="DbHost" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderHost").ToHtmlString())" required />
+                                <label for="DbHost" class="form-label required">主機/IP</label>
+                                <input type="text" name="DbHost" id="DbHost" class="form-control" placeholder="請輸入主機名稱或IP" required />
                             </div>
                         </div>
                         <div class="col-lg-4">
                             <div>
-                                <label for="DbPort" class="form-label">@(config.GetMessage("ESDbTransfer_DbPort").ToHtmlString())</label>
-                                <input type="text" name="DbPort" id="DbPort" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderPort").ToHtmlString())" />
+                                <label for="DbPort" class="form-label">埠號</label>
+                                <input type="text" name="DbPort" id="DbPort" class="form-control" placeholder="請輸入埠號" />
                             </div>
                         </div>
                         <div class="col-lg-12">
                             <div>
-                                <label for="DbName" class="form-label required">@(config.GetMessage("ESDbTransfer_DbName").ToHtmlString())</label>
-                                <input type="text" name="DbName" id="DbName" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderDbName").ToHtmlString())" required />
+                                <label for="DbName" class="form-label required">資料庫名稱</label>
+                                <input type="text" name="DbName" id="DbName" class="form-control" placeholder="請輸入資料庫名稱" required />
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
-                                <label for="DbUser" class="form-label required">@(config.GetMessage("ESDbTransfer_DbUser").ToHtmlString())</label>
-                                <input type="text" name="DbUser" id="DbUser" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderAccount").ToHtmlString())" required />
+                                <label for="DbType" class="form-label required">資料庫類型</label>
+                                <select class="form-select" id="DbType" name="DbType" required>
+                                    <option value="1">PostgreSQL</option>
+                                    <option value="2">MSSQL</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
-                                <label for="DbPassword" class="form-label required">@(config.GetMessage("ESDbTransfer_DbPassword").ToHtmlString())</label>
-                                <input type="password" name="DbPassword" id="DbPassword" class="form-control" placeholder="@(config.GetMessage("ESDbTransfer_PlaceholderPassword").ToHtmlString())" required />
+                                <label for="DbUser" class="form-label required">帳號</label>
+                                <input type="text" name="DbUser" id="DbUser" class="form-control" placeholder="請輸入帳號" required />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div>
+                                <label for="DbPassword" class="form-label required">密碼</label>
+                                <input type="password" name="DbPassword" id="DbPassword" class="form-control" placeholder="請輸入密碼" required />
                             </div>
                         </div>
                         <div class="col-lg-12">
                             <div>
                                 <label for="Description" class="form-label">
-                                    @(config.GetMessage("Description").ToHtmlString())
+                                    描述
                                 </label>
-                                <textarea name="Description" id="Description" class="form-control" placeholder="@(config.GetMessage("Description").ToHtmlString())" rows="2"></textarea>
+                                <textarea name="Description" id="Description" class="form-control" placeholder="描述" rows="2"></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
-                        <button type="submit" class="btn btn-success" id="add-btn">@(config.GetMessage("Confirm").ToHtmlString())</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">確認</button>
                         <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
                     </div>
                 </div>
@@ -244,32 +242,59 @@
                 EndDate: "",
             };
 
+            const data = [
+                {
+                    'No':1,
+                    'Id':1,
+                    'TransferCode':'Test001',
+                    'TransferName':'測試資料1',
+                    'DbHost':'192.168.1.105',
+                    'DbName':'TestDB',
+                    'DbUser':'sa',
+                    'DbTypeDescription':'PostgreSQL',
+                    'Description':'這是一筆測試資料'
+                },
+                {
+                    'No':2,
+                    'Id':2,
+                    'TransferCode':'Test002',
+                    'TransferName':'測試資料2',
+                    'DbHost':'192.168.1.106',
+                    'DbName':'TestDB2',
+                    'DbUser':'sa',
+                    'DbTypeDescription':'MSSQL',
+                    'Description':'這是一筆測試資料'
+                },
+            ]
+
             // ⭐ 主載入函式（分頁 / 搜尋 / 排序 都走這裡）
             function loadDatas() {
-                showLoader();
-                $.ajax({
-                    url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
-                    type: 'GET',
-                    data: queryState,
-                    success: function (res) {
-                    hideLoader();
-                    if (!res.Success) {
-                        Swal.fire({
-                            icon: (res.Errors.AlertLevel || '').toLowerCase(),
-                            title: res.Errors.ReturnCode,
-                            text: res.Errors.ReturnMsg,
-                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
-                        });
-                        return;
-                    };
-                        renderTable(res.Data.Data);
-                        renderPagination(res.Data.Total);
-                        document.getElementById("remove-actions").style.display = 'none';
-                    },
-                    error: function () {
-                        alert('Failed to load data.');
-                    }
-                });
+                // showLoader();
+                // $.ajax({
+                //     url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
+                //     type: 'GET',
+                //     data: queryState,
+                //     success: function (res) {
+                //     hideLoader();
+                //     if (!res.Success) {
+                //         Swal.fire({
+                //             icon: (res.Errors.AlertLevel || '').toLowerCase(),
+                //             title: res.Errors.ReturnCode,
+                //             text: res.Errors.ReturnMsg,
+                //             confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                //         });
+                //         return;
+                //     };
+                //         renderTable(res.Data.Data);
+                //         renderPagination(res.Data.Total);
+                //         document.getElementById("remove-actions").style.display = 'none';
+                //     },
+                //     error: function () {
+                //         alert('Failed to load data.');
+                //     }
+                // });
+                renderTable(data);
+                renderPagination(data.length);
             }
 
             // ⭐ 表格渲染
@@ -298,8 +323,8 @@
                                         <i class="ri-more-fill align-middle"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
-                                        <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Delete").ToHtmlString())</a></li>
+                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i>編輯</a></li>
+                                        <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i>刪除</a></li>
                                     </ul>
                                 </div>
                             </td>
@@ -308,6 +333,7 @@
                             <td class="TransferName">${data.TransferName}</td>
                             <td class="DbHost">${data.DbHost}</td>
                             <td class="DbName">${data.DbName}</td>
+                            <td class="DbTypeDescription">${data.DbTypeDescription}</td>
                             <td class="DbUser">${data.DbUser}</td>
                             <td class="Description">${data.Description}</td>
                         </tr>
@@ -338,7 +364,7 @@
                 if (startPage > 1) {
                     ul.append(`
                         <li class="page-item">
-                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">第一頁</a>
                         </li>
                     `);
 
@@ -368,7 +394,7 @@
 
                     ul.append(`
                         <li class="page-item">
-                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">最後一頁</a>
                         </li>
                     `);
                 }
@@ -584,10 +610,9 @@
             // 初始化 select2 
             $('#showModal select').each(function () {
                 if (!$(this).data('select2')) {
-                    const isMultiple = this.multiple;
 
                     $(this).select2({
-                        placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
+                        placeholder: '請選擇',
                         allowClear: true,
                         width: '100%',
                         dropdownParent: $('#showModal')
