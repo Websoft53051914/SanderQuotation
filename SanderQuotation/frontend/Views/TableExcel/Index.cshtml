@@ -1,0 +1,1728 @@
+﻿@{
+    // *** 頁面名稱
+    ViewBag.Title = config.GetMessage("TableExcel_PageTitle");
+    ViewBag.pTitle = config.GetMessage("TableExcel_PageTitle");
+    ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    @* *** 篩選條件 *@
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="請輸入關鍵字">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <!--end col-->
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                篩選
+                            </button>
+                        </div>
+                        <!--end col-->
+                    </div>
+                    <!--end row-->
+                </form>
+            </div>
+            <!--end card-body-->
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                @* *** 顯示欄位 *@
+                                <th data-sort="action">Action</th>
+                                <th data-sort="No">項次</th>                                                                
+                                <th>檔案轉檔代碼</th>
+                                <th>匯入範本檔案名稱</th>
+                                <th>檔案類型</th>
+                                <th class="sort" data-sort="SrcNasFilePath">NAS 檔案路徑</th>
+                                <th class="sort" data-sort="Description">備註</th>
+                                <th>對應資料表</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            上一頁
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            下一頁
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>
+                                        您即將刪除一筆資料
+                                    </h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        刪除您的資料將會把所有資訊從我們的資料庫中移除。
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            關閉
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它！</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end modal -->
+            </div>
+            <!--end card-body-->
+        </div>
+        <!--end card-->
+    </div>
+    <!--end col-->
+</div>
+<!--end row-->
+
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                <div class="modal-body">
+                    <!-- Step 1: Upload Excel (shown only when creating) -->
+                    <div id="step1Upload">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">上傳檔案 (Excel / CSV)</label>
+                            <div id="excelDropZone" class="rounded p-4 text-center" style="cursor:pointer;">
+                                <i class="ri-upload-cloud-2-line fs-1 text-muted d-block mb-2"></i>
+                                <p class="text-muted mb-2">拖曳 / 選擇檔案</p>
+                                <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" style="display:none">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnBrowseExcel">選擇檔案</button>
+                            </div>
+                            <div id="excelUploadStatus" class="mt-2 small" style="display:none"></div>
+                        </div>
+                        <div id="excelParseResult" style="display:none">
+                            <label class="form-label fw-semibold">需設定匯入的工作表</label>
+                            <div id="sheetCheckList" class="mb-3 ps-1">
+                            </div>
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSelectAll">全選</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeselectAll">取消全選</button>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="btnNextStep">
+                                下一步 <i class="ri-arrow-right-line align-bottom"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Step 2: Sheet mapping config -->
+                    <div id="step2Mapping" style="display:none">
+                        <div class="row mb-3">                            
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">匯入範本檔案名稱</label>
+                                <input type="text" class="form-control" id="exampleFileName" readonly />
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">副檔名 Extension</label>
+                                <input type="text" class="form-control" id="exampleFileType" readonly />
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label required">檔案轉檔代碼</label>
+                                <input type="text" class="form-control" id="transferMappingCode" maxlength="50" placeholder="請輸入" required/>
+                            </div>
+                              <div class="col-md-4 mb-3">
+                                <label class="form-label required">NAS 檔案路徑</label>
+                                <input type="text" class="form-control" id="nasfilePath" placeholder="請輸入" maxlength="500" required />
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">備註</label>
+                                <textarea class="form-control" id="description" rows="2" placeholder="請輸入"></textarea>
+                            </div>
+                        </div>
+                        <hr />
+                        <!-- Sheet Tabs -->
+                        <label class="form-label required">檔案欄位對應設定</label>
+                        <ul class="nav nav-tabs mb-3" id="sheetTabs" role="tablist">
+                            <!-- tabs rendered by JS -->
+                        </ul>
+                        <!-- Sheet Content (single active sheet) -->
+                        <div id="sheetContent">
+                            <!-- Basic Info -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">工作表名稱</label>
+                                    <input type="text" class="form-control" id="sheetName" readonly />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">對應資料庫 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="DBName" required>
+                                        <option value="">請選擇</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">對應資料表 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="tableName" required>
+                                        <option value="">請選擇</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">標題起始行</label>
+                                    <input type="number" class="form-control" id="headerRowIndex" min="1" value="1" readonly/>
+                                </div>
+                            </div>
+                            <!-- Mapping Table -->
+                            <div class="table-responsive" id="mappingDOM">
+                                    <table class="table table-bordered align-middle mb-0" id="mappingTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:60px;">#</th>
+                                        <th style="width:calc((100% - 260px) / 2)">檔案欄位 <span class="text-danger">*</span></th>
+                                        <th style="width:calc((100% - 260px) / 2)">資料表對應欄位 <span class="text-danger">*</span></th>
+                                        <th style="width:90px;" class="text-center">是否為主鍵</th>
+                                        <th style="width:90px;" class="text-center">是否加密</th>
+                                        <th style="width:120px;">預設値(來源資料為空的時候)</th>
+                                        <th style="width:80px;">移除</th>
+                                    </tr>
+                                </thead>
+                                    <tbody id="mappingBody">
+                                        <!-- rows rendered by JS -->
+                                    </tbody>
+                                </table>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary mt-2" id="btnAddMappingRow">
+                                            <i class="ri-add-line"></i> 新增欄位對應
+                                        </button>
+                                    </div>
+
+                                    <!-- Filter Condition Area -->
+                                    <div class="card border mt-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center py-2">
+                                            <span class="fw-semibold">篩選條件設定</span>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
+                                                    <label class="form-check-label" for="filterModeBuilder">條件設定</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
+                                                    <label class="form-check-label" for="filterModeManual">手寫 SQL</label>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
+                                                    <i class="ri-add-line"></i> 新增條件
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-2" id="filterBuilderArea">
+                                            <table class="table table-sm table-bordered mb-0" id="filterTable">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width:10%">AND/OR</th>
+                                                        <th style="width:30%">來源欄位</th>
+                                                        <th style="width:20%">篩選</th>
+                                                        <th style="width:30%">內容</th>
+                                                        <th style="width:10%">動作</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="filterRows"></tbody>
+                                            </table>
+                                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">尚未設定任何篩選條件</div>
+                                        </div>
+                                        <div class="card-body p-2" id="filterManualArea" style="display:none;">
+                                            <textarea id="FilterConditionManual" class="form-control font-monospace"
+                                                      rows="3" placeholder="請勿包含 WHERE 關鍵字，直接輸入條件式"></textarea>
+                                            <div class="form-text">請勿包含 WHERE 關鍵字，直接輸入條件式</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                    <div class="hstack gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                        <button type="submit" class="btn btn-success" id="add-btn">確認</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <style>
+        /* Mapping table - Choices.js consistent sizing */
+
+        #mappingTable {
+            table-layout: fixed;
+        }
+        #mappingTable .choices {
+            margin-bottom: 0;
+        }
+
+        /* 防止 table-responsive 裁切 Choices.js 下拉選單 */
+        #mappingDOM {
+            overflow: visible;
+        }
+
+        /* Sheet switching smooth transition */
+        #sheetContent {
+            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+        }
+        #sheetContent.sheet-switching {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* Tab navigation smooth transition */
+        #sheetTabs .nav-link {
+            transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Excel upload drop zone */
+        #excelDropZone {
+            border: 2px dashed #dee2e6;
+            background: #f8f9fa;
+            transition: border-color 0.2s, background 0.2s;
+            min-height: 130px;
+        }
+        #excelDropZone.drag-over {
+            border-color: #405189 !important;
+            background: #eef2ff;
+        }
+        #sheetCheckList .sheet-item {
+            padding: 6px 4px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        #sheetCheckList .sheet-item:last-child {
+            border-bottom: none;
+        }
+
+        /* 統一 tableName 與 mappingTable 下拉選單的「請選擇」文字顏色 */
+        /* .choices__item {
+            color: #6c757d;
+            opacity: 1;
+        } */
+    </style>
+    <script>
+        var tableExcelMsg = {
+            minOneSheet: '至少需保留一個工作表',
+            confirmDeleteSheet: '確定要刪除此工作表？',
+            confirm: '確認',
+            cancel: '取消',
+            duplicateColumn: '資料欄位(檔案/資料表對應)不可重複',
+            uploading: '上傳中...',
+            uploadSuccess: '上傳成功！',
+            uploadFailed: '上傳失敗',
+            uploadFailedFormat: '上傳失敗，請確認檔案格式是否正確',
+            parseFailed: '請確認檔案格式',
+            loading: '載入中...',
+            selectAtLeastOneSheet: '請至少選擇一個工作表',
+            noColumnData: '沒有資料欄位，無法進行欄位對應設定',
+            cannotProceed: '無法進行下一步',
+            nextStep: '下一步',
+            selectTargetTable: '請選擇對應資料表',
+            minOneMapping: '至少需要一筆欄位對應',
+            selectExcelColumn: '請選擇 Excel 欄位',
+            selectDbColumn: '請選擇資料庫欄位',
+            excelColDuplicate: 'Excel 欄位 [{0}] 重複',
+            dbColDuplicate: '資料庫欄位 [{0}] 重複',
+            loadingTemplate: '載入範本檔案中...',
+            loadFailed: '載入失敗',
+            templateLoaded: '範本檔案載入成功！',
+            loadFailedServer: '載入失敗：伺服器錯誤',
+            loadFailedNoFile: '載入失敗：無法取得範本檔案',
+            confirmDeleteMapping: '確定要刪除此對應？',
+            sheetLabel: '工作表',
+            rowLabel: '第 {0} 列',
+            headerRowIndex: '標題起始行',
+            deleteSheet: '刪除工作表',
+            columnCount: '欄',
+            pleaseSelect: '請選擇',
+            minOneSheetRequired: '至少需保留一個工作表',
+            onlyOnePrimaryKey: '每個工作表只能設定一個主鍵欄位',
+        };
+
+        var pageUrls = {
+            GetPageList: '@(Configuration["BackendURL"])/api/TableExcel/GetPageList',
+            Create: '@(Configuration["BackendURL"])/api/TableExcel/Create',
+            Edit: '@(Configuration["BackendURL"])/api/TableExcel/Update',
+            Delete: '@(Configuration["BackendURL"])/api/TableExcel/Delete',
+            Get: '@(Configuration["BackendURL"])/api/TableExcel/Get',
+            GetExampleFile: '@(Configuration["BackendURL"])/api/TableExcel/GetExampleFile',
+            GetTableList: '@(Configuration["BackendURL"])/api/TableExcel/GetTableList',
+            GetTableColumns: '@(Configuration["BackendURL"])/api/TableExcel/GetTableColumns',
+            GetDbTransferList: '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetDbTransferList',
+            GetTargetTables: '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetTargetTables',
+            GetExcelColumns: '@(Configuration["BackendURL"])/api/TableExcel/GetExcelColumns',
+            GetSheetColumns: '@(Configuration["BackendURL"])/api/TableExcel/GetSheetColumns',
+            UploadExcel: '@(Configuration["BackendURL"])/api/TableExcel/UploadExcel',
+        };
+
+        var queryState = {
+            page: 1,
+            pageSize: 40,
+            sortField: "SrcNasFilePath",
+            sortDir: "asc",
+            Keyword1: "",
+            Status: "",
+            StartDate: "",
+            EndDate: "",
+        };
+
+        // ========================================
+        // Sheet 資料管理
+        // ========================================
+        var sheets = [];
+        var activeSheetIndex = 0;
+        var dbTableList = [];
+        var dbColumnCache = {};
+        var uploadedFilePath = '';
+        var parsedSheets = [];
+        var editData = null;
+        var isEditMode = false;
+
+        function createEmptySheet(name) {
+            return {
+                sheetName: name || ('Sheet' + (sheets.length + 1)),
+                filePath: '',
+                dbName: '',
+                tableName: '',
+                mappings: [],
+                headerRowIndex: 1,
+                _sheetIndex: 0,
+                _excelHeaders: [],
+                filterCondition: null,
+                filterMode: 'builder'
+            };
+        }
+
+        function createEmptyMapping() {
+            return { excelColumn: '', dbColumn: '', isPrimaryKey: false, isEncrypt: false, defaultValue: '' };
+        }
+
+        // ========================================
+        // Tab 渲染
+        // ========================================
+        function renderSheetTabs() {
+            var $tabs = $('#sheetTabs');
+            $tabs.empty();
+
+            sheets.forEach(function (sheet, idx) {
+                var isActive = idx === activeSheetIndex;
+                var $li = $('<li class="nav-item" role="presentation"></li>');
+                var $btn = $(`
+                    <button class="nav-link ${isActive ? 'active' : ''} d-flex align-items-center gap-1"
+                            type="button" data-index="${idx}">
+                        <span class="sheet-tab-name">${sheet.sheetName}</span>
+                        ${sheets.length > 1 ? '<i class="ri-close-line btn-remove-sheet ms-1" title=""></i>' : ''}
+                    </button>
+                `);
+
+                $btn.on('click', function (e) {
+                    if ($(e.target).hasClass('btn-remove-sheet')) {
+                        e.stopPropagation();
+                        removeSheet(idx);
+                        return;
+                    }
+                    switchSheet(idx);
+                });
+
+                $li.append($btn);
+                $tabs.append($li);
+            });
+        }
+
+        // ========================================
+        // Sheet 切換
+        // ========================================
+        function switchSheet(idx) {
+            if (idx === activeSheetIndex) return;
+            saveCurrentSheetData();
+            activeSheetIndex = idx;
+            renderSheetTabs();
+
+            var $content = $('#sheetContent');
+            $content.addClass('sheet-switching');
+
+            setTimeout(function () {
+                loadSheetToUI(sheets[idx]);
+                requestAnimationFrame(function () {
+                    $content.removeClass('sheet-switching');
+                });
+            }, 250);
+        }
+
+        function saveCurrentSheetData() {
+            if (!sheets[activeSheetIndex]) return;
+            var sheet = sheets[activeSheetIndex];
+            sheet.filePath = $('#filePath').val() || '';
+            sheet.dbName = $('#DBName').val() || '';
+            sheet.tableName = $('#tableName').val() || '';
+            sheet.headerRowIndex = parseInt($('#headerRowIndex').val()) || sheet.headerRowIndex || 1;
+            sheet.mappings = collectMappingRows();
+            var fd = collectFilterData();
+            sheet.filterCondition = JSON.stringify(fd);
+            sheet.filterMode = fd.mode;
+        }
+
+        function collectMappingRows() {
+            var mappings = [];
+            $('#mappingBody tr').each(function () {
+                mappings.push({
+                    excelColumn: $(this).find('.sel-excel-col').val() || '',
+                    dbColumn: $(this).find('.sel-db-col').val() || '',
+                    isPrimaryKey: $(this).find('.chk-primary-key').prop('checked') || false,
+                    isEncrypt: $(this).find('.chk-encrypt').prop('checked') || false,
+                    defaultValue: $(this).find('.inp-default-value').val() || ''
+                });
+            });
+            return mappings;
+        }
+
+        function loadSheetToUI(sheet) {
+            $('#sheetName').val(sheet.sheetName);
+            $('#filePath').val('');
+            $('#headerRowIndex').val(sheet.headerRowIndex || 1);
+
+            // restore DBName
+            var dbEl = document.getElementById('DBName');
+            if (dbEl) {
+                $('#DBName').val(sheet.dbName || '').trigger('change');
+                $(dbEl).removeClass('is-invalid');
+            }
+            // 清除 tableName 的驗證錯誤樣式
+            var el = document.getElementById('tableName');
+            if (el) {
+                $(el).removeClass('is-invalid');
+            }
+
+            // reload tables for selected DB，並在載入完成後預選 tableName
+            if (sheet.dbName) {
+                loadTableList(sheet.dbName, sheet.tableName);
+            } else {
+                // 無 dbName 時清空 tableName 選項與值
+                $('#tableName').find('option:not(:first)').remove();
+                $('#tableName').val('').trigger('change');
+            }
+
+            // mappings
+            renderMappingTable(sheet.mappings, sheet.tableName);
+
+            // filter condition
+            loadFilterCondition(sheet.filterCondition || null, sheet.filterMode || 'builder');
+        }
+
+
+        function removeSheet(idx) {
+            if (sheets.length <= 1) {
+                Swal.fire({ icon: 'warning', title: tableExcelMsg.minOneSheet, confirmButtonText: pageConfig.messages.confirm });
+                return;
+            }
+            Swal.fire({
+                title: tableExcelMsg.confirmDeleteSheet,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: pageConfig.messages.confirm ,
+                cancelButtonText: '取消',
+                customClass: { confirmButton: 'btn btn-primary me-2', cancelButton: 'btn btn-danger' },
+                buttonsStyling: false
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    sheets.splice(idx, 1);
+                    if (activeSheetIndex >= sheets.length) activeSheetIndex = sheets.length - 1;
+                    renderSheetTabs();
+                    loadSheetToUI(sheets[activeSheetIndex]);
+                }
+            });
+        }
+
+        // ========================================
+        // Mapping Table 渲染
+        // ========================================
+        function renderMappingTable(mappings, tableName) {
+            var $body = $('#mappingBody');
+            // Destroy existing select2 instances before clearing
+            $body.find('select').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            $body.empty();
+
+            if (!mappings || mappings.length === 0) {
+                mappings = [createEmptyMapping()];
+            }
+
+            var dbColumns = dbColumnCache[tableName] || [];
+
+            mappings.forEach(function (m, i) {
+                appendMappingRow(m, i, dbColumns);
+            });
+        }
+
+         
+        
+        function initMappingSelect2($sel) {
+            $sel.select2({
+                placeholder: '請選擇',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+        }
+
+        function appendMappingRow(mapping, index, dbColumns) {
+            var $body = $('#mappingBody');
+            var rowNum = index !== undefined ? index : $body.find('tr').length;
+            dbColumns = dbColumns || dbColumnCache[$('#tableName').val()] || [];
+
+            var excelOptions = buildExcelOptions(mapping.excelColumn);
+            var dbOptions = buildDbColumnOptions(dbColumns, mapping.dbColumn);
+            var selectPlaceholder = '請選擇';
+            var $tr = $(`
+                <tr data-row="${rowNum}">
+                    <td class="text-center row-index">${rowNum + 1}</td>
+                    <td>
+                        <select class="form-select sel-excel-col" required>
+                            <option value="">${selectPlaceholder}</option>
+                            ${excelOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select sel-db-col" required>
+                            <option value="">${selectPlaceholder}</option>
+                            ${dbOptions}
+                        </select>
+                    </td>
+                    <td class="text-center">
+                        <div class="form-check d-flex justify-content-center mb-0">
+                            <input class="form-check-input chk-primary-key" type="checkbox" ${mapping.isPrimaryKey ? 'checked' : ''}>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="form-check d-flex justify-content-center mb-0">
+                            <input class="form-check-input chk-encrypt" type="checkbox" ${mapping.isEncrypt ? 'checked' : ''}>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control inp-default-value" value="${mapping.defaultValue || ''}" placeholder="Null" maxlength="200">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-soft-danger btn-remove-mapping">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+
+            $body.append($tr);
+
+            // Initialize select2 on the new row's selects
+            $tr.find('select').each(function () {
+                initMappingSelect2($(this));
+                $(this).on('change', function () {
+                    $(this).removeClass('is-invalid');
+                    var colClass = $(this).hasClass('sel-excel-col') ? 'sel-excel-col' : 'sel-db-col';
+                    var newVal = $(this).val();
+                    if (!newVal) return;
+                    var $thisSel = $(this);
+                    var isDup = false;
+                    $('#mappingBody tr').each(function () {
+                        var $sel = $(this).find('.' + colClass);
+                        if ($sel[0] !== $thisSel[0] && $sel.val() === newVal) {
+                            isDup = true;
+                            return false;
+                        }
+                    });
+                    if (isDup) {
+                        Swal.fire({ icon: 'warning', title: tableExcelMsg.duplicateColumn, confirmButtonText: '確定' });
+                        $(this).val('').trigger('change');
+                    }
+                });
+            });
+        }
+
+        function buildExcelOptions(selected) {
+            var sheet = sheets[activeSheetIndex];
+            if(!sheet){
+                return '';
+            }
+            var headers = sheet._excelHeaders || [];
+            var options = headers.map(function (h) {
+                return `<option value="${h}" ${h === selected ? 'selected' : ''}>${h}</option>`;
+            }).join('');
+            if (selected && headers.indexOf(selected) < 0) {
+                options = `<option value="${selected}" selected>${selected}</option>` + options;
+            }
+            return options;
+        }
+
+        function buildDbColumnOptions(dbColumns, selected) {
+            return dbColumns.map(function (c) {
+                return `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`;
+            }).join('');
+        }
+
+        function reindexMappingRows() {
+            $('#mappingBody tr').each(function (i) {
+                $(this).attr('data-row', i);
+                $(this).find('.row-index').text(i + 1);
+            });
+        }
+
+        // Add mapping row
+        $('#btnAddMappingRow').on('click', function () {
+            var dbColumns = dbColumnCache[$('#tableName').val()] || [];
+            appendMappingRow(createEmptyMapping(), $('#mappingBody tr').length, dbColumns);
+        });
+
+        // Remove mapping row
+        $(document).on('click', '.btn-remove-mapping', function () {
+            var $tr = $(this).closest('tr');
+            var hasValue = $tr.find('.sel-excel-col').val() || $tr.find('.sel-db-col').val();
+
+            function destroyRowChoices() {
+                $tr.find('select').each(function () {
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
+                });
+            }
+
+            if (hasValue) {
+                Swal.fire({
+                    title: tableExcelMsg.confirmDeleteMapping,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '確認',
+                    cancelButtonText: '取消',
+                    customClass: { confirmButton: 'btn btn-primary me-2', cancelButton: 'btn btn-danger' },
+                    buttonsStyling: false
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        destroyRowChoices();
+                        $tr.remove();
+                        reindexMappingRows();
+                    }
+                });
+            } else {
+                destroyRowChoices();
+                $tr.remove();
+                reindexMappingRows();
+            }
+        });
+
+        // ========================================
+        // tableName 變更 → 載入 dbColumn
+        // ========================================
+        $('#tableName').on('change', function () {
+            var tableName = $(this).val();
+            if (!tableName) {
+                dbColumnCache[tableName] = [];
+                renderMappingTable([], tableName);
+                return;
+            }
+            loadDbColumns(tableName, function (columns) {
+                var currentMappings = collectMappingRows();
+                // 清除已選的 dbColumn（因為資料表已變更）
+                currentMappings.forEach(function (m) { m.dbColumn = ''; });
+                renderMappingTable(currentMappings, tableName);
+            });
+        });
+
+        // ========================================
+        // DBName 變更 → 重新載入 tableName
+        // ========================================
+        $('#DBName').on('change', function () {
+            var dbTransferCode = $(this).val();
+            // Clear current tableName
+            var el = document.getElementById('tableName');
+            if (el) {
+                $('#tableName').find('option:not(:first)').remove();
+                $('#tableName').val('').trigger('change');
+            }
+            // 保留 excel 欄位選擇，僅清除 db 欄位
+            var currentMappings = collectMappingRows();
+            currentMappings.forEach(function (m) { m.dbColumn = ''; });
+            renderMappingTable(currentMappings, '');
+            if (dbTransferCode) {
+                loadTableList(dbTransferCode);
+            }
+        });
+
+        function loadDbColumns(tableName, callback) {
+            if (dbColumnCache[tableName]) {
+                if (callback) callback(dbColumnCache[tableName]);
+                return;
+            }
+            $.ajax({
+                url: pageUrls.GetTableColumns,
+                type: 'GET',
+                data: { tableName: tableName },
+                success: function (res) {
+                    if (res.Success) {
+                        dbColumnCache[tableName] = res.Data || [];
+                    } else {
+                        dbColumnCache[tableName] = [];
+                    }
+                    if (callback) callback(dbColumnCache[tableName]);
+                },
+                error: function () {
+                    dbColumnCache[tableName] = [];
+                    if (callback) callback([]);
+                }
+            });
+        }
+
+        function resetChoicesSelect(selectId) {
+            var $sel = $('#' + selectId);
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
+            $sel[0].innerHTML = '<option value="">' + tableExcelMsg.pleaseSelect + '</option>';
+        }
+
+function initSingleChoices(selectId) {
+    var $sel = $('#' + selectId);
+    if (!$sel.length || $sel.hasClass('select2-hidden-accessible')) return;
+    $sel.select2({
+        placeholder: tableExcelMsg.pleaseSelect,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#showModal')
+    });
+    $sel.on('change', function () {
+        $(this).removeClass('is-invalid');
+    });
+}
+
+function loadDbTransferList(selectedValue, callback) {
+    $.ajax({
+        url: pageUrls.GetDbTransferList,
+        type: 'GET',
+        success: function (res) {
+            if (res.Success) {
+                var list = res.Data || [];
+                var $sel = $('#DBName');
+                resetChoicesSelect('DBName');
+                initSingleChoices('DBName');
+                $sel.find('option:not(:first)').remove();
+                list.forEach(function (item) {
+                    $sel.append('<option value="' + item.TransferCode + '">' + item.TransferName + ' (' + item.DbHost + '/' + item.DbName + ')' + '</option>');
+                });
+                if (selectedValue) {
+                    $sel.val(selectedValue).trigger('change');
+                }
+            }
+            if (callback) callback();
+        },
+        error: function () {
+            if (callback) callback();
+        }
+    });
+}
+
+        // function loadDbTransferList(selectedValue, callback) {
+        //     $.ajax({
+        //         url: pageUrls.GetDbTransferList,
+        //         type: 'GET',
+        //         success: function (res) {
+        //             if (res.Success) {
+        //                 var list = res.Data || [];
+        //                 var el = document.getElementById('DBName');
+        //                 if (el && el.choices) {
+        //                             var choicesArr = [];
+        //                             list.forEach(function (item) {
+        //                                 choicesArr.push({ value: item.TransferCode, label: item.TransferName + ' (' + item.DbHost + '/' + item.DbName + ')' });
+        //                             });
+        //                             el.choices.clearChoices();
+        //                             el.choices.setChoices(choicesArr, 'value', 'label', false);
+        //                             if (selectedValue) {
+        //                                 el.choices.setChoiceByValue(selectedValue);
+        //                             }
+        //                 } else {
+        //                     var $sel = $('#DBName');
+        //                     $sel.find('option:not(:first)').remove();
+        //                     list.forEach(function (item) {
+        //                         $sel.append('<option value="' + item.TransferCode + '">' + item.TransferName + ' (' + item.DbHost + '/' + item.DbName + ')</option>');
+        //                     });
+        //                     if (selectedValue) {
+        //                         $sel.val(selectedValue);
+        //                     }
+        //                 }
+        //             }
+        //             if (callback) callback();
+        //         },
+        //         error: function () {
+        //             if (callback) callback();
+        //         }
+        //     });
+        // }
+
+        function loadTableList(dbTransferGuid, selectedValue) {
+            var params = {};
+            if (dbTransferGuid) params.dbTransferGuid = dbTransferGuid;
+            $.ajax({
+                url: pageUrls.GetTargetTables,
+                type: 'GET',
+                data: params,
+                success: function (res) {
+                    if (res.Success) {
+                        dbTableList = res.Data || [];
+                        var $sel = $('#tableName');
+                        $sel.find('option:not(:first)').remove();
+                        dbTableList.forEach(function (t) {
+                            $sel.append('<option value="' + t + '">' + t + '</option>');
+                        });
+                        if (selectedValue) {
+                            $sel.val(selectedValue).trigger('change');
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadExcelColumns(filePath, callback) {
+            $.ajax({
+                url: pageUrls.GetExcelColumns,
+                type: 'GET',
+                data: { filePath: filePath },
+                success: function (res) {
+                    if (res.Success) {
+                        if (callback) callback(res.Data || []);
+                    } else {
+                        if (callback) callback([]);
+                    }
+                },
+                error: function () {
+                    if (callback) callback([]);
+                }
+            });
+        }
+
+        // ========================================
+        // filePath 變更 → 載入 Excel 欄位
+        // ========================================
+        $('#filePath').on('change', function () {
+            var filePath = $(this).val();
+            if (!filePath) {
+                sheets[activeSheetIndex]._excelHeaders = [];
+                renderMappingTable(collectMappingRows(), $('#tableName').val());
+                return;
+            }
+            loadExcelColumns(filePath, function (headers) {
+                sheets[activeSheetIndex]._excelHeaders = headers;
+                var currentMappings = collectMappingRows();
+                currentMappings.forEach(function (m) { m.excelColumn = ''; });
+                renderMappingTable(currentMappings, $('#tableName').val());
+            });
+        });
+
+        // ========================================
+        // Excel 上傳解析（Step 1）
+        // ========================================
+        function initUploadStep() {
+            isEditMode = false;
+            editData = null;
+            uploadedFilePath = '';
+            parsedSheets = [];
+            $('#excelFileInput').val('');
+            $('#excelParseResult').hide();
+            $('#excelDropZone').show().removeClass('drag-over');
+            $('#excelUploadStatus').hide().text('');
+            $('#description').val('');
+            $('#exampleFileType').val('');
+            $('#transferMappingCode').val('').prop('readonly', false);
+            $('#step1Upload').show();
+            $('#step2Mapping').hide();
+            $('#add-btn').hide();
+            resetFilterCondition();
+        }
+
+        function showStep2(afterLoad) {
+            $('#step1Upload').hide();
+            $('#step2Mapping').show();
+            $('#add-btn').show();
+            initPageChoices();
+            loadDbTransferList('', afterLoad);
+        }
+
+        function uploadExcel(file) {
+            var $status = $('#excelUploadStatus');
+            $status.removeClass('text-danger text-success').text(tableExcelMsg.uploading).show();
+            var formData = new FormData();
+            formData.append('file', file);
+            $.ajax({
+                url: pageUrls.UploadExcel,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.Success) {
+                        uploadedFilePath = res.Data.filePath || res.Data.FilePath || '';
+                        parsedSheets = (res.Data.sheets || res.Data.Sheets || []).map(function (s) {
+                            return {
+                                name: s.name || s.Name || s.SheetName || '',
+                                columnCount: s.columnCount || s.ColumnCount || 0,
+                                columns: s.columns || s.Columns || []
+                            };
+                        });
+                        var fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+                        var fileExt = (file.name.match(/\.([^.]+)$/) || [])[1] || '';
+                        $('#exampleFileName').val(fileNameWithoutExt);
+                        $('#exampleFileType').val(fileExt);
+                        $status.addClass('text-success').text(tableExcelMsg.uploadSuccess);
+                        renderSheetCheckList();
+                        $('#excelParseResult').show();
+                    } else {
+                        $status.addClass('text-danger').text(tableExcelMsg.uploadFailed + (res.Message || tableExcelMsg.parseFailed));
+                    }
+                },
+                error: function () {
+                    $status.addClass('text-danger').text(tableExcelMsg.uploadFailedFormat);
+                }
+            });
+        }
+
+        function renderSheetCheckList() {
+            var $list = $('#sheetCheckList');
+            $list.empty();
+            parsedSheets.forEach(function (s, i) {
+                $list.append(
+                    '<div class="sheet-item d-flex align-items-center gap-3">' +
+                    '<div class="form-check mb-0 flex-grow-1">' +
+                    '<input class="form-check-input sheet-check" type="checkbox" id="sheetCheck' + i + '" value="' + i + '" checked>' +
+                    '<label class="form-check-label" for="sheetCheck' + i + '">' +
+                    '<i class="ri-checkbox-circle-line text-success me-1"></i>' +
+                    s.name +
+                    '</label>' +
+                    '</div>' +
+                    '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +
+                    '<label class="form-label mb-0 small text-nowrap" for="sheetHeaderRow' + i + '">' + tableExcelMsg.headerRowIndex +'</label>' +
+                    '<input maxlength="4" type="text" class="form-control form-control-sm sheet-header-row" id="sheetHeaderRow' + i + '" value="1" style="width:70px;">' +
+                    '</div>' +
+                    '</div>'
+                );
+            });
+        }
+
+        $('#excelDropZone').on('dragover dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('drag-over');
+        }).on('dragleave dragend', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+        }).on('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+            var files = e.originalEvent.dataTransfer.files;
+            if (files.length > 0) {
+                uploadExcel(files[0]);
+            }
+        });
+
+        $('#btnBrowseExcel').on('click', function () {
+            $('#excelFileInput').trigger('click');
+        });
+
+        $('#excelFileInput').on('change', function () {
+            if (this.files && this.files.length > 0) {
+                uploadExcel(this.files[0]);
+            }
+        });
+
+        $('#btnSelectAll').on('click', function () {
+            $('.sheet-check').prop('checked', true);
+        });
+
+        $('#btnDeselectAll').on('click', function () {
+            $('.sheet-check').prop('checked', false);
+        });
+
+        $(document).on('blur', '.sheet-header-row', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value === '' || parseInt(this.value) < 1) {
+                this.value = 1;
+            }
+        });
+
+        $('#btnNextStep').on('click', function () {
+            var selected = [];
+            $('.sheet-check:checked').each(function () {
+                var idx = parseInt($(this).val());
+                var headerRowIndex = parseInt($('#sheetHeaderRow' + idx).val()) || 1;
+                if (headerRowIndex < 1) headerRowIndex = 1;
+                selected.push({ idx: idx, headerRowIndex: headerRowIndex });
+            });
+            if (selected.length === 0) {
+                Swal.fire({ icon: 'warning', title: tableExcelMsg.selectAtLeastOneSheet, confirmButtonText: pageConfig.messages.confirm });
+                return;
+            }
+
+            sheets = selected.map(function (item) {
+                var s = parsedSheets[item.idx];
+                return {
+                    sheetName: s.name,
+                    filePath: uploadedFilePath,
+                    dbName: '',
+                    tableName: '',
+                    mappings: [],
+                    headerRowIndex: item.headerRowIndex,
+                    _sheetIndex: item.idx,
+                    _excelHeaders: []
+                };
+            });
+
+            var $btn = $(this).prop('disabled', true).text(tableExcelMsg.loading);
+            var apiCalls = sheets.map(function (sheet, i) {
+                return $.ajax({
+                    url: pageUrls.GetSheetColumns,
+                    type: 'GET',
+                    data: {
+                        filePath: uploadedFilePath,
+                        sheetIndex: sheet._sheetIndex,
+                        headerRowIndex: sheet.headerRowIndex
+                    }
+                }).then(function (res) {
+                    if (res.Success) sheets[i]._excelHeaders = res.Data || [];
+                });
+            });
+
+            $.when.apply($, apiCalls).always(function () {
+                $btn.prop('disabled', false).html(tableExcelMsg.nextStep + ' <i class="ri-arrow-right-line align-bottom"></i>');
+
+                var noHeaderSheets = sheets.filter(function (s) { return !s._excelHeaders || s._excelHeaders.length === 0; });
+
+                if (noHeaderSheets.length > 0) {
+                    var msgs = noHeaderSheets.map(function (s) { return s.sheetName + tableExcelMsg.noColumnData; }).join('<br>');
+                    Swal.fire({
+                        icon: 'error',
+                        title: tableExcelMsg.cannotProceed,
+                        html: '<div style="text-align:center">' + msgs + '</div>',
+                        confirmButtonText: pageConfig.messages.confirm
+                    });
+                    return;
+                }
+
+                activeSheetIndex = 0;
+                $('#filePath').val(uploadedFilePath);
+                renderSheetTabs();
+                showStep2(function () {
+                    if (isEditMode) {
+                        applyEditDataToStep2();
+                    } else {
+                        loadSheetToUI(sheets[0]);
+                    }
+                });
+            });
+        });
+
+        // ========================================
+        // 驗證
+        // ========================================
+        function validateAllSheets() {
+            saveCurrentSheetData();
+            var errors = [];
+
+            if (sheets.length === 0) {
+                errors.push(tableExcelMsg.minOneSheet);
+                return errors;
+            }
+
+            sheets.forEach(function (sheet, idx) {
+                var prefix = ' [' + sheet.sheetName + ']: ';
+
+                if (!sheet.tableName) {
+                    errors.push(prefix + tableExcelMsg.selectTargetTable);
+                }
+
+                if (!sheet.mappings || sheet.mappings.length === 0) {
+                    errors.push(prefix + tableExcelMsg.minOneMapping);
+                    return;
+                }
+
+                var excelCols = [];
+                var dbCols = [];
+
+                sheet.mappings.forEach(function (m, ri) {
+                    var rowLabel = prefix + tableExcelMsg.rowLabel.replace('{0}', ri + 1) + ': ';
+
+                    if (!m.excelColumn) {
+                        errors.push(rowLabel + tableExcelMsg.selectExcelColumn);
+                    }
+
+                    if (!m.dbColumn) {
+                        errors.push(rowLabel + tableExcelMsg.selectDbColumn);
+                    }
+
+                    if (m.excelColumn) {
+                        if (excelCols.includes(m.excelColumn)) {
+                            errors.push(
+                                prefix + tableExcelMsg.excelColDuplicate.replace('{0}', m.excelColumn)
+                            );
+                        } else {
+                            excelCols.push(m.excelColumn);
+                        }
+                    }
+
+                    if (m.dbColumn) {
+                        if (dbCols.includes(m.dbColumn)) {
+                            errors.push(
+                                prefix + tableExcelMsg.dbColDuplicate.replace('{0}', m.dbColumn)
+                            );
+                        } else {
+                            dbCols.push(m.dbColumn);
+                        }
+                    }
+
+                });
+
+                var primaryKeyCount = sheet.mappings.filter(function (m) { return m.isPrimaryKey; }).length;
+                if (primaryKeyCount > 1) {
+                    errors.push(prefix + tableExcelMsg.onlyOnePrimaryKey);
+                }
+            });
+
+            return errors;
+        }
+
+        function beforeSubmitValidation() {
+            var errors = validateAllSheets();
+            if (errors.length > 0) {
+                Swal.fire({
+                    icon: 'warning',                   
+                    html: '<div style="text-align:center">' + errors.join('<br>') + '</div>',
+                    confirmButtonText: pageConfig.messages.confirm
+                });
+                return false;
+            }
+            return true;
+        }
+
+        // ========================================
+        // 送出資料準備
+        // ========================================
+        function prepareSubmitData($form) {
+            saveCurrentSheetData();
+
+            var submitSheets = sheets.map(function (s) {
+                return {
+                    SrcSheetName: s.sheetName,
+                    SrcSheetIndex: s._sheetIndex || 0,
+                    HeaderRowIndex: s.headerRowIndex || 1,
+                    DBName: s.dbName || '',
+                    TargetTableName: s.tableName,
+                    FilterCondition: s.filterCondition || null,
+                    FilterMode: s.filterMode || 'builder',
+                    Mappings: s.mappings.map(function (m) {
+                        return { SrcFileColumnName: m.excelColumn, TargetTableColumnName: m.dbColumn, IsPrimaryKey: m.isPrimaryKey || false, IsEncrypt: m.isEncrypt || false, DefaultValue: m.defaultValue || null };
+                    })
+                };
+            });
+
+            var data = {
+                RowGuid: currentId,
+                ExampleFileName: $('#exampleFileName').val() || '',
+                SrcNasFilePath: $('#nasfilePath').val() || '',
+                Description: $('#description').val() || '',
+                UploadedFilePath: uploadedFilePath || '',
+                ExampleFileType: $('#exampleFileType').val() || '',
+                TransferMappingCode: $('#transferMappingCode').val() || '',
+                DBName: $('#DBName').val() || '',
+
+                Sheets: submitSheets
+            };
+
+            return {
+                data: JSON.stringify(data),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json'
+            };
+        }
+
+        // ========================================
+        // 新增 / 編輯回呼
+        // ========================================
+        function onBeforeCreate() {
+            initUploadStep();
+        }
+
+        function onAfterEditFill(data) {
+            initUploadStep();
+            editData = data;
+            isEditMode = true;
+            $('#excelDropZone').hide();
+            $('#exampleFileName').val(data.ExampleFileName || data.exampleFileName || '');
+            $('#exampleFileType').val((data.ExampleFileType || data.exampleFileType || '').replace(/^\./, ''));
+            $('#transferMappingCode').val(data.TransferMappingCode || data.transferMappingCode || '').prop('readonly', true);
+
+            var rowGuid = data.RowGuid || data.rowGuid;
+            var $status = $('#excelUploadStatus');
+            $status
+                .removeClass('text-danger text-success')
+                .text(tableExcelMsg.loadingTemplate)
+                .show();
+
+            $.ajax({
+                url: pageUrls.GetExampleFile + '?id=' + rowGuid,
+                type: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function (blob) {
+                    var fileExt = (data.ExampleFileType || data.exampleFileType || '').replace(/^\./, '');
+                    var fileName = (data.ExampleFileName || data.exampleFileName || 'file');
+                    var fullName = fileExt ? (fileName + '.' + fileExt) : fileName;
+                    var file = new File([blob], fullName, { type: blob.type });
+
+                    var formData = new FormData();
+                    formData.append('file', file);
+
+                    $.ajax({
+                        url: pageUrls.UploadExcel,
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (!res.Success) {
+                                    $status             
+                                    .addClass('text-danger')
+                                    .text(tableExcelMsg.loadFailed +'：' +(res.Message || tableExcelMsg.parseFailed)      
+                                );
+                                return;
+                            }
+                            uploadedFilePath = res.Data.filePath || res.Data.FilePath || '';
+                            parsedSheets = (res.Data.sheets || res.Data.Sheets || []).map(function (s) {
+                                return {
+                                    name: s.name || s.Name || s.SheetName || '',
+                                    columnCount: s.columnCount || s.ColumnCount || 0,
+                                    columns: s.columns || s.Columns || []
+                                };
+                            });
+                            $status
+                            .addClass('text-success')
+                            .text(tableExcelMsg.templateLoaded);
+                            renderSheetCheckListForEdit();
+                            $('#excelParseResult').show();
+                        },
+                        error: function () {
+                            $status.addClass('text-danger').text(tableExcelMsg.loadFailedServer);
+
+                        }
+                    });
+                },
+                error: function () {
+                    $status.addClass('text-danger').text(tableExcelMsg.loadFailedNoFile);
+                }
+            });
+        }
+
+        function renderSheetCheckListForEdit() {
+            var $list = $('#sheetCheckList');
+            $list.empty();
+            var existingSheets = editData ? (editData.Sheets || editData.sheets || []) : [];
+
+            parsedSheets.forEach(function (s, i) {
+                var existingSheet = existingSheets.find(function (es) {
+                    return (es.SrcSheetIndex === i || es.srcSheetIndex === i);
+                });
+                var isChecked = !!existingSheet;
+                var headerRowIndex = existingSheet
+                    ? (existingSheet.HeaderRowIndex || existingSheet.headerRowIndex || 1)
+                    : 1;
+
+                $list.append(
+                    '<div class="sheet-item d-flex align-items-center gap-3">' +
+                    '<div class="form-check mb-0 flex-grow-1">' +
+                    '<input class="form-check-input sheet-check" type="checkbox" id="sheetCheck' + i + '" value="' + i + '" ' + (isChecked ? 'checked' : '') + '>' +
+                    '<label class="form-check-label" for="sheetCheck' + i + '">' +
+                    '<i class="ri-checkbox-circle-line text-success me-1"></i>' +
+                    s.name +
+                    '</label>' +
+                    '</div>' +
+                    '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +
+                    '<label class="form-label mb-0 small text-nowrap" for="sheetHeaderRow' + i + '">' + tableExcelMsg.headerRowIndex+'</label>' +
+                    '<input maxlength="4" type="text" class="form-control form-control-sm sheet-header-row" id="sheetHeaderRow' + i + '" value="' + headerRowIndex + '" style="width:70px;">' +
+                    '</div>' +
+                    '</div>'
+                );
+            });
+        }
+
+        function applyEditDataToStep2() {
+            if (!editData) {
+                loadSheetToUI(sheets[0]);
+                return;
+            }
+            $('#exampleFileName').val(editData.ExampleFileName || editData.exampleFileName || '');
+            $('#exampleFileType').val((editData.ExampleFileType || editData.exampleFileType || '').replace(/^\./, ''));
+            $('#nasfilePath').val(editData.SrcNasFilePath || editData.srcNasFilePath || '');
+            $('#description').val(editData.Description || editData.description || '');
+
+            var existingSheets = editData.Sheets || editData.sheets || [];
+            sheets.forEach(function (sheet) {
+                var match = existingSheets.find(function (es) {
+                    return (es.SrcSheetIndex === sheet._sheetIndex || es.srcSheetIndex === sheet._sheetIndex);
+                });
+                if (match) {
+                    sheet.dbName = match.DBName || match.dbName || '';
+                    sheet.tableName = match.TargetTableName || match.targetTableName || '';
+                    sheet.filterCondition = match.FilterCondition || match.filterCondition || null;
+                    sheet.filterMode = match.FilterMode || match.filterMode || 'builder';
+                    sheet.mappings = (match.Mappings || match.mappings || []).map(function (m) {
+                        return {
+                            excelColumn: m.SrcFileColumnName || m.srcFileColumnName || '',
+                            dbColumn: m.TargetTableColumnName || m.targetTableColumnName || '',
+                            isPrimaryKey: m.IsPrimaryKey || m.isPrimaryKey || false,
+                            isEncrypt: m.IsEncrypt || m.isEncrypt || false,
+                            defaultValue: m.DefaultValue || m.defaultValue || ''
+                        };
+                    });
+                }
+            });
+
+            var sheetsWithTable = sheets.filter(function (s) { return s.tableName; });
+            if (sheetsWithTable.length === 0) {
+                loadSheetToUI(sheets[0]);
+                return;
+            }
+
+            var pending = sheetsWithTable.length;
+            sheetsWithTable.forEach(function (sheet) {
+                loadDbColumns(sheet.tableName, function () {
+                    pending--;
+                    if (pending === 0) {
+                        loadSheetToUI(sheets[0]);
+                    }
+                });
+            });
+        }
+
+        // ========================================
+        // 列表頁
+        // ========================================
+        function renderTableTextBadges(tablesStr) {
+            if (!tablesStr) return '';
+            return tablesStr.split(',').filter(Boolean).map(function (t) {
+                return '<span class="badge bg-primary me-1">' + t.trim() + '</span>';
+            }).join('');
+        }
+
+       
+        function renderTable(rows) {
+            const tbody = $('#data-list-data');
+            tbody.empty();
+
+            if (!rows || rows.length === 0) {
+                $('.noresult').show();
+                return;
+            }
+            $('.noresult').hide();
+
+            rows.forEach(data => {
+                var rowGuid = data.RowGuid || data.rowGuid || '';
+                var no = data.No || data.no || '';
+                var transferMappingCode = data.TransferMappingCode || data.transferMappingCode || '';                                
+                var exampleFileName = data.ExampleFileName || data.exampleFileName || '';
+
+                var exampleFileTypeText = data.ExampleFileTypeText || data.exampleFileTypeText || '';
+                var srcNasFilePath = data.SrcNasFilePath || data.srcNasFilePath || '';
+                var description = data.Description || data.description || '';
+                var mappingTables = data.MappingTables || data.mappingTables || '';
+                var status = data.Status || data.status || '';
+
+                tbody.append(`
+                    <tr data-id="${rowGuid}">
+                        <th scope="row">
+                            <div class="form-check">
+                                <input class="form-check-input row-check" type="checkbox" data-id="${rowGuid}" value="option1">
+                            </div>
+                        </th>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                    <i class="ri-more-fill align-middle"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="No">${no}</td>
+                        <td class="TransferMappingCode">${transferMappingCode}</td>
+                        <td class="ExampleFileName">${exampleFileName}</td>
+                        <td class="ExampleFileTypeText">${exampleFileTypeText}</td>
+                        <td class="SrcNasFilePath">${srcNasFilePath}</td>
+                        <td class="Description">${description}</td>
+                        <td class="MappingTables">${renderTableTextBadges(mappingTables)}</td>
+                    </tr>
+                `);
+            });
+
+            initDynamicDropdowns();
+        }
+
+        async function initDropdownList() {
+        }
+
+        function onSearchData() {
+            queryState.Keyword1 = $('#Keyword1').val() || '';
+        }
+
+        // ========================================
+        // Global Search
+        // ========================================
+        $('#globalSearchInput').on('input', function () {
+            var keyword = $(this).val().toLowerCase().trim();
+            var $rows = $('#data-list-data tr');
+            var visibleCount = 0;
+            $rows.each(function () {
+                var text = $(this).text().toLowerCase();
+                if (!keyword || text.indexOf(keyword) >= 0) {
+                    $(this).show();
+                    visibleCount++;
+                } else {
+                    $(this).hide();
+                }
+            });
+            if (visibleCount === 0 && $rows.length > 0) {
+                $('.noresult').show();
+            } else {
+                $('.noresult').hide();
+            }
+        });
+
+        // ========================================
+        // Filter Condition
+        // ========================================
+        const FILTER_OPERATORS = [
+            { value: '=',           label: '等於 (=)' },
+            { value: '!=',          label: '不等於 (!=)' },
+            { value: '>',           label: '大於 (>)' },
+            { value: '>=',          label: '大於等於 (>=)' },
+            { value: '<',           label: '小於 (<)' },
+            { value: '<=',          label: '小於等於 (<=)' },
+            { value: 'LIKE',        label: '包含 (LIKE)' },
+            { value: 'NOT LIKE',    label: '不包含 (NOT LIKE)' },
+            { value: 'IS NULL',     label: '為空 (IS NULL)' },
+            { value: 'IS NOT NULL', label: '不為空 (IS NOT NULL)' },
+        ];
+
+        $(document).on('change', 'input[name="filterMode"]', function () {
+            var isManual = $(this).val() === 'manual';
+            if (isManual) {
+                $('#filterBuilderArea').hide();
+                $('#btnAddFilterRow').hide();
+                $('#filterManualArea').show();
+            } else {
+                $('#filterBuilderArea').show();
+                $('#btnAddFilterRow').show();
+                $('#filterManualArea').hide();
+            }
+        });
+
+        $('#btnAddFilterRow').on('click', function () {
+            addFilterRow('AND', '', '=', '');
+        });
+
+        function addFilterRow(logic, column, operator_, value) {
+            var isFirst = $('#filterRows tr').length === 0;
+            var tableName = $('#tableName').val() || (sheets && sheets[activeSheetIndex] && sheets[activeSheetIndex].tableName) || '';
+            var dbCols = dbColumnCache[tableName] || [];
+            var colOptions = dbCols.map(function (c) {
+                return '<option value="' + c + '" ' + (c === column ? 'selected' : '') + '>' + c + '</option>';
+            }).join('');
+            if (column && dbCols.indexOf(column) < 0) {
+                colOptions = '<option value="' + column + '" selected>' + column + '</option>' + colOptions;
+            }
+            var opOptions = FILTER_OPERATORS.map(function (o) {
+                return '<option value="' + o.value + '" ' + (o.value === operator_ ? 'selected' : '') + '>' + o.label + '</option>';
+            }).join('');
+            var noValueOps = ['IS NULL', 'IS NOT NULL'];
+            var hideVal = noValueOps.indexOf(operator_) >= 0;
+
+            var $tr = $('<tr>' +
+                '<td class="align-middle">' +
+                (isFirst
+                    ? '<span class="text-muted ps-1">WHERE</span>'
+                    : '<select class="form-select form-select-sm filter-logic">' +
+                      '<option value="AND" ' + (logic === 'AND' ? 'selected' : '') + '>AND</option>' +
+                      '<option value="OR" '  + (logic === 'OR'  ? 'selected' : '') + '>OR</option>' +
+                      '</select>') +
+                '</td>' +
+                '<td><select class="form-select form-select-sm filter-col">' +
+                '<option value="">-- 請選擇 --</option>' +
+                colOptions + '</select></td>' +
+                '<td><select class="form-select form-select-sm filter-op">' + opOptions + '</select></td>' +
+                '<td><input type="text" class="form-control filter-val" value="' + escFilterHtml(value) + '" ' + (hideVal ? 'style="display:none"' : '') + '></td>' +
+                '<td class="text-center"><button type="button" class="btn btn-sm btn-soft-danger btn-remove-filter"><i class="ri-delete-bin-line"></i></button></td>' +
+                '</tr>');
+
+            $('#filterRows').append($tr);
+            if (!isFirst) {
+                $tr.find('.filter-logic').select2({ minimumResultsForSearch: Infinity, width: '100%', dropdownParent: $('#showModal') });
+                $tr.find('.filter-logic').val(logic).trigger('change');
+            }
+            $tr.find('.filter-col').select2({ placeholder: '-- 請選擇 --', allowClear: true, width: '100%', dropdownParent: $('#showModal') });
+            if (column) $tr.find('.filter-col').val(column).trigger('change');
+            $tr.find('.filter-op').select2({ minimumResultsForSearch: Infinity, width: '100%', dropdownParent: $('#showModal') });
+            $tr.find('.filter-op').val(operator_).trigger('change');
+            updateFilterEmpty();
+        }
+
+        $(document).on('change', '.filter-op', function () {
+            var noVal = ['IS NULL', 'IS NOT NULL'].indexOf($(this).val()) >= 0;
+            $(this).closest('tr').find('.filter-val').toggle(!noVal);
+        });
+
+        $(document).on('click', '.btn-remove-filter', function () {
+            var $tr = $(this).closest('tr');
+            $tr.find('.filter-col, .filter-op, .filter-logic').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) $(this).select2('destroy');
+            });
+            $tr.remove();
+            updateFilterEmpty();
+        });
+
+        function updateFilterEmpty() {
+            var hasRows = $('#filterRows tr').length > 0;
+            $('#filterEmpty').toggle(!hasRows);
+        }
+
+        function collectFilterData() {
+            var mode = $('input[name="filterMode"]:checked').val();
+            if (mode === 'manual') {
+                return { mode: 'manual', sql: $('#FilterConditionManual').val().trim(), rows: [] };
+            }
+            var rows = [];
+            $('#filterRows tr').each(function (i) {
+                var $logicSel = $(this).find('.filter-logic');
+                var logic = $logicSel.length ? $logicSel.val() : '';
+                var col = $(this).find('.filter-col').val();
+                var op  = $(this).find('.filter-op').val();
+                var val = $(this).find('.filter-val').val();
+                if (col) rows.push({ logic: i === 0 ? '' : logic, col: col, op: op, val: val });
+            });
+            return { mode: 'builder', sql: '', rows: rows };
+        }
+
+        function loadFilterCondition(filterCondition, filterMode) {
+            $('#filterRows .filter-col, #filterRows .filter-op, #filterRows .filter-logic').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) $(this).select2('destroy');
+            });
+            $('#filterRows').empty();
+            $('#FilterConditionManual').val('');
+
+            if (!filterCondition) { updateFilterEmpty(); return; }
+
+            try {
+                var fc = JSON.parse(filterCondition);
+                var mode = filterMode || fc.mode || 'builder';
+
+                if (mode === 'manual') {
+                    $('input[name="filterMode"][value="manual"]').prop('checked', true);
+                    $('#filterBuilderArea').hide();
+                    $('#btnAddFilterRow').hide();
+                    $('#filterManualArea').show();
+                    $('#FilterConditionManual').val(fc.sql || filterCondition);
+                } else {
+                    $('input[name="filterMode"][value="builder"]').prop('checked', true);
+                    $('#filterBuilderArea').show();
+                    $('#btnAddFilterRow').show();
+                    $('#filterManualArea').hide();
+                    $.each(fc.rows || [], function (i, r) {
+                        addFilterRow(i === 0 ? 'AND' : r.logic, r.col, r.op, r.val);
+                    });
+                }
+            } catch (e) {
+                $('input[name="filterMode"][value="manual"]').prop('checked', true);
+                $('#filterBuilderArea').hide();
+                $('#btnAddFilterRow').hide();
+                $('#filterManualArea').show();
+                $('#FilterConditionManual').val(filterCondition);
+            }
+            updateFilterEmpty();
+        }
+
+        function resetFilterCondition() {
+            $('#filterRows .filter-col, #filterRows .filter-op, #filterRows .filter-logic').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) $(this).select2('destroy');
+            });
+            $('#filterRows').empty();
+            $('#FilterConditionManual').val('');
+            $('input[name="filterMode"][value="builder"]').prop('checked', true);
+            $('#filterBuilderArea').show();
+            $('#btnAddFilterRow').show();
+            $('#filterManualArea').hide();
+            updateFilterEmpty();
+        }
+
+        function escFilterHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function initPageChoices() {
+            ['DBName', 'tableName'].forEach(function (id) {
+                var $sel = $('#' + id);
+                if ($sel.length && !$sel.hasClass('select2-hidden-accessible')) {
+                    $sel.select2({
+                        placeholder: tableExcelMsg.pleaseSelect,
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#showModal')
+                    });
+                    $sel.on('change', function () {
+                        $(this).removeClass('is-invalid');
+                    });
+                }
+            });
+        }
+    </script>
+    @await Html.PartialAsync("_CrudCommonScripts")
+}
