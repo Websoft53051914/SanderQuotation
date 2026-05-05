@@ -1,0 +1,276 @@
+@using ViewModel.QuotationResult
+@using ViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var mapData = new
+    {
+        ItemPicker = new ItemPickerVCM(),
+    };
+}
+
+<!-- ═══ Modal：料號快查 ═══ -->
+<div class="modal fade" id="quickPartSearchModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-warning-subtle">
+                <h5 class="modal-title">
+                    <i class="ri-search-2-line me-2"></i>料號快查
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- 搜尋條件 -->
+                <form id="qsSearchForm" class="needs-validation" novalidate>
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-lg-3 col-md-4">
+                        <label class="col-form-label pt-0 required">製造商料號</label>
+                        <input type="text" id="qs_ManufacturerPartNo" class="form-control" placeholder="輸入製造商料號" required />
+                    </div>
+                    <div class="col-lg-3 col-md-4">
+                        <label class="col-form-label pt-0 required">客戶別</label>
+                        <select id="qs_CustomerType" class="form-select" required>
+                            <option value="">請選擇</option>
+                            <option value="MM">MM</option>
+                            <option value="D3">D3</option>
+                            <option value="STL">STL</option>
+                            <option value="CTB">CTB</option>
+                            <option value="WT">WT</option>
+                            <option value="AED">AED</option>
+                            <option value="EDS">EDS</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-4">
+                        <label class="col-form-label pt-0 required">採購數量</label>
+                        <input type="number" id="qs_PurchaseQty" class="form-control" min="1" placeholder="採購數量" required />
+                    </div>
+                    <div class="col-lg-2 col-md-3">
+                        <button type="submit" class="btn btn-primary" id="btnQuickSearch">
+                            <i class="ri-search-line me-1"></i>查詢
+                        </button>
+                    </div>
+                </div>
+                </form>
+                <div class="text-muted small mb-2">
+                    採購型號欄位黃底標示表示系統建議採購型號
+                </div>
+
+                <!-- 結果表格 -->
+                <div class="table-responsive" style="max-height:480px; overflow-y:auto;">
+                    <table class="table table-bordered table-sm align-middle mb-0" id="qsTable"
+                           style="min-width:1200px;">
+                        <thead class="table-light sticky-top" style="top:0;z-index:10;">
+                            <tr>
+                                <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
+                                <th rowspan="2" style="min-width:160px;"
+                                    class="align-middle bg-warning-subtle text-warning">採購型號</th>
+                                <th colspan="6" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
+                                <th colspan="6" class="text-center bg-success-subtle text-success">外部查價</th>
+                            </tr>
+                            <tr>
+                                <th class="bg-primary-subtle text-primary" style="min-width:100px;">採購日期</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(原幣)</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(台幣)</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width: 70px;">數量</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width: 65px;">幣別</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:120px;">供應商名稱</th>
+                                <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
+                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
+                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(台幣)</th>
+                                <th class="bg-success-subtle text-success" style="min-width: 70px;">MOQ</th>
+                                <th class="bg-success-subtle text-success" style="min-width: 65px;">幣別</th>
+                                <th class="bg-success-subtle text-success" style="min-width:120px;">供應商名稱</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qs-result-body"></tbody>
+                    </table>
+                    <div class="qs-noresult" style="display:none;">
+                        <div class="text-center py-4">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                <button type="button" class="btn btn-success" id="btnQsReQuote">
+                    <i class="ri-refresh-line me-1"></i>重新查價
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Views/QuotationResult/_ItemPicker.cshtml", mapData.ItemPicker)
+
+<script>
+    (function () {
+        var qsApiUrl = '@(Configuration["BackendURL"])/api/QuotationResult/QuickSearch';
+        var qsSaveUrl = '@(Configuration["BackendURL"])/api/QuotationResult/SaveQuickItem';
+
+        var F = {
+            Id: '@nameof(QuotationItemVM.Id)',
+            ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
+            ProcurementModel: '@nameof(QuotationItemVM.ProcurementModel)',
+            IsRecommended: '@nameof(QuotationItemVM.IsRecommended)',
+            InternalProcurementDate: '@nameof(QuotationItemVM.InternalProcurementDate)',
+            InternalUnitPriceOrig: '@nameof(QuotationItemVM.InternalUnitPriceOrig)',
+            InternalUnitPriceTwd: '@nameof(QuotationItemVM.InternalUnitPriceTwd)',
+            InternalQty: '@nameof(QuotationItemVM.InternalQty)',
+            InternalCurrency: '@nameof(QuotationItemVM.InternalCurrency)',
+            InternalSupplierName: '@nameof(QuotationItemVM.InternalSupplierName)',
+            ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
+            ExternalUnitPriceOrig: '@nameof(QuotationItemVM.ExternalUnitPriceOrig)',
+            ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
+            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',
+            ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
+            ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
+        };
+
+        function esc(v) {
+            return $('<div>').text(v ?? '').html();
+        }
+
+        function fmtPrice(val) {
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">\u2014</span>';
+            return '<span class="font-monospace">' + parseFloat(val).toFixed(4) + '</span>';
+        }
+
+        function fmtNum(val) {
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">\u2014</span>';
+            return Number(val).toLocaleString();
+        }
+
+        function fmtDate(val) {
+            if (!val) return '<span class="text-muted">\u2014</span>';
+            return esc(val);
+        }
+
+        function fmtCurrency(val) {
+            if (!val) return '<span class="text-muted">\u2014</span>';
+            return '<span class="badge bg-light text-dark border">' + esc(val) + '</span>';
+        }
+
+        function buildRow(r) {
+            var isRec = r[F.IsRecommended] === true;
+            var itemId = r[F.Id];
+            return '<tr data-id="' + itemId + '" data-rec="' + isRec + '">'
+                + '<td><code class="small">' + esc(r[F.ManufacturerPartNo1]) + '</code></td>'
+                + '<td class="p-1' + (isRec ? ' bg-warning-subtle' : '') + '">'
+                + '<div class="input-group input-group-sm">'
+                + '<input type="text" class="form-control form-control-sm font-monospace qs-model-input"'
+                + ' data-id="' + itemId + '" value="' + esc(r[F.ProcurementModel] || '') + '" placeholder="—" />'
+                + '<button class="btn btn-outline-secondary qs-pick-btn" type="button" data-id="' + itemId + '">'
+                + '<i class="ri-search-line"></i>'
+                + '</button>'
+                + '</div>'
+                + '</td>'
+                + '<td class="small">' + fmtDate(r[F.InternalProcurementDate]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[F.InternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[F.InternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center small">' + fmtNum(r[F.InternalQty]) + '</td>'
+                + '<td class="text-center">' + fmtCurrency(r[F.InternalCurrency]) + '</td>'
+                + '<td class="small">' + esc(r[F.InternalSupplierName] || '') + '</td>'
+                + '<td class="small">' + fmtDate(r[F.ExternalQuotationDate]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[F.ExternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[F.ExternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center small">' + fmtNum(r[F.ExternalMOQ]) + '</td>'
+                + '<td class="text-center">' + fmtCurrency(r[F.ExternalCurrency]) + '</td>'
+                + '<td class="small">' + esc(r[F.ExternalSupplierName] || '') + '</td>'
+                + '</tr>';
+        }
+
+        function doSearch() {
+            var $form = $('#qsSearchForm');
+            if (!$form[0].checkValidity()) {
+                $form.addClass('was-validated');
+                return;
+            }
+
+            var params = {
+                manufacturerPartNo: $('#qs_ManufacturerPartNo').val().trim(),
+                customerType: $('#qs_CustomerType').val(),
+                purchaseQty: parseInt($('#qs_PurchaseQty').val()) || 0,
+            };
+
+            showLoader();
+            $.ajax({
+                url: qsApiUrl,
+                type: 'GET',
+                data: params,
+                success: function (res) {
+                    var $tbody = $('#qs-result-body');
+                    $tbody.empty();
+                    if (!res.Success || !res.Data || !res.Data.length) {
+                        $('.qs-noresult').show();
+                        return;
+                    }
+                    $('.qs-noresult').hide();
+                    res.Data.forEach(function (r) { $tbody.append(buildRow(r)); });
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
+                },
+                complete: function () { hideLoader(); },
+            });
+        }
+
+        $('#qsSearchForm').on('submit', function (e) {
+            e.preventDefault();
+            doSearch();
+        });
+
+        document.getElementById('quickPartSearchModal').addEventListener('show.bs.modal', function () {
+            $('#qs-result-body').empty();
+            $('.qs-noresult').hide();
+            $('#qsSearchForm').removeClass('was-validated');
+        });
+
+        // ── 採購型號選取器 ──────────────────────────────────────────────────
+        var _qsCurrentPickerId = null;
+        $(document).on('click', '#quickPartSearchModal .qs-pick-btn', function () {
+            _qsCurrentPickerId = $(this).data('id');
+            ItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
+                $('.qs-model-input[data-id="' + _qsCurrentPickerId + '"]').val(no);
+            });
+        });
+
+        // ── 重新查價（儲存所有可見料項的採購型號） ──────────────────────────
+        $('#btnQsReQuote').on('click', function () {
+            var rows = [];
+            $('#qs-result-body tr[data-id]').each(function () {
+                var $tr = $(this);
+                var id = parseInt($tr.data('id'));
+                if (!id) return;
+                rows.push({
+                    Id: id,
+                    ProcurementModel: $tr.find('.qs-model-input').val(),
+                    IsRecommended: String($tr.data('rec')) === 'true'
+                });
+            });
+            if (!rows.length) {
+                Swal.fire({ icon: 'warning', title: '無資料', text: '尚無查詢結果可儲存。', confirmButtonText: '確定' });
+                return;
+            }
+            showLoader();
+            var defs = rows.map(function (item) {
+                return $.ajax({
+                    url: qsSaveUrl,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(item)
+                });
+            });
+            $.when.apply($, defs).then(function () {
+                hideLoader();
+                Swal.fire({ icon: 'success', title: '重新查價成功', confirmButtonText: '確定' });
+            }).fail(function () {
+                hideLoader();
+                Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
+            });
+        });
+    }());
+</script>

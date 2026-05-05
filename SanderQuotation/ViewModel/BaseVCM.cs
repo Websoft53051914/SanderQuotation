@@ -1,4 +1,4 @@
-﻿namespace Const
+﻿namespace ViewModel
 {
     public class BaseVCM
     {
