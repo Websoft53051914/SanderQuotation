@@ -1,8 +1,8 @@
 @model ViewModel.ESDbTransferMappingVM
 @{
-    ViewBag.Title = config.GetMessage("ESDbTransferMapping_PageTitle");
-    ViewBag.pTitle = config.GetMessage("ESDbTransferMapping_PageTitle");
-    ViewBag.pageTitle = (config.GetMessage("SystemManagementModule").ToHtmlString());
+    ViewBag.Title = "資料表轉檔設定";
+    ViewBag.pTitle = "資料表轉檔設定";
+    ViewBag.pageTitle = ("系統管理模組");
 
     var mapUrl = new
     {
@@ -29,7 +29,7 @@
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
                             <button id="btnShowModal" class="btn btn-danger add-btn">
-                                <i class="ri-add-line align-bottom me-1"></i> @(config.GetMessage("Create").ToHtmlString())
+                                <i class="ri-add-line align-bottom me-1"></i> 新增
                             </button>
                             <button class="btn btn-soft-danger" id="remove-actions" onclick="deleteMultiple()">
                                 <i class="ri-delete-bin-2-line"></i>
@@ -44,7 +44,7 @@
                         <div class="col-xxl-3 col-sm-12">
                             <div class="search-box">
                                 <input type="text" id="globalSearchInput" class="form-control search bg-light border-light"
-                                       placeholder="@(config.GetMessage("SearchTableContent").ToHtmlString())">
+                                       placeholder="請輸入關鍵字">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
@@ -65,7 +65,7 @@
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>
-                                @(config.GetMessage("Filters").ToHtmlString())
+                                篩選
                             </button>
                         </div>
                     </div>
@@ -82,14 +82,14 @@
                                     </div>
                                 </th>
                                 <th data-sort="action">Action</th>
-                                <th data-sort="No">@(config.GetMessage("No").ToHtmlString())</th>
-                                <th class="sort" data-sort="TransferMappingCode">@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())</th>
-                                <th class="sort" data-sort="SrcTransferName">@(config.GetMessage("ESDbTransferMapping_SrcDb").ToHtmlString())</th>
-                                <th class="sort" data-sort="SrcTableName">@(config.GetMessage("ESDbTransferMapping_SrcTable").ToHtmlString())</th>
-                                <th class="sort" data-sort="DstTransferName">@(config.GetMessage("ESDbTransferMapping_DstDb").ToHtmlString())</th>
-                                <th class="sort" data-sort="DstTableName">@(config.GetMessage("ESDbTransferMapping_DstTable").ToHtmlString())</th>
-                                <th>@(config.GetMessage("ESDbTransferMapping_ColumnCount").ToHtmlString())</th>
-                                <th class="sort" data-sort="Description">@(config.GetMessage("Description").ToHtmlString())</th>
+                                <th data-sort="No">項次</th>
+                                <th class="sort" data-sort="TransferMappingCode">資料表轉檔代碼</th>
+                                <th class="sort" data-sort="SrcTransferName">來源資料庫</th>
+                                <th class="sort" data-sort="SrcTableName">來源資料表</th>
+                                <th class="sort" data-sort="DstTransferName">目標資料庫</th>
+                                <th class="sort" data-sort="DstTableName">目標資料表</th>
+                                <th>欄位對應數</th>
+                                <th class="sort" data-sort="Description">描述</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -104,17 +104,16 @@
                     </table>
                     <div class="noresult" style="display: none">
                         <div class="text-center">
-                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
-                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">@(config.GetMessage("No_Result_Found").ToHtmlString())</h5>
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end mt-2">
                     <div class="pagination-wrap hstack gap-2">
-                        <a class="page-item pagination-prev disabled" href="#">@(config.GetMessage("Page_Previous").ToHtmlString())</a>
+                        <a class="page-item pagination-prev disabled" href="#">上一頁</a>
                         <ul class="pagination listjs-pagination mb-0"></ul>
-                        <a class="page-item pagination-next" href="#">@(config.GetMessage("Page_Next").ToHtmlString())</a>
+                        <a class="page-item pagination-next" href="#">下一頁</a>
                     </div>
                 </div>
 
@@ -123,20 +122,20 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-body p-5 text-center">
-                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop"
-                                           colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
-                                    <h4>@(config.GetMessage("You_are_about_to_delete_a_data").ToHtmlString())</h4>
+                                    <h4>
+                                        您即將刪除一筆資料
+                                    </h4>
                                     <p class="text-muted fs-14 mb-4">
-                                        @(config.GetMessage("Deleting_your_data_will_remove_all_of_your_information_from_our_database.").ToHtmlString())
+                                        刪除您的資料將會把所有資訊從我們的資料庫中移除。
                                     </p>
                                     <div class="hstack gap-2 justify-content-center remove">
-                                        <button class="btn btn-link link-success fw-medium text-decoration-none"
-                                                id="deleteRecord-close" data-bs-dismiss="modal">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            @(config.GetMessage("Close").ToHtmlString())
+                                            關閉
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">@(config.GetMessage("Yes_delete_it").ToHtmlString())</button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它!</button>
                                     </div>
                                 </div>
                             </div>
@@ -153,8 +152,8 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
-                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">@(config.GetMessage("Create").ToHtmlString())</h5>
-                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">@(config.GetMessage("Edit").ToHtmlString())</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
             <form class="needs-validation" novalidate="" method="post" id="submitForm">
@@ -163,9 +162,9 @@
                     <!-- TransferMappingCode -->
                     <div class="row g-3 mb-3">
                         <div class="col-lg-4">
-                            <label for="TransferMappingCode" class="form-label required">@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())</label>
+                            <label for="TransferMappingCode" class="form-label required">資料表轉檔代碼</label>
                             <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
-                                   placeholder="@(config.GetMessage("ESDbTransferMapping_MappingCode").ToHtmlString())" />
+                                   placeholder="資料表轉檔代碼" />
                         </div>
                     </div>
 
@@ -173,14 +172,14 @@
                     <div class="row g-3 mb-3">
                         <!-- Source DB -->
                         <div class="col-lg-4">
-                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_SrcDb").ToHtmlString())</label>
+                            <label class="form-label required">來源資料庫</label>
                             <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
-                                <option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>
+                                <option value="">-- 請選擇 --</option>
                             </select>
                         </div>
                         <!-- Source TABLE -->
                         <div class="col-lg-4">
-                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_SrcTable").ToHtmlString())</label>
+                            <label class="form-label required">來源資料表</label>
                             <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled>
                             </select>
                         </div>
@@ -189,14 +188,14 @@
                     <div class="row g-3 mb-3">
                         <!-- Destination DB -->
                         <div class="col-lg-4">
-                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_DstDb").ToHtmlString())</label>
+                            <label class="form-label required">目標資料庫</label>
                             <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
-                                <option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>
+                                <option value="">-- 請選擇 --</option>
                             </select>
                         </div>
                         <!-- Target TABLE -->
                         <div class="col-lg-4">
-                            <label class="form-label required">@(config.GetMessage("ESDbTransferMapping_DstTable").ToHtmlString())</label>
+                            <label class="form-label required">目標資料表</label>
                             <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled>
                             </select>
                         </div>
@@ -205,20 +204,20 @@
                     <!-- Column Mapping Area -->
                     <div class="card border">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">@(config.GetMessage("ESDbTransferMapping_ColumnMapping").ToHtmlString())</span>
+                            <span class="fw-semibold">欄位對應設定</span>
                             <button type="button" class="btn btn-sm btn-primary" id="btnAddMappingRow">
-                                <i class="ri-add-line"></i> @(config.GetMessage("ESDbTransferMapping_AddMapping").ToHtmlString())
+                                <i class="ri-add-line"></i> 新增對應
                             </button>
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-sm table-bordered mb-0" id="mappingTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:32%">@(config.GetMessage("ESDbTransferMapping_SrcColumn").ToHtmlString())</th>
-                                        <th style="width:32%">@(config.GetMessage("ESDbTransferMapping_DstColumn").ToHtmlString())</th>
-                                        <th style="width:12%" class="text-center">@(config.GetMessage("ESDbTransferMapping_IsEncrypt").ToHtmlString())</th>
-                                        <th style="width:12%" class="text-center">@(config.GetMessage("ESDbTransferMapping_IsPrimaryKey").ToHtmlString())</th>
-                                        <th style="width:12%">@(config.GetMessage("Action").ToHtmlString())</th>
+                                        <th style="width:32%">來源欄位</th>
+                                        <th style="width:32%">目標欄位</th>
+                                        <th style="width:12%" class="text-center">是否加密</th>
+                                        <th style="width:12%" class="text-center">是否為主鍵</th>
+                                        <th style="width:12%">動作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="mappingRows">
@@ -230,18 +229,18 @@
                     <!-- Filter Condition Area -->
                     <div class="card border mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">@(config.GetMessage("ESDbTransferMapping_FilterCondition").ToHtmlString())</span>
+                            <span class="fw-semibold">篩選條件設定</span>
                             <div class="d-flex gap-2 align-items-center">
                                 <div class="form-check form-check-inline mb-0">
                                     <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
-                                    <label class="form-check-label" for="filterModeBuilder">@(config.GetMessage("ESDbTransferMapping_FilterModeBuilder").ToHtmlString())</label>
+                                    <label class="form-check-label" for="filterModeBuilder">條件設定</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
                                     <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
-                                    <label class="form-check-label" for="filterModeManual">@(config.GetMessage("ESDbTransferMapping_FilterModeManual").ToHtmlString())</label>
+                                    <label class="form-check-label" for="filterModeManual">手寫 SQL</label>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
-                                    <i class="ri-add-line"></i> @(config.GetMessage("ESDbTransferMapping_AddCondition").ToHtmlString())
+                                    <i class="ri-add-line"></i> 新增條件
                                 </button>
                             </div>
                         </div>
@@ -249,38 +248,38 @@
                             <table class="table table-sm table-bordered mb-0" id="filterTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:10%">@(config.GetMessage("ESDbTransferMapping_AndOr").ToHtmlString())</th>
-                                        <th style="width:30%">@(config.GetMessage("ESDbTransferMapping_SrcColumn").ToHtmlString())</th>
-                                        <th style="width:20%">@(config.GetMessage("Filters").ToHtmlString())</th>
-                                        <th style="width:30%">@(config.GetMessage("Content").ToHtmlString())</th>
-                                        <th style="width:10%">@(config.GetMessage("Action").ToHtmlString())</th>
+                                        <th style="width:10%">AND/OR</th>
+                                        <th style="width:30%">來源欄位</th>
+                                        <th style="width:20%">篩選</th>
+                                        <th style="width:30%">內容</th>
+                                        <th style="width:10%">動作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="filterRows"></tbody>
                             </table>
-                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">@(config.GetMessage("ESDbTransferMapping_NoFilter").ToHtmlString())</div>
+                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">尚未設定任何篩選條件</div>
                         </div>
                         <div class="card-body p-2" id="filterManualArea" style="display:none;">
                             <textarea id="FilterConditionManual" class="form-control font-monospace"
-                                      rows="3" placeholder="@(config.GetMessage("ESDbTransferMapping_FilterWhereHint").ToHtmlString())"></textarea>
-                            <div class="form-text">@(config.GetMessage("ESDbTransferMapping_FilterWhereHint").ToHtmlString())</div>
+                                      rows="3" placeholder="請勿包含 WHERE 關鍵字，直接輸入條件式"></textarea>
+                            <div class="form-text">請勿包含 WHERE 關鍵字，直接輸入條件式</div>
                         </div>
                     </div>
 
                     <!-- Description -->
                     <div class="row g-3 mt-1">
                         <div class="col-lg-12">
-                            <label for="Description" class="form-label">@(config.GetMessage("Description").ToHtmlString())</label>
+                            <label for="Description" class="form-label">描述</label>
                             <textarea name="Description" id="Description" class="form-control"
-                                      placeholder="@(config.GetMessage("Description").ToHtmlString())" rows="2"></textarea>
+                                      placeholder="描述" rows="2"></textarea>
                         </div>
                     </div>
 
                 </div>
                 <div class="modal-footer">
                     <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@(config.GetMessage("Close").ToHtmlString())</button>
-                        <button type="button" class="btn btn-success" id="btnSaveAll">@(config.GetMessage("Confirm").ToHtmlString())</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                        <button type="button" class="btn btn-success" id="btnSaveAll">確認</button>
                     </div>
                 </div>
             </form>
@@ -341,11 +340,11 @@
             loadDbTransferList();
             loadDstDbTransferList();
 
-            // 初始化 Source Table 和 Target Table 的 select2
-            $('#SrcTableName, #DstTableName').each(function () {
+            // 初始化 Source DB、Target DB、Source Table 和 Target Table 的 select2
+            $('#SrcDbTransferCode, #DstDbTransferCode, #SrcTableName, #DstTableName').each(function () {
                 if (!$(this).data('select2')) {
                     $(this).select2({
-                        placeholder: '@config.GetMessage("Please_Select").ToHtmlString()',
+                        placeholder: '請選擇',
                         allowClear: true,
                         width: '100%',
                         dropdownParent: $('#showModal')
@@ -375,6 +374,21 @@
                 $('#filterManualArea').hide();
             }
         });
+
+        // ── Select2 輔助 ────────────────────────────────────────────────────────────
+        function initColSelect2($sel) {
+            $sel.select2({
+                placeholder: '-- 請選擇 --',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+        }
+        function destroyColSelect2($sel) {
+            $sel.each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) $(this).select2('destroy');
+            });
+        }
 
         // ── 載入來源資料庫下拉 ──────────────────────────────────────────────────────
         function loadDbTransferList() {
@@ -407,20 +421,20 @@
             const $tbl = $('#SrcTableName');
 
             if (!guid) {
-                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                 clearAllSrcColumns();
                 return;
             }
 
             // 顯示載入中
-            $tbl.empty().append('<option value="">-- @(config.GetMessage("ESDbTransferMapping_Loading").ToHtmlString()) --</option>').trigger('change');
+            $tbl.empty().append('<option value="">-- 載入中 --</option>').trigger('change');
 
             $.get(API.GetSourceTables, { dbTransferGuid: guid }, function (res) {
-                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>');
+                $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
                 } else {
-                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
                 $tbl.val('').trigger('change');
             });
@@ -432,14 +446,14 @@
             if (!isLoadingEditData && dstGuid && guid === dstGuid) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '@(config.GetMessage("ESDbTransferMapping_SameDatabaseWarning").ToHtmlString())',
+                    title: '來源資料庫與目標資料庫相同，是否繼續？',
                     showCancelButton: true,
-                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
-                    cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+                    confirmButtonText: '確定',
+                    cancelButtonText: '取消'
                 }).then(result => {
                     if (!result.isConfirmed) {
                         $('#SrcDbTransferCode').val('');
-                        $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                        $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                         clearAllSrcColumns();
                     }
                 });
@@ -459,7 +473,7 @@
                 clearAllSrcColumns();
                 $('#filterRows .filter-col').each(function () {
                     const cur = $(this).val();
-                    $(this).html('<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>');
+                    $(this).html('<option value="">-- 請選擇 --</option>');
                     if (cur) $(this).append(`<option value="${cur}" selected>${cur}</option>`);
                 });
                 return;
@@ -473,9 +487,12 @@
                 // 更新篩選條件欄位下拉
                 $('#filterRows .filter-col').each(function () {
                     const cur = $(this).val();
-                    const opts = '<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>' +
+                    destroyColSelect2($(this));
+                    const opts = '<option value="">-- 請選擇 --</option>' +
                         cols.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
                     $(this).html(opts);
+                    initColSelect2($(this));
+                    if (cur) $(this).val(cur).trigger('change');
                 });
             });
         });
@@ -487,20 +504,20 @@
             const $tbl = $('#DstTableName');
 
             if (!guid) {
-                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                 clearAllDstColumns();
                 return;
             }
 
             // 顯示載入中
-            $tbl.empty().append('<option value="">-- @(config.GetMessage("ESDbTransferMapping_Loading").ToHtmlString()) --</option>').trigger('change');
+            $tbl.empty().append('<option value="">-- 載入中 --</option>').trigger('change');
 
             $.get(API.GetTargetTables, { dbTransferGuid: guid }, function (res) {
-                $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>');
+                $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
                 } else {
-                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
                 $tbl.val('').trigger('change');
             });
@@ -512,14 +529,14 @@
             if (!isLoadingEditData && srcGuid && guid === srcGuid) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '@(config.GetMessage("ESDbTransferMapping_SameDatabaseWarning").ToHtmlString())',
+                    title: '來源與目標資料庫相同，可能造成資料被覆蓋，是否繼續？',
                     showCancelButton: true,
-                    confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
-                    cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())'
+                    confirmButtonText: '確認',
+                    cancelButtonText: '取消'
                 }).then(result => {
                     if (!result.isConfirmed) {
                         $('#DstDbTransferCode').val('');
-                        $tbl.empty().append('<option value="">-- @(config.GetMessage("Please_Select").ToHtmlString()) --</option>').trigger('change');
+                        $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                         clearAllDstColumns();
                     }
                 });
@@ -579,25 +596,25 @@
                 <tr data-row="${idx}">
                     <td>
                         <select class="form-select form-select-sm src-col-select" required>
-                            <option value="">@(config.GetMessage("ESDbTransferMapping_SelectSrcTableFirst").ToHtmlString())</option>
+                            <option value="">請先選擇來源資料表</option>
                         </select>
                     </td>
                     <td>
                         <select class="form-select form-select-sm dst-col-select" required>
-                            <option value="">@(config.GetMessage("ESDbTransferMapping_SelectDstTableFirst").ToHtmlString())</option>
+                            <option value="">請先選擇目標資料表</option>
                         </select>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center align-middle">
                         <div class="form-check d-flex justify-content-center mb-0">
                             <input class="form-check-input is-encrypt-check" type="checkbox" ${isEncrypt ? 'checked' : ''}>
                         </div>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center align-middle">
                         <div class="form-check d-flex justify-content-center mb-0">
                             <input class="form-check-input is-primary-key-check" type="checkbox" ${isPrimaryKey ? 'checked' : ''}>
                         </div>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-row">
                             <i class="ri-delete-bin-line"></i>
                         </button>
@@ -606,6 +623,10 @@
             `);
 
             $('#mappingRows').append($tr);
+
+            // 初始化 select2
+            initColSelect2($tr.find('.src-col-select'));
+            initColSelect2($tr.find('.dst-col-select'));
 
             // 填充來源欄位
             const srcTbl = $('#SrcTableName').val();
@@ -627,7 +648,9 @@
 
         // ── 刪除對應列 ──────────────────────────────────────────────────────────────
         $(document).on('click', '.btn-remove-row', function () {
-            $(this).closest('tr').remove();
+            const $tr = $(this).closest('tr');
+            destroyColSelect2($tr.find('.src-col-select, .dst-col-select'));
+            $tr.remove();
             refreshDstSelectOptions();
         });
 
@@ -706,7 +729,7 @@
             }
 
             if ($('#mappingRows tr').length === 0) {
-                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_AtLeastOneMapping").ToHtmlString())', confirmButtonText: '確定' });
+                Swal.fire({ icon: 'warning', title: '請至少新增一筆欄位對應', confirmButtonText: '確定' });
                 return;
             }
 
@@ -730,7 +753,7 @@
             });
 
             if (!valid) {
-                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_SelectAllColumns").ToHtmlString())', confirmButtonText: '確定' });
+                Swal.fire({ icon: 'warning', title: '請完整選擇每列的來源與目標欄位', confirmButtonText: '確定' });
                 return;
             }
 
@@ -766,13 +789,13 @@
                     const modal = bootstrap.Modal.getInstance(document.getElementById('showModal'));
                     modal.hide();
                     const msg = postaction === 'create'
-                        ? '@(config.GetMessage("Successfully_Added").ToHtmlString())'
-                        : '@(config.GetMessage("Successfully_Edited").ToHtmlString())';
+                        ? '新增成功'
+                        : '編輯成功';
                     Swal.fire({ icon: 'success', title: msg, confirmButtonText: '確定' }).then(() => loadDatas());
                     resetElement();
                 },
                 error: function () {
-                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                 }
             }).always(() => hideLoader());
         });
@@ -793,7 +816,7 @@
                             icon: (res.Errors?.AlertLevel || 'warning').toLowerCase(),
                             title: res.Errors?.ReturnCode,
                             text: res.Errors?.ReturnMsg,
-                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            confirmButtonText: '確認',
                         });
                         return;
                     }
@@ -826,8 +849,8 @@
                                     <i class="ri-more-fill align-middle"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
-                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Delete").ToHtmlString())</a></li>
+                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
                                 </ul>
                             </div>
                         </td>
@@ -837,7 +860,7 @@
                         <td class="SrcTableName">${data.SrcTableName || ''}</td>
                         <td class="DstTransferName">${data.DstTransferName || ''}</td>
                         <td class="DstTableName">${data.DstTableName || ''}</td>
-                        <td><span class="badge bg-primary-subtle text-primary">${(data.Columns && data.Columns.length) || 0} @(config.GetMessage("ESDbTransferMapping_CountUnit").ToHtmlString())</span></td>
+                        ${(data.Columns && data.Columns.length) || 0} 筆
                         <td class="Description">${data.Description || ''}</td>
                     </tr>
                 `);
@@ -856,8 +879,9 @@
             let endPage = Math.min(totalPages, startPage + maxPages - 1);
             if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
 
+
             if (startPage > 1) {
-                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">@(config.GetMessage("First_Page").ToHtmlString())</a></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">上一頁</a></li>`);
                 ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
             }
             for (let i = startPage; i <= endPage; i++) {
@@ -865,7 +889,7 @@
             }
             if (endPage < totalPages) {
                 ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
-                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">@(config.GetMessage("Last_Page").ToHtmlString())</a></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">最後一頁</a></li>`);
             }
 
             $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
@@ -937,7 +961,7 @@
             currentId = $(this).closest('tr').data('id');
 
             if (!currentId) {
-                Swal.fire({ icon: 'warning', title: '@(config.GetMessage("ESDbTransferMapping_DataNotFound").ToHtmlString())', confirmButtonText: '確定' });
+                Swal.fire({ icon: 'warning', title: '查無資料', confirmButtonText: '確定' });
                 return;
             }
 
@@ -1016,7 +1040,7 @@
                 },
                 error: function () {
                     hideLoader();
-                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                 }
             });
         });
@@ -1039,10 +1063,10 @@
                         return;
                     }
                     loadDatas();
-                    Swal.fire({ icon: 'success', title: '@(config.GetMessage("Successfully_Deleted").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'success', title: '刪除成功', confirmButtonText: '確定' });
                 },
                 error: function () {
-                    Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                 }
             }).always(() => hideLoader());
         });
@@ -1065,12 +1089,12 @@
             }
 
             Swal.fire({
-                title: '@(config.GetMessage("Are_you_sure").ToHtmlString())',
-                text: '@(config.GetMessage("You_wont_be_able_to_revert_this").ToHtmlString())',
+                title: '您確定要刪除此項目嗎？',
+                text: '您無法撤銷這個操作！',
                 icon: 'warning', showCancelButton: true,
                 customClass: { confirmButton: 'btn btn-primary w-xs me-2 mt-2', cancelButton: 'btn btn-danger w-xs mt-2' },
-                confirmButtonText: '@(config.GetMessage("Yes_delete_it").ToHtmlString())',
-                cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())',
+                confirmButtonText: '是的，刪除它！',
+                cancelButtonText: '取消',
                 buttonsStyling: false, showCloseButton: true
             }).then(function (result) {
                 if (!result.value) return;
@@ -1083,10 +1107,10 @@
                             return;
                         }
                         loadDatas();
-                        Swal.fire({ title: '@(config.GetMessage("Deleted").ToHtmlString())', text: '@(config.GetMessage("Your_data_has_been_deleted").ToHtmlString())', icon: 'success', customClass: { confirmButton: 'btn btn-info w-xs mt-2' }, buttonsStyling: false });
+                        Swal.fire({ title: '已刪除！', text: '您的資料已被刪除。', icon: 'success', customClass: { confirmButton: 'btn btn-info w-xs mt-2' }, buttonsStyling: false });
                     },
                     error: function () {
-                        Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                        Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                     }
                 }).always(() => hideLoader());
             });
@@ -1104,11 +1128,11 @@
                     cb(res.Data);
                 } else {
                         hideLoader();
-                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                     cb([]);
                 }
             }).fail(function () {
-                Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                 cb([]);
             });
         }
@@ -1122,44 +1146,55 @@
                     cb(res.Data);
                 } else {
                         hideLoader();
-                    Swal.fire({ icon: 'warning', title: res.Message || '@(config.GetMessage("ESDbTransferMapping_LoadFailedMsg").ToHtmlString())', confirmButtonText: '確定' });
+                    Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                     cb([]);
                 }
             }).fail(function () {
-                Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                Swal.fire({ icon: 'error', title: '系統錯誤，請聯絡系統管理員', confirmButtonText: '確定' });
                 cb([]);
             });
         }
 
         function refreshColumnSelect($sel, cols, selectedVal) {
             const prev = selectedVal || $sel.val() || '';
-            $sel.html('<option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>');
+            destroyColSelect2($sel);
+            $sel.html('<option value="">-- 請選擇 --</option>');
             cols.forEach(c => $sel.append(`<option value="${c}" ${c === prev ? 'selected' : ''}>${c}</option>`));
+            initColSelect2($sel);
+            if (prev) $sel.val(prev).trigger('change');
         }
 
         function clearAllSrcColumns() {
-            $('#mappingRows .src-col-select').html('<option value="">@(config.GetMessage("ESDbTransferMapping_SelectSrcTableFirst").ToHtmlString())</option>');
+            $('#mappingRows .src-col-select').each(function () {
+                destroyColSelect2($(this));
+                $(this).html('<option value="">-- 請先選擇來源資料表 --</option>');
+                initColSelect2($(this));
+            });
         }
 
         function clearAllDstColumns() {
-            $('#mappingRows .dst-col-select').html('<option value="">@(config.GetMessage("ESDbTransferMapping_SelectDstTableFirst").ToHtmlString())</option>');
+            $('#mappingRows .dst-col-select').each(function () {
+                destroyColSelect2($(this));
+                $(this).html('<option value="">-- 請先選擇目標資料表 --</option>');
+                initColSelect2($(this));
+            });
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
         // 篩選條件
         // ═══════════════════════════════════════════════════════════════════════════
         const FILTER_OPERATORS = [
-            { value: '=',           label: '@(config.GetMessage("ESDbTransferMapping_OpEq").ToHtmlString())' },
-            { value: '!=',          label: '@(config.GetMessage("ESDbTransferMapping_OpNeq").ToHtmlString())' },
-            { value: '>',           label: '@(config.GetMessage("ESDbTransferMapping_OpGt").ToHtmlString())' },
-            { value: '>=',          label: '@(config.GetMessage("ESDbTransferMapping_OpGte").ToHtmlString())' },
-            { value: '<',           label: '@(config.GetMessage("ESDbTransferMapping_OpLt").ToHtmlString())' },
-            { value: '<=',          label: '@(config.GetMessage("ESDbTransferMapping_OpLte").ToHtmlString())' },
-            { value: 'LIKE',        label: '@(config.GetMessage("ESDbTransferMapping_OpLike").ToHtmlString())' },
-            { value: 'NOT LIKE',    label: '@(config.GetMessage("ESDbTransferMapping_OpNotLike").ToHtmlString())' },
-            { value: 'IS NULL',     label: '@(config.GetMessage("ESDbTransferMapping_OpIsNull").ToHtmlString())' },
-            { value: 'IS NOT NULL', label: '@(config.GetMessage("ESDbTransferMapping_OpIsNotNull").ToHtmlString())' },
-            // { value: 'IN',          label: '@(config.GetMessage("ESDbTransferMapping_OpIn").ToHtmlString())' },
+            { value: '=',           label: '等於 (=)' },
+            { value: '!=',          label: '不等於 (!=)' },
+            { value: '>',           label: '大於 (>)' },
+            { value: '>=',          label: '大於等於 (>=)' },
+            { value: '<',           label: '小於 (<)' },
+            { value: '<=',          label: '小於等於 (<=)' },
+            { value: 'LIKE',        label: '包含 (LIKE)' },
+            { value: 'NOT LIKE',    label: '不包含 (NOT LIKE)' },
+            { value: 'IS NULL',     label: '為空 (IS NULL)' },
+            { value: 'IS NOT NULL', label: '不為空 (IS NOT NULL)' },
+            // { value: 'IN',          label: '在清單內 (IN)' },
         ];
 
         // 新增條件列
@@ -1178,9 +1213,9 @@
 
             const $tr = $(`
                 <tr>
-                    <td>
+                    <td class="align-middle">
                     ${isFirst
-                            ? `<span class="text-muted small ps-1">@(config.GetMessage("ESDbTransferMapping_Where").ToHtmlString())</span>`
+                            ? `<span class="text-muted ps-1">WHERE</span>`
                             : `<select class="form-select form-select-sm filter-logic">
                                    <option value="AND" ${logic === 'AND' ? 'selected' : ''}>AND</option>
                                    <option value="OR"  ${logic === 'OR'  ? 'selected' : ''}>OR</option>
@@ -1189,7 +1224,7 @@
                     </td>
                     <td>
                         <select class="form-select form-select-sm filter-col">
-                            <option value="">@(config.GetMessage("ESDbTransferMapping_PleaseSelect").ToHtmlString())</option>
+                            <option value="">-- 請選擇 --</option>
                             ${srcCols}
                         </select>
                     </td>
@@ -1199,10 +1234,10 @@
                         </select>
                     </td>
                     <td>
-                        <input type="text" class="form-control form-control-sm filter-val"
+                        <input type="text" class="form-control filter-val"
                                value="${escHtml(value)}" ${hideVal ? 'style="display:none"' : ''}>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-filter">
                             <i class="ri-delete-bin-line"></i>
                         </button>
@@ -1210,8 +1245,15 @@
                 </tr>
             `);
 
-            if (column) $tr.find('.filter-col').val(column);
             $('#filterRows').append($tr);
+            initColSelect2($tr.find('.filter-col'));
+            if (column) $tr.find('.filter-col').val(column).trigger('change');
+            $tr.find('.filter-op').select2({
+                minimumResultsForSearch: Infinity,
+                width: '100%',
+                dropdownParent: $('#showModal')
+            });
+            $tr.find('.filter-op').val(operator_).trigger('change');
             updateFilterEmpty();
         }
 
@@ -1223,7 +1265,9 @@
 
         // 刪除條件列
         $(document).on('click', '.btn-remove-filter', function () {
-            $(this).closest('tr').remove();
+            const $tr = $(this).closest('tr');
+            destroyColSelect2($tr.find('.filter-col, .filter-op'));
+            $tr.remove();
             updateFilterEmpty();
         });
 
@@ -1308,11 +1352,13 @@
             // 重置 Source Table 和 Target Table
             const $srcTbl = $('#SrcTableName');
             const $dstTbl = $('#DstTableName');
-                const defaultMsg = '@(config.GetMessage("Please_Select").ToHtmlString())';
+                const defaultMsg = '請選擇';
 
             $srcTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');
             $dstTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');
 
+            destroyColSelect2($('#mappingRows .src-col-select, #mappingRows .dst-col-select'));
+            destroyColSelect2($('#filterRows .filter-col, #filterRows .filter-op'));
             $('#mappingRows').empty();
             $('#filterRows').empty();
             $('#FilterConditionManual').val('');
