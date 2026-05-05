@@ -1,0 +1,389 @@
+@using ViewModel.QuotationResult
+@using ViewModel
+@{
+    ViewBag.Title = "定時查價結果編輯";
+    ViewBag.pTitle = "定時查價結果編輯";
+    ViewBag.pageTitle = "採購管理";
+
+    long quotationFileId = ViewBag.QuotationFileId as long? ?? 0L;
+
+    var mapData = new
+    {
+        ItemPicker = new ItemPickerVCM(),
+    };
+}
+
+<div class="row">
+    <div class="col-lg-12">
+
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+
+                <!-- ── Header 資訊 ── -->
+                <form id="headerForm" class="needs-validation" novalidate>
+                    <input type="hidden" id="e_Id" />
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">BOM File 名稱</label>
+                            <input type="text" id="e_BomFileName" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">客戶名稱</label>
+                            <input type="text" id="e_CustomerName" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">產品料號</label>
+                            <input type="text" id="e_ProductNo" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0 required">客戶別</label>
+                            <select id="e_CustomerType" class="form-select" required>
+                                <option value="">請選擇</option>
+                                <option value="MM">MM</option>
+                                <option value="D3">D3</option>
+                                <option value="STL">STL</option>
+                                <option value="CTB">CTB</option>
+                                <option value="WT">WT</option>
+                                <option value="AED">AED</option>
+                                <option value="EDS">EDS</option>
+                            </select>
+                            @*<div class="invalid-feedback">請選擇客戶別。</div>*@
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0 required">採購數量</label>
+                            <input type="number" id="e_PurchaseQty" class="form-control" min="1" required />
+                            @*<div class="invalid-feedback">請輸入採購數量。</div>*@
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">建立時間</label>
+                            <input type="text" id="e_CreateTime" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">最後更新</label>
+                            <input type="text" id="e_UpdateTime" class="form-control" readonly />
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-body">
+
+                <!-- ── 查價結果表 ── -->
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="text-muted mb-0">
+                            <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-warning" id="btnToggleRecommended"
+                                title="切換建議採購型號的勾選狀態">
+                            <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
+                        </button>
+                    </div>
+                    <span class="badge bg-info-subtle text-info" id="itemCountBadge">— 筆料項</span>
+                </div>
+                <div class="text-muted small mb-2">
+                    <i class="ri-checkbox-blank-circle-fill me-1"></i>採購型號欄位黃底標示表示系統建議採購型號
+                </div>
+
+                <div class="table-responsive" style="max-height:600px; overflow-y:auto;">
+                    <table class="table table-bordered table-sm align-middle mb-0" id="itemTable"
+                           style="min-width:1600px;">
+                        <thead class="table-light sticky-top" style="top:0;z-index:10;">
+                            <tr>
+                                <th rowspan="2" style="width:40px;" class="text-center align-middle">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAllItems">
+                                    </div>
+                                </th>
+                                <th rowspan="2" style="width:40px;" class="text-center align-middle">項次</th>
+                                <th rowspan="2" style="min-width:160px;" class="align-middle">元件描述</th>
+                                <th rowspan="2" style="min-width:120px;" class="align-middle">製造商</th>
+                                <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
+                                <th rowspan="2" style="width:70px;" class="text-center align-middle">數量</th>
+                                <th rowspan="2" style="min-width:180px;"
+                                    class="text-center align-middle bg-warning-subtle text-warning">採購型號</th>
+                                <th colspan="6" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
+                                <th colspan="6" class="text-center bg-success-subtle text-success">外部查價</th>
+                            </tr>
+                            <tr>
+                                <!-- 內部採購紀錄 sub-headers -->
+                                <th class="bg-primary-subtle text-primary" style="min-width:100px;">採購日期</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(原幣)</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(台幣)</th>
+                                <th class="bg-primary-subtle text-primary" style="width:70px;">數量</th>
+                                <th class="bg-primary-subtle text-primary" style="width:65px;">幣別</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:120px;">供應商名稱</th>
+                                <!-- 外部查價 sub-headers -->
+                                <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
+                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
+                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(台幣)</th>
+                                <th class="bg-success-subtle text-success" style="width:70px;">MOQ</th>
+                                <th class="bg-success-subtle text-success" style="width:65px;">幣別</th>
+                                <th class="bg-success-subtle text-success" style="min-width:120px;">供應商名稱</th>
+                            </tr>
+                        </thead>
+                        <tbody id="item-table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ── 底部按鈕列 ── -->
+                <div class="d-flex justify-content-end mt-3 gap-2">
+                    <a href="@Url.Action("Index", "QuotationResult")" class="btn btn-secondary">
+                        <i class="ri-arrow-left-line me-1"></i>返回
+                    </a>
+                    <button type="button" class="btn btn-success" id="btnSaveHeader">
+                        <i class="ri-refresh-line me-1"></i>重新查價
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Views/QuotationResult/_ItemPicker.cshtml", mapData.ItemPicker)
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            var pTitle = '@(Html.Raw(ViewBag.pTitle))';
+            var pageTitle = '@(Html.Raw(ViewBag.pageTitle))';
+            $('#header-pTitle').text(pTitle);
+            var bElList = [];
+            if (pageTitle) bElList.push('<li class="breadcrumb-item"><a href="javascript: void(0);">' + pageTitle + '</a></li>');
+            bElList.push('<li class="breadcrumb-item active">' + pTitle + '</li>');
+            $('#_page_title_row .breadcrumb').html(bElList.join(''));
+
+            $('#e_CustomerType').select2({ width: '100%' });
+            loadDetail();
+        });
+
+        window.currentFileId = @quotationFileId;
+
+        var apiUrls = {
+            GetById: '@(Configuration["BackendURL"])/api/QuotationResult/GetById',
+            SaveHeader: '@(Configuration["BackendURL"])/api/QuotationResult/SaveHeader',
+        };
+
+        // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
+        var FH = {
+            Id: '@nameof(QuotationFileEditVM.Id)',
+            BomFileName: '@nameof(QuotationFileEditVM.BomFileName)',
+            CustomerName: '@nameof(QuotationFileEditVM.CustomerName)',
+            ProductNo: '@nameof(QuotationFileEditVM.ProductNo)',
+            CustomerType: '@nameof(QuotationFileEditVM.CustomerType)',
+            PurchaseQty: '@nameof(QuotationFileEditVM.PurchaseQty)',
+            CreateTime: '@nameof(QuotationFileEditVM.CreateTime)',
+            UpdateTime: '@nameof(QuotationFileEditVM.UpdateTime)',
+            Items: '@nameof(QuotationFileEditVM.Items)'
+        };
+
+        var FI = {
+            Id: '@nameof(QuotationItemVM.Id)',
+            Description: '@nameof(QuotationItemVM.Description)',
+            Manufacturer1: '@nameof(QuotationItemVM.Manufacturer1)',
+            ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
+            Quantity: '@nameof(QuotationItemVM.Quantity)',
+            InternalProcurementDate: '@nameof(QuotationItemVM.InternalProcurementDate)',
+            InternalUnitPriceOrig: '@nameof(QuotationItemVM.InternalUnitPriceOrig)',
+            InternalUnitPriceTwd: '@nameof(QuotationItemVM.InternalUnitPriceTwd)',
+            InternalQty: '@nameof(QuotationItemVM.InternalQty)',
+            InternalCurrency: '@nameof(QuotationItemVM.InternalCurrency)',
+            InternalSupplierName: '@nameof(QuotationItemVM.InternalSupplierName)',
+            ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
+            ExternalUnitPriceOrig: '@nameof(QuotationItemVM.ExternalUnitPriceOrig)',
+            ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
+            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',
+            ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
+            ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
+            ProcurementModel: '@nameof(QuotationItemVM.ProcurementModel)',
+            IsRecommended: '@nameof(QuotationItemVM.IsRecommended)',
+            ProcurementModelOptions: '@nameof(QuotationItemVM.ProcurementModelOptions)'
+        };
+
+        // 目前載入的料項清單（用於儲存採購型號）
+        var currentItems = [];
+
+        // ── 工具函式 ──────────────────────────────────────────────────────────
+        function escapeHtml(value) {
+            return $('<div>').text(value ?? '').html();
+        }
+
+        function showSysError() {
+            Swal.fire({ icon: 'error', title: '系統錯誤', text: '操作失敗，請稍後再試。' });
+        }
+
+        function fmtPrice(val) {
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">—</span>';
+            return '<span class="font-monospace">' + parseFloat(val).toFixed(4) + '</span>';
+        }
+
+        function fmtNum(val) {
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">—</span>';
+            return Number(val).toLocaleString();
+        }
+
+        function fmtDate(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return escapeHtml(val);
+        }
+
+        function fmtCurrency(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return '<span class="badge bg-light text-dark border">' + escapeHtml(val) + '</span>';
+        }
+
+        // ── 採購型號選取器 ─────────────────────────────────────────────────────
+        function openItemPicker(itemId) {
+            ItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
+                $('.procurement-model-input[data-id="' + itemId + '"]').val(no);
+            });
+        }
+
+        // ── 載入詳細資料 ──────────────────────────────────────────────────────
+        function loadDetail() {
+            if (!window.currentFileId) return;
+            showLoader();
+            $.ajax({
+                url: apiUrls.GetById,
+                type: 'GET',
+                data: { id: window.currentFileId },
+                success: function (res) {
+                    if (!res.Success || !res.Data) { showSysError(); return; }
+                    fillHeader(res.Data);
+                    renderItems(res.Data[FH.Items] || []);
+                },
+                error: function () { showSysError(); },
+                complete: function () { hideLoader(); }
+            });
+        }
+
+        function fillHeader(d) {
+            $('#e_Id').val(d[FH.Id]);
+            $('#e_BomFileName').val(d[FH.BomFileName]);
+            $('#e_CustomerName').val(d[FH.CustomerName]);
+            $('#e_ProductNo').val(d[FH.ProductNo]);
+            $('#e_CustomerType').val(d[FH.CustomerType]).trigger('change');
+            $('#e_PurchaseQty').val(d[FH.PurchaseQty]);
+            $('#e_CreateTime').val(d[FH.CreateTime]);
+            $('#e_UpdateTime').val(d[FH.UpdateTime]);
+        }
+
+        function renderItems(items) {
+            currentItems = items;
+            var $body = $('#item-table-body');
+            $body.empty();
+            $('#itemCountBadge').text(items.length + ' 筆料項');
+
+            if (!items.length) {
+                $body.append('<tr><td colspan="19" class="text-center text-muted py-4">無料項資料</td></tr>');
+                return;
+            }
+
+            items.forEach(function (r, idx) {
+                $body.append(buildItemRow(r, idx + 1));
+            });
+
+            // 同步全選 checkbox 狀態
+            syncCheckAllState();
+        }
+
+        function buildItemRow(r, no) {
+            var itemId = r[FI.Id];
+            var isRecommended = r[FI.IsRecommended] === true;
+            var checked = isRecommended ? ' checked' : '';
+            var currentModel = escapeHtml(r[FI.ProcurementModel] || '');
+
+            return '<tr data-id="' + itemId + '">'
+                + '<td class="text-center">'
+                + '<div class="form-check">'
+                + '<input class="form-check-input item-check" type="checkbox" value="' + itemId + '"'
+                + ' data-recommended="' + isRecommended + '"' + checked + '>'
+                + '</div>'
+                + '</td>'
+                + '<td class="text-center text-muted small">' + no + '</td>'
+                + '<td><span title="' + escapeHtml(r[FI.Description]) + '">' + escapeHtml(r[FI.Description]) + '</span></td>'
+                + '<td class="small text-muted">' + escapeHtml(r[FI.Manufacturer1]) + '</td>'
+                + '<td><code class="small">' + escapeHtml(r[FI.ManufacturerPartNo1]) + '</code></td>'
+                + '<td class="text-center">' + fmtNum(r[FI.Quantity]) + '</td>'
+                // 採購型號（唯讀 InputGroup + 選取按鈕）
+                + '<td class="p-1' + (isRecommended ? ' bg-warning-subtle' : '') + '">'
+                + '<div class="input-group input-group-sm">'
+                + '<input type="text" class="form-control form-control-sm font-monospace procurement-model-input"'
+                + ' data-id="' + itemId + '" value="' + currentModel + '" readonly placeholder="—" />'
+                + '<button class="btn btn-outline-secondary" type="button" onclick="openItemPicker(' + itemId + ')">'
+                + '<i class="ri-search-line"></i>'
+                + '</button>'
+                + '</div>'
+                + '</td>'
+                // 內部採購紀錄
+                + '<td class="small">' + fmtDate(r[FI.InternalProcurementDate]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[FI.InternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[FI.InternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center small">' + fmtNum(r[FI.InternalQty]) + '</td>'
+                + '<td class="text-center">' + fmtCurrency(r[FI.InternalCurrency]) + '</td>'
+                + '<td class="small">' + escapeHtml(r[FI.InternalSupplierName] || '') + '</td>'
+                // 外部查價
+                + '<td class="small">' + fmtDate(r[FI.ExternalQuotationDate]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[FI.ExternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end small">' + fmtPrice(r[FI.ExternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center small">' + fmtNum(r[FI.ExternalMOQ]) + '</td>'
+                + '<td class="text-center">' + fmtCurrency(r[FI.ExternalCurrency]) + '</td>'
+                + '<td class="small">' + escapeHtml(r[FI.ExternalSupplierName] || '') + '</td>'
+                + '</tr>';
+        }
+
+        // ── 全選 / 取消全選（料項 checkbox） ─────────────────────────────────
+        function syncCheckAllState() {
+            var total = $('.item-check').length;
+            var checked = $('.item-check:checked').length;
+            $('#checkAllItems').prop('indeterminate', checked > 0 && checked < total);
+            $('#checkAllItems').prop('checked', total > 0 && checked === total);
+        }
+
+        $('#checkAllItems').on('change', function () {
+            $('.item-check').prop('checked', $(this).is(':checked'));
+        });
+
+        $(document).on('change', '.item-check', function () {
+            syncCheckAllState();
+        });
+
+        // ── 切換建議採購型號的勾選狀態 ────────────────────────────────────────
+        $('#btnToggleRecommended').on('click', function () {
+            var $rec = $('.item-check[data-recommended="true"]');
+            var allChecked = $rec.length > 0 && $rec.filter(':checked').length === $rec.length;
+            $rec.prop('checked', !allChecked);
+            syncCheckAllState();
+        });
+
+        // ── 重新查價（儲存 Header） ───────────────────────────────────────────
+        $('#btnSaveHeader').on('click', function () {
+            var $form = $('#headerForm');
+            if (!$form[0].checkValidity()) {
+                $form.addClass('was-validated');
+                return;
+            }
+
+            var headerPayload = {};
+            headerPayload[FH.Id] = parseInt($('#e_Id').val()) || 0;
+            headerPayload[FH.CustomerType] = $('#e_CustomerType').val();
+            headerPayload[FH.PurchaseQty] = parseInt($('#e_PurchaseQty').val()) || 0;
+
+            showLoader();
+            $.ajax({
+                url: apiUrls.SaveHeader,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(headerPayload),
+                success: function (res) {
+                    showResponseResultAlert(res, '重新查價', function () { loadDetail(); });
+                },
+                error: function () { showSysError(); },
+                complete: function () { hideLoader(); }
+            });
+        });
+    </script>
+}

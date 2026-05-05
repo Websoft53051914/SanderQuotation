@@ -1,0 +1,68 @@
+{
+  "Items": [
+    {
+      "Id": 1,
+      "No": "01-01180002",
+      "Description": "ES-AEHRAX12",
+      "Description2": "CHIP 晶元 2018 R620-630",
+      "LongDesc": "400-450 626-629\n實際以分BIN明細為準\n770-850 620-625\n[採購專用]\nE19/E20/E21 620-625nm",
+      "LongDesc2": "CHIP 晶元 2018 Ture Red (620-630)\n(EAX)12x12"
+    },
+    {
+      "Id": 2,
+      "No": "01-01180003",
+      "Description": "ES-AEHRAX12B",
+      "Description2": "CHIP 晶元 2018 R620-630",
+      "LongDesc": "600-650 620-624\n實際以分BIN明細為準\n700-770 620-624",
+      "LongDesc2": "CHIP 晶元 2018 Ture Red (620-630)\n(EAX)12x12"
+    },
+    {
+      "Id": 3,
+      "No": "01-01180004",
+      "Description": "ES-AESRAX12",
+      "Description2": "CHIP 晶元 2018 R620-630",
+      "LongDesc": "400-450 626-629\n實際以分BIN明細為準\n700-770 620-625",
+      "LongDesc2": "CHIP 晶元 2018 Ture Red (620-630)\n(EAX)12x12"
+    },
+    {
+      "Id": 4,
+      "No": "01-02100001",
+      "Description": "ES-AEB-FG25",
+      "Description2": "CHIP 晶元 FG 2510 G525-535",
+      "LongDesc": "純綠 525~535nm\n[採購專用]\n1000-1200 525-535nm",
+      "LongDesc2": "CHIP 晶元 FG 2510 Pure Green (525-535)\n(EA)25x10"
+    },
+    {
+      "Id": 5,
+      "No": "01-02100002",
+      "Description": "ES-AEB-FGS25",
+      "Description2": "CHIP 晶元 FG 2510 G525-535",
+      "LongDesc": "800-1000 525-535nm\n實際以分BIN明細為準",
+      "LongDesc2": "CHIP 晶元 FG 2510 Pure Green (525-535)\n(EA)25x10"
+    },
+    {
+      "Id": 6,
+      "No": "02-03050001",
+      "Description": "ES-DRIVER-01",
+      "Description2": "LED 驅動 IC 350mA",
+      "LongDesc": "輸入電壓 8-40V\n輸出電流 350mA\n效率 > 90%",
+      "LongDesc2": "Constant Current LED Driver 350mA\nSOT-23 Package"
+    },
+    {
+      "Id": 7,
+      "No": "02-03050002",
+      "Description": "ES-DRIVER-02",
+      "Description2": "LED 驅動 IC 700mA",
+      "LongDesc": "輸入電壓 8-40V\n輸出電流 700mA\n效率 > 92%",
+      "LongDesc2": "Constant Current LED Driver 700mA\nSOT-23 Package"
+    },
+    {
+      "Id": 8,
+      "No": "03-05001001",
+      "Description": "ES-LENS-001",
+      "Description2": "透鏡 20° 圓形",
+      "LongDesc": "出光角 20°\n材質 PMMA\n適用晶元 1010~2020",
+      "LongDesc2": "Lens 20° Round\nPMMA Material"
+    }
+  ]
+}
