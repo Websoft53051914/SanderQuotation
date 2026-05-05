@@ -483,5 +483,261 @@
 
         })
     </script>
+
+    <!-- ── AI 對話按鈕 ── -->
+    <style>
+        #aiChatToggle {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #2e3a7e;
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 18px rgba(46,58,126,.5);
+            cursor: pointer;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+            transition: background .2s, transform .2s;
+        }
+        #aiChatToggle:hover { background: #1e2a5e; transform: scale(1.08); }
+        #aiChatToggle.hidden { opacity: 0; pointer-events: none; transform: scale(0.7); transition: opacity .2s, transform .2s; }
+
+        #aiChatPanel {
+            position: fixed;
+            bottom: 0px;
+            right: 28px;
+            width: 460px;
+            height: 620px;
+            background: #2e3a7e;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.35);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #aiChatPanel.open { display: flex; }
+
+        .ai-chat-header {
+            background: #2e3a7e;
+            color: #fff;
+            padding: 16px 18px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 16px;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+            flex-shrink: 0;
+        }
+        .ai-chat-header .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-chat-header .header-icon {
+            width: 28px; height: 28px;
+            background: #f5c518;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; color: #2e3a7e;
+        }
+        .ai-chat-header .ai-chat-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,.8);
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            font-weight: 400;
+            transition: color .15s;
+        }
+        .ai-chat-header .ai-chat-close:hover { color: #fff; }
+
+        #aiChatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 16px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,.2) transparent;
+        }
+        #aiChatMessages::-webkit-scrollbar { width: 5px; }
+        #aiChatMessages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 10px; }
+
+        .ai-msg { display: flex; flex-direction: column; gap: 4px; }
+        .ai-msg.user { align-items: flex-end; }
+        .ai-msg.bot  { align-items: flex-start; }
+        .ai-msg .bubble {
+            max-width: 82%;
+            padding: 11px 15px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .ai-msg.bot  .bubble {
+            background: rgba(255,255,255,.13);
+            color: #fff;
+            border-bottom-left-radius: 4px;
+        }
+        .ai-msg.user .bubble {
+            background: rgba(255,255,255,.22);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-msg .msg-time {
+            font-size: 11px;
+            color: rgba(255,255,255,.45);
+            padding: 0 4px;
+        }
+
+        .ai-chat-footer {
+            padding: 12px 14px;
+            background: rgba(255,255,255,.07);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .ai-chat-footer input {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            outline: none;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+        }
+        .ai-chat-footer input::placeholder { color: rgba(255,255,255,.45); }
+        .ai-chat-footer input:focus { background: rgba(255,255,255,.18); }
+        .ai-chat-footer .footer-btn {
+            width: 38px; height: 38px;
+            border: none;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            flex-shrink: 0;
+            transition: opacity .2s;
+        }
+        .ai-chat-footer .footer-btn:hover { opacity: .85; }
+        .ai-chat-footer .btn-attach {
+            background: rgba(255,255,255,.15);
+            color: #fff;
+        }
+        .ai-chat-footer .btn-send {
+            background: #4e6aff;
+            color: #fff;
+        }
+    </style>
+
+    <!-- 浮動按鈕 -->
+    <button id="aiChatToggle" title="AI 對話">
+        <i class="ri-robot-2-line"></i>
+    </button>
+
+    <!-- 對話視窗 -->
+    <div id="aiChatPanel">
+        <div class="ai-chat-header">
+            <div class="header-left">
+                <div class="header-icon"><i class="ri-flashlight-fill"></i></div>
+                    <span>AI 對話中心</span>
+            </div>
+            <button class="ai-chat-close" id="aiChatClose" title="關閉">✕</button>
+        </div>
+        <div id="aiChatMessages">
+            <div class="ai-msg bot">
+                <div class="bubble">您好！我是 AI 智慧助理，請問有什麼可以幫您？</div>
+                <div class="msg-time" id="aiInitTime"></div>
+            </div>
+        </div>
+        <div class="ai-chat-footer">
+            <input type="text" id="aiChatInput" placeholder="輸入訊息…" autocomplete="off" />
+            <button class="footer-btn btn-send" id="aiChatSend" title="送出"><i class="ri-send-plane-fill"></i></button>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var $toggle  = $('#aiChatToggle');
+        var $panel   = $('#aiChatPanel');
+        var $close   = $('#aiChatClose');
+        var $input   = $('#aiChatInput');
+        var $send    = $('#aiChatSend');
+        var $msgs    = $('#aiChatMessages');
+
+                function openPanel()  { $panel.addClass('open'); $toggle.addClass('hidden'); $input.focus();  // 初始化時間
+                $('#aiInitTime').text(formatTime(new Date()));}
+        function closePanel() { $panel.removeClass('open'); $toggle.removeClass('hidden'); }
+
+        $toggle.on('click', function () {
+            $panel.hasClass('open') ? closePanel() : openPanel();
+        });
+        $close.on('click', closePanel);
+
+       
+
+        function formatTime(d) {
+            var h = d.getHours(), m = d.getMinutes();
+            var ampm = h >= 12 ? '下午' : '上午';
+            h = h % 12 || 12;
+            return ampm + ' ' + h + ':' + (m < 10 ? '0' : '') + m;
+        }
+
+        function appendMsg(text, role) {
+            var time = formatTime(new Date());
+            var $m = $('<div class="ai-msg ' + role + '">' +
+                '<div class="bubble">' + $('<div>').text(text).html() + '</div>' +
+                '<div class="msg-time">' + time + '</div>' +
+                '</div>');
+            $msgs.append($m);
+            $msgs.scrollTop($msgs[0].scrollHeight);
+        }
+
+        function sendMessage() {
+            var text = $input.val().trim();
+            if (!text) return;
+            appendMsg(text, 'user');
+            $input.val('');
+
+            // 顯示思考中
+            var $thinking = $('<div class="ai-msg bot"><div class="bubble" id="aiThinking">思考中…</div></div>');
+            $msgs.append($thinking);
+            $msgs.scrollTop($msgs[0].scrollHeight);
+
+            $.ajax({
+                url: '/api/AiChat/Chat',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ message: text }),
+                success: function (resp) {
+                    $('#aiThinking').closest('.ai-msg').remove();
+                    appendMsg((resp && resp.reply) ? resp.reply : '（無回應）', 'bot');
+                },
+                error: function () {
+                    $('#aiThinking').closest('.ai-msg').remove();
+                    appendMsg('連線失敗，請稍後再試。', 'bot');
+                }
+            });
+        }
+
+        $send.on('click', sendMessage);
+        $input.on('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+    })();
+    </script>
 </body>
 </html>

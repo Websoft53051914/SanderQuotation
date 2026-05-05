@@ -1,0 +1,766 @@
+@{
+    ViewBag.Title = "EIP Source Dashboard";
+    ViewBag.pTitle = config.GetMessage("EIPSourceDashboard_PageSubTitle").ToHtmlString();
+    ViewBag.pageTitle = config.GetMessage("SystemManagementModule").ToHtmlString();
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .dashboard-card .card-body { min-height: 120px; }
+
+    .timeline-item {
+        border-left: 3px solid #405189;
+        padding-left: 15px;
+        margin-bottom: 15px;
+        position: relative;
+        width: 100% !important;
+    }
+    .timeline-item::before { content: ''; position: absolute; left: -7px; top: 6px; width: 11px; height: 11px; border-radius: 50%; background: #405189; }
+    .timeline-item.error::before { background: #f06548; }
+    .timeline-item.error { border-left-color: #f06548; }
+    .timeline-item.success::before { background: #0ab39c; }
+    .timeline-item.success { border-left-color: #0ab39c; }
+    .timeline-item.partial::before { background: #f7b84b; }
+
+        .timeline-item.partial {
+            border-left-color: #f7b84b;
+           
+        }
+    .job-status-badge { font-size: 0.75rem; }
+    .running-pulse { animation: pulse 1.5s infinite; }
+    @@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+
+<!-- Row: KPI Cards -->
+<div class="row">
+    <!-- 同步成功率 -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-animate dashboard-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <p class="text-uppercase fw-medium text-muted mb-0">同步成功率</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-success-subtle text-success" id="kpiSyncTrend">
+                            <i class="ri-arrow-right-up-line"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-4">
+                    <div>
+                        <h4 class="fs-22 fw-semibold ff-secondary mb-4">
+                            <span id="kpiSyncRate">--</span>%
+                        </h4>
+                        <span class="text-muted" id="kpiSyncDetail">-- 成功 / -- 總計</span>
+                    </div>
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-success-subtle rounded fs-3" id="kpiSyncIcon">
+                            <i class="ri-checkbox-circle-line text-success" id="kpiSyncIconI"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 資料列錯誤率 -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-animate dashboard-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <p class="text-uppercase fw-medium text-muted mb-0">資料列錯誤率</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-danger-subtle text-danger" id="kpiErrorTrend">
+                            <i class="ri-arrow-right-down-line"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-4">
+                    <div>
+                        <h4 class="fs-22 fw-semibold ff-secondary mb-4">
+                            <span id="kpiErrorRate">--</span>%
+                        </h4>
+                        <span class="text-muted" id="kpiErrorDetail">-- 錯誤 / -- 總資料</span>
+                    </div>
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-danger-subtle rounded fs-3" id="kpiErrorIcon">
+                            <i class="ri-error-warning-line text-danger" id="kpiErrorIconI"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 總執行次數 -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-animate dashboard-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <p class="text-uppercase fw-medium text-muted mb-0">任務執行次數 (24h)</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-4">
+                    <div>
+                        <h4 class="fs-22 fw-semibold ff-secondary mb-4">
+                            <span id="kpiTotalDetails">--</span>
+                        </h4>
+                        <span class="text-muted">過去 24 小時</span>
+                    </div>
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-info-subtle rounded fs-3">
+                            <i class="ri-bar-chart-box-line text-info"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 總資料筆數 -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-animate dashboard-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <p class="text-uppercase fw-medium text-muted mb-0">處理資料筆數 (24h)</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-4">
+                    <div>
+                        <h4 class="fs-22 fw-semibold ff-secondary mb-4">
+                            <span id="kpiTotalData">--</span>
+                        </h4>
+                        <span class="text-muted" id="kpiTotalErrorCount">其中 -- 筆錯誤</span>
+                    </div>
+                    <div class="avatar-sm flex-shrink-0">
+                        <span class="avatar-title bg-warning-subtle rounded fs-3">
+                            <i class="ri-database-2-line text-warning"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row: Charts -->
+<div class="row">
+    <!-- 各任務成功/失敗統計 Bar Chart -->
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header align-items-center d-flex">
+                <h4 class="card-title mb-0 flex-grow-1">各任務成功 / 失敗統計</h4>
+            </div>
+            <div class="card-body">
+                <div id="jobStatsChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功/失敗圓餅圖 -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">同步結果分佈</h4>
+            </div>
+            <div class="card-body">
+                <div id="syncPieChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row: Success Rate Line Chart -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card">
+            <div class="card-header align-items-center d-flex">
+                <h4 class="card-title mb-0 flex-grow-1">各任務時間點成功率趨勢</h4>
+            </div>
+            <div class="card-body">
+                <div id="successRateFilterContainer" class="mb-3 d-flex flex-wrap gap-2"></div>
+                <div id="successRateChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row: Timeline + Recurring Jobs -->
+<div class="row">
+    <!-- 24h 時間軸 -->
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header align-items-center d-flex">
+                <h4 class="card-title mb-0 flex-grow-1">過去 24 小時週期執行時間軸</h4>
+            </div>
+            <div class="card-body">
+                <div id="timelineFilterContainer" class="mb-3 d-flex flex-wrap gap-2"></div>
+                <div id="timelineContainer" style="max-height: 450px; overflow-y: auto;">
+                    <div class="text-center text-muted py-4">載入中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 排程即時狀態 -->
+    <div class="col-xl-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">排程即時執行狀態</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-nowrap align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>排程代碼</th>
+                                <th>Cron</th>
+                                <th>上次執行</th>
+                                <th>下次執行</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recurringJobsTable">
+                            <tr><td colspan="5" class="text-center text-muted">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 class="mt-4 mb-3">已啟用排程設定</h6>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-nowrap align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>排程代碼</th>
+                                <th>名稱</th>
+                                <th>週期類型</th>
+                                <th>上次執行</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeSchedulesTable">
+                            <tr><td colspan="5" class="text-center text-muted">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Detail Modal -->
+<div class="modal fade" id="errorDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger-subtle">
+                <h5 class="modal-title">
+                <i class="ri-error-warning-line me-1"></i>錯誤詳情 — <span id="errorDetailTitle"></span>
+                    <span id="errorDetailTypeBadge" class="badge bg-secondary ms-1 fs-12"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="errorDetailBody">
+                <div class="text-center text-muted py-4">載入中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="/assets/libs/apexcharts/apexcharts.min.js"></script>
+    <script src="/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        var apiUrl = '@(Configuration["BackendURL"])/api/eipsource-dashboard/GetDashboardData';
+        var jobStatsChart = null;
+        var syncPieChart = null;
+        var successRateChart = null;
+        var dashboardData = null;
+        var timelineFilter = '';
+
+        var msg = {
+            good:                '良好',
+            attention:           '注意',
+            success:             '成功',
+            partialFail:         '部分失敗',
+            failed:              '失敗',
+            hasFailed:           '有失敗',
+            error:               '錯誤',
+            totalData:           '總資料',
+            errorIn:             '其中',
+            errorRows:           '筆錯誤',
+            countUnit:           '次數',
+            timesUnit:           '次',
+            total:               '總計',
+            noRecords24h:        '過去 24 小時無執行紀錄',
+            noFilteredRecords:   '無符合條件的執行紀錄',
+            manual:              '手動',
+            schedule:            '排程',
+            dataImport:          '資料轉入',
+            fileExport:          '轉出檔案',
+            fileImport:          '檔案轉入',
+            duration:            '耗時',
+            dataLabel:           '資料',
+            rowsUnit:            '筆',
+            noRecurringJobs:     '無排程工作',
+            notExecuted:         '未執行',
+            noActiveSchedules:   '無啟用排程',
+            successRatePct:      '成功率 (%)',
+            noData:              '無資料',
+            jobLevelError:       '任務層級錯誤',
+            dataErrorDetail:     '資料列錯誤明細',
+            noErrorDetail:       '無錯誤詳情',
+            loadFailed:          '載入失敗',
+            all:                 '全部',
+            loading:             '載入中...'
+        };
+
+        const socketConn = new signalR.HubConnectionBuilder().withUrl("@(Configuration["BackendURL"])/SignalRHub").build();
+                
+        $(document).ready(function () {
+            loadDashboard();
+            socketConn.start().then(function () {
+            }).catch(function (err) {});
+
+            socketConn.on("TransferJobCompleted", async function () {
+                loadDashboard();
+            });
+        });
+
+        function loadDashboard() {
+            $.getJSON(apiUrl, function (resp) {
+                if (!resp || !resp.Data) return;
+                dashboardData = resp.Data;
+                var d = dashboardData;
+                renderKPI(d);
+                renderJobStatsChart(d.JobStats);
+                renderSyncPieChart(d.SuccessDetails, d.PartialFailDetails, d.FailedDetails);
+                buildTimelineFilter(d.Timeline);
+                renderTimeline(d.Timeline);
+                renderRecurringJobs(d.RecurringJobs);
+                renderActiveSchedules(d.ActiveSchedules);
+                buildSuccessRateFilter(d.Timeline);
+                renderSuccessRateChart();
+            }).fail(function () {
+                console.error('Dashboard API failed');
+            });
+        }
+
+        function renderKPI(d) {
+            var noData = !d.TotalDetails || d.TotalDetails === 0;
+
+            // Sync success rate card
+            if (noData) {
+                $('#kpiSyncRate').text('-');
+                $('#kpiSyncDetail').text('-');
+                $('#kpiSyncTrend').removeClass('bg-success-subtle text-success bg-danger-subtle text-danger').addClass('bg-secondary-subtle text-secondary').html('<i class="ri-minus-line"></i>');
+                $('#kpiSyncIcon').hide();
+            } else {
+                $('#kpiSyncIcon').show();
+                $('#kpiSyncRate').text(d.SyncSuccessRate);
+                $('#kpiSyncDetail').text(d.SuccessDetails + ' ' + msg.success + ' / ' + d.PartialFailDetails + ' ' + msg.partialFail + ' / ' + d.FailedDetails + ' ' + msg.failed);
+                if (d.SyncSuccessRate >= 95) {
+                    $('#kpiSyncTrend').removeClass('bg-secondary-subtle text-secondary bg-danger-subtle text-danger').addClass('bg-success-subtle text-success').html('<i class="ri-arrow-right-up-line"></i> ' + msg.good);
+                    $('#kpiSyncIcon').removeClass('bg-warning-subtle bg-danger-subtle').addClass('bg-success-subtle');
+                    $('#kpiSyncIconI').removeClass('ri-error-warning-line text-warning text-danger').addClass('ri-checkbox-circle-line text-success');
+                } else {
+                    $('#kpiSyncTrend').removeClass('bg-secondary-subtle text-secondary bg-success-subtle text-success').addClass('bg-danger-subtle text-danger').html('<i class="ri-arrow-right-down-line"></i> ' + msg.attention);
+                    $('#kpiSyncIcon').removeClass('bg-success-subtle bg-danger-subtle').addClass('bg-warning-subtle');
+                    $('#kpiSyncIconI').removeClass('ri-checkbox-circle-line text-success text-danger').addClass('ri-error-warning-line text-warning');
+                }
+            }
+
+            // Data error rate card
+            if (noData) {
+                $('#kpiErrorRate').text('-');
+                $('#kpiErrorDetail').text('-');
+                $('#kpiErrorTrend').removeClass('bg-success-subtle text-success bg-danger-subtle text-danger').addClass('bg-secondary-subtle text-secondary').html('<i class="ri-minus-line"></i>');
+                $('#kpiErrorIcon').hide();
+            } else {
+                $('#kpiErrorIcon').show();
+                $('#kpiErrorRate').text(d.DataErrorRate);
+                $('#kpiErrorDetail').text(d.TotalErrorCount + ' ' + msg.error + ' / ' + d.TotalDataCount + ' ' + msg.totalData);
+                if (d.DataErrorRate > 1) {
+                    $('#kpiErrorTrend').removeClass('bg-secondary-subtle text-secondary bg-success-subtle text-success').addClass('bg-danger-subtle text-danger').html('<i class="ri-arrow-right-up-line"></i> ' + msg.attention);
+                    $('#kpiErrorIcon').removeClass('bg-success-subtle bg-danger-subtle').addClass('bg-warning-subtle');
+                    $('#kpiErrorIconI').removeClass('ri-checkbox-circle-line text-success text-danger').addClass('ri-error-warning-line text-warning');
+                } else {
+                    $('#kpiErrorTrend').removeClass('bg-secondary-subtle text-secondary bg-danger-subtle text-danger').addClass('bg-success-subtle text-success').html('<i class="ri-arrow-right-down-line"></i> ' + msg.good);
+                    $('#kpiErrorIcon').removeClass('bg-warning-subtle bg-danger-subtle').addClass('bg-success-subtle');
+                    $('#kpiErrorIconI').removeClass('ri-error-warning-line text-warning text-danger').addClass('ri-checkbox-circle-line text-success');
+                }
+            }
+
+            $('#kpiTotalDetails').text(d.TotalDetails || '-');
+            $('#kpiTotalData').text(noData ? '-' : d.TotalDataCount.toLocaleString());
+            $('#kpiTotalErrorCount').text(noData ? '-' : (msg.errorIn + ' ' + d.TotalErrorCount + ' ' + msg.errorRows));
+        }
+
+        function renderJobStatsChart(stats) {
+            var categories = stats.map(function (s) { return s.Code; });
+            var successData = stats.map(function (s) { return s.SuccessCount; });
+            var partialData = stats.map(function (s) { return s.PartialFailCount; });
+            var failedData = stats.map(function (s) { return s.FailedCount; });
+
+            var options = {
+                series: [
+                    { name: msg.success, data: successData },
+                    { name: msg.partialFail, data: partialData },
+                    { name: msg.failed, data: failedData }
+                ],
+                chart: { type: 'bar', height: 350, stacked: true, toolbar: { show: true } },
+                plotOptions: { bar: { horizontal: false, columnWidth: '50%' } },
+                colors: ['#0ab39c', '#f7b84b', '#f06548'],
+                xaxis: { categories: categories },
+                yaxis: { title: { text: msg.countUnit } },
+                legend: { position: 'top' },
+                dataLabels: { enabled: true },
+                tooltip: {
+                    y: {
+                        formatter: function (val) { return val + ' ' + msg.timesUnit; }
+                    }
+                }
+            };
+
+            if (jobStatsChart) {
+                jobStatsChart.updateOptions(options);
+            } else {
+                jobStatsChart = new ApexCharts(document.querySelector("#jobStatsChart"), options);
+                jobStatsChart.render();
+            }
+        }
+
+        function renderSyncPieChart(success, partial, failed) {
+            var options = {
+                series: [success, partial, failed],
+                chart: { type: 'donut', height: 350 },
+                labels: [msg.success, msg.partialFail, msg.failed],
+                colors: ['#0ab39c', '#f7b84b', '#f06548'],
+                legend: { position: 'bottom' },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: msg.total,
+                                    formatter: function (w) {
+                                        return w.globals.seriesTotals.reduce(function (a, b) { return a + b; }, 0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            if (syncPieChart) {
+                syncPieChart.updateSeries([success, partial, failed]);
+            } else {
+                syncPieChart = new ApexCharts(document.querySelector("#syncPieChart"), options);
+                syncPieChart.render();
+            }
+        }
+
+        function buildTimelineFilter(timeline) {
+            var codes = {};
+            (timeline || []).forEach(function (item) {
+                (item.Details || []).forEach(function (det) {
+                    if (det.TransferCode) codes[det.TransferCode] = det.TransferType;
+                });
+            });
+            var keys = Object.keys(codes).sort();
+            var html = '<button class="btn btn-sm ' + (!timelineFilter ? 'btn-primary' : 'btn-outline-primary') + '" onclick="setTimelineFilter(\'\')"> ' + msg.all + '</button>';
+            keys.forEach(function (code) {
+                var active = timelineFilter === code ? 'btn-primary' : 'btn-outline-primary';
+                var typeLabel = codes[code] === '資料轉入' ? msg.dataImport : (codes[code] === '轉出檔案' ? msg.fileExport : msg.fileImport);
+                var typeCls = codes[code] === '資料轉入' ? 'bg-primary-subtle text-primary' : (codes[code] === '轉出檔案' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning');
+                var typeBadge = '<span class="badge ' + typeCls + ' ms-1">' + typeLabel + '</span>';
+                html += '<button class="btn btn-sm ' + active + '" onclick="setTimelineFilter(\'' + code + '\')">' + code + typeBadge + '</button>';
+            });
+            $('#timelineFilterContainer').html(html);
+        }
+
+        function setTimelineFilter(code) {
+            timelineFilter = code;
+            if (dashboardData) {
+                buildTimelineFilter(dashboardData.Timeline);
+                renderTimeline(dashboardData.Timeline);
+            }
+        }
+
+        function renderTimeline(timeline) {
+            if (!timeline || timeline.length === 0) {
+                $('#timelineContainer').html('<div class="text-center text-muted py-4">' + msg.noRecords24h + '</div>');
+                return;
+            }
+
+            // Filter by TransferCode
+            var filtered = timeline;
+            if (timelineFilter) {
+                filtered = timeline.filter(function (item) {
+                    return item.Details && item.Details.some(function (d) { return d.TransferCode === timelineFilter; });
+                }).map(function (item) {
+                    var clone = Object.assign({}, item);
+                    clone.Details = item.Details.filter(function (d) { return d.TransferCode === timelineFilter; });
+                    return clone;
+                });
+            }
+
+            if (filtered.length === 0) {
+                $('#timelineContainer').html('<div class="text-center text-muted py-4">' + msg.noFilteredRecords + '</div>');
+                return;
+            }
+
+            var html = '';
+            var lastDate = '';
+            filtered.forEach(function (item) {
+                // Group by date header
+                var dateStr = item.RunAt.substring(0, 10);
+                if (dateStr !== lastDate) {
+                    lastDate = dateStr;
+                    html += '<div class="border-bottom pb-1 mb-3 mt-2"><h5 class="text-primary mb-0"><i class="ri-calendar-line me-1"></i>' + dateStr + '</h5></div>';
+                }
+
+                var hasFailed = item.Details && item.Details.some(function(d){ return d.JobStatus === 'Failed'; });
+                var hasPartial = item.Details && item.Details.some(function(d){ return d.JobStatus === 'PartialFail'; });
+                var cls = hasFailed ? 'error' : (hasPartial ? 'partial' : 'success');
+                var statusBadge = hasFailed
+                    ? '<span class="badge bg-danger-subtle text-danger job-status-badge">' + msg.hasFailed + '</span>'
+                    : (hasPartial ? '<span class="badge bg-warning-subtle text-warning job-status-badge">' + msg.partialFail + '</span>'
+                    : '<span class="badge bg-success-subtle text-success job-status-badge">' + msg.success + '</span>');
+                var triggerBadge = item.TriggerType === 'Manual'
+                    ? '<span class="badge bg-info-subtle text-info job-status-badge ms-1">' + msg.manual + '</span>'
+                    : '<span class="badge bg-primary-subtle text-primary job-status-badge ms-1">' + msg.schedule + '</span>';
+                var timeStr = item.RunAt.substring(11);
+
+                html += '<div class="timeline-item ' + cls + '">';
+                html += '<span class="text-muted">' + timeStr + '</span>';
+                html += '<div class="d-flex align-items-center gap-2 mb-1 mt-1">';
+                html += '<h6 class="mb-0">' + item.ScheduleCycleCode + ' ' + triggerBadge + '</h6>';
+                // html += '<h6 class="mb-0">' + item.ScheduleCycleCode + ' ' + statusBadge + triggerBadge + '</h6>';
+                html += '</div>';
+                html += '<p class="text-muted mb-1 fs-13">' + msg.duration + ' ' + (item.DurationMs || 0) + ' ms ｜ ' + msg.dataLabel + ' ' + item.TotalData + ' ' + msg.rowsUnit + ' ｜ ' + msg.error + ' ' + item.TotalError + ' ' + msg.rowsUnit + '</p>';
+
+                if (item.Details && item.Details.length > 0) {
+                    html += '<div class="ms-3">';
+                    item.Details.forEach(function (det) {
+                        var detIcon, statusLabel;
+                        if (det.JobStatus === 'Failed') {
+                            detIcon = '<i class="ri-close-circle-fill text-danger me-1"></i>';
+                            statusLabel = '<span class="badge bg-danger me-1">Failed</span>';
+                        } else if (det.JobStatus === 'PartialFail') {
+                            detIcon = '<i class="ri-error-warning-fill text-warning me-1"></i>';
+                            statusLabel = '<span class="badge bg-warning me-1">PartialFail</span>';
+                        } else {
+                            detIcon = '<i class="ri-checkbox-circle-fill text-success me-1"></i>';
+                            statusLabel = '<span class="badge bg-success me-1">Success</span>';
+                        }
+                        var typeBadge = det.TransferType === '資料轉入'
+                            ? '<span class="badge bg-primary-subtle text-primary me-1">' + msg.dataImport + '</span>'
+                            : (det.TransferType === '轉出檔案'
+                                ? '<span class="badge bg-success-subtle text-success me-1">' + msg.fileExport + '</span>'
+                                : '<span class="badge bg-warning-subtle text-warning me-1">' + msg.fileImport + '</span>');
+                        var clickable = (det.JobStatus === 'Failed' || det.JobStatus === 'PartialFail')
+                            ? ' role="button" onclick="showErrorDetail(\'' + det.RowGuid + '\', \'' + det.TransferCode + '\')" style="cursor:pointer;"'
+                            : '';
+                        html += '<div class="fs-13 text-muted mt-2"' + clickable + '>' + detIcon + statusLabel + typeBadge + det.TransferCode + ' — ' + msg.dataLabel + ' ' + det.DataCount + ' / ' + msg.error + ' ' + det.ErrorCount + ' / ' + (det.DurationMs || 0) + 'ms';
+                        if (det.JobStatus === 'Failed' || det.JobStatus === 'PartialFail') {
+                            html += ' <i class="ri-external-link-line text-primary ms-1"></i>';
+                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            $('#timelineContainer').html(html);
+        }
+
+        function renderRecurringJobs(jobs) {
+            if (!jobs || jobs.length === 0) {
+                $('#recurringJobsTable').html('<tr><td colspan="5" class="text-center text-muted">' + msg.noRecurringJobs + '</td></tr>');
+                return;
+            }
+            var html = '';
+            jobs.forEach(function (j) {
+                var stateBadge = '';
+                if (j.LastJobState === 'Succeeded') stateBadge = '<span class="badge bg-success">Succeeded</span>';
+                else if (j.LastJobState === 'Processing') stateBadge = '<span class="badge bg-warning running-pulse">Running</span>';
+                else if (j.LastJobState === 'Failed') stateBadge = '<span class="badge bg-danger">Failed</span>';
+                else if (j.LastJobState === 'Enqueued') stateBadge = '<span class="badge bg-info">Enqueued</span>';
+                else stateBadge = '<span class="badge bg-secondary">' + (j.LastJobState || 'N/A') + '</span>';
+
+                html += '<tr>';
+                html += '<td class="fw-medium">' + j.Id + '</td>';
+                html += '<td><code class="fs-12">' + j.Cron + '</code></td>';
+                html += '<td>' + (j.LastExecution || '-') + '</td>';
+                html += '<td>' + (j.NextExecution || '-') + '</td>';
+                html += '<td>' + stateBadge + '</td>';
+                html += '</tr>';
+            });
+            $('#recurringJobsTable').html(html);
+        }
+
+        var successRateFilter = '';
+
+        function buildSuccessRateFilter(timeline) {
+            var codes = {};
+            (timeline || []).forEach(function (item) {
+                (item.Details || []).forEach(function (det) {
+                    if (det.TransferCode) codes[det.TransferCode] = det.TransferType;
+                });
+            });
+            var keys = Object.keys(codes).sort();
+            if (!successRateFilter && keys.length > 0) {
+                successRateFilter = keys[0];
+            }
+            var html = '';
+            keys.forEach(function (code) {
+                var active = successRateFilter === code ? 'btn-primary' : 'btn-outline-primary';
+                var typeLabel = codes[code] === '資料轉入' ? msg.dataImport : (codes[code] === '轉出檔案' ? msg.fileExport : msg.fileImport);
+                var typeCls = codes[code] === '資料轉入' ? 'bg-primary-subtle text-primary' : (codes[code] === '轉出檔案' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning');
+                var typeBadge = '<span class="badge ' + typeCls + ' ms-1">' + typeLabel + '</span>';
+                html += '<button class="btn btn-sm ' + active + '" onclick="setSuccessRateFilter(\'' + code + '\')">' + code + typeBadge + '</button>';
+            });
+            $('#successRateFilterContainer').html(html);
+        }
+
+        function setSuccessRateFilter(code) {
+            successRateFilter = code;
+            if (dashboardData) {
+                buildSuccessRateFilter(dashboardData.Timeline);
+                renderSuccessRateChart();
+            }
+        }
+
+        function renderSuccessRateChart() {
+            if (!dashboardData || !dashboardData.Timeline) return;
+            var code = successRateFilter;
+            if (!code) return;
+
+            // Collect all executions of this TransferCode, grouped by time
+            var points = [];
+            dashboardData.Timeline.forEach(function (item) {
+                (item.Details || []).forEach(function (det) {
+                    if (det.TransferCode === code) {
+                        var rate = 0;
+                        if (det.JobStatus === 'Failed') {
+                            rate = 0;
+                        } else if (det.DataCount > 0) {
+                            rate = Math.round(((det.DataCount - det.ErrorCount) / det.DataCount) * 100 * 10) / 10;
+                        } else {
+                            rate = det.JobStatus === 'Success' ? 100 : 0;
+                        }
+                        points.push({ x: det.RunAt || item.RunAt, y: rate, status: det.JobStatus });
+                    }
+                });
+            });
+
+            // Sort by time ascending
+            points.sort(function (a, b) { return a.x < b.x ? -1 : (a.x > b.x ? 1 : 0); });
+
+            var options = {
+                series: [{ name: msg.successRatePct, data: points.map(function (p) { return { x: p.x, y: p.y }; }) }],
+                chart: { type: 'area', height: 350, toolbar: { show: true }, zoom: { enabled: true } },
+                colors: ['#405189'],
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1, stops: [0, 90, 100] } },
+                stroke: { curve: 'smooth', width: 2 },
+                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '11px' } } },
+                yaxis: { min: 0, max: 100, title: { text: msg.successRatePct }, labels: { formatter: function (v) { return v + '%'; } } },
+                dataLabels: { enabled: true, formatter: function (v) { return v + '%'; } },
+                tooltip: {
+                    y: { formatter: function (v) { return v + '%'; } }
+                },
+                markers: { size: 5 }
+            };
+
+            if (successRateChart) {
+                successRateChart.updateOptions(options);
+            } else {
+                successRateChart = new ApexCharts(document.querySelector('#successRateChart'), options);
+                successRateChart.render();
+            }
+        }
+
+        function showErrorDetail(detailId, transferCode) {
+            $('#errorDetailTitle').text(transferCode);
+            $('#errorDetailBody').html('<div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-1"></div>' + msg.loading + '</div>');
+            var modal = new bootstrap.Modal(document.getElementById('errorDetailModal'));
+            modal.show();
+
+            var detailUrl = '@(Configuration["BackendURL"])/api/eipsource-dashboard/GetErrorDetail?detailId=' + detailId;
+            $.getJSON(detailUrl, function (resp) {
+                if (!resp || !resp.Data) {
+                    $('#errorDetailBody').html('<div class="text-center text-muted py-4">' + msg.noData + '</div>');
+                    return;
+                }
+                var d = resp.Data;
+                var typeCls = d.TransferType === '資料轉入' ? 'bg-primary' : (d.TransferType === '轉出檔案' ? 'bg-success' : 'bg-warning');
+                $('#errorDetailTypeBadge').attr('class', 'badge ' + typeCls + ' ms-1 fs-12').text(d.TransferType || '');
+                var html = '';
+
+                // Job-level error (Failed)
+                if (d.ErrorMessage) {
+                    html += '<div class="alert alert-danger"><i class="ri-error-warning-line me-1"></i><strong>' + msg.jobLevelError + '</strong><br>' + escapeHtml(d.ErrorMessage) + '</div>';
+                }
+
+                // Data-level errors
+                if (d.ErrorLogs && d.ErrorLogs.length > 0) {
+                    html += '<h6 class="mb-2">' + msg.dataErrorDetail + ' <span class="badge bg-danger">' + d.ErrorLogs.length + '</span></h6>';
+                    html += '<div class="table-responsive"><table class="table table-sm table-bordered align-middle mb-0">';
+                    html += '<thead class="table-light"><tr><th style="width:50px">#</th><th>SQL</th><th>Exception</th></tr></thead><tbody>';
+                    d.ErrorLogs.forEach(function (e, idx) {
+                        html += '<tr>';
+                        html += '<td>' + (idx + 1) + '</td>';
+                        html += '<td><code class="fs-12">' + escapeHtml(e.Sql || '-') + '</code></td>';
+                        html += '<td class="text-danger fs-12">' + escapeHtml(e.Exception || '-') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                }
+
+                if (!d.ErrorMessage && (!d.ErrorLogs || d.ErrorLogs.length === 0)) {
+                    html += '<div class="text-center text-muted py-4">' + msg.noErrorDetail + '</div>';
+                }
+
+                $('#errorDetailBody').html(html);
+            }).fail(function () {
+                $('#errorDetailBody').html('<div class="text-center text-danger py-4">' + msg.loadFailed + '</div>');
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function renderActiveSchedules(schedules) {
+            if (!schedules || schedules.length === 0) {
+                $('#activeSchedulesTable').html('<tr><td colspan="5" class="text-center text-muted">' + msg.noActiveSchedules + '</td></tr>');
+                return;
+            }
+            var html = '';
+            schedules.forEach(function (s) {
+                var statusBadge = s.LastRunStatus === 'Success'
+                    ? '<span class="badge bg-success-subtle text-success">' + msg.success + '</span>'
+                    : (s.LastRunStatus ? '<span class="badge bg-danger-subtle text-danger">' + s.LastRunStatus + '</span>' : '<span class="badge bg-secondary">' + msg.notExecuted + '</span>');
+
+                html += '<tr>';
+                html += '<td class="fw-medium">' + s.ScheduleCycleCode + '</td>';
+                html += '<td>' + (s.CycleName || '') + '</td>';
+                html += '<td><span class="badge bg-primary-subtle text-primary">' + (s.CycleType || '') + '</span></td>';
+                html += '<td>' + (s.LastRunAt || '-') + '</td>';
+                html += '<td>' + statusBadge + '</td>';
+                html += '</tr>';
+            });
+            $('#activeSchedulesTable').html(html);
+        }
+    </script>
+}

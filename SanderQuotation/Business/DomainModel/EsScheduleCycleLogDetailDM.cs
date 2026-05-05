@@ -23,5 +23,20 @@ namespace Business.DomainModel
         public string ErrorMessage { get; set; }
 
         public List<EsTransferErrorLogDM> ErrorLogs = new();
+
+        /// <summary>取得該筆 Detail 的 TransferCode（依優先順序：DB轉入 > 轉出CSV > 檔案轉入）</summary>
+        public string GetTransferCode()
+        {
+            if (!string.IsNullOrEmpty(DBTransferCode)) return DBTransferCode;
+            return FileTransferCode;
+        }
+
+        /// <summary>取得中文類型名稱：資料轉入 / 轉出檔案 / 檔案轉入</summary>
+        public string GetTransferTypeDisplay()
+        {
+            if (!string.IsNullOrEmpty(DBTransferCode)) return "資料轉入";
+            if (!string.IsNullOrEmpty(FileTransferCode)) return "檔案轉入";
+            return "未知類型";
+        }
     }
 }
