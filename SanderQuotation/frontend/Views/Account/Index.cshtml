@@ -37,19 +37,10 @@
                 <form>
                     <div class="row g-3">
                         <div class="col-xxl-3 col-sm-12">
-                            <div class="search-box">
-                                <input type="text"
-                                       id="globalSearchInput"
-                                       class="form-control search bg-light border-light"
-                                       placeholder="搜尋表格內容">
-                                <i class="ri-search-line search-icon"></i>
-                            </div>
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入帳號" id="MemberAccountSearch" name="MemberAccountSearch">
                         </div>
                         <div class="col-xxl-3 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="帳號" id="MemberAccountSearch" name="MemberAccountSearch">
-                        </div>
-                        <div class="col-xxl-3 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="姓名" id="AccountNameSearch" name="AccountNameSearch">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入姓名" id="AccountNameSearch" name="AccountNameSearch">
                         </div>
                         <div class="col-xxl-2 col-sm-12">
                             <select class="form-control" id="AccountStatus" name="AccountStatus">
@@ -395,6 +386,10 @@
         $(document).ready(function () {
             loadDatas();
             loadRoleList();
+
+            $('#AccountStatus').select2({
+                minimumResultsForSearch:-1,
+            })
 
             $('#globalSearchInput').on('input', function () {
                 const keyword = $(this).val().toLowerCase();
