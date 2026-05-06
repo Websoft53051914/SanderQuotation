@@ -59,7 +59,7 @@
                         <div class="col-lg-12">
                             <div class="text-center mt-sm-5 mb-4 text-white-50">
                                 <div>
-                                    <img src="~/assets/images/logo.svg" alt="" style="filter: brightness(0) invert(1);">
+                                    <img src="~/assets/images/logo.png" alt="" style="width:40%;">
                                     @*          <a href="@Url.Action("TwoStepVerificationBasic", "Login")" class="d-inline-block auth-logo">
                                 </a> *@
                                 </div>
@@ -75,29 +75,25 @@
                                     <div class="text-center mt-2">
                                         @* <h5 class="text-primary">@config.GetMessage("WelcomeBack").ToHtmlString() </h5> *@
                                     </div>
-                                    <div class="p-2 mt-4">
+                                    <div class="p-2 mt-2">
                                         <form action="@Url.Action("TwoStepVerificationBasic", "Login")">
-                                            <div class="form-select-mb-3">
-                                                <select id="company" class="form-control"></select>
-
+                                            <div class="mb-3">
+                                                <label for="username" class="form-label">帳號</label>
+                                                <input type="text" class="form-control focusinput" id="username" placeholder="請輸入帳號">
                                             </div>
                                             <div class="mb-3">
-                                                <label for="username" class="form-label">@config.GetMessage("Account").ToHtmlString()</label>
-                                                <input type="text" class="form-control focusinput" id="username" placeholder="@config.GetMessage("PleaseEnterUsername").ToHtmlString()">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label" for="password-input">@config.GetMessage("Password").ToHtmlString()</label>
+                                                <label class="form-label" for="password-input">密碼</label>
                                                 <div class="position-relative auth-pass-inputgroup mb-3">
-                                                    <input type="password" class="form-control pe-5 password-input" placeholder="@(config.GetMessage("Please_enter_your_password").ToHtmlString())" id="password-input" value="@password">
+                                                    <input type="password" class="form-control pe-5 password-input" placeholder="請輸入密碼" id="password-input" value="@password">
                                                     <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon material-shadow-none" type="button" id="password-addon"><i class="ri-eye-fill align-middle"></i></button>
                                                 </div>
                                             </div>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" value="" id="auth-remember-check">
-                                                <label class="form-check-label" for="auth-remember-check">@(config.GetMessage("Remember_Account").ToHtmlString())</label>
+                                                <label class="form-check-label" for="auth-remember-check">記住帳號</label>
                                             </div>
                                             <div class="mt-4">
-                                                <button class="btn btn-success w-100" type="submit" id="btnSubmit">@(config.GetMessage("Login").ToHtmlString())</button>
+                                                <button class="btn btn-success w-100" type="submit" id="btnSubmit">登入</button>
                                             </div>
                                         </form>
                                     </div>
@@ -168,10 +164,10 @@
                                     <div class="p-2 mt-4">
                                         <div class="text-muted text-center mb-4 mx-lg-3">
                                             <h4 class="PinCode" style="display:none;">
-                                                @(config.GetMessage("Please_enter_your_PIN_CODE").ToHtmlString())
+                                                請輸入您的 PIN 碼
                                             </h4>
                                             <h4 class="VerifyCode" style="display:none;">
-                                                @(config.GetMessage("Please_enter_your_Verify_Code").ToHtmlString())
+                                                請輸入您的驗證碼
                                             </h4>
                                         </div>
                                         <form autocomplete="off">
@@ -203,17 +199,17 @@
                                             </div>
                                             <div class="float-end PinCode" style="display:none;">
                                                 <a href="javascript:void(0);" id="PinCodeReset" class="text-muted">
-                                                    @(config.GetMessage("Forgot_Pin_Code").ToHtmlString())?
+                                                    忘記 PIN 碼?
                                                 </a>
                                             </div>
                                             <div class="float-end VerifyCode" style="display:none;">
                                                 <a href="javascript:void(0);" id="ReSentVerifyCode" class="text-muted">
-                                                    @(config.GetMessage("ReSent_Verify_Code").ToHtmlString())
+                                                    重新發送驗證碼
                                                 </a>
                                             </div>
                                             <div class="mt-3">
                                                 <button type="submit" class="btn btn-success w-100" id="btnPinCode">
-                                                    @(config.GetMessage("Confirm").ToHtmlString())
+                                                    確認
                                                 </button>
                                             </div>
                                         </form><!-- end form -->
