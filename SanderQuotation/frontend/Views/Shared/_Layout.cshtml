@@ -249,9 +249,7 @@
             $select.append(items.join(''));
         }
 
-        if("@(CultureInfo.CurrentUICulture.Name?.ToLower().ToHtmlString())" === "zh-tw"){
-            flatpickr.localize(flatpickr.l10ns.zh_tw);
-        }
+         flatpickr.localize(flatpickr.l10ns.zh_tw);
 
 
         const pageSizeWrapper = $('<div>', { class: 'page-size-wrapper' }).append(
