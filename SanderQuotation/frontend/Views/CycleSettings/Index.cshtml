@@ -1,6 +1,6 @@
 @{
-    ViewBag.Title = config.GetMessage("ScheduleCycle_PageTitle").ToHtmlString();
-    ViewBag.pTitle = config.GetMessage("ScheduleCycle_PageTitle").ToHtmlString();
+    ViewBag.Title = "排程設定";
+    ViewBag.pTitle = "排程設定";
     ViewBag.pageTitle = config.GetMessage("SystemManagementModule").ToHtmlString();
 }
 
@@ -27,9 +27,12 @@
                                 <input type="text"
                                        id="globalSearchInput"
                                        class="form-control search bg-light border-light"
-                                       placeholder="請輸入關鍵字">
+                                       placeholder="搜尋表格內容">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入關鍵字" id="Keyword" name="Keyword">
                         </div>
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">

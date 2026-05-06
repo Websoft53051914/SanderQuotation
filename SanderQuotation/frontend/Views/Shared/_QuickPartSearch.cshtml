@@ -30,7 +30,6 @@
                     <div class="col-lg-3 col-md-4">
                         <label class="col-form-label pt-0 required">客戶別</label>
                         <select id="qs_CustomerType" class="form-select" required>
-                            <option value="">請選擇</option>
                             <option value="MM">MM</option>
                             <option value="D3">D3</option>
                             <option value="STL">STL</option>
@@ -272,5 +271,10 @@
                 Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
             });
         });
+
+
+        $('#qs_CustomerType').select2({
+            dropdownParent: $('#quickPartSearchModal')
+        })
     }());
 </script>
