@@ -47,6 +47,9 @@ namespace Data.Register
                 case "MSSQL":
                     container.RegisterType<IUnitOfWork, UnitOfWorkSqlServer>();
                     break;
+                case "PgSQL":
+                    container.RegisterType<IUnitOfWork, UnitOfWorkPgSQL>();
+                    break;
                 default:
                     //container.RegisterType<IUnitOfWork, UnitOfWorkOracle>();
                     break;
