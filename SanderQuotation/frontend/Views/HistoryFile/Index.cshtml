@@ -1,0 +1,581 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewBag.Title = "歷史資料上傳";
+}
+
+@section styles {
+    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet" />
+    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css" rel="stylesheet" />
+    <style>
+        .filepond--root { font-family: inherit; }
+        .filepond--panel-root { background-color: #f3f6f9; border: 2px dashed #ced4da; border-radius: 0.375rem; }
+        .filepond--drop-label { color: #6c757d; }
+        .filepond--label-action { text-decoration-color: #405189; color: #405189; }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="datasList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="ri-upload-2-line align-bottom me-1"></i> 上傳</button>
+                            <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    @* *** 篩選條件 *@
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text"
+                                       id="globalSearchInput"
+                                       class="form-control search bg-light border-light"
+                                       placeholder="搜尋表格內容">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入關鍵字" id="Keyword" name="Keyword">
+                        </div>
+                        <!--end col-->
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>
+                                篩選
+                            </button>
+                        </div>
+                        <!--end col-->
+                    </div>
+                    <!--end row-->
+                </form>
+            </div>
+            <!--end card-body-->
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                    </div>
+                                </th>
+                                @* *** 顯示欄位 *@
+                                <th data-sort="action">Action</th>@* 功能名稱 *@
+                                <th data-sort="No">項次</th>
+                                <th class="sort" data-sort="FileName">檔案名稱</th>
+                                <th class="sort" data-sort="ContentSummary" style="width: 600px;">內容摘要</th>
+                                <th class="sort" data-sort="UpdateTime">更新時間</th>
+                                <th>更新人員</th>
+                            </tr>
+                        </thead>
+                        <tbody class="list form-check-all" id="data-list-data">
+                            <tr>
+                                <th scope="row">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="checkAll" value="option1">
+                                    </div>
+                                </th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="noresult" style="display: none">
+                        <div class="text-center">
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                            @* <p class="text-muted mb-0">We've searched more than 150+ Datas We did not find any Datas for you search.</p> *@
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <div class="pagination-wrap hstack gap-2">
+                        <a class="page-item pagination-prev disabled" href="#">
+                            上一頁
+                        </a>
+                        <ul class="pagination listjs-pagination mb-0"></ul>
+                        <a class="page-item pagination-next" href="#">
+                            下一頁
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>
+                                        您即將刪除一筆資料
+                                    </h4>
+                                    <p class="text-muted fs-14 mb-4">
+                                        刪除您的資料將會把所有資訊從我們的資料庫中移除。
+                                    </p>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            關閉
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它!</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end modal -->
+            </div>
+            <!--end card-body-->
+        </div>
+        <!--end card-->
+    </div>
+    <!--end col-->
+</div>
+<!--end row-->
+
+<div class="modal fade zoomIn" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-primary-subtle">
+                <h5 class="modal-title">
+                    <i class="ri-upload-2-line me-2"></i>上傳檔案
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <!-- FilePond 上傳區 -->
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">選取檔案（可多選）</label>
+                    <input type="file" id="uploadFileInput" multiple />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btnSaveUpload" disabled>
+                    <i class="ri-save-line me-1"></i>儲存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header p-3 bg-info-subtle">
+                    <h5 class="modal-title" id="showModalLabel">編輯</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editForm">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-lg-12">
+                                <label for="edit_FileName" class="form-label">檔案名稱</label>
+                                <input type="text" id="edit_FileName" class="form-control" readonly />
+                            </div>
+                            <div class="col-lg-12">
+                                <label for="edit_ContentSummary" class="form-label">內容摘要</label>
+                                <textarea id="edit_ContentSummary" class="form-control" rows="8"></textarea>
+                                <div class="mt-1">
+                                    <small class="text-danger">※內容摘要空白時，AI 重新產生摘要</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="hstack gap-2 justify-content-end">
+                            <button type="submit" class="btn btn-success" id="edit-btn">確認</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@section scripts {
+    <script>
+        // ⭐ 全域查詢狀態（完全由前端控制）
+            let queryState = {
+                pageIndex: 1,
+                pageSize: 10,
+                sortField: "FileName", //*** 頁面預設排序欄位，必須是TABLE內欄位
+                sortDir: "asc",
+
+                //*** 篩選條件
+                Keyword1: "",
+                Keyword2: "",
+                Status: "",
+                StartDate: "",
+                EndDate: "",
+            };
+
+            const data = [
+                {
+                    'No':1,
+                    'Id':1,
+                    'FileName':'2310.07081v2.pdf',
+                    'ContentSummary':`這篇論文探討如何提升機器翻譯在處理成語與習語時的準確性。由於成語具有非組合性，其含義無法從單字推導，導致傳統模型常因字面翻譯而產生錯誤。
+
+- 建立包含法語、芬蘭語及日語約 4,000 個成語句子的新數據集。
+- 提出策略性調高成語句子的訓練損失權重，並結合 kNN-MT 檢索增強模型。
+- 透過合成實驗發現模型正確翻譯成語的頻率臨界點，並驗證上下文線索的影響。
+
+實驗數據顯示，這些方法能將預訓練模型的成語翻譯準確度絕對提升達 13%，且在改善成語翻譯的同時，不會損害非成語句子的翻譯品質。
+
+關鍵字：機器翻譯、成語翻譯、檢索增強、損失加權、kNN-MT、自然語言處理`,
+                    'UpdateTime':'2026/05/07 10:00:00',
+                    'UpdaterName':'管理員'
+                },
+                {
+                    'No':2,
+                    'Id':2,
+                    'FileName':'1706.03762v7.pdf',
+                    'ContentSummary':`這份文件介紹了名為 Transformer 的新神經網路架構，主要應用於序列轉換任務，如機器翻譯。該研究由 Google 團隊提出，旨在解決傳統模型在處理長序列時的效率與平行化問題。
+
+- 捨棄傳統的循環神經網路（RNN）與卷積神經網路（CNN），完全基於自注意力機制（Self-Attention）來捕捉輸入與輸出之間的全局依賴關係。
+- 提出多頭注意力（Multi-Head Attention）技術，允許模型同時關注來自不同表示子空間的信息。
+- 顯著提升訓練效率與平行化能力，使模型能在較短時間內達到頂尖性能。
+
+關鍵數據包含在 WMT 2014 英德翻譯任務中取得 28.4 BLEU 分數，英法翻譯則達到 41.8 BLEU，均創下當時的新紀錄，且訓練成本僅為現有模型的一小部分。
+
+關鍵字：Transformer、自注意力機制、機器翻譯、深度學習、序列建模、多頭注意力。`,
+                    'UpdateTime':'2026/05/07 09:00:00',
+                    'UpdaterName':'管理員'
+                },
+            ]
+
+            // ⭐ 主載入函式（分頁 / 搜尋 / 排序 都走這裡）
+            function loadDatas() {
+                // showLoader();
+                // $.ajax({
+                //     url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
+                //     type: 'GET',
+                //     data: queryState,
+                //     success: function (res) {
+                //     hideLoader();
+                //     if (!res.Success) {
+                //         Swal.fire({
+                //             icon: (res.Errors.AlertLevel || '').toLowerCase(),
+                //             title: res.Errors.ReturnCode,
+                //             text: res.Errors.ReturnMsg,
+                //             confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                //         });
+                //         return;
+                //     };
+                //         renderTable(res.Data.Data);
+                //         renderPagination(res.Data.Total);
+                //         document.getElementById("remove-actions").style.display = 'none';
+                //     },
+                //     error: function () {
+                //         alert('Failed to load data.');
+                //     }
+                // });
+                renderTable(data);
+                renderPagination(data.length);
+            }
+
+            // ⭐ 表格渲染
+            function renderTable(rows) {
+                const tbody = $('#data-list-data');
+                tbody.empty();
+
+                if (!rows || rows.length === 0) {
+                    $('.noresult').show();
+                    return;
+                }
+                $('.noresult').hide();
+
+                //*** 取得後端資料後產生tr
+                rows.forEach(data => {
+                    tbody.append(`
+                        <tr data-id="${data.Id}">
+                            <th scope="row">
+                                <div class="form-check">
+                                    <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value=option1>
+                                </div>
+                            </th>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                        <i class="ri-more-fill align-middle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i>編輯</a></li>
+                                        <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i>刪除</a></li>
+                                        <li><a class="dropdown-item download-item-btn"><i class="ri-download-line align-bottom me-2 text-muted"></i>下載</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            <td class="No">${data.No}</td>
+                            <td class="No">${data.FileName}</td>
+                            <td class="No" style="max-width:300px;"><div title="${data.ContentSummary}" style="display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-word; white-space:pre-wrap;">${data.ContentSummary}</div></td>
+                            <td class="No">${data.UpdateTime}</td>
+                            <td class="No">${data.UpdaterName}</td>
+                        </tr>
+                    `);
+                });
+                initDynamicDropdowns();
+            }
+
+            // ⭐ 分頁渲染
+            function renderPagination(total) {
+                const totalPages = Math.ceil(total / queryState.pageSize);
+                const ul = $('.listjs-pagination');
+                ul.empty();
+
+                if (totalPages <= 1) return;
+
+                const maxPages = 5;
+
+                let startPage = Math.max(1, queryState.pageIndex- Math.floor(maxPages / 2));
+                let endPage = startPage + maxPages - 1;
+
+                if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                }
+
+                // ⭐ 前面有隱藏 → 第一頁 …
+                if (startPage > 1) {
+                    ul.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">第一頁</a>
+                        </li>
+                    `);
+
+                    ul.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 中間連續頁碼（最多5頁）
+                for (let i = startPage; i <= endPage; i++) {
+                    ul.append(`
+                        <li class="page-item ${i === queryState.pageIndex? 'active' : ''}">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i}</a>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 後面有隱藏 → … 最後一頁
+                if (endPage < totalPages) {
+                    ul.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    `);
+
+                    ul.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">最後一頁</a>
+                        </li>
+                    `);
+                }
+
+                // ⭐ 上一頁 / 下一頁狀態
+                $('.pagination-prev').toggleClass('disabled', queryState.pageIndex=== 1);
+                $('.pagination-next').toggleClass('disabled', queryState.pageIndex=== totalPages);
+
+                // ⭐ 上一頁
+                $('.pagination-prev').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    if (queryState.pageIndex> 1) {
+                        queryState.pageIndex--;
+                        loadDatas();
+                    }
+                });
+
+                // ⭐ 下一頁
+                $('.pagination-next').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    if (queryState.pageIndex< totalPages) {
+                        queryState.pageIndex++;
+                        loadDatas();
+                    }
+                });
+            }
+
+            function gotoPage(page) {
+                queryState.pageIndex= page;
+                loadDatas();
+            }
+
+            // ⭐ 搜尋 + 篩選
+            function SearchData() {
+
+                //*** 篩選條件
+                queryState.Keyword1 = $('#Keyword1').val();
+                queryState.Keyword2 = $('#Keyword2').val();
+
+                queryState.pageIndex= 1;
+                $('#globalSearchInput').val('').trigger('input');
+                loadDatas();
+            }
+
+            // ⭐ 點擊排序（完全用你原本的 class="sort"）
+            $('.sort').on('click', function () {
+                const field = $(this).data('sort');
+
+                if (queryState.sortField === field) {
+                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    queryState.sortField = field;
+                    queryState.sortDir = 'asc';
+                }
+
+                loadDatas();
+            });
+
+            // ⭐ 狀態樣式（沿用你原邏輯）
+            function getStatusBadge(status) {
+                switch(String(status)) {
+                    case '1': return 'bg-success-subtle text-success';
+                    case '0': return 'bg-secondary-subtle text-secondary';
+                    default: return 'bg-light text-dark';
+                }
+            }
+
+            // 顯示 / 隱藏刪除區塊
+            function toggleRemoveActions() {
+                if($('.row-check:checked').length > 0)
+                    $('#remove-actions').show();
+                else
+                    $('#remove-actions').hide();
+            }
+
+            // ⭐ 單筆勾選
+            $(document).on('change', '.row-check', function () {
+
+                const total = $('.row-check').length;
+                const checked = $('.row-check:checked').length;
+
+                // header checkbox 狀態同步
+                $('#checkAll').prop('checked', total === checked);
+
+                toggleRemoveActions();
+            });
+
+            // ⭐ 全選 / 取消全選
+            $('#checkAll').on('change', function () {
+                $('.row-check').prop('checked', this.checked);
+                toggleRemoveActions();
+            });
+
+            // ⭐ 上傳 Modal 邏輯（FilePond）
+            let pond = null;
+
+            function initFilePond() {
+                if (pond) return; // 已初始化就不重複
+                FilePond.registerPlugin(FilePondPluginImagePreview);
+                pond = FilePond.create(document.getElementById('uploadFileInput'), {
+                    allowMultiple: true,
+                    maxFiles: 50,
+                            labelIdle: '上傳檔案',
+                    labelFileProcessing: '上傳中...',
+                    labelFileProcessingComplete: '上傳完成',
+                    labelFileProcessingAborted: '已取消',
+                    labelFileProcessingError: '上傳失敗',
+                    labelTapToCancel: '點擊取消',
+                    labelTapToRetry: '點擊重試',
+                    labelTapToUndo: '點擊移除',
+                    labelButtonRemoveItem: '移除',
+                    labelButtonAbortItemLoad: '中止',
+                    labelButtonRetryItemLoad: '重試',
+                    labelButtonAbortItemProcessing: '取消',
+                    labelButtonUndoItemProcessing: '復原',
+                    labelButtonRetryItemProcessing: '重試',
+                    labelButtonProcessItem: '上傳',
+                    // 停用自動上傳（按儲存才送出）
+                    server: null,
+                    instantUpload: false,
+                    onaddfile: updateSaveBtn,
+                    onremovefile: updateSaveBtn,
+                });
+            }
+
+            function updateSaveBtn() {
+                const count = pond ? pond.getFiles().length : 0;
+                $('#btnSaveUpload').prop('disabled', count === 0);
+            }
+
+            // Modal 開啟時初始化 FilePond 並清空
+            $('#uploadModal').on('shown.bs.modal', function () {
+                initFilePond();
+                pond.removeFiles();
+                updateSaveBtn();
+            });
+
+            // 儲存按鈕 — 取得所有 File 物件後送出
+            $('#btnSaveUpload').on('click', function () {
+                const files = pond.getFiles().map(f => f.file);
+                if (files.length === 0) {
+                    Swal.fire({ icon: 'warning', title: '請先選取檔案', confirmButtonText: '確認' });
+                    return;
+                }
+                // TODO: 送出 FormData 至後端 API
+                // const formData = new FormData();
+                // files.forEach(f => formData.append('files', f));
+                // $.ajax({ url: '...', type: 'POST', data: formData, processData: false, contentType: false, ... });
+                console.log('準備上傳', files.map(f => f.name));
+                $('#uploadModal').modal('hide');
+            });
+
+            // ⭐ 點擊編輯按鈕
+            $(document).on('click', '.edit-item-btn', function () {
+                const tr = $(this).closest('tr');
+                const id = tr.data('id');
+                const rowData = data.find(d => d.Id == id);
+                if (!rowData) return;
+                $('#edit_FileName').val(rowData.FileName);
+                $('#edit_ContentSummary').val(rowData.ContentSummary);
+                $('#editForm').data('id', id);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('showModal')).show();
+            });
+
+            // ⭐ 編輯表單送出
+            $('#editForm').on('submit', function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                const contentSummary = $('#edit_ContentSummary').val();
+                const idx = data.findIndex(d => d.Id == id);
+                if (idx !== -1) {
+                    data[idx].ContentSummary = contentSummary;
+                }
+                $('#showModal').modal('hide');
+                loadDatas();
+            });
+
+            // ⭐ 初始化
+            $(document).ready(function () {
+                loadDatas();
+
+                $('#globalSearchInput').on('input', function () {
+                    const keyword = $(this).val().toLowerCase();
+                    $('#data-list-data tr').each(function () {
+                        const rowText = $(this).text().toLowerCase();
+                        $(this).toggle(rowText.includes(keyword));
+                    });
+                });
+
+                var CodeType='';
+
+                //func尾
+            });
+
+    </script>
+    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
+    <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+}

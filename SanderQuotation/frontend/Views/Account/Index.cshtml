@@ -72,11 +72,6 @@
                     <table class="table align-middle table-nowrap mb-0" id="dataTable">
                         <thead>
                             <tr>
-                                <th scope="col" style="width: 40px;">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="checkAll" value="option">
-                                    </div>
-                                </th>
                                 <th data-sort="action">操作</th>
                                 <th data-sort="No">序號</th>
                                 <th class="sort" data-sort="MemberAccount">帳號</th>
@@ -277,11 +272,6 @@
 
                 tbody.append(`
                     <tr data-id="${data.Id}">
-                        <th scope="row">
-                            <div class="form-check">
-                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">
-                            </div>
-                        </th>
                         <td>
                             <div class="dropdown">
                                 <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
@@ -289,7 +279,6 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
-                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.AccountStatus === '1' ? '0' : '1'}">
                                         <i class="ri-${data.AccountStatus === '1' ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i> 
