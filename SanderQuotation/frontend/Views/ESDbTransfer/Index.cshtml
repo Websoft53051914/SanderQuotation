@@ -245,59 +245,32 @@
                 EndDate: "",
             };
 
-            const data = [
-                {
-                    'No':1,
-                    'Id':1,
-                    'TransferCode':'Test001',
-                    'TransferName':'測試資料1',
-                    'DbHost':'192.168.1.105',
-                    'DbName':'TestDB',
-                    'DbUser':'sa',
-                    'DbTypeDescription':'PostgreSQL',
-                    'Description':'這是一筆測試資料'
-                },
-                {
-                    'No':2,
-                    'Id':2,
-                    'TransferCode':'Test002',
-                    'TransferName':'測試資料2',
-                    'DbHost':'192.168.1.106',
-                    'DbName':'TestDB2',
-                    'DbUser':'sa',
-                    'DbTypeDescription':'MSSQL',
-                    'Description':'這是一筆測試資料'
-                },
-            ]
-
             // ⭐ 主載入函式（分頁 / 搜尋 / 排序 都走這裡）
             function loadDatas() {
-                // showLoader();
-                // $.ajax({
-                //     url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
-                //     type: 'GET',
-                //     data: queryState,
-                //     success: function (res) {
-                //     hideLoader();
-                //     if (!res.Success) {
-                //         Swal.fire({
-                //             icon: (res.Errors.AlertLevel || '').toLowerCase(),
-                //             title: res.Errors.ReturnCode,
-                //             text: res.Errors.ReturnMsg,
-                //             confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
-                //         });
-                //         return;
-                //     };
-                //         renderTable(res.Data.Data);
-                //         renderPagination(res.Data.Total);
-                //         document.getElementById("remove-actions").style.display = 'none';
-                //     },
-                //     error: function () {
-                //         alert('Failed to load data.');
-                //     }
-                // });
-                renderTable(data);
-                renderPagination(data.length);
+                showLoader();
+                $.ajax({
+                    url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
+                    type: 'GET',
+                    data: queryState,
+                    success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: (res.Errors.AlertLevel || '').toLowerCase(),
+                            title: res.Errors.ReturnCode,
+                            text: res.Errors.ReturnMsg,
+                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                        });
+                        return;
+                    };
+                        renderTable(res.Data.Data);
+                        renderPagination(res.Data.Total);
+                        document.getElementById("remove-actions").style.display = 'none';
+                    },
+                    error: function () {
+                        alert('Failed to load data.');
+                    }
+                });
             }
 
             // ⭐ 表格渲染
