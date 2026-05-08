@@ -23,7 +23,7 @@ using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace backend.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class BaseProjectController : ApiBaseController
     {
         private readonly IConfiguration _config;
@@ -41,22 +41,10 @@ namespace backend.Controllers
             if (UserInfo == null)
                 UserInfo = new CommonClass.Model.UserInfo();
 
-            Request.Cookies.TryGetValue("SystemCode", out string systemCode);
-            Request.Cookies.TryGetValue("ModuleCode", out string moduleCode);
-            UserInfo.AccessToken = User.FindFirst("AccessToken")?.Value;
             UserInfo.UserAccount = User.FindFirst("UserAccount")?.Value;
-            UserInfo.CompanyID = User.FindFirst("CompanyID")?.Value;
             UserInfo.UserName = User.FindFirst("UserName")?.Value;
-            UserInfo.ExpireAt = User.FindFirst("ExpireAt")?.Value;
             UserInfo.IP = Common.Method.GetClientIPAddress();
-            UserInfo.UserAgent = Request.Headers.UserAgent.ToString();
-            UserInfo.SystemCode = systemCode;
-            UserInfo.ModuleCode = moduleCode;
             //UserInfo.RoleList = User.FindFirst("RoleList")?.Value;
-
-#if DEBUG
-            UserInfo.UserAccount = "admin";
-#endif
 
             base.OnActionExecuting(context);
         }
@@ -91,7 +79,7 @@ namespace backend.Controllers
         /// 依目前語系取得 message.json 中的訊息
         /// </summary>
         protected string GetMsg(IConfiguration config, string key)
-            => config[$"message:{CultureInfo.CurrentUICulture.Name}:{key}"] ?? key;
+            => config[$"message:zh-tw:{key}"] ?? key;
 
         //private UserInfoFromTokenResultDTO? _userInfoExt;
         ///// <summary>

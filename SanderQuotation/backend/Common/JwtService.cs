@@ -13,21 +13,14 @@ public class JwtService
         _config = config;
     }
 
-    public string Generate(Dictionary<string, string> userInfo)
+    public string Generate(Dictionary<string, string> userInfo, out DateTime expiresUtc)
     {
+        expiresUtc = DateTime.Now.AddMinutes(int.Parse(_config["Jwt:ExpireMinutes"]!));
         var claims = new List<Claim>
         {
-            new Claim("AccessToken", userInfo["AccessToken"]),
             new Claim("UserAccount", userInfo["UserAccount"]),
-            new Claim("CompanyID", userInfo["CompanyID"]),
             new Claim("UserName", userInfo["UserName"]),
-            new Claim("ExpireAt", userInfo["ExpireAt"]),
-            new Claim("LoginType", "AD")
         };
-        if (userInfo.TryGetValue("DeptList", out var deptList) && !string.IsNullOrEmpty(deptList))
-        {
-            claims.Add(new Claim("DeptList", deptList));
-        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -36,9 +29,10 @@ public class JwtService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Issuer"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(int.Parse(_config["Jwt:ExpireMinutes"]!)),
+            expires: expiresUtc,
             signingCredentials: creds
         );
+
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

@@ -83,7 +83,10 @@
                         </span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end" id="menu_MyAccount">
-                        
+                        <a class="dropdown-item" href="#" id="btnLogout">
+                            <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> 
+                            <span class="align-middle" data-key="t-logout">登出</span>
+                        </a>
 
                     </div>
                 </div>
@@ -188,13 +191,18 @@
                         Swal.fire({
                             title: msg,
                             icon: alertType,
-                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                            confirmButtonText: '確認',
                         }).then((result) => {
                         });
                     }
                 },
                 error: function (xhr) {
-                    console.log(xhr.responseText);
+                     Swal.fire({
+                            title: '登出失敗',
+                            icon: 'error',
+                            confirmButtonText: '確認',
+                        }).then((result) => {
+                        });
                 }
             });
         })

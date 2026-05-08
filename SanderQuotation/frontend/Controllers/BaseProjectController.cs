@@ -22,57 +22,57 @@ namespace frontend.Controllers
             string controllerName = routeData["controller"]?.ToString();
             string actionName = routeData["action"]?.ToString();
 
-            var SystemCode = context.HttpContext.Request.Query["SystemCode"].ToString();
-            var ModuleCode = context.HttpContext.Request.Query["ModuleCode"].ToString();
-            var Breadcrumb = context.HttpContext.Request.Query["Breadcrumb"].ToString();
-            var MenuCode = context.HttpContext.Request.Query["MenuCode"].ToString();
-            if (!string.IsNullOrEmpty(SystemCode))
-            {
-#if DEBUG
-                Response.Cookies.Append("SystemCode", SystemCode);
-#endif
-                Response.Cookies.Append("SystemCode", SystemCode, new CookieOptions
-                {
-                    Domain = Common.Method.GetAppSettingsDataByName("frontendDoamin"),   // ⭐ 這行關鍵
-                    HttpOnly = true,
-                    Secure = true,                 // 🔴 必須 true
-                    SameSite = SameSiteMode.None,  // 🔴 跨站一定要 None
-                    Path = "/"
-                });
-            }
-            if (!string.IsNullOrEmpty(ModuleCode))
-            {
-#if DEBUG
-                Response.Cookies.Append("ModuleCode", ModuleCode);
+//            var SystemCode = context.HttpContext.Request.Query["SystemCode"].ToString();
+//            var ModuleCode = context.HttpContext.Request.Query["ModuleCode"].ToString();
+//            var Breadcrumb = context.HttpContext.Request.Query["Breadcrumb"].ToString();
+//            var MenuCode = context.HttpContext.Request.Query["MenuCode"].ToString();
+//            if (!string.IsNullOrEmpty(SystemCode))
+//            {
+//#if DEBUG
+//                Response.Cookies.Append("SystemCode", SystemCode);
+//#endif
+//                Response.Cookies.Append("SystemCode", SystemCode, new CookieOptions
+//                {
+//                    Domain = Common.Method.GetAppSettingsDataByName("frontendDoamin"),   // ⭐ 這行關鍵
+//                    HttpOnly = true,
+//                    Secure = true,                 // 🔴 必須 true
+//                    SameSite = SameSiteMode.None,  // 🔴 跨站一定要 None
+//                    Path = "/"
+//                });
+//            }
+//            if (!string.IsNullOrEmpty(ModuleCode))
+//            {
+//#if DEBUG
+//                Response.Cookies.Append("ModuleCode", ModuleCode);
 
-#endif
-                Response.Cookies.Append("ModuleCode", ModuleCode, new CookieOptions
-                {
-                    Domain = Common.Method.GetAppSettingsDataByName("frontendDoamin"),   // ⭐ 這行關鍵
-                    HttpOnly = true,
-                    Secure = true,                 // 🔴 必須 true
-                    SameSite = SameSiteMode.None,  // 🔴 跨站一定要 None
-                    Path = "/"
-                });
-            }
-            if (!string.IsNullOrEmpty(Breadcrumb))
-            {
-                Response.Cookies.Append("Breadcrumb", Breadcrumb);
-            }
-            if (!string.IsNullOrEmpty(MenuCode))
-            {
-                Response.Cookies.Append("MenuCode", MenuCode);
-            }
+//#endif
+//                Response.Cookies.Append("ModuleCode", ModuleCode, new CookieOptions
+//                {
+//                    Domain = Common.Method.GetAppSettingsDataByName("frontendDoamin"),   // ⭐ 這行關鍵
+//                    HttpOnly = true,
+//                    Secure = true,                 // 🔴 必須 true
+//                    SameSite = SameSiteMode.None,  // 🔴 跨站一定要 None
+//                    Path = "/"
+//                });
+//            }
+//            if (!string.IsNullOrEmpty(Breadcrumb))
+//            {
+//                Response.Cookies.Append("Breadcrumb", Breadcrumb);
+//            }
+//            if (!string.IsNullOrEmpty(MenuCode))
+//            {
+//                Response.Cookies.Append("MenuCode", MenuCode);
+//            }
 
 
-            // 2. 判斷是否為首頁 (Home/Index)
-            if (controllerName == "Home" && actionName == "Index")
-            {
-                // 移除 Cookie (透過設定過期時間為過去來移除)
-                Response.Cookies.Delete("Breadcrumb");
-                Response.Cookies.Delete("MenuCode");
+//            // 2. 判斷是否為首頁 (Home/Index)
+//            if (controllerName == "Home" && actionName == "Index")
+//            {
+//                // 移除 Cookie (透過設定過期時間為過去來移除)
+//                Response.Cookies.Delete("Breadcrumb");
+//                Response.Cookies.Delete("MenuCode");
 
-            }
+//            }
 
             base.OnActionExecuting(context);
         }

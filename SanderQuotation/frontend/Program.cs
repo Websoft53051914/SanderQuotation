@@ -169,7 +169,7 @@ app.MapRazorPages();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=home}/{action=Index}/{id?}");
+    pattern: "{controller=login}/{action=Index}/{id?}");
 
 frontend.Common.HttpContext.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 

@@ -27,20 +27,6 @@ namespace frontend.Controllers
                 SameSite = SameSiteMode.None
             });
 
-            Response.Cookies.Append(
-               CookieRequestCultureProvider.DefaultCookieName,
-               CookieRequestCultureProvider.MakeCookieValue(new RequestCulture("en-US")),
-               new CookieOptions
-               {
-                   Expires = DateTimeOffset.UtcNow.AddYears(1),
-                   Domain = Common.Method.GetAppSettingsDataByName("frontendDoamin"),   // ? 這行關鍵
-                   HttpOnly = true,
-                   Secure = true,                 // ?? 必須 true
-                   SameSite = SameSiteMode.None,  // ?? 跨站一定要 None
-                   Path = "/"
-               }
-           );
-
             return View("Logout");
         }
     }

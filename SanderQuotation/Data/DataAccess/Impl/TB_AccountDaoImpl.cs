@@ -62,23 +62,16 @@ where id=@id
         {
             Dictionary<string, object> paras = new();
             paras.Add("MemberAccount", memberAccount);
-            paras.Add("Status", AccountStatusEnum.Cancel.ToInt());
-            paras.Add("OtherStatusEq", (int)StatusEnum.Enabled);
+            paras.Add("Status", AccountStatusEnum.Cancel.ToInt().ToString());
 
             string qrySQL = $@"
 
 
 select  
 a.*
-, e.Id AS EmployeeId
 from
 TB_ACCOUNT a
-left outer join TB_SysRole b on a.PermissionID=b.id
-LEFT JOIN TB_Employee e
-    ON e.AccountId = a.Id
-    AND e.Status = @OtherStatusEq
-
-where MemberAccount=@MemberAccount and {nameof(TB_AccountEntity.AccountStatus)} <> @Status
+where MemberAccount=@MemberAccount and {nameof(TB_AccountEntity.AccountStatus)} != @Status
 
 ";
 
@@ -134,7 +127,7 @@ where a.id=@id
             }
             else
             {
-                whereSQL += $@" and AccountStatus <> {AccountStatusEnum.Cancel.ToInt()} ";
+                whereSQL += $@" and AccountStatus != '{AccountStatusEnum.Cancel.ToInt()}' ";
             }
              
 
@@ -149,7 +142,7 @@ SUBSTRING ( LastLoginTime ,7 , 2 )+' '+
 SUBSTRING ( LastLoginTime ,10 , 2 )+':'+
 SUBSTRING ( LastLoginTime ,12 , 2 )+':'+
 SUBSTRING ( LastLoginTime ,14 , 2 ))
-) <= SYSDATETIME() and accountstatus={StatusEnum.Enabled.ToInt()}
+) <= SYSDATETIME() and accountstatus='{AccountStatusEnum.Enabled.ToInt()}'
 ";
 
             string originSQL = $@"
@@ -159,7 +152,7 @@ a.* FROM TB_account a
 
 where 1=1
 
-and a.AccountStatus!=9
+and a.AccountStatus!='{AccountStatusEnum.Cancel.ToInt()}'
 
 {whereSQL}
 
