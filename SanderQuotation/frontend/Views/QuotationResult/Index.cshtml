@@ -49,14 +49,14 @@
                             <tr>
                                 <th style="width:100px;">Action</th>
                                 <th style="width:40px;">項次</th>
-                                <th>BOM File 名稱</th>
-                                <th>客戶名稱</th>
-                                <th>產品料號</th>
-                                <th>客戶別</th>
-                                <th>採購數量</th>
-                                <th>料項數</th>
-                                <th>建立日期</th>
-                                <th>最後更新</th>
+                                <th class="sort" data-sort="BomFileName">BOM File 名稱</th>
+                                <th class="sort" data-sort="CustomerName">客戶名稱</th>
+                                <th class="sort" data-sort="ProductNo">產品料號</th>
+                                <th class="sort" data-sort="CustomerType">客戶別</th>
+                                <th class="sort" data-sort="PurchaseQty">採購數量</th>
+                                <th class="sort" data-sort="ItemCount">料項數</th>
+                                <th class="sort" data-sort="CreateTime">建立日期</th>
+                                <th class="sort" data-sort="UpdateTime">最後更新</th>
                             </tr>
                         </thead>
                         <tbody id="quotation-list-data">
@@ -76,6 +76,12 @@
         </div>
     </div>
 </div>
+
+<style>
+    #dataTable .sort { cursor: pointer; padding-right: 1.5rem; }
+    #dataTable .sort::after  { top: 65%;  transform: translateY(calc(-100% - 1px)); }
+    #dataTable .sort::before { top: 35%;  transform: translateY(1px); }
+</style>
 
 @section scripts {
     <script>
@@ -112,8 +118,8 @@
             UpdateTime: '@nameof(QuotationFileGridVM.UpdateTime)'
         };
 
-        var deleteId = 0;
-
+        var deleteId = 0;        var sortState = { field: 'CreateTime', dir: 'desc' };
+        var cachedList = [];
         // ── DOM ──────────────────────────────────────────────────────────────
         var dom = {
             listBody: $('#quotation-list-data'),
@@ -165,10 +171,21 @@
                             });
                         });
                     }
-                    renderList(list);
+                    cachedList = list;
+                    renderList(applySortFilter(cachedList));
                 },
                 error: function () { showSysError(); },
                 complete: function () { hideLoader(); }
+            });
+        }
+
+        function applySortFilter(list) {
+            return list.slice().sort(function (a, b) {
+                var va = a[sortState.field] ?? '';
+                var vb = b[sortState.field] ?? '';
+                if (va < vb) return sortState.dir === 'asc' ? -1 : 1;
+                if (va > vb) return sortState.dir === 'asc' ? 1 : -1;
+                return 0;
             });
         }
 
@@ -200,7 +217,7 @@
                 '<td>' + no + '</td>' +
                 '<td><span class="fw-semibold">' + escapeHtml(r[F.BomFileName]) + '</span></td>' +
                 '<td>' + escapeHtml(r[F.CustomerName]) + '</td>' +
-                '<td><code>' + escapeHtml(r[F.ProductNo]) + '</code></td>' +
+                '<td><code class="fs-6">' + escapeHtml(r[F.ProductNo]) + '</code></td>' +
                 '<td>' + customerTypeBadge(r[F.CustomerType]) + '</td>' +
                 '<td class="text-end">' + (r[F.PurchaseQty] || 0).toLocaleString() + '</td>' +
                 '<td><span class="badge bg-secondary-subtle text-secondary">' + r[F.ItemCount] + '</span></td>' +
@@ -209,6 +226,16 @@
                 '</tr>';
         }
 
+        $(document).on('click', '#dataTable .sort', function () {
+            var field = $(this).data('sort');
+            if (sortState.field === field) {
+                sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.field = field;
+                sortState.dir = 'asc';
+            }
+            renderList(applySortFilter(cachedList));
+        });
 
     </script>
 }

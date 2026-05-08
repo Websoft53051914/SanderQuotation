@@ -74,7 +74,7 @@
                         <h6 class="text-muted mb-0">
                             <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
                         </h6>
-                        <button type="button" class="btn btn-sm btn-warning" id="btnToggleRecommended"
+                        <button type="button" class="btn btn-warning" id="btnToggleRecommended"
                                 title="切換建議採購型號的勾選狀態">
                             <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
                         </button>
@@ -303,15 +303,15 @@
                 + ' data-recommended="' + isRecommended + '"' + checked + '>'
                 + '</div>'
                 + '</td>'
-                + '<td class="text-center text-muted small">' + no + '</td>'
+                + '<td class="text-center text-muted">' + no + '</td>'
                 + '<td><span title="' + escapeHtml(r[FI.Description]) + '">' + escapeHtml(r[FI.Description]) + '</span></td>'
-                + '<td class="small text-muted">' + escapeHtml(r[FI.Manufacturer1]) + '</td>'
-                + '<td><code class="small">' + escapeHtml(r[FI.ManufacturerPartNo1]) + '</code></td>'
+                + '<td class="text-muted">' + escapeHtml(r[FI.Manufacturer1]) + '</td>'
+                + '<td><code class="fs-6">' + escapeHtml(r[FI.ManufacturerPartNo1]) + '</code></td>'
                 + '<td class="text-center">' + fmtNum(r[FI.Quantity]) + '</td>'
                 // 採購型號（唯讀 InputGroup + 選取按鈕）
                 + '<td class="p-1' + (isRecommended ? ' bg-warning-subtle' : '') + '">'
-                + '<div class="input-group input-group-sm">'
-                + '<input type="text" class="form-control form-control-sm font-monospace procurement-model-input"'
+                + '<div class="input-group">'
+                + '<input type="text" class="form-control font-monospace procurement-model-input"'
                 + ' data-id="' + itemId + '" value="' + currentModel + '" readonly placeholder="—" />'
                 + '<button class="btn btn-outline-secondary" type="button" onclick="openItemPicker(' + itemId + ')">'
                 + '<i class="ri-search-line"></i>'
@@ -319,19 +319,19 @@
                 + '</div>'
                 + '</td>'
                 // 內部採購紀錄
-                + '<td class="small">' + fmtDate(r[FI.InternalProcurementDate]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[FI.InternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[FI.InternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center small">' + fmtNum(r[FI.InternalQty]) + '</td>'
+                + '<td>' + fmtDate(r[FI.InternalProcurementDate]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[FI.InternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[FI.InternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center">' + fmtNum(r[FI.InternalQty]) + '</td>'
                 + '<td class="text-center">' + fmtCurrency(r[FI.InternalCurrency]) + '</td>'
-                + '<td class="small">' + escapeHtml(r[FI.InternalSupplierName] || '') + '</td>'
+                + '<td>' + escapeHtml(r[FI.InternalSupplierName] || '') + '</td>'
                 // 外部查價
-                + '<td class="small">' + fmtDate(r[FI.ExternalQuotationDate]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[FI.ExternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[FI.ExternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center small">' + fmtNum(r[FI.ExternalMOQ]) + '</td>'
+                + '<td>' + fmtDate(r[FI.ExternalQuotationDate]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[FI.ExternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[FI.ExternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center">' + fmtNum(r[FI.ExternalMOQ]) + '</td>'
                 + '<td class="text-center">' + fmtCurrency(r[FI.ExternalCurrency]) + '</td>'
-                + '<td class="small">' + escapeHtml(r[FI.ExternalSupplierName] || '') + '</td>'
+                + '<td>' + escapeHtml(r[FI.ExternalSupplierName] || '') + '</td>'
                 + '</tr>';
         }
 

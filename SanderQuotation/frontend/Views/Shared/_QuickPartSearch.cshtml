@@ -22,33 +22,33 @@
 
                 <!-- 搜尋條件 -->
                 <form id="qsSearchForm" class="needs-validation" novalidate>
-                <div class="row g-2 align-items-end mb-3">
-                    <div class="col-lg-3 col-md-4">
-                        <label class="col-form-label pt-0 required">製造商料號</label>
-                        <input type="text" id="qs_ManufacturerPartNo" class="form-control" placeholder="輸入製造商料號" required />
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-lg-3 col-md-4">
+                            <label class="col-form-label pt-0 required">製造商料號</label>
+                            <input type="text" id="qs_ManufacturerPartNo" class="form-control" placeholder="輸入製造商料號" required />
+                        </div>
+                        <div class="col-lg-3 col-md-4">
+                            <label class="col-form-label pt-0 required">客戶別</label>
+                            <select id="qs_CustomerType" class="form-select" required>
+                                <option value="MM">MM</option>
+                                <option value="D3">D3</option>
+                                <option value="STL">STL</option>
+                                <option value="CTB">CTB</option>
+                                <option value="WT">WT</option>
+                                <option value="AED">AED</option>
+                                <option value="EDS">EDS</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-4">
+                            <label class="col-form-label pt-0 required">實際查價量</label>
+                            <input type="number" id="qs_PurchaseQty" class="form-control" min="1" placeholder="採購數量" required />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <button type="submit" class="btn btn-primary" id="btnQuickSearch">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>篩選
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-lg-3 col-md-4">
-                        <label class="col-form-label pt-0 required">客戶別</label>
-                        <select id="qs_CustomerType" class="form-select" required>
-                            <option value="MM">MM</option>
-                            <option value="D3">D3</option>
-                            <option value="STL">STL</option>
-                            <option value="CTB">CTB</option>
-                            <option value="WT">WT</option>
-                            <option value="AED">AED</option>
-                            <option value="EDS">EDS</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-3 col-md-4">
-                        <label class="col-form-label pt-0 required">採購數量</label>
-                        <input type="number" id="qs_PurchaseQty" class="form-control" min="1" placeholder="採購數量" required />
-                    </div>
-                    <div class="col-lg-2 col-md-3">
-                        <button type="submit" class="btn btn-primary" id="btnQuickSearch">
-                            <i class="ri-search-line me-1"></i>查詢
-                        </button>
-                    </div>
-                </div>
                 </form>
                 <div class="text-muted small mb-2">
                     採購型號欄位黃底標示表示系統建議採購型號
@@ -157,28 +157,28 @@
             var isRec = r[F.IsRecommended] === true;
             var itemId = r[F.Id];
             return '<tr data-id="' + itemId + '" data-rec="' + isRec + '">'
-                + '<td><code class="small">' + esc(r[F.ManufacturerPartNo1]) + '</code></td>'
+                + '<td><code class="fs-6">' + esc(r[F.ManufacturerPartNo1]) + '</code></td>'
                 + '<td class="p-1' + (isRec ? ' bg-warning-subtle' : '') + '">'
-                + '<div class="input-group input-group-sm">'
-                + '<input type="text" class="form-control form-control-sm font-monospace qs-model-input"'
+                + '<div class="input-group">'
+                + '<input type="text" class="form-control font-monospace qs-model-input"'
                 + ' data-id="' + itemId + '" value="' + esc(r[F.ProcurementModel] || '') + '" placeholder="—" />'
                 + '<button class="btn btn-outline-secondary qs-pick-btn" type="button" data-id="' + itemId + '">'
                 + '<i class="ri-search-line"></i>'
                 + '</button>'
                 + '</div>'
                 + '</td>'
-                + '<td class="small">' + fmtDate(r[F.InternalProcurementDate]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[F.InternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[F.InternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center small">' + fmtNum(r[F.InternalQty]) + '</td>'
+                + '<td>' + fmtDate(r[F.InternalProcurementDate]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[F.InternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[F.InternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center">' + fmtNum(r[F.InternalQty]) + '</td>'
                 + '<td class="text-center">' + fmtCurrency(r[F.InternalCurrency]) + '</td>'
-                + '<td class="small">' + esc(r[F.InternalSupplierName] || '') + '</td>'
-                + '<td class="small">' + fmtDate(r[F.ExternalQuotationDate]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[F.ExternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end small">' + fmtPrice(r[F.ExternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center small">' + fmtNum(r[F.ExternalMOQ]) + '</td>'
+                + '<td>' + esc(r[F.InternalSupplierName] || '') + '</td>'
+                + '<td>' + fmtDate(r[F.ExternalQuotationDate]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[F.ExternalUnitPriceOrig]) + '</td>'
+                + '<td class="text-end">' + fmtPrice(r[F.ExternalUnitPriceTwd]) + '</td>'
+                + '<td class="text-center">' + fmtNum(r[F.ExternalMOQ]) + '</td>'
                 + '<td class="text-center">' + fmtCurrency(r[F.ExternalCurrency]) + '</td>'
-                + '<td class="small">' + esc(r[F.ExternalSupplierName] || '') + '</td>'
+                + '<td>' + esc(r[F.ExternalSupplierName] || '') + '</td>'
                 + '</tr>';
         }
 

@@ -12,11 +12,11 @@
                 <div class="d-flex align-items-center">
                     <h5 class="card-title mb-0 flex-grow-1"></h5>
                     <div class="flex-shrink-0">
+                        <button id="btnUpload" class="btn btn-danger add-btn" type="button">
+                            <i class="ri-upload-2-line align-bottom me-1"></i>上傳
+                        </button>
                         <button id="btnBatchDelete" class="btn btn-soft-danger me-1" type="button" style="display:none;">
                             <i class="ri-delete-bin-2-line"></i>
-                        </button>
-                        <button id="btnUpload" class="btn btn-primary add-btn" type="button">
-                            <i class="ri-upload-2-line align-bottom me-1"></i>上傳
                         </button>
                     </div>
                 </div>
@@ -56,15 +56,15 @@
                                 <th style="width:40px;"><div class="form-check"><input class="form-check-input" type="checkbox" id="checkAll"></div></th>
                                 <th style="width:110px;">Action</th>
                                 <th style="width:40px;">項次</th>
-                                <th style="min-width:200px;">檔案名稱</th>
-                                <th style="min-width:130px;">匯入設定規則</th>
-                                <th style="min-width:120px;">客戶名稱</th>
-                                <th style="min-width:130px;">產品料號</th>
-                                <th style="width:80px;">客戶別</th>
-                                <th style="width:90px;">採購數量</th>
-                                <th style="width:100px;">狀態</th>
-                                <th style="width:120px;">建立日期</th>
-                                <th style="width:120px;">最後更新</th>
+                                <th class="sort" data-sort="BomFileName" style="min-width:200px;">檔案名稱</th>
+                                <th class="sort" data-sort="ImportRuleName" style="min-width:130px;">匯入設定規則</th>
+                                <th class="sort" data-sort="CustomerName" style="min-width:120px;">客戶名稱</th>
+                                <th class="sort" data-sort="ProductNo" style="min-width:130px;">產品料號</th>
+                                <th class="sort" data-sort="CustomerType" style="width:80px;">客戶別</th>
+                                <th class="sort" data-sort="PurchaseQty" style="width:90px;">採購數量</th>
+                                <th class="sort" data-sort="StatusCode" style="width:100px;">狀態</th>
+                                <th class="sort" data-sort="CreateTime" style="width:120px;">建立日期</th>
+                                <th class="sort" data-sort="UpdateTime" style="width:120px;">最後更新</th>
                             </tr>
                         </thead>
                         <tbody id="import-file-list-data"></tbody>
@@ -154,7 +154,7 @@
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
                 <button type="button" class="btn btn-primary" id="btnSaveUpload" disabled>
                     <i class="ri-save-line me-1"></i>儲存
                 </button>
@@ -165,11 +165,11 @@
 
 <!-- ═══ Modal：編輯 ═══ -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
                 <h5 class="modal-title">
-                    <i class="ri-pencil-line me-2"></i>編輯
+                    編輯
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -177,25 +177,25 @@
                 <div class="modal-body">
                     <input type="hidden" id="ef_Id" />
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-lg-6">
                             <label class="col-form-label pt-0">檔案名稱</label>
                             <input type="text" id="ef_BomFileName" class="form-control" readonly />
                         </div>
-                        <div class="col-12">
+                        <div class="col-lg-6">
                             <label class="col-form-label pt-0 required">客戶名稱</label>
                             <select id="ef_CustomerName" class="form-select" required></select>
                             <div class="invalid-feedback">請選擇客戶名稱。</div>
                         </div>
-                        <div class="col-12">
+                        <div class="col-lg-6">
                             <label class="col-form-label pt-0">產品料號</label>
                             <input type="text" id="ef_ProductNo" class="form-control" maxlength="100" />
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary" id="btnConfirmEdit">
-                        <i class="ri-save-line me-1"></i>確認
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmEdit">
+                        確認
                     </button>
                 </div>
             </form>
@@ -266,8 +266,7 @@
         var optionData = { ImportRules: [], CustomerNames: [] };
 
         // ── 刪除用 ID ──────────────────────────────────────────────────────────
-        var deleteId = 0;
-        // ── 橋接 _CrudCommonScripts ───────────────────────────────────────────
+        var deleteId = 0;        var queryState = { sortField: 'CreateTime', sortDir: 'desc' };        // ── 橋接 _CrudCommonScripts ───────────────────────────────────────────
         function loadDatas() { loadList(); }
 
         // ── DOM ──────────────────────────────────────────────────────────────
@@ -317,10 +316,21 @@
                                 .some(function (v) { return (v || '').toLowerCase().includes(globalKw); });
                         });
                     }
-                    renderList(list);
+                    renderList(applySortList(list));
                 },
                 error: function () { showSysError(); },
                 complete: function () { hideLoader(); },
+            });
+        }
+
+        /** 排序清單 */
+        function applySortList(list) {
+            return list.slice().sort(function (a, b) {
+                var va = a[queryState.sortField] ?? '';
+                var vb = b[queryState.sortField] ?? '';
+                if (va < vb) return queryState.sortDir === 'asc' ? -1 : 1;
+                if (va > vb) return queryState.sortDir === 'asc' ? 1 : -1;
+                return 0;
             });
         }
 
@@ -358,7 +368,7 @@
                             + ' \'' + escapeHtml(r[FG.CustomerName]) + '\', \'' + escapeHtml(r[FG.ProductNo]) + '\')">'
                                 + '<i class="ri-pencil-fill align-bottom me-2 text-muted"></i>編輯'
                             + '</a></li>'
-                            + '<li><a class="dropdown-item delete-btn text-danger" href="javascript:void(0)"'
+                            + '<li><a class="dropdown-item delete-btn" href="javascript:void(0)"'
                             + ' data-id="' + r[FG.Id] + '">'
                                 + '<i class="ri-delete-bin-fill align-bottom me-2"></i>刪除'
                             + '</a></li>'
@@ -369,7 +379,7 @@
                 + '<td class="fw-semibold">' + escapeHtml(r[FG.BomFileName]) + '</td>'
                 + '<td>' + escapeHtml(r[FG.ImportRuleName]) + '</td>'
                 + '<td>' + escapeHtml(r[FG.CustomerName]) + '</td>'
-                + '<td><code>' + escapeHtml(r[FG.ProductNo]) + '</code></td>'
+                + '<td><code class="fs-6">' + escapeHtml(r[FG.ProductNo]) + '</code></td>'
                 + '<td>' + escapeHtml(r[FG.CustomerType]) + '</td>'
                 + '<td class="text-end">' + Number(r[FG.PurchaseQty]).toLocaleString() + '</td>'
                 + '<td class="text-center"><span class="' + sc.cls + '">' + escapeHtml(sc.text) + '</span></td>'
@@ -416,13 +426,18 @@
             var ids = $('.row-check:checked').map(function () { return $(this).val(); }).get();
             if (!ids.length) return;
             Swal.fire({
+                title: '@(config.GetMessage("Are_you_sure").ToHtmlString())',
+                text: '@(config.GetMessage("You_wont_be_able_to_revert_this").ToHtmlString())',
                 icon: 'warning',
-                title: '確定要刪除 ' + ids.length + ' 筆資料？',
-                text: '刪除後將無法復原。',
                 showCancelButton: true,
-                confirmButtonText: '確定刪除',
-                cancelButtonText: '取消',
-                confirmButtonColor: '#d33'
+                customClass: {
+                    confirmButton: 'btn btn-primary w-xs me-2 mt-2',
+                    cancelButton: 'btn btn-danger w-xs mt-2'
+                },
+                confirmButtonText: '@(config.GetMessage("Yes_delete_it").ToHtmlString())',
+                cancelButtonText: '@(config.GetMessage("Cancel").ToHtmlString())',
+                buttonsStyling: false,
+                showCloseButton: true
             }).then(function (result) {
                 if (!result.isConfirmed) return;
                 showLoader();
@@ -501,7 +516,6 @@
             );
             $sel.select2({
                 width: '100%',
-                minimumResultsForSearch: -1,
                 data: data,
                 dropdownParent: $('#uploadModal'),
             });
