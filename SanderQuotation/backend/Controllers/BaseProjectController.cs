@@ -153,7 +153,7 @@ namespace backend.Controllers
         /// <returns>ControlLog.Id</returns>
         protected Guid LogError(string exception)
         {
-            var blLog = BLFactory.GetInstance<LogBL>();
+            var blLog = GetBLInstance<LogBL>();
 
             var logDM = new ControlLogDM()
             {
@@ -200,7 +200,7 @@ namespace backend.Controllers
         /// <param name="description"></param>
         protected void LogSuccess(string description = null)
         {
-            var blLog = BLFactory.GetInstance<LogBL>();
+            var blLog = GetBLInstance<LogBL>();
 
             var logDM = new ControlLogDM()
             {
@@ -220,7 +220,7 @@ namespace backend.Controllers
         /// <param name="description"></param>
         protected void LogSuccess(Guid id, LogAction logAction, string description = null)
         {
-            var blLog = BLFactory.GetInstance<LogBL>();
+            var blLog = GetBLInstance<LogBL>();
 
             var logDM = new ControlLogDM()
             {

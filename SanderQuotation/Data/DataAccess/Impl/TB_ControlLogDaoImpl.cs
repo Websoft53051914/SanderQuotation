@@ -1,4 +1,5 @@
-﻿using Core.Utility.Base.Data;
+﻿using CommonClass.Model;
+using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Helper.DB.FilterCondition;
 using Data.DataAccess.Dao;
@@ -12,7 +13,6 @@ namespace Data.DataAccess.Impl
     {
         public PageResult<TB_ControlLogEntity> GetPageList(PageEntity pageEntity, int? status, string keyword, DateTime? dateGte, DateTime? dateLte)
         {
-            FilterConditionHandle filterHandle = new(pageEntity.Filter);
             StringBuilder condition = new();
             Dictionary<string, object> properties = new Dictionary<string, object>();
             properties.Add("Name", "%" + keyword + "%");
@@ -60,7 +60,7 @@ FROM TB_ControlLog CL WHERE 1=1 {condition}";
 ) as pageData
  where 1=1 
 ";
-            return DbHelper.FindPageList<TB_ControlLogEntity>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, properties, $" {nameof(TB_ControlLogEntity.LogTime)} desc");
+            return DbHelper.FindPageList<TB_ControlLogEntity>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, properties, $" {pageEntity.Sort} {pageEntity.Asc}, Id");
         }
 
 

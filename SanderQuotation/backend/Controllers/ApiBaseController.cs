@@ -50,6 +50,8 @@ namespace Core.Utility.Web.Base
             return new PageEntity()
             {
                 //Filter = GetFilterListWebRequest(base.Request),
+                Sort = !string.IsNullOrEmpty(request.SortField) ? request.SortField : string.Empty,
+                Asc = string.IsNullOrWhiteSpace(request.SortOrder) || (request.SortOrder.ToUpper() != "ASC" && request.SortOrder.ToUpper() != "DESC") ? "ASC" : request.SortOrder.ToUpper(),
                 CurrentPage = request.pageIndex,
                 PageDataSize = request.pageSize
             };

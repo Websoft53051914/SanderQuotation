@@ -1,12 +1,14 @@
 using AutoMapper;
+using backend.Common;
 using Business.BusinessLogic;
 using Business.DomainModel;
+using CommonClass.Model;
 using Core.Utility.Helper.DB.Entity;
+using Core.Utility.Utility;
 using Core.Utility.Web.EX;
-using backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using ViewModel;
-using Core.Utility.Utility;
+using static Const.Enums;
 
 namespace backend.Controllers
 {
@@ -43,8 +45,12 @@ namespace backend.Controllers
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, string? keyword, DateTime? dateGte, DateTime? dateLte, int? status)
         {
             try
-            {
-                PageEntity pageEntity = base.GetPageEntity(request);
+            {   
+                if(dateLte.HasValue)
+                {
+                    dateLte = dateLte.Value.Date.AddDays(1).AddTicks(-1);
+                }
+                var pageEntity = base.GetPageEntity(request);
                 var pageResult = GetLogBL().GetPageList(pageEntity, keyword ?? string.Empty, dateGte, dateLte, status);
 
                 var list = _mapper.Map<List<ControlLogVM>>(pageResult.Results);
@@ -52,8 +58,8 @@ namespace backend.Controllers
 
                 for (int i = 0; i < list.Count; i++)
                 {
-                    list[i].No = ((request.pageIndex - 1) * request.pageSize + i + 1).ToString();
-                    list[i].StatusName = list[i].Status == 1 ? "жие\" : "ев▒╤";
+                    list[i].No = ((pageEntity.CurrentPage - 1) * pageEntity.PageDataSize + i + 1).ToString();
+                    list[i].StatusName = EnumUtility.GetDescriptionByInt<LogStatusEnum>(list[i].Status??0);
                     if (dic.ContainsKey(list[i].Action))
                     {
                         list[i].ActionStr = dic[list[i].Action];

@@ -49,19 +49,20 @@ namespace backend.Controllers
         /// </summary>
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.Permission_View)]
-        public IActionResult GetPageList([FromQuery] ListPageEntity request, AccountVM vm)
+        public IActionResult GetPageList([FromQuery] DataSourceRequest request, AccountVM vm)
         {
             try
             {
+                PageEntity pageEntity = base.GetPageEntity(request);
                 var dm = _mapper.Map<AccountDM>(vm);
-                var pageResult = GetAccountBL().GetPageList(request, dm);
+                var pageResult = GetAccountBL().GetPageList(pageEntity, dm);
 
                 var list = _mapper.Map<List<AccountVM>>(pageResult.Results);
 
                 for (int i = 0; i < list.Count; i++)
                 {
                     var item = list[i];
-                    item.No = (request.Page - 1) * request.PageSize + i + 1;
+                    item.No = (pageEntity.CurrentPage - 1) * pageEntity.PageDataSize + i + 1;
 
                     if (item.RoleNames.Count > 0)
                     {

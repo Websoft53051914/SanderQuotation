@@ -66,15 +66,15 @@ namespace Business.BusinessLogic
                 var account = "tempAcc";
                 var accountName = "tempAcc";
 
-                if (SessionVO != null)
+                if (UserInfo != null)
                 {
-                    if (!string.IsNullOrEmpty(SessionVO.Account))
+                    if (!string.IsNullOrEmpty(UserInfo.UserAccount))
                     {
-                        account = SessionVO.Account;
+                        account = UserInfo.UserAccount;
                     }
-                    if (!string.IsNullOrEmpty(SessionVO.AccountName))
+                    if (!string.IsNullOrEmpty(UserInfo.UserName))
                     {
-                        accountName = SessionVO.AccountName;
+                        accountName = UserInfo.UserName;
                     }
                 }
 
@@ -85,9 +85,9 @@ namespace Business.BusinessLogic
                 entity.Account = account;
                 entity.Name = accountName;
 
-                if (string.IsNullOrEmpty(entity.IP))
+                if (string.IsNullOrEmpty(entity.IP) && UserInfo!=null)
                 {
-                    entity.IP = base.SessionVO.IP ?? string.Empty;
+                    entity.IP = UserInfo.IP;
                 }
 
                 var insertedEntity = dao.InsertAction(entity);

@@ -99,7 +99,7 @@ where a.id=@id
 
             return DbHelper.Find<AccountDTO>(qrySQL, paras);
         }
-        public PageResult<AccountDTO> FindPageList(ListPageEntity pageEntity, AccountDTO dto, bool isExpaied)
+        public PageResult<AccountDTO> FindPageList(PageEntity pageEntity, AccountDTO dto, bool isExpaied)
         {
             Dictionary<string, object> paras = new Dictionary<string, object>();
             paras.Add("AccountName", "%" + dto.AccountName + "%");
@@ -181,7 +181,7 @@ and a.AccountStatus!='{AccountStatusEnum.Cancel.ToInt()}'
  where 1=1 
 ";
 
-            return DbHelper.FindPageList<AccountDTO>(qrySQL, countSQL, pageEntity.Page, pageEntity.PageSize, paras, $"{pageEntity.SortField} {pageEntity.SortDir}, Id");
+            return DbHelper.FindPageList<AccountDTO>(qrySQL, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, $"{pageEntity.Sort} {pageEntity.Asc}, Id");
 
         }
 

@@ -229,7 +229,7 @@
             pageIndex: 1,
             pageSize: 10,
             sortField: "CreatedAt",
-            sortDir: "desc",
+            sortOrder: "desc",
             memberAccount: "",
             accountName: "",
             accountStatus: "",
@@ -296,7 +296,7 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> ½s¿è</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.AccountStatus === '1' ? '0' : '1'}">
+                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ? '@AccountStatusEnum.Disabled.ToInt()' : '@AccountStatusEnum.Enabled.ToInt()'}">
                                         <i class="ri-${data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i>
                                         ${data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ? '°±¥Î' : '±Ò¥Î'}
                                     </a></li>
@@ -431,10 +431,10 @@
             $('.sort').on('click', function () {
                 const field = $(this).data('sort');
                 if (queryState.sortField === field) {
-                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                    queryState.sortOrder = queryState.sortOrder === 'asc' ? 'desc' : 'asc';
                 } else {
                     queryState.sortField = field;
-                    queryState.sortDir = 'asc';
+                    queryState.sortOrder = 'asc';
                 }
                 loadDatas();
             });

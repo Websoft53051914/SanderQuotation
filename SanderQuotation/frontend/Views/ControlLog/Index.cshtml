@@ -50,7 +50,7 @@
                         </div>
                         <div class="col-xxl-2 col-sm-12">
                             <select class="form-control" id="StatusSearch">
-                                <option value="">全部狀態</option>
+                                <option value=""></option>
                                 @if (statusList != null)
                                 {
                                     foreach (var item in statusList)
@@ -77,12 +77,12 @@
                         <thead>
                             <tr>
                                 <th>項次</th>
-                                <th data-sort="LogTime">紀錄時間</th>
-                                <th data-sort="Account">操作者帳號</th>
-                                <th data-sort="Name">操作者姓名</th>
-                                <th data-sort="Status">狀態</th>
-                                <th data-sort="ControllerName">Controller</th>
-                                <th data-sort="ActionName">Action</th>
+                                <th class="sort" data-sort="LogTime">紀錄時間</th>
+                                <th class="sort" data-sort="Account">操作者帳號</th>
+                                <th class="sort" data-sort="Name">操作者姓名</th>
+                                <th class="sort" data-sort="Status">狀態</th>
+                                <th class="sort" data-sort="ControllerName">Controller</th>
+                                <th class="sort" data-sort="ActionName">Action</th>
                                 <th data-sort="ActionStr">執行動作</th>
                                 <th>Exception</th>
                             </tr>
@@ -167,7 +167,7 @@
             pageIndex: 1,
             pageSize: 40,
             sortField: "LogTime",
-            sortDir: "desc",
+            sortOrder: "desc",
             keyword: "",
             status: "",
             dateGte: "",
@@ -185,11 +185,10 @@
                 success: function (res) {
                     hideLoader();
                     if (!res.Success) {
-                        let codeMsg = res.Errors.ReturnCode + "\n" + res.Errors.ReturnMsg;
                         Swal.fire({
-                            icon: (res.Errors.AlertLevel || '').toLowerCase(),
-                            title: codeMsg,
-                            confirmButtonText: '確認',
+                            icon: 'error',
+                            title: res.Message,
+                            confirmButtonText: '確定',
                         });
                         return;
                     }
@@ -199,7 +198,7 @@
                 error: function () {
                     hideLoader();
                     Swal.fire({
-                        title: '系統錯誤，請聯絡系統管理員',
+                        title:'@config.GetMessage("System_Error").ToHtmlString()',
                         icon: 'error',
                         confirmButtonText: '確認',
                     });
@@ -301,9 +300,18 @@
 
         // ⭐ 搜尋 + 篩選
         function SearchData() {
+            if($('#DateGteSearch').val() && $('#DateLteSearch').val() && $('#DateGteSearch').val()>$('#DateLteSearch').val()){
+                Swal.fire({
+                                icon: 'warning',
+                                title: '起始日期不可大於結束日期',
+                                confirmButtonText: '確認',
+                            });
+                return;
+            }
             queryState.keyword = $('#KeywordSearch').val();
             queryState.dateGte = $('#DateGteSearch').val();
             queryState.dateLte = $('#DateLteSearch').val();
+
             queryState.status = $('#StatusSearch').val();
             queryState.pageIndex = 1;
             $('#globalSearchInput').val('');
@@ -315,6 +323,8 @@
             loadDatas();
             $('#StatusSearch').select2({
                 minimumResultsForSearch:-1,
+                allowClear:true,
+                placeholder:'請選擇狀態'
             })
             // 查看 Exception
             $(document).on('click', '.view-exception-btn', function (e) {
@@ -326,20 +336,19 @@
                     data: { id: id },
                     success: function (response) {
                         if (!response.Success) {
-                            let codeMsg = response.Errors.ReturnCode + "\n" + response.Errors.ReturnMsg;
-                            Swal.fire({
-                                icon: (response.Errors.AlertLevel || '').toLowerCase(),
-                                title: codeMsg,
-                                confirmButtonText: '確認',
-                            });
-                            return;
-                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: response.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    }
                         $('#ExceptionContent').val(response.Data);
                     },
                     error: function () {
                         Swal.fire({
                             icon: 'error',
-                            title: '系統錯誤，請聯絡系統管理員',
+                            title:'@config.GetMessage("System_Error").ToHtmlString()',
                             confirmButtonText: '確認',
                         });
                     }
@@ -350,10 +359,10 @@
             $('.sort').on('click', function () {
                 const field = $(this).data('sort');
                 if (queryState.sortField === field) {
-                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                    queryState.sortOrder = queryState.sortOrder === 'asc' ? 'desc' : 'asc';
                 } else {
                     queryState.sortField = field;
-                    queryState.sortDir = 'asc';
+                    queryState.sortOrder = 'asc';
                 }
                 loadDatas();
             });

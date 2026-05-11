@@ -46,7 +46,7 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 取得分頁列表
         /// </summary>
-        public PageResult<AccountDM> GetPageList(ListPageEntity pageEntity, AccountDM condition)
+        public PageResult<AccountDM> GetPageList(PageEntity pageEntity, AccountDM condition)
         {
             ITB_AccountDAO dao = _unitOfWork.Repository<ITB_AccountDAO>();
             var dto = mapper.Map<AccountDTO>(condition);

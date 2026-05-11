@@ -1,4 +1,5 @@
-﻿using Core.Utility.Base.Data;
+﻿using CommonClass.Model;
+using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Entity;
 
