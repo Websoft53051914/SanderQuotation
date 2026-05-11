@@ -298,7 +298,15 @@
     @Html.Partial("~/Views/Shared/_customizer.cshtml")
 
     @Html.Partial("~/Views/Shared/_vendor_scripts.cshtml")
-
+        <script>
+            $(function () {
+                if ($.fn.select2) {
+                    $.fn.select2.defaults.set('language', 'zh-TW');
+                    $.fn.select2.defaults.set('width', '100%');
+                    $.fn.select2.defaults.set('placeholder', { id: '', text: '請選擇', selected: 'selected' });
+                }
+            });
+        </script>
     @RenderSection("scripts", required: false)
 
     <!-- App js -->
@@ -365,7 +373,7 @@
         
 
         $(function () {
- 
+               
         })
                 
         function showNotification({title, message, type = 'info', link = '#', delay = 5000}) {
@@ -478,7 +486,7 @@
     </script>
     <script>
         $(document).ready(function(){
-
+                 
         })
     </script>
 

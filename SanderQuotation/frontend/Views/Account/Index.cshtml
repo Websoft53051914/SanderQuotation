@@ -13,6 +13,8 @@
         Enable = $"{Configuration["BackendURL"]}/api/Account/Enable",
         GetRoleList = $"{Configuration["BackendURL"]}/api/Account/GetRoleList",
     };
+
+    var accountStatusSelectList = ViewData["AccountStatusSelectList"] as List<SelectListItem>;
 }
 
 <div class="row">
@@ -53,9 +55,11 @@
                         </div>
                         <div class="col-xxl-2 col-sm-12">
                             <select class="form-control" id="AccountStatus" name="AccountStatus">
-                                <option value="">全部狀態</option>
-                                <option value="1">啟用</option>
-                                <option value="0">停用</option>
+                                <option value=""></option>
+                                @foreach (var item in accountStatusSelectList)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
                             </select>
                         </div>
                         <div class="col-xxl-1 col-sm-4">
@@ -73,11 +77,11 @@
                         <thead>
                             <tr>
                                 <th data-sort="action">操作</th>
-                                <th data-sort="No">序號</th>
+                                <th data-sort="No">項次</th>
                                 <th class="sort" data-sort="MemberAccount">帳號</th>
                                 <th class="sort" data-sort="AccountName">姓名</th>
                                 <th class="sort" data-sort="AccountEmail">Email</th>
-                                <th class="sort" data-sort="RoleName">角色</th>
+                                <th>角色</th>
                                 <th class="sort" data-sort="AccountStatus">狀態</th>
                                 <th class="sort" data-sort="LastLoginTime">最後登入時間</th>
                             </tr>
@@ -155,18 +159,21 @@
                             <div>
                                 <label for="MemberAccount" class="form-label required">帳號</label>
                                 <input type="text" name="MemberAccount" id="MemberAccount" class="form-control" placeholder="請輸入帳號" required />
+                                <div class="invalid-feedback">請輸入帳號</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="AccountName" class="form-label required">姓名</label>
                                 <input type="text" name="AccountName" id="AccountName" class="form-control" placeholder="請輸入姓名" required />
+                                <div class="invalid-feedback">請輸入姓名</div>
                             </div>
                         </div>
                         <div class="col-lg-12">
                             <div>
                                 <label for="AccountEmail" class="form-label">Email</label>
-                                <input type="email" name="AccountEmail" id="AccountEmail" class="form-control" placeholder="請輸入Email" />
+                                <input type="email" name="AccountEmail" id="AccountEmail" class="form-control" placeholder="請輸入Email" pattern="[a-z0-9._%+-]+@@[a-z0-9.-]+\.[a-z]{2,4}$"/>
+                                <div class="invalid-feedback">Email格式錯誤</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
@@ -174,20 +181,24 @@
                                 <label for="MemberPWD" class="form-label required">密碼</label>
                                 <input type="password" name="MemberPWD" id="MemberPWD" class="form-control" placeholder="請輸入密碼" required />
                                 <small class="text-muted" id="pwd-edit-hint" style="display:none;">不輸入則保持原密碼</small>
+                                <div class="invalid-feedback">請輸入密碼</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="ConfirmPassword" class="form-label required">確認密碼</label>
                                 <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="請再次輸入密碼" required />
+                                <div class="invalid-feedback">請輸入密碼</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="AccountStatus" class="form-label required">狀態</label>
                                 <select name="AccountStatus" id="AccountStatus_Modal" class="form-control" required>
-                                    <option value="1">啟用</option>
-                                    <option value="0">停用</option>
+                                    @foreach (var item in accountStatusSelectList)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
                                 </select>
                             </div>
                         </div>
@@ -217,7 +228,7 @@
         let queryState = {
             pageIndex: 1,
             pageSize: 10,
-            sortField: "CreateTime",
+            sortField: "CreatedAt",
             sortDir: "desc",
             memberAccount: "",
             accountName: "",
@@ -237,7 +248,7 @@
                     hideLoader();
                     if (!res.Success) {
                         Swal.fire({
-                            icon: 'warning',
+                            icon: 'error',
                             title: res.Message,
                             confirmButtonText: '確定',
                         });
@@ -249,7 +260,12 @@
                 },
                 error: function () {
                     hideLoader();
-                    alert('載入資料失敗');
+                    
+                    Swal.fire({
+                            icon: 'error',
+                            title:'@config.GetMessage("System_Error").ToHtmlString()',
+                            confirmButtonText: '確定',
+                        });
                 }
             });
         }
@@ -266,7 +282,7 @@
             $('.noresult').hide();
 
             rows.forEach(data => {
-                const statusBadge = data.AccountStatus === '1' ? 
+                const statusBadge = data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ?
                     '<span class="badge bg-success-subtle text-success">啟用</span>' : 
                     '<span class="badge bg-secondary-subtle text-secondary">停用</span>';
 
@@ -281,8 +297,8 @@
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.AccountStatus === '1' ? '0' : '1'}">
-                                        <i class="ri-${data.AccountStatus === '1' ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i> 
-                                        ${data.AccountStatus === '1' ? '停用' : '啟用'}
+                                        <i class="ri-${data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i>
+                                        ${data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ? '停用' : '啟用'}
                                     </a></li>
                                 </ul>
                             </div>
@@ -387,6 +403,8 @@
 
             $('#AccountStatus').select2({
                 minimumResultsForSearch:-1,
+                placeholder:'請選擇狀態',
+                allowClear:true
             })
 
             $('#globalSearchInput').on('input', function () {
@@ -407,7 +425,7 @@
             $('#RoleIds').select2({
                 width: '100%',
                 dropdownParent: $('#showModal'),
-                allowClear: true
+                allowClear: true,
             });
 
             $('.sort').on('click', function () {
@@ -440,26 +458,19 @@
             $('#pwd-edit-hint').hide();
             $('#MemberPWD').prop('required', true);
             $('#ConfirmPassword').prop('required', true);
+             $('#MemberAccount').prop('readonly',false)
             postaction = 'create';
         });
 
         // 表單提交
         $("#submitForm").submit(function (e) {
             e.preventDefault();
-            
-            // Email 格式驗證
-            const email = $('#AccountEmail').val();
-            if (email) {
-                // 使用字串建立 RegExp 以避免 Razor 解析問題
-                const emailPattern = new RegExp('^[^\\s@@]+@@[^\\s@@]+\\.[^\\s@@]+$');
-                if (!emailPattern.test(email)) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Email 格式不正確',
-                        confirmButtonText: '確定',
-                    });
-                    return;
-                }
+
+            // Bootstrap needs-validation：驗證所有 required + pattern 欄位
+            const form = this;
+            form.classList.add('was-validated');
+            if (!form.checkValidity()) {
+                return;
             }
 
             showLoader();
@@ -529,7 +540,7 @@
                 error: function (xhr, status, error) {
                     Swal.fire({
                         icon: 'error',
-                        title: '系統錯誤',
+                        title: '@config.GetMessage("System_Error").ToHtmlString()',
                         confirmButtonText: '確定',
                     });
                 }
@@ -550,6 +561,7 @@
 
         // 編輯按鈕
         $(document).on('click', '.edit-item-btn', function (e) {
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#exampleModalLabel_Create').hide();
             $('#exampleModalLabel_Edit').show();
             $('#pwd-edit-hint').show();
@@ -583,7 +595,7 @@
                 success: function (response) {
                     if (!response.Success) {
                         Swal.fire({
-                            icon: 'warning',
+                            icon: 'error',
                             title: response.Message,
                             confirmButtonText: '確定',
                         });
@@ -591,6 +603,7 @@
                     }
 
                     $('#MemberAccount').val(response.Data.MemberAccount);
+                    $('#MemberAccount').prop('readonly',true)
                     $('#AccountName').val(response.Data.AccountName);
                     $('#AccountEmail').val(response.Data.AccountEmail);
                     $('#MemberPWD').val('');
@@ -606,7 +619,7 @@
                 error: function (xhr, status, error) {
                     Swal.fire({
                         icon: 'error',
-                        title: '系統錯誤',
+                        title: '@config.GetMessage("System_Error").ToHtmlString()',
                         confirmButtonText: '確定',
                     });
                 }
@@ -656,7 +669,7 @@
                         error: function () {
                             Swal.fire({
                                 icon: 'error',
-                                title: '系統錯誤',
+                                title: '@config.GetMessage("System_Error").ToHtmlString()',
                                 confirmButtonText: '確定',
                             });
                         }
@@ -778,6 +791,7 @@
 
         // 重置表單
         function resetElement() {
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#showModal input').val('');
             $('#showModal textarea').val('');
             $('#showModal').find('[type="checkbox"]').prop('checked', false);

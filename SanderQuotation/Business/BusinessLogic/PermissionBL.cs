@@ -95,34 +95,7 @@ namespace Business.BusinessLogic
             return dm;
         }
          
-        
-        public PageResult<MemberDM> GetPageList(PageEntity pageEntity, MemberDM dm, bool isExpaied)
-        {
-            ITB_AccountDAO dao = _unitOfWork.Repository<ITB_AccountDAO>();
-            var condition = mapper.Map<AccountDTO>(dm);
-            PageResult<AccountDTO> dtos = dao.FindPageList(pageEntity, condition, isExpaied);
-            ITB_AccountSysRoleDAO daoRole = _unitOfWork.Repository<ITB_AccountSysRoleDAO>();
-            var allRoleData = daoRole.FindListByMemberIds(dtos.Results.Select(s => s.Id).ToList());
-
-            //ISysRoleDAO daoRole = _unitOfWork.Repository<ISysRoleDAO>();
-            //var group = allRoleData.GroupBy(g => g.RoleID);
-
-            foreach (var item in dtos.Results)
-            {
-                //var funcs = string.Join(@"\r\n", allRoleData.Where(w => w.Id == item.Id).Select(s => "『" + s.CompanyName + " - " + s.RoleName + "』"));
-                var funcs = string.Join(@"\r\n", allRoleData.Where(w => w.Id == item.Id).Select(s => "『" + s.RoleName + "』"));
-                item.RoleName += $@"{funcs}";
-            }
-
-            PageResult<MemberDM> dms = new PageResult<MemberDM>()
-            {
-                CurrentPage = dtos.CurrentPage,
-                DataCount = dtos.DataCount,
-                PageDataSize = dtos.PageDataSize,
-                Results = mapper.Map<List<MemberDM>>(dtos.Results)
-            };
-            return dms;
-        }
+       
 
         public void Delete(Guid id)
         {

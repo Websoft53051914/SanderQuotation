@@ -21,7 +21,7 @@ namespace frontend.Common.ConfigurationHelper
                 return defaultVal;
             }
 
-            return _configuration[$"Message:{CultureInfo.CurrentUICulture.Name}:{key}"] ?? defaultVal;
+            return _configuration[$"Message:zh-tw:{key}"] ?? defaultVal;
         }
 
         /// <summary>

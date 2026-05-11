@@ -39,7 +39,6 @@ left outer join TB_SysFuncCLASS SysFuncCLASS on SysFuncCLASS.id=SysFunc.FUNCCLAS
 left outer join TB_SysRole BackSysRole on BackSysRole.Id=memberrole.RoleID
 
 where member.memberAccount=@memberAccount
-and SysFuncDetail.Status='1'
 and SysFunc.Status='1'
  
  group by 

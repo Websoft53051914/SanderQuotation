@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Const.Enums;
+using Core.Utility.Extensions;
 
 namespace Business.BusinessLogic
 {
@@ -175,7 +176,7 @@ namespace Business.BusinessLogic
             ITB_SysRoleDAO dao = _unitOfWork.Repository<ITB_SysRoleDAO>();
             var entities = dao.FindListByPropertys(new Dictionary<string, object>
             {
-                { nameof(TB_SysRoleEntity.Status), 1 }
+                { nameof(TB_SysRoleEntity.Status), StatusEnum.Enabled.ToInt() }
             });
             return mapper.Map<List<SysRoleDM>>(entities);
         }

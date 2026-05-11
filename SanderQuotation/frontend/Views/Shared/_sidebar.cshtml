@@ -72,7 +72,7 @@
     }
     var isDebug = false;
     // #if DEBUG
-    isDebug = false;
+    isDebug = true;
     // #endif
 
     // 初始化 model
@@ -82,36 +82,39 @@
 
     try
     {
-        var client = HttpClientFactory.CreateClient();
-
-        // 帶 JWT Cookie
-        if (Context.Request.Cookies.ContainsKey(Const.Value.JWT_TokenName))
+        using(var client = HttpClientFactory.CreateClient())
         {
-            var jwt = Context.Request.Cookies[Const.Value.JWT_TokenName];
-            client.DefaultRequestHeaders.Add("Cookie", $"{Const.Value.JWT_TokenName}={jwt}");
-        }
-
-        // POST JSON
-        var requestContent = new StringContent("{}", Encoding.UTF8, "application/json");
-
-        var responseTask = client.PostAsync(apiUrl, requestContent);
-        responseTask.Wait(); // Razor 須同步等待
-        var response = responseTask.Result;
-
-        if (response.IsSuccessStatusCode)
-        {
-            var jsonStringTask = response.Content.ReadAsStringAsync();
-            jsonStringTask.Wait();
-            var jsonString = jsonStringTask.Result;
-
-            // JSON 反序列化成動態物件
-            menuModel_Shell = JsonSerializer.Deserialize<DispatcherResponse_Menu_Shell>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (menuModel_Shell != null && menuModel_Shell.Success == true)
+            // 帶 JWT Cookie
+            if (Context.Request.Cookies.ContainsKey(Const.Value.JWT_TokenName))
             {
-                menuModel = menuModel_Shell.Data;
+                var jwt = Context.Request.Cookies[Const.Value.JWT_TokenName];
+                client.DefaultRequestHeaders.Add("Cookie", $"{Const.Value.JWT_TokenName}={jwt}");
+            }
+
+            // POST JSON
+            var requestContent = new StringContent("{}", Encoding.UTF8, "application/json");
+
+            var responseTask = client.PostAsync(apiUrl, requestContent);
+            responseTask.Wait(); // Razor 須同步等待
+            var response = responseTask.Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonStringTask = response.Content.ReadAsStringAsync();
+                jsonStringTask.Wait();
+                var jsonString = jsonStringTask.Result;
+
+                // JSON 反序列化成動態物件
+                menuModel_Shell = JsonSerializer.Deserialize<DispatcherResponse_Menu_Shell>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (menuModel_Shell != null && menuModel_Shell.Success == true)
+                {
+                    menuModel = menuModel_Shell.Data;
+                }
             }
         }
+
+       
     }
     catch (Exception ex)
     {
@@ -143,31 +146,6 @@
         <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
             <i class="ri-record-circle-line"></i>
         </button>
-    </div>
-
-    <div class="dropdown sidebar-user m-1 rounded">
-        <button type="button" class="btn material-shadow-none" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="d-flex align-items-center gap-2">
-                <img class="rounded header-profile-user" src="/assets/images/users/avatar-1.jpg" alt="Header Avatar">
-                <span class="text-start">
-                    <span class="d-block fw-medium sidebar-user-name-text">Anna Adame</span>
-                    <span class="d-block fs-14 sidebar-user-name-sub-text"><i class="ri ri-circle-fill fs-10 text-success align-baseline"></i> <span class="align-middle">Online</span></span>
-                </span>
-            </span>
-        </button>
-        <div class="dropdown-menu dropdown-menu-end">
-            <!-- item-->
-            <h6 class="dropdown-header">Welcome Anna!</h6>
-            <a class="dropdown-item" href="/pages/profilesimple"><i class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Profile</span></a>
-            <a class="dropdown-item" href="/apps/chat"><i class="mdi mdi-message-text-outline text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Messages</span></a>
-            <a class="dropdown-item" href="/tasks/kanbanBoard"><i class="mdi mdi-calendar-check-outline text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Taskboard</span></a>
-            <a class="dropdown-item" href="/pages/faqs"><i class="mdi mdi-lifebuoy text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Help</span></a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="/pages/profilesimple"><i class="mdi mdi-wallet text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Balance : <b>$5971.67</b></span></a>
-            <a class="dropdown-item" href="/pages/profilesettings"><span class="badge bg-success-subtle text-success mt-1 float-end">New</span><i class="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Settings</span></a>
-            <a class="dropdown-item" href="/authentication/lockscreenbasic"><i class="mdi mdi-lock text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Lock screen</span></a>
-            <a class="dropdown-item" href="/authentication/logoutbasic"><i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span class="align-middle" data-key="t-logout">Logout</span></a>
-        </div>
     </div>
 
     <div id="scrollbar">

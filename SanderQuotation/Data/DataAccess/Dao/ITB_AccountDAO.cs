@@ -1,4 +1,5 @@
-﻿using Const;
+﻿using CommonClass.Model;
+using Const;
 using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.DTO;
@@ -18,7 +19,7 @@ namespace Data.DataAccess.Dao
         AccountDTO FindByAccount(string memberAccount);
         TB_AccountEntity FindByAccountName(string accountName);
         AccountDTO FindDTOByPk(Guid id);
-        PageResult<AccountDTO> FindPageList(PageEntity pageEntity, AccountDTO condition, bool isExpaied);
+        PageResult<AccountDTO> FindPageList(ListPageEntity pageEntity, AccountDTO condition, bool isExpaied);
         List<AccountDTO> GetBackMembersByRole(Guid roleId);
         List<AccountDTO> GetBackMembersByRole(List<Guid> roleId);
         List<AccountDTO> GetLast3PWD(string memberAccount);

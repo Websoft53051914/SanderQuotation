@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Business.Common;
 using Business.DomainModel;
+using CommonClass.Model;
 using Const;
 using Core.Utility.Common;
 using Core.Utility.Extensions;
@@ -10,6 +11,7 @@ using Core.Utility.Utility;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
+using System.Transactions;
 using static Const.Enums;
 
 namespace Business.BusinessLogic
@@ -44,7 +46,7 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 取得分頁列表
         /// </summary>
-        public PageResult<AccountDM> GetPageList(PageEntity pageEntity, AccountDM condition)
+        public PageResult<AccountDM> GetPageList(ListPageEntity pageEntity, AccountDM condition)
         {
             ITB_AccountDAO dao = _unitOfWork.Repository<ITB_AccountDAO>();
             var dto = mapper.Map<AccountDTO>(condition);
@@ -120,7 +122,7 @@ namespace Business.BusinessLogic
 
             if (entities.Count > 0)
             {
-                var entity = entities.Where(w => w.AccountStatus != "9").FirstOrDefault();
+                var entity = entities.Where(w => w.AccountStatus != AccountStatusEnum.Cancel.ToInt().ToString()).FirstOrDefault();
                 if (entity == null) return null;
 
                 return mapper.Map<AccountDM>(entity);
@@ -130,45 +132,51 @@ namespace Business.BusinessLogic
         }
 
         public Guid Create(AccountDM dm)
-        {
-            ITB_AccountDAO dao = _unitOfWork.Repository<ITB_AccountDAO>();
-            var newEntity = new TB_AccountEntity
+        {   
+            using(var scope = new TransactionScope())
             {
-                Id = Guid.NewGuid(),
-                MemberAccount = dm.MemberAccount,
-                AccountName = dm.AccountName,
-                AccountEmail = dm.AccountEmail,
-                AccountStatus = dm.AccountStatus ?? "1",
-                MemberPWD = dm.MemberPWD, // TODO: 應該要加密
-                LastLoginTime = DateTime.Now,
-                LastMemberPWDTime = DateTime.Now,
-                Logins = 0,
-
-            };
-
-            var entity = dao.Insert(newEntity);
-
-            // 新增角色關聯
-            if (dm.RoleIds != null && dm.RoleIds.Count > 0)
-            {
-                ITB_AccountSysRoleDAO roleDao = _unitOfWork.Repository<ITB_AccountSysRoleDAO>();
-                foreach (var roleIdStr in dm.RoleIds)
+                ITB_AccountDAO dao = _unitOfWork.Repository<ITB_AccountDAO>();
+                var newEntity = new TB_AccountEntity
                 {
-                    if (Guid.TryParse(roleIdStr, out Guid roleId))
+                    Id = Guid.NewGuid(),
+                    MemberAccount = dm.MemberAccount,
+                    AccountName = dm.AccountName,
+                    AccountEmail = dm.AccountEmail,
+                    AccountStatus = dm.AccountStatus ?? "1",
+                    MemberPWD = Method_BL.EncryptionForPWD(dm.MemberAccount ?? "",dm.MemberPWD ?? ""),
+                    LastLoginTime = DateTime.Now,
+                    LastMemberPWDTime = DateTime.Now,
+                    Logins = 0,
+
+                };
+
+                var entity = dao.Insert(newEntity);
+
+                // 新增角色關聯
+                if (dm.RoleIds != null && dm.RoleIds.Count > 0)
+                {
+                    ITB_AccountSysRoleDAO roleDao = _unitOfWork.Repository<ITB_AccountSysRoleDAO>();
+                    foreach (var roleIdStr in dm.RoleIds)
                     {
-                        roleDao.InsertAction(new TB_AccountSysRoleEntity
+                        if (Guid.TryParse(roleIdStr, out Guid roleId))
                         {
-                            Id = Guid.NewGuid(),
-                            AccountId = newEntity.Id,
-                            RoleId = roleId
-                        });
+                            roleDao.InsertAction(new TB_AccountSysRoleEntity
+                            {
+                                Id = Guid.NewGuid(),
+                                AccountId = newEntity.Id,
+                                RoleId = roleId
+                            });
+                        }
                     }
                 }
+
+                dao.DbHelper.Commit();
+                scope.Complete();
+                return entity.Id;
             }
+            
 
-            dao.DbHelper.Commit();
-
-            return entity.Id;
+            
         }
 
         /// <summary>
@@ -184,18 +192,17 @@ namespace Business.BusinessLogic
                 throw new Exception("資料不存在");
             }
 
-            entity.MemberAccount = dm.MemberAccount;
             entity.AccountName = dm.AccountName;
             entity.AccountEmail = dm.AccountEmail;
             entity.AccountStatus = dm.AccountStatus;
 
-            entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedAt = base.now;
 
             // 如果有新密碼才更新
             if (!string.IsNullOrEmpty(dm.MemberPWD))
             {
-                entity.MemberPWD = dm.MemberPWD; // TODO: 應該要加密
-                entity.LastMemberPWDTime = DateTime.Now;
+                entity.MemberPWD = Method_BL.EncryptionForPWD(dm.MemberAccount ?? "", dm.MemberPWD ?? "");
+                entity.LastMemberPWDTime = base.now;
             }
 
             dao.Update(entity);

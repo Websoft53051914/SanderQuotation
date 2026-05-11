@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ViewModel;
+using static Const.Enums;
 
 namespace frontend.Controllers
 {
@@ -18,6 +19,7 @@ namespace frontend.Controllers
         public IActionResult Index()
         {
             var vm = new AccountVM();
+            ViewData["AccountStatusSelectList"] = GetSelectListHandler().GetSelectListEnum<AccountStatusEnum>().Where(x=>x.Value != ((int)AccountStatusEnum.Cancel).ToString()).OrderBy(x => x.Value).ToList();
             return View(vm);
         }
 

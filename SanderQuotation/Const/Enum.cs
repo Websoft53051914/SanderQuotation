@@ -26,9 +26,6 @@ namespace Const
             [Description("啟用")]
             Enabled = 1,
 
-            [Description("開通中")]
-            Opening = 3,
-
             [Description("停用")]
             Disabled = 8,
 
@@ -107,19 +104,6 @@ namespace Const
             Cyclesettings_Edit =   990093,
             Cyclesettings_Delete = 990094,
 
-            //配方主檔管理
-            RecipeMgmt_View = 990101,
-            RecipeMgmt_Create = 990102,
-            RecipeMgmt_Edit = 990103,
-            RecipeMgmt_Delete = 990104,
-
-
-            //版號規則管理
-            RecipeVersionNoRule_View = 990111,
-            RecipeVersionNoRule_Create = 990112,
-            RecipeVersionNoRule_Edit = 990113,
-            RecipeVersionNoRule_Delete = 990114,
-
             //DashBoard設計
             DashBoard_View =   990121,
             DashBoard_Create = 990122,
@@ -131,29 +115,6 @@ namespace Const
             DashboardHome_Create = 990132,
             DashboardHome_Edit =   990133,
             DashboardHome_Delete = 990134,
-
-
-            //DashBoard監看
-            ChartData_View =   990141,
-            ChartData_Create = 990142,
-            ChartData_Edit =   990143,
-            ChartData_Delete = 990144,
-
-            //Foup良品不良品設定
-            Foup_View =   990151,
-            Foup_Create = 990152,
-            Foup_Edit =   990153,
-            Foup_Delete = 990154,
-
-            OcapDesign_View   = 990161,
-            OcapDesign_Create = 990162,
-            OcapDesign_Edit =   990163,
-            OcapDesign_Delete = 990164,
-
-            Ocap_View   = 990171,
-            Ocap_Create = 990172,
-            Ocap_Edit   = 990173,
-            Ocap_Delete = 990174,
 
             FoupLot_View =   990181,
             FoupLot_Create = 990182,
