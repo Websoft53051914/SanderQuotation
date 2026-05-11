@@ -10,7 +10,7 @@
     <Compile Remove="UnitOfWork\UnitOfWorkOracle.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Core.8.Utility" Version="3.26.507.1" />
+    <PackageReference Include="Core.8.Utility" Version="3.26.511.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.1" />
     <PackageReference Include="Unity" Version="5.11.10" />
   </ItemGroup>
