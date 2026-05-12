@@ -1,4 +1,6 @@
-﻿using Core.Utility.Helper.DB.Entity;
+﻿using CommonClass.CustomAttribute;
+using CommonClass.Model;
+using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -90,6 +92,68 @@ namespace Core.Utility.Web.Base
                 {
                     defaultSort = sort;
                     defaultAsc = attrSortColumn.DefaultSortOrder;
+                }
+
+                if (request.SortField == item.Name)
+                {
+                    result.Sort = sort;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(result.Sort))
+            {
+                result.Sort = defaultSort;
+                result.Asc = defaultAsc;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 取得分頁要傳入的值（使用 ListPageEntity）
+        /// </summary>
+        /// <param name="request">ListPageEntity 分頁請求</param>
+        /// <returns>傳回 PageEntity</returns>
+        [ApiExplorerSettings(IgnoreApi = true)]
+        protected PageEntity GetPageEntity(ListPageEntity request)
+        {
+            PageEntity result = new();
+            result.CurrentPage = request.Page;
+            result.PageDataSize = request.PageSize;
+            return result;
+        }
+
+        /// <summary>
+        /// 取得分頁要傳入的值（使用 ListPageEntity，依 SortAttribute 設定排序）
+        /// </summary>
+        /// <typeparam name="T">含 SortAttribute 的 VM 型別</typeparam>
+        /// <param name="request">ListPageEntity 分頁請求</param>
+        /// <returns>傳回 PageEntity</returns>
+        [ApiExplorerSettings(IgnoreApi = true)]
+        protected PageEntity GetPageEntity<T>(ListPageEntity request)
+            where T : class
+        {
+            PageEntity result = new();
+            result.CurrentPage = request.Page;
+            result.PageDataSize = request.PageSize;
+            result.Asc = string.IsNullOrWhiteSpace(request.SortDir) || (request.SortDir.ToUpper() != "ASC" && request.SortDir.ToUpper() != "DESC") ? "ASC" : request.SortDir.ToUpper();
+
+            var propertyInfoList = typeof(T).GetProperties();
+            string defaultSort = string.Empty;
+            string defaultAsc = string.Empty;
+
+            foreach (var item in propertyInfoList)
+            {
+                SortAttribute? attrSort = (SortAttribute?)Attribute.GetCustomAttribute(item, typeof(SortAttribute));
+                if (attrSort == null) continue;
+
+                string sort = attrSort.ColumnName ?? item.Name;
+
+                if (string.IsNullOrEmpty(request.SortField) && attrSort.IsDefault)
+                {
+                    defaultSort = sort;
+                    defaultAsc = attrSort.DefaultSortOrder;
                 }
 
                 if (request.SortField == item.Name)

@@ -140,7 +140,11 @@ namespace Const
             //開發人員依此使用值，避免一個value被兩個功能使用，導致開啟一個權限卻可以使用兩個功能
             // Hugh 20000 LEO 30000 Jerri 40000 Jordan 50000 Ray 60000
 
-
+            // 轉入檔案上傳
+            EsFileTransferUpload_View = 40001,
+            EsFileTransferUpload_Create = 40002,
+            EsFileTransferUpload_Edit = 40003,
+            EsFileTransferUpload_Delete = 40004,
         }
 
         /// <summary>
@@ -411,6 +415,42 @@ namespace Const
             /// </summary>
             [Description("Delegater")]
             Delegate = 1,
+        }
+
+        /// <summary>
+        /// 轉入檔案上傳 處理狀態
+        /// </summary>
+        public enum EsFileTransferUploadProcessStatusEnum
+        {
+            /// <summary>
+            /// 未轉檔：檔案已上傳，尚未執行欄位對應轉換
+            /// </summary>
+            [Description("未轉檔")]
+            Pending = 1,
+
+            /// <summary>
+            /// 已轉檔：欄位對應完成，並已儲存至資料庫
+            /// </summary>
+            [Description("已轉檔")]
+            Transferred = 2,
+
+            /// <summary>
+            /// 未查料：已轉檔，尚未執行查詢採購型號作業（只有 BOM 檔案有此狀態）
+            /// </summary>
+            [Description("未查料")]
+            PendingPartSearch = 3,
+
+            /// <summary>
+            /// 已查料：查詢採購型號作業完成（只有 BOM 檔案有此狀態）
+            /// </summary>
+            [Description("已查料")]
+            PartSearchDone = 4,
+
+            /// <summary>
+            /// 已查價：內部 + 外部查價完成
+            /// </summary>
+            [Description("已查價")]
+            PricingDone = 5,
         }
 
         /// <summary>

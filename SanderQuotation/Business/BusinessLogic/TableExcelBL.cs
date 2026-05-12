@@ -4,24 +4,12 @@ using Business.DomainModel;
 using CommonClass.Model;
 using CommonClass.Models;
 using Const;
-using Core.Utility.Base.Data;
 using Core.Utility.Enums;
-using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
-using Core.Utility.Utility;
 using Data.DataAccess.Dao;
 using Data.DataAccess.Entity;
-using DocumentFormat.OpenXml.InkML;
-using NPOI.HSSF.UserModel;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
-using System.Data.SqlClient;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Transactions;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Business.BusinessLogic
 {
@@ -107,19 +95,19 @@ namespace Business.BusinessLogic
 
             return new PageResult<EsFileTransferMappingDM>
             {
-                CurrentPage  = pageResult.CurrentPage,
-                DataCount    = pageResult.DataCount,
+                CurrentPage = pageResult.CurrentPage,
+                DataCount = pageResult.DataCount,
                 PageDataSize = pageResult.PageDataSize,
                 Results = pageResult.Results.Select(dto => new EsFileTransferMappingDM
                 {
                     //Id                 = dto.Id,
-                    TransferMappingCode     = dto.TransferMappingCode,
-                    ExampleFileName         = dto.ExampleFileName,
-                    ExampleFileType         = dto.ExampleFileType,
-                    SrcNasFilePath          = dto.SrcNasFilePath,
-                    Description             = dto.Description,
-                    Status                  = dto.Status,
-                    MappingTables           = dto.MappingTables,
+                    TransferMappingCode = dto.TransferMappingCode,
+                    ExampleFileName = dto.ExampleFileName,
+                    ExampleFileType = dto.ExampleFileType,
+                    SrcNasFilePath = dto.SrcNasFilePath,
+                    Description = dto.Description,
+                    Status = dto.Status,
+                    MappingTables = dto.MappingTables,
                 }).ToList()
             };
         }
@@ -218,7 +206,7 @@ namespace Business.BusinessLogic
             _unitOfWork.Commit();
             scope.Complete();
 
-            return (new DispatcherReturnMsg { IsSuccess = "Y"}, null, entity.TransferMappingCode);
+            return (new DispatcherReturnMsg { IsSuccess = "Y" }, null, entity.TransferMappingCode);
         }
 
         /// <summary>
@@ -237,10 +225,10 @@ namespace Business.BusinessLogic
 
                 entity.ExampleFileName = dm.ExampleFileName;
                 entity.ExampleFileType = dm.ExampleFileType;
-                entity.SrcNasFilePath  = dm.SrcNasFilePath;
-                entity.Description     = dm.Description;
-                entity.UpdatedAt       = DateTime.Now;
-                entity.UpdatedBy       = UserInfo?.UserAccount;
+                entity.SrcNasFilePath = dm.SrcNasFilePath;
+                entity.Description = dm.Description;
+                entity.UpdatedAt = DateTime.Now;
+                entity.UpdatedBy = UserInfo?.UserAccount;
 
                 using var scope = new TransactionScope();
 
@@ -257,10 +245,10 @@ namespace Business.BusinessLogic
                 {
                     var colEntity = mapper.Map<EsFileTransferMappingColumnEntity>(dm.Columns[i]);
                     //colEntity.RowGuid                       = Guid.NewGuid();
-                    colEntity.TransferMappingCode           = entity.TransferMappingCode;
+                    colEntity.TransferMappingCode = entity.TransferMappingCode;
                     colEntity.EsFileTransferMappingColumnID = Guid.NewGuid().ToString("N").ToUpper();
-                    colEntity.Status    = Status.Enable.ToValueString();
-                    colEntity.SortNo    = (i + 1).ToString();
+                    colEntity.Status = Status.Enable.ToValueString();
+                    colEntity.SortNo = (i + 1).ToString();
                     colEntity.CreatedAt = DateTime.Now;
                     colEntity.CreatedBy = UserInfo?.UserAccount;
                     GetColumnDAO().Insert(colEntity);
@@ -275,14 +263,44 @@ namespace Business.BusinessLogic
             {
                 return new DispatcherReturnMsg
                 {
-                    IsSuccess  = "N",
+                    IsSuccess = "N",
                     AlertLevel = "error",
                     ReturnCode = "E500",
-                    ReturnMsg  = ex.Message
+                    ReturnMsg = ex.Message
                 };
             }
         }
     }
 
-   
+    public partial class TableExcelBL
+    {
+        /// <summary>
+        /// 取得所有匯入規則並包含 IsBomFileRule 標記
+        /// （判斷依據：EsFileTransferMappingColumn 下是否存在 TargetTableName == 'bomfilecontent'）
+        /// </summary>
+        public List<EsFileTransferMappingDM> GetListWithBomFlag(SearchVO searchVO)
+        {
+            return GetMappingDAO().GetListWithBomFlag(searchVO)
+                .Select(dto =>
+                {
+                    EsFileTransferMappingDM dm = mapper.Map<EsFileTransferMappingDM>(dto);
+                    dm.IsBomFileRule = dto.IsBomFileRule;
+                    return dm;
+                })
+                .ToList();
+        }
+
+        /// <summary>
+        /// 依 Id 取得單筆匯入規則（含 IsBomFileRule 標記）
+        /// </summary>
+        /// <param name="id">EsFileTransferMapping.Id</param>
+        /// <returns></returns>
+        public EsFileTransferMappingDM? GetOneWithBomFlag(Guid id)
+        {
+            SearchVO searchVO = new();
+            searchVO.IdEq = id;
+
+            return GetListWithBomFlag(searchVO).FirstOrDefault();
+        }
+    }
 }

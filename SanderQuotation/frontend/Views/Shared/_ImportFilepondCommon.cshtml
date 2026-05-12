@@ -1,0 +1,82 @@
+@model ViewModel.ImportFilepondCommonVCM
+@{
+    int valFileSize = 200;
+    int maxFileSize = valFileSize * 1024 * 1024;
+    ArgumentNullException.ThrowIfNullOrWhiteSpace(Model.ServerUrl);
+}
+
+<link href="~/assets/libs/filepond/filepond.min.css" rel="stylesheet" />
+<script src="~/assets/libs/filepond/filepond.min.js"></script>
+<script src="~/assets/libs/filepond-plugin-file-validate-size/filepond-plugin-file-validate-size.min.js"></script>
+<script src="~/assets/libs/filepond-plugin-file-validate-type/filepond-plugin-file-validate-type.min.js"></script>
+<script>
+    const optionsFilePondCreate = {
+        maxFileSize: @(maxFileSize),
+        labelMaxFileSizeExceeded: '@("檔案過大，不可超過{0}".Replace("{0}", $"{valFileSize}MB").ToHtmlString())',
+        labelMaxFileSize: '@(("檔案過大，不可超過{0}".Replace("{0}", $"{valFileSize}MB")).ToHtmlString())',
+
+        //acceptedFileTypes: ['image/*'],  //檔案類型限制
+        labelFileTypeNotAllowed: '不支援此類型檔案',
+        fileValidateTypeLabelExpectedTypes: '不支援此類型檔案',
+
+        allowVideoPreview: false,
+        allowAudioPreview: false,
+    };
+    const optionsFilePond = {
+        labelIdle: '點選上傳',
+        labelInvalidField: '不支援此檔案',
+        labelButtonProcessItem: '上傳',
+        labelFileWaitingForSize: '正在計算檔案大小',
+        labelFileSizeNotAvailable: '檔案大小不符',
+        labelFileLoading: '讀取中',
+        labelFileLoadError: '讀取錯誤',
+        labelFileProcessing: '上傳',
+        labelFileProcessingComplete: '已上傳',
+        labelFileProcessingAborted: '上傳已取消',
+        labelFileProcessingError: '上傳發生錯誤',
+        labelFileProcessingRevertError: '還原錯誤',
+        labelFileRemoveError: '刪除錯誤',
+        labelTapToCancel: '點擊取消',
+        labelTapToRetry: '點擊重試',
+        labelTapToUndo: '點擊取消上傳',
+        labelButtonRemoveItem: '刪除',
+        labelButtonAbortItemLoad: '停止',
+        labelButtonRetryItemLoad: '重試',
+        labelButtonAbortItemProcessing: '取消',
+        labelButtonUndoItemProcessing: '取消',
+        labelButtonRetryItemProcessing: '重試',
+        allowProcess: false,
+        allowMultiple: true,
+        chunkUploads: true,
+        chunkForce: true,
+        chunkSize: '5000000', //5000000 = 5MB
+        instantUpload: true,
+        server: {
+            url: '@(Model.ServerUrl?.ToHtmlString())',
+            revert: 'Revert',
+            withCredentials: true,
+            patch: {
+                url: 'Patch?id=',
+                method: 'PATCH',
+                headers: this.headers,
+                withCredentials: true,
+                onerror: null,
+                ondata: (formData) => {
+                    return formData;
+                },
+            },
+            process: {
+                url: 'Process',
+                withCredentials: true,
+            },
+            load: 'Load?id=',
+        }
+    };
+
+    FilePond.registerPlugin(
+        FilePondPluginFileValidateSize,
+        FilePondPluginFileValidateType,
+    );
+
+    FilePond.setOptions(optionsFilePond);
+</script>

@@ -5,29 +5,21 @@ using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
 using CommonClass.Model;
-using CommonClass.Models;
-using Core.Utility.Extensions;
 using Core.Utility.Helper.Message;
 using Core.Utility.Web.Base;
-using Data.DataAccess.DTO;
 using MES.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Globalization;
 using static Const.Enums;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace backend.Controllers
 {
     [Authorize]
     public class BaseProjectController : ApiBaseController
     {
-        private readonly IConfiguration _config;
+        protected readonly IConfiguration _config;
         public BaseProjectController(IConfiguration configuration)
         {
             _config = configuration;

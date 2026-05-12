@@ -1,8 +1,8 @@
 @model ViewModel.ESDbTransferMappingVM
 @{
-    ViewBag.Title = "¸ך®ֶ×םֲאְֹ³]©w";
-    ViewBag.pTitle = "¸ך®ֶ×םֲאְֹ³]©w";
-    ViewBag.pageTitle = ("¨t²־÷Þ²z¼ׂ²ױ");
+    ViewBag.Title = "ט³‡ז–™ט¡¨ט½‰ז×”ט¨­ו®";
+    ViewBag.pTitle = "ט³‡ז–™ט¡¨ט½‰ז×”ט¨­ו®";
+    ViewBag.pageTitle = ("ח³»חµ±ח®¡ח†ז¨¡חµ„");
 
     var mapUrl = new
     {
@@ -29,7 +29,7 @@
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
                             <button id="btnShowModal" class="btn btn-danger add-btn">
-                                <i class="ri-add-line align-bottom me-1"></i> ·s¼W
+                                <i class="ri-add-line align-bottom me-1"></i> ז–°ו¢
                             </button>
                             <button class="btn btn-soft-danger" id="remove-actions" onclick="deleteMultiple()">
                                 <i class="ri-delete-bin-2-line"></i>
@@ -44,17 +44,17 @@
                         <div class="col-xxl-3 col-sm-12">
                             <div class="search-box">
                                 <input type="text" id="globalSearchInput" class="form-control search bg-light border-light"
-                                       placeholder="·j´M×ם®ז₪÷®e">
+                                       placeholder="זו°‹ט¡¨ז ¼ו…§ו®¹">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
                         <div class="col-xxl-2 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="½׀¿י₪Jֳצֱה¦r" id="Keyword" name="Keyword">
+                            <input type="text" class="form-control bg-light border-light" placeholder="ט«‹ט¼¸ו…¥י—יµו­—" id="Keyword" name="Keyword">
                         </div>
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>
-                                ¿z¿ן
+                                ח¯©י¸
                             </button>
                         </div>
                     </div>
@@ -71,14 +71,14 @@
                                     </div>
                                 </th>
                                 <th data-sort="action">Action</th>
-                                <th data-sort="No">¶µ¦¸</th>
-                                <th class="sort" data-sort="TransferMappingCode">¸ך®ֶ×םֲאְֹ¥N½X</th>
-                                <th class="sort" data-sort="SrcTransferName">¨׃·½¸ך®ֶ®w</th>
-                                <th class="sort" data-sort="SrcTableName">¨׃·½¸ך®ֶ×ם</th>
-                                <th class="sort" data-sort="DstTransferName">¥״¼׀¸ך®ֶ®w</th>
-                                <th class="sort" data-sort="DstTableName">¥״¼׀¸ך®ֶ×ם</th>
-                                <th>ִז¦ל¹ןְ³¼ֶ</th>
-                                <th class="sort" data-sort="Description">´y­z</th>
+                                <th data-sort="No">י …ז¬¡</th>
+                                <th class="sort" data-sort="TransferMappingCode">ט³‡ז–™ט¡¨ט½‰ז×”ה»£ח¢¼</th>
+                                <th class="sort" data-sort="SrcTransferName">ה¾†ז÷ט³‡ז–™ו÷«</th>
+                                <th class="sort" data-sort="SrcTableName">ה¾†ז÷ט³‡ז–™ט¡¨</th>
+                                <th class="sort" data-sort="DstTransferName">ח›®ז¨™ט³‡ז–™ו÷«</th>
+                                <th class="sort" data-sort="DstTableName">ח›®ז¨™ט³‡ז–™ט¡¨</th>
+                                <th>ז¬„ה½ו°ז‡‰ז•¸</th>
+                                <th class="sort" data-sort="Description">זט¿°</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -94,15 +94,15 @@
                     <div class="noresult" style="display: none">
                         <div class="text-center">
                             <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">¬dµL¸ך®ֶ</h5>
+                            <h5 class="mt-2">ז¥ח„¡ט³‡ז–™</h5>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end mt-2">
                     <div class="pagination-wrap hstack gap-2">
-                        <a class="page-item pagination-prev disabled" href="#">₪W₪@­¶</a>
+                        <a class="page-item pagination-prev disabled" href="#">ה¸ה¸€י </a>
                         <ul class="pagination listjs-pagination mb-0"></ul>
-                        <a class="page-item pagination-next" href="#">₪U₪@­¶</a>
+                        <a class="page-item pagination-next" href="#">ה¸‹ה¸€י </a>
                     </div>
                 </div>
 
@@ -114,17 +114,17 @@
                                 <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
                                     <h4>
-                                        ±z§Y±N§R°£₪@µ§¸ך®ֶ
+                                        ז‚¨ו³ו°‡וˆ×י™₪ה¸€ח­†ט³‡ז–™
                                     </h4>
                                     <p class="text-muted fs-14 mb-4">
-                                        §R°£±z×÷¸ך®ֶ±N·|§ג©ׂ¦³¸ך°T±q§Ú­ּ×÷¸ך®ֶ®w₪₪²¾°£¡C
+                                        וˆ×י™₪ז‚¨ח„ט³‡ז–™ו°‡זƒזז‰€ז‰ט³‡ט¨ו¾זˆ‘ו€‘ח„ט³‡ז–™ו÷«ה¸­ח§»י™₪ד€‚
                                     </p>
                                     <div class="hstack gap-2 justify-content-center remove">
                                         <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            ֳצ³¬
+                                            י—י–‰
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">¬O×÷¡A§R°£¥¦!</button>
+                                        <button class="btn btn-danger" id="delete-record">ז˜¯ח„ן¼וˆ×י™₪ו®ƒ!</button>
                                     </div>
                                 </div>
                             </div>
@@ -141,8 +141,8 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
-                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">·s¼W</h5>
-                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">½s¿ט</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">ז–°ו¢</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">ח·¨ט¼¯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
             <form class="needs-validation" novalidate="" method="post" id="submitForm">
@@ -151,9 +151,9 @@
                     <!-- TransferMappingCode -->
                     <div class="row g-3 mb-3">
                         <div class="col-lg-4">
-                            <label for="TransferMappingCode" class="form-label required">¸ך®ֶ×םֲאְֹ¥N½X</label>
+                            <label for="TransferMappingCode" class="form-label required">ט³‡ז–™ט¡¨ט½‰ז×”ה»£ח¢¼</label>
                             <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
-                                   placeholder="¸ך®ֶ×םֲאְֹ¥N½X" />
+                                   placeholder="ט³‡ז–™ט¡¨ט½‰ז×”ה»£ח¢¼" />
                         </div>
                     </div>
 
@@ -161,14 +161,14 @@
                     <div class="row g-3 mb-3">
                         <!-- Source DB -->
                         <div class="col-lg-4">
-                            <label class="form-label required">¨׃·½¸ך®ֶ®w</label>
+                            <label class="form-label required">ה¾†ז÷ט³‡ז–™ו÷«</label>
                             <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
-                                <option value="">-- ½׀¿ן¾Ü --</option>
+                                <option value="">-- ט«‹י¸ז“‡ --</option>
                             </select>
                         </div>
                         <!-- Source TABLE -->
                         <div class="col-lg-4">
-                            <label class="form-label required">¨׃·½¸ך®ֶ×ם</label>
+                            <label class="form-label required">ה¾†ז÷ט³‡ז–™ט¡¨</label>
                             <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled>
                             </select>
                         </div>
@@ -177,14 +177,14 @@
                     <div class="row g-3 mb-3">
                         <!-- Destination DB -->
                         <div class="col-lg-4">
-                            <label class="form-label required">¥״¼׀¸ך®ֶ®w</label>
+                            <label class="form-label required">ח›®ז¨™ט³‡ז–™ו÷«</label>
                             <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
-                                <option value="">-- ½׀¿ן¾Ü --</option>
+                                <option value="">-- ט«‹י¸ז“‡ --</option>
                             </select>
                         </div>
                         <!-- Target TABLE -->
                         <div class="col-lg-4">
-                            <label class="form-label required">¥״¼׀¸ך®ֶ×ם</label>
+                            <label class="form-label required">ח›®ז¨™ט³‡ז–™ט¡¨</label>
                             <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled>
                             </select>
                         </div>
@@ -193,20 +193,20 @@
                     <!-- Column Mapping Area -->
                     <div class="card border">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">ִז¦ל¹ןְ³³]©w</span>
+                            <span class="fw-semibold">ז¬„ה½ו°ז‡‰ט¨­ו®</span>
                             <button type="button" class="btn btn-sm btn-primary" id="btnAddMappingRow">
-                                <i class="ri-add-line"></i> ·s¼W¹ןְ³
+                                <i class="ri-add-line"></i> ז–°ו¢ו°ז‡‰
                             </button>
                         </div>
                         <div class="card-body p-0">
                             <table class="table table-sm table-bordered mb-0" id="mappingTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:32%">¨׃·½ִז¦ל</th>
-                                        <th style="width:32%">¥״¼׀ִז¦ל</th>
-                                        <th style="width:12%" class="text-center">¬O§_¥[±K</th>
-                                        <th style="width:12%" class="text-center">¬O§_¬°¥Dֱה</th>
-                                        <th style="width:12%">°Ê§@</th>
+                                        <th style="width:32%">ה¾†ז÷ז¬„ה½</th>
+                                        <th style="width:32%">ח›®ז¨™ז¬„ה½</th>
+                                        <th style="width:12%" class="text-center">ז˜¯ו¦ו ו¯†</th>
+                                        <th style="width:12%" class="text-center">ז˜¯ו¦ח‚÷ה¸»יµ</th>
+                                        <th style="width:12%">ו‹•ה½</th>
                                     </tr>
                                 </thead>
                                 <tbody id="mappingRows">
@@ -218,18 +218,18 @@
                     <!-- Filter Condition Area -->
                     <div class="card border mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">¿z¿ן±ר¥ף³]©w</span>
+                            <span class="fw-semibold">ח¯©י¸ז¢ה»¶ט¨­ו®</span>
                             <div class="d-flex gap-2 align-items-center">
                                 <div class="form-check form-check-inline mb-0">
                                     <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
-                                    <label class="form-check-label" for="filterModeBuilder">±ר¥ף³]©w</label>
+                                    <label class="form-check-label" for="filterModeBuilder">ז¢ה»¶ט¨­ו®</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
                                     <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
-                                    <label class="form-check-label" for="filterModeManual">₪ג¼g SQL</label>
+                                    <label class="form-check-label" for="filterModeManual">ז‰‹ו¯« SQL</label>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
-                                    <i class="ri-add-line"></i> ·s¼W±ר¥ף
+                                    <i class="ri-add-line"></i> ז–°ו¢ז¢ה»¶
                                 </button>
                             </div>
                         </div>
@@ -238,37 +238,37 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width:10%">AND/OR</th>
-                                        <th style="width:30%">¨׃·½ִז¦ל</th>
-                                        <th style="width:20%">¿z¿ן</th>
-                                        <th style="width:30%">₪÷®e</th>
-                                        <th style="width:10%">°Ê§@</th>
+                                        <th style="width:30%">ה¾†ז÷ז¬„ה½</th>
+                                        <th style="width:20%">ח¯©י¸</th>
+                                        <th style="width:30%">ו…§ו®¹</th>
+                                        <th style="width:10%">ו‹•ה½</th>
                                     </tr>
                                 </thead>
                                 <tbody id="filterRows"></tbody>
                             </table>
-                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">©|¥¼³]©w¥פ¦ף¿z¿ן±ר¥ף</div>
+                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">ו°ז×ט¨­ו®ה»»ה½•ח¯©י¸ז¢ה»¶</div>
                         </div>
                         <div class="card-body p-2" id="filterManualArea" style="display:none;">
                             <textarea id="FilterConditionManual" class="form-control font-monospace"
-                                      rows="3" placeholder="½׀₪ֵ¥]§t WHERE ֳצֱה¦r¡A×½±µ¿י₪J±ר¥ף¦¡"></textarea>
-                            <div class="form-text">½׀₪ֵ¥]§t WHERE ֳצֱה¦r¡A×½±µ¿י₪J±ר¥ף¦¡</div>
+                                      rows="3" placeholder="ט«‹ו‹¿ו…ו« WHERE י—יµו­—ן¼ח›´ז¥ט¼¸ו…¥ז¢ה»¶ו¼"></textarea>
+                            <div class="form-text">ט«‹ו‹¿ו…ו« WHERE י—יµו­—ן¼ח›´ז¥ט¼¸ו…¥ז¢ה»¶ו¼</div>
                         </div>
                     </div>
 
                     <!-- Description -->
                     <div class="row g-3 mt-1">
                         <div class="col-lg-12">
-                            <label for="Description" class="form-label">´y­z</label>
+                            <label for="Description" class="form-label">זט¿°</label>
                             <textarea name="Description" id="Description" class="form-control"
-                                      placeholder="´y­z" rows="2"></textarea>
+                                      placeholder="זט¿°" rows="2"></textarea>
                         </div>
                     </div>
 
                 </div>
                 <div class="modal-footer">
                     <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">ֳצ³¬</button>
-                        <button type="button" class="btn btn-success" id="btnSaveAll">½T»{</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">י—י–‰</button>
+                        <button type="button" class="btn btn-success" id="btnSaveAll">ח¢÷ט×</button>
                     </div>
                 </div>
             </form>
@@ -278,7 +278,7 @@
 
 @section scripts {
     <style>
-        /* Select2 ֵחֳׂ¿ש»~¼ֻ¦¡ */
+        /* Select2 י©—ט­‰י¯ט×₪ז¨£ו¼ */
         select.is-invalid + .select2-container .select2-selection {
             border-color: #dc3545 !important;
             background-color: #fff5f5;
@@ -289,7 +289,7 @@
         }
     </style>
     <script>
-        // ¢w¢w URL ±`¼ֶ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ URL ו¸¸ז•¸ ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         const API = {
             GetPageList:      '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetPageList',
             Get:              '@(mapUrl.Get)',
@@ -305,7 +305,7 @@
             GetTargetColumns: '@(mapUrl.GetTargetColumns)',
         };
 
-        // ¢w¢w ¬d¸ß×¬÷A ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ז¥ט©¢ח‹€ז…‹ ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         let queryState = {
             pageIndex: 1, pageSize: 10,
             sortField: 'SrcTableName', sortDir: 'asc',
@@ -313,27 +313,27 @@
             Status: '', StartDate: '', EndDate: '',
         };
 
-        // ¢w¢w §ײ¨ת ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
-        let srcColumnCache  = {};   // tableName ¡ק [col,¡K]
-        let dstColumnCache  = {};   // tableName ¡ק [col,¡K]
+        // ג”€ג”€ ו¿«ו– ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
+        let srcColumnCache  = {};   // tableName ג†’ [col,ג€¦]
+        let dstColumnCache  = {};   // tableName ג†’ [col,ג€¦]
         let currentId       = null;
         let postaction      = 'create';
-        let isLoadingEditData = false;  // ½s¿ט¸ך®ֶ¸ü₪J₪₪¡A¸ץ¹L¬Û¦P¸ך®ֶ®wִµ§i
+        let isLoadingEditData = false;  // ח·¨ט¼¯ט³‡ז–™ט¼‰ו…¥ה¸­ן¼ט·³יח›¸וט³‡ז–™ו÷«ט­¦ו‘
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ×ל©l₪ֶ
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // וˆו§‹ו–
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         $(document).ready(function () {
 
             loadDatas();
             loadDbTransferList();
             loadDstDbTransferList();
 
-            // ×ל©l₪ֶ Source DB¡BTarget DB¡BSource Table ©M Target Table ×÷ select2
+            // וˆו§‹ו– Source DBד€Target DBד€Source Table ו’ Target Table ח„ select2
             $('#SrcDbTransferCode, #DstDbTransferCode, #SrcTableName, #DstTableName').each(function () {
                 if (!$(this).data('select2')) {
                     $(this).select2({
-                        placeholder: '½׀¿ן¾Ü',
+                        placeholder: 'ט«‹י¸ז“‡',
                         allowClear: true,
                         width: '100%',
                         dropdownParent: $('#showModal')
@@ -350,7 +350,7 @@
 
         });
 
-        // ₪ֱ´«¿z¿ן¼ׂ¦¡
+        // וˆ‡ז›ח¯©י¸ז¨¡ו¼
         $(document).on('change', 'input[name="filterMode"]', function () {
             const isManual = $(this).val() === 'manual';
             if (isManual) {
@@ -364,10 +364,10 @@
             }
         });
 
-        // ¢w¢w Select2 »²§U ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ Select2 ט¼”ו© ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         function initColSelect2($sel) {
             $sel.select2({
-                placeholder: '-- ½׀¿ן¾Ü --',
+                placeholder: '-- ט«‹י¸ז“‡ --',
                 allowClear: true,
                 width: '100%',
                 dropdownParent: $('#showModal')
@@ -379,81 +379,81 @@
             });
         }
 
-        // ¢w¢w ¸ü₪J¨׃·½¸ך®ֶ®w₪U©װ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ט¼‰ו…¥ה¾†ז÷ט³‡ז–™ו÷«ה¸‹ז‹‰ ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         function loadDbTransferList() {
             $.get(API.GetDbTransferList, function (res) {
                 if (!res.Success) return;
                 const $sel = $('#SrcDbTransferCode');
                 $sel.find('option:not(:first)').remove();
                 res.Data.forEach(x => {
-                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}¡]${x.DbHost} / ${x.DbName}¡^</option>`);
+                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}ן¼ˆ${x.DbHost} / ${x.DbName}ן¼‰</option>`);
                 });
             });
         }
 
-        // ¢w¢w ¸ü₪J¥״×÷¸ך®ֶ®w₪U©װ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ט¼‰ו…¥ח›®ח„ט³‡ז–™ו÷«ה¸‹ז‹‰ ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         function loadDstDbTransferList() {
             $.get(API.GetDstDbTransferList, function (res) {
                 if (!res.Success) return;
                 const $sel = $('#DstDbTransferCode');
                 $sel.find('option:not(:first)').remove();
                 res.Data.forEach(x => {
-                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}¡]${x.DbHost} / ${x.DbName}¡^</option>`);
+                        $sel.append(`<option value="${x.TransferCode}">${x.TransferName}ן¼ˆ${x.DbHost} / ${x.DbName}ן¼‰</option>`);
                 });
             });
         }
 
-        // ¢w¢w ¨׃·½¸ך®ֶ®wֵÜ§ף ¡ק ­«¸ü¨׃·½TABLE ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ה¾†ז÷ט³‡ז–™ו÷«ט®ז›´ ג†’ י‡ט¼‰ה¾†ז÷TABLE ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $(document).on('change', '#SrcDbTransferCode', function () {
             const guid = $(this).val();
             srcColumnCache = {};
             const $tbl = $('#SrcTableName');
 
             if (!guid) {
-                $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>').trigger('change');
+                $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>').trigger('change');
                 clearAllSrcColumns();
                 return;
             }
 
-            // ֵד¥Ü¸ü₪J₪₪
-            $tbl.empty().append('<option value="">-- ¸ü₪J₪₪ --</option>').trigger('change');
+            // י¡¯ח₪÷ט¼‰ו…¥ה¸­
+            $tbl.empty().append('<option value="">-- ט¼‰ו…¥ה¸­ --</option>').trigger('change');
 
             $.get(API.GetSourceTables, { dbTransferGuid: guid }, function (res) {
-                $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>');
+                $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
                 } else {
-                    Swal.fire({ icon: 'warning', title: res.Message || '¸ü₪J¥¢±ׁ', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'warning', title: res.Message || 'ט¼‰ו…¥ו₪±ז•—', confirmButtonText: 'ח¢÷ו®' });
                 }
                 $tbl.val('').trigger('change');
             });
 
             clearAllSrcColumns();
 
-            // ְֻ¬d¬O§_»P¥״¼׀DB¬Û¦P¡]½s¿ט¸ü₪J´ֱ¶¡¸ץ¹L¡^
+            // ז×¢ז¥ז˜¯ו¦טˆ‡ח›®ז¨™DBח›¸ון¼ˆח·¨ט¼¯ט¼‰ו…¥זי–“ט·³ין¼‰
             const dstGuid = $('#DstDbTransferCode').val();
             if (!isLoadingEditData && dstGuid && guid === dstGuid) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '¨׃·½¸ך®ֶ®w»P¥״¼׀¸ך®ֶ®w¬Û¦P¡A¬O§_ִ~ִע¡H',
+                    title: 'ה¾†ז÷ט³‡ז–™ו÷«טˆ‡ח›®ז¨™ט³‡ז–™ו÷«ח›¸ון¼ז˜¯ו¦ח¹¼ח÷ן¼',
                     showCancelButton: true,
-                    confirmButtonText: '½T©w',
-                    cancelButtonText: '¨ת®ר'
+                    confirmButtonText: 'ח¢÷ו®',
+                    cancelButtonText: 'ו–ז¶ˆ'
                 }).then(result => {
                     if (!result.isConfirmed) {
                         $('#SrcDbTransferCode').val('');
-                        $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>').trigger('change');
+                        $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>').trigger('change');
                         clearAllSrcColumns();
                     }
                 });
             }
         });
 
-        // ¢w¢w ¨׃·½TABLEֵÜ§ף ¡ק §ף·sִז¦ל¹ןְ³¦C & ¿z¿ן±ר¥ףִז¦ל₪U©װ¡]²־₪@¥ׁ¿z¿ן±ר¥ף°ֿ¶פ³B²z¡^¢w¢w
+        // ג”€ג”€ ה¾†ז÷TABLEט®ז›´ ג†’ ז›´ז–°ז¬„ה½ו°ז‡‰וˆ— & ח¯©י¸ז¢ה»¶ז¬„ה½ה¸‹ז‹‰ן¼ˆחµ±ה¸€ח”±ח¯©י¸ז¢ה»¶ו€ו¡ט™•ח†ן¼‰ג”€ג”€
         $(document).on('change', '#SrcTableName', function () {
             const tbl = $(this).val();
 
-            // ²¾°£ֵחֳׂ¿ש»~¼ֻ¦¡
+            // ח§»י™₪י©—ט­‰י¯ט×₪ז¨£ו¼
             if (tbl) {
                 $(this).removeClass('is-invalid');
             }
@@ -462,22 +462,22 @@
                 clearAllSrcColumns();
                 $('#filterRows .filter-col').each(function () {
                     const cur = $(this).val();
-                    $(this).html('<option value="">-- ½׀¿ן¾Ü --</option>');
+                    $(this).html('<option value="">-- ט«‹י¸ז“‡ --</option>');
                     if (cur) $(this).append(`<option value="${cur}" selected>${cur}</option>`);
                 });
                 return;
             }
 
             getSrcColumns(tbl, function (cols) {
-                // §ף·sִז¦ל¹ןְ³¦C
+                // ז›´ז–°ז¬„ה½ו°ז‡‰וˆ—
                 $('#mappingRows .src-col-select').each(function () {
                     refreshColumnSelect($(this), cols, $(this).val());
                 });
-                // §ף·s¿z¿ן±ר¥ףִז¦ל₪U©װ
+                // ז›´ז–°ח¯©י¸ז¢ה»¶ז¬„ה½ה¸‹ז‹‰
                 $('#filterRows .filter-col').each(function () {
                     const cur = $(this).val();
                     destroyColSelect2($(this));
-                    const opts = '<option value="">-- ½׀¿ן¾Ü --</option>' +
+                    const opts = '<option value="">-- ט«‹י¸ז“‡ --</option>' +
                         cols.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
                     $(this).html(opts);
                     initColSelect2($(this));
@@ -486,57 +486,57 @@
             });
         });
 
-        // ¢w¢w ¥״×÷¸ך®ֶ®wֵÜ§ף ¡ק ­«¸ü¥״×÷TABLE ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ח›®ח„ט³‡ז–™ו÷«ט®ז›´ ג†’ י‡ט¼‰ח›®ח„TABLE ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $(document).on('change', '#DstDbTransferCode', function () {
             const guid = $(this).val();
             dstColumnCache = {};
             const $tbl = $('#DstTableName');
 
             if (!guid) {
-                $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>').trigger('change');
+                $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>').trigger('change');
                 clearAllDstColumns();
                 return;
             }
 
-            // ֵד¥Ü¸ü₪J₪₪
-            $tbl.empty().append('<option value="">-- ¸ü₪J₪₪ --</option>').trigger('change');
+            // י¡¯ח₪÷ט¼‰ו…¥ה¸­
+            $tbl.empty().append('<option value="">-- ט¼‰ו…¥ה¸­ --</option>').trigger('change');
 
             $.get(API.GetTargetTables, { dbTransferGuid: guid }, function (res) {
-                $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>');
+                $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
                 } else {
-                    Swal.fire({ icon: 'warning', title: res.Message || '¸ü₪J¥¢±ׁ', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'warning', title: res.Message || 'ט¼‰ו…¥ו₪±ז•—', confirmButtonText: 'ח¢÷ו®' });
                 }
                 $tbl.val('').trigger('change');
             });
 
             clearAllDstColumns();
 
-            // ְֻ¬d¬O§_»P¨׃·½DB¬Û¦P¡]½s¿ט¸ü₪J´ֱ¶¡¸ץ¹L¡^
+            // ז×¢ז¥ז˜¯ו¦טˆ‡ה¾†ז÷DBח›¸ון¼ˆח·¨ט¼¯ט¼‰ו…¥זי–“ט·³ין¼‰
             const srcGuid = $('#SrcDbTransferCode').val();
             if (!isLoadingEditData && srcGuid && guid === srcGuid) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '¨׃·½»P¥״¼׀¸ך®ֶ®w¬Û¦P¡A¥i¯א³y¦¨¸ך®ֶ³Qֲ׀»\¡A¬O§_ִ~ִע¡H',
+                    title: 'ה¾†ז÷טˆ‡ח›®ז¨™ט³‡ז–™ו÷«ח›¸ון¼ו¯טƒ½י€ זˆט³‡ז–™ט¢«ט¦†ט“‹ן¼ז˜¯ו¦ח¹¼ח÷ן¼',
                     showCancelButton: true,
-                    confirmButtonText: '½T»{',
-                    cancelButtonText: '¨ת®ר'
+                    confirmButtonText: 'ח¢÷ט×',
+                    cancelButtonText: 'ו–ז¶ˆ'
                 }).then(result => {
                     if (!result.isConfirmed) {
                         $('#DstDbTransferCode').val('');
-                        $tbl.empty().append('<option value="">-- ½׀¿ן¾Ü --</option>').trigger('change');
+                        $tbl.empty().append('<option value="">-- ט«‹י¸ז“‡ --</option>').trigger('change');
                         clearAllDstColumns();
                     }
                 });
             }
         });
 
-        // ¢w¢w ¥״×÷TABLEֵÜ§ף ¡ק §ף·s¦U¦C×÷¥״¼׀ִז¦ל¿ן¶µ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ח›®ח„TABLEט®ז›´ ג†’ ז›´ז–°ו„וˆ—ח„ח›®ז¨™ז¬„ה½י¸י … ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $(document).on('change', '#DstTableName', function () {
             const tbl = $(this).val();
 
-            // ²¾°£ֵחֳׂ¿ש»~¼ֻ¦¡
+            // ח§»י™₪י©—ט­‰י¯ט×₪ז¨£ו¼
             if (tbl) {
                 $(this).removeClass('is-invalid');
             }
@@ -551,12 +551,12 @@
             });
         });
 
-        // ¥״¼׀ִז¦ל¿ן§ף§ן®ֹ ¡ק ¦P¨B©ׂ¦³¦C×÷ disabled ×¬÷A
+        // ח›®ז¨™ז¬„ה½י¸ז›´ז”¹ז™‚ ג†’ וז­¥ז‰€ז‰וˆ—ח„ disabled ח‹€ז…‹
         $(document).on('change', '.dst-col-select', function () {
             refreshDstSelectOptions();
         });
 
-        // ­«·s­p÷ג©ׂ¦³ dst-col-select ×÷ disabled ¿ן¶µ¡]₪w³Q¨ה¥L¦C¿ן¥־×÷­ָ₪£¥i¦A¿ן¡^
+        // י‡ז–°ט¨ˆח®—ז‰€ז‰ dst-col-select ח„ disabled י¸י …ן¼ˆו·²ט¢«ו…¶ה»–וˆ—י¸ח”¨ח„ו€¼ה¸ו¯ו†י¸ן¼‰
         function refreshDstSelectOptions() {
             const usedVals = new Set();
             $('#mappingRows .dst-col-select').each(function () {
@@ -574,7 +574,7 @@
             });
         }
 
-        // ¢w¢w ·s¼W¹ןְ³¦C ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ז–°ו¢ו°ז‡‰וˆ— ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $('#btnAddMappingRow').on('click', function () {
             addMappingRow('', '', false, false);
         });
@@ -585,12 +585,12 @@
                 <tr data-row="${idx}">
                     <td>
                         <select class="form-select form-select-sm src-col-select" required>
-                            <option value="">½׀¥‎¿ן¾Ü¨׃·½¸ך®ֶ×ם</option>
+                            <option value="">ט«‹ו…ˆי¸ז“‡ה¾†ז÷ט³‡ז–™ט¡¨</option>
                         </select>
                     </td>
                     <td>
                         <select class="form-select form-select-sm dst-col-select" required>
-                            <option value="">½׀¥‎¿ן¾Ü¥״¼׀¸ך®ֶ×ם</option>
+                            <option value="">ט«‹ו…ˆי¸ז“‡ח›®ז¨™ט³‡ז–™ט¡¨</option>
                         </select>
                     </td>
                     <td class="text-center align-middle">
@@ -613,11 +613,11 @@
 
             $('#mappingRows').append($tr);
 
-            // ×ל©l₪ֶ select2
+            // וˆו§‹ו– select2
             initColSelect2($tr.find('.src-col-select'));
             initColSelect2($tr.find('.dst-col-select'));
 
-            // ¶ס¥R¨׃·½ִז¦ל
+            // ו¡«ו……ה¾†ז÷ז¬„ה½
             const srcTbl = $('#SrcTableName').val();
             if (srcTbl) {
                 getSrcColumns(srcTbl, function (cols) {
@@ -625,7 +625,7 @@
                 });
             }
 
-            // ¶ס¥R¥״¼׀ִז¦ל¡]±ֶ°£₪w³Q¨ה¥L¦C¿ן¥־×÷­ָ¡^
+            // ו¡«ו……ח›®ז¨™ז¬„ה½ן¼ˆז’י™₪ו·²ט¢«ו…¶ה»–וˆ—י¸ח”¨ח„ו€¼ן¼‰
             const dstTbl = $('#DstTableName').val();
             if (dstTbl) {
                 getDstColumns(dstTbl, function (cols) {
@@ -635,7 +635,7 @@
             }
         }
 
-        // ¢w¢w §R°£¹ןְ³¦C ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ וˆ×י™₪ו°ז‡‰וˆ— ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $(document).on('click', '.btn-remove-row', function () {
             const $tr = $(this).closest('tr');
             destroyColSelect2($tr.find('.src-col-select, .dst-col-select'));
@@ -643,20 +643,20 @@
             refreshDstSelectOptions();
         });
 
-        // ¢w¢w ִז¦לֵחֳׂ¡]¥״¼׀ִז¦ל₪£¥i­«½ֶ¡A¨׃·½ִז¦ל₪¹³\­«½ֶ¡^¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ז¬„ה½י©—ט­‰ן¼ˆח›®ז¨™ז¬„ה½ה¸ו¯י‡ט₪‡ן¼ה¾†ז÷ז¬„ה½ו…ט¨±י‡ט₪‡ן¼‰ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         function validateNoDuplicateColumns() {
             return true;
         }
 
-        // ¢w¢w ְx¦s¡]₪@¦¸°e¥X¥D×ם + Columns °}¦C¡^¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ג”€ג”€ ו„²ו­˜ן¼ˆה¸€ז¬¡י€ו‡÷ה¸»ט¡¨ + Columns י™£וˆ—ן¼‰ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
         $('#btnSaveAll').on('click', function () {
             const $form = $('#submitForm');
 
-            // ₪ג°Êֵחֳׂ¥²¶סִז¦ל
+            // ז‰‹ו‹•י©—ט­‰ו¿…ו¡«ז¬„ה½
             let isValid = true;
             let firstInvalidField = null;
 
-            // ֵחֳׂ TransferMappingCode
+            // י©—ט­‰ TransferMappingCode
             if (!$('#TransferMappingCode').val().trim()) {
                 $('#TransferMappingCode').addClass('is-invalid');
                 if (!firstInvalidField) firstInvalidField = $('#TransferMappingCode');
@@ -665,7 +665,7 @@
                 $('#TransferMappingCode').removeClass('is-invalid');
             }
 
-            // ֵחֳׂ¨׃·½¸ך®ֶ®w
+            // י©—ט­‰ה¾†ז÷ט³‡ז–™ו÷«
             if (!$('#SrcDbTransferCode').val()) {
                 $('#SrcDbTransferCode').addClass('is-invalid');
                 if (!firstInvalidField) firstInvalidField = $('#SrcDbTransferCode');
@@ -674,7 +674,7 @@
                 $('#SrcDbTransferCode').removeClass('is-invalid');
             }
 
-            // ֵחֳׂ¨׃·½¸ך®ֶ×ם
+            // י©—ט­‰ה¾†ז÷ט³‡ז–™ט¡¨
             const srcTableVal = $('#SrcTableName').val();
             if (!srcTableVal) {
                 $('#SrcTableName').addClass('is-invalid');
@@ -684,7 +684,7 @@
                 $('#SrcTableName').removeClass('is-invalid');
             }
 
-            // ֵחֳׂ¥״¼׀¸ך®ֶ®w
+            // י©—ט­‰ח›®ז¨™ט³‡ז–™ו÷«
             if (!$('#DstDbTransferCode').val()) {
                 $('#DstDbTransferCode').addClass('is-invalid');
                 if (!firstInvalidField) firstInvalidField = $('#DstDbTransferCode');
@@ -693,7 +693,7 @@
                 $('#DstDbTransferCode').removeClass('is-invalid');
             }
 
-            // ֵחֳׂ¥״¼׀¸ך®ֶ×ם
+            // י©—ט­‰ח›®ז¨™ט³‡ז–™ט¡¨
             const dstTableVal = $('#DstTableName').val();
             if (!dstTableVal) {
                 $('#DstTableName').addClass('is-invalid');
@@ -706,11 +706,11 @@
             if (!isValid) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '½׀¶ס¼g©ׂ¦³¥²¶סִז¦ל',
-                    text: '½׀½T»{₪w¿ן¾Ü¨׃·½¸ך®ֶ®w¡B¨׃·½¸ך®ֶ×ם¡B¥״¼׀¸ך®ֶ®w₪־¥״¼׀¸ך®ֶ×ם',
-                    confirmButtonText: '½T©w'
+                    title: 'ט«‹ו¡«ו¯«ז‰€ז‰ו¿…ו¡«ז¬„ה½',
+                    text: 'ט«‹ח¢÷ט×ו·²י¸ז“‡ה¾†ז÷ט³‡ז–™ו÷«ד€ה¾†ז÷ט³‡ז–™ט¡¨ד€ח›®ז¨™ט³‡ז–™ו÷«וח›®ז¨™ט³‡ז–™ט¡¨',
+                    confirmButtonText: 'ח¢÷ו®'
                 });
-                // ±NµJֲI²¾¨ל²ִ₪@­׃µL®ִִז¦ל
+                // ו°‡ח„¦י»ח§»וˆ°ח¬¬ה¸€ו€‹ח„¡ז•ˆז¬„ה½
                 if (firstInvalidField) {
                     firstInvalidField.focus();
                 }
@@ -718,7 +718,7 @@
             }
 
             if ($('#mappingRows tr').length === 0) {
-                Swal.fire({ icon: 'warning', title: '½׀¦Ü₪ײ·s¼W₪@µ§ִז¦ל¹ןְ³', confirmButtonText: '½T©w' });
+                Swal.fire({ icon: 'warning', title: 'ט«‹ט‡³ו°‘ז–°ו¢ה¸€ח­†ז¬„ה½ו°ז‡‰', confirmButtonText: 'ח¢÷ו®' });
                 return;
             }
 
@@ -742,7 +742,7 @@
             });
 
             if (!valid) {
-                Swal.fire({ icon: 'warning', title: '½׀§¹¾ד¿ן¾Ü¨C¦C×÷¨׃·½»P¥״¼׀ִז¦ל', confirmButtonText: '½T©w' });
+                Swal.fire({ icon: 'warning', title: 'ט«‹ו®ז•´י¸ז“‡ז¯וˆ—ח„ה¾†ז÷טˆ‡ח›®ז¨™ז¬„ה½', confirmButtonText: 'ח¢÷ו®' });
                 return;
             }
 
@@ -772,26 +772,26 @@
                 type: 'POST', url: postURL, dataType: 'json', data: data,
                 success: function (res) {
                     if (!res.Success) {
-                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: 'ח¢÷ו®' });
                         return;
                     }
                     const modal = bootstrap.Modal.getInstance(document.getElementById('showModal'));
                     modal.hide();
                     const msg = postaction === 'create'
-                        ? '·s¼W¦¨¥\'
-                        : '½s¿ט¦¨¥\';
-                    Swal.fire({ icon: 'success', title: msg, confirmButtonText: '½T©w' }).then(() => loadDatas());
+                        ? 'ז–°ו¢זˆו'
+                        : 'ח·¨ט¼¯זˆו';
+                    Swal.fire({ icon: 'success', title: msg, confirmButtonText: 'ח¢÷ו®' }).then(() => loadDatas());
                     resetElement();
                 },
                 error: function () {
-                    Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                 }
             }).always(() => hideLoader());
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ¦C×ם¸ü₪J
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // וˆ—ט¡¨ט¼‰ו…¥
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         function loadDatas() {
             showLoader();
             $.ajax({
@@ -805,7 +805,7 @@
                             icon: (res.Errors?.AlertLevel || 'warning').toLowerCase(),
                             title: res.Errors?.ReturnCode,
                             text: res.Errors?.ReturnMsg,
-                            confirmButtonText: '½T»{',
+                            confirmButtonText: 'ח¢÷ט×',
                         });
                         return;
                     }
@@ -838,8 +838,8 @@
                                     <i class="ri-more-fill align-middle"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> ½s¿ט</a></li>
-                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> §R°£</a></li>
+                                    <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> ח·¨ט¼¯</a></li>
+                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> וˆ×י™₪</a></li>
                                 </ul>
                             </div>
                         </td>
@@ -849,7 +849,7 @@
                         <td class="SrcTableName">${data.SrcTableName || ''}</td>
                         <td class="DstTransferName">${data.DstTransferName || ''}</td>
                         <td class="DstTableName">${data.DstTableName || ''}</td>
-                        ${(data.Columns && data.Columns.length) || 0} µ§
+                        ${(data.Columns && data.Columns.length) || 0} ח­†
                         <td class="Description">${data.Description || ''}</td>
                     </tr>
                 `);
@@ -870,7 +870,7 @@
 
 
             if (startPage > 1) {
-                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">₪W₪@­¶</a></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(1)">ה¸ה¸€י </a></li>`);
                 ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
             }
             for (let i = startPage; i <= endPage; i++) {
@@ -878,7 +878,7 @@
             }
             if (endPage < totalPages) {
                 ul.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
-                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">³ּ«ב₪@­¶</a></li>`);
+                ul.append(`<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="gotoPage(${totalPages})">ז€ו¾ה¸€י </a></li>`);
             }
 
             $('.pagination-prev').toggleClass('disabled', queryState.pageIndex === 1);
@@ -912,9 +912,9 @@
             loadDatas();
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ₪ִ¿ן / ¥‏¿ן
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // ו‹¾י¸ / ו…¨י¸
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         function toggleRemoveActions() {
             $('#remove-actions').toggle($('.row-check:checked').length > 0);
         }
@@ -927,9 +927,9 @@
             toggleRemoveActions();
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ·s¼W«צ¶s
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // ז–°ו¢ז‰יˆ•
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         $('#btnShowModal').on('click', function () {
             resetElement();
             $('#exampleModalLabel_Create').show();
@@ -939,9 +939,9 @@
             new bootstrap.Modal(document.getElementById('showModal'), { backdrop: 'static', keyboard: false }).show();
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ½s¿ט«צ¶s
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // ח·¨ט¼¯ז‰יˆ•
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         $(document).on('click', '.edit-item-btn', function (e) {
             e.preventDefault();
             $('#exampleModalLabel_Create').hide();
@@ -950,7 +950,7 @@
             currentId = $(this).closest('tr').data('id');
 
             if (!currentId) {
-                Swal.fire({ icon: 'warning', title: '¬dµL¸ך®ֶ', confirmButtonText: '½T©w' });
+                Swal.fire({ icon: 'warning', title: 'ז¥ח„¡ט³‡ז–™', confirmButtonText: 'ח¢÷ו®' });
                 return;
             }
 
@@ -962,36 +962,36 @@
                 success: function (res) {
                     if (!res.Success) {
                         hideLoader();
-                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: 'ח¢÷ו®' });
                         return;
                     }
                     const d = res.Data;
 
-                    // ¼׀°O½s¿ט¸ך®ֶ¸ü₪J₪₪¡Aֱ׳§Kִ²µo¬Û¦P¸ך®ֶ®wִµ§i
+                    // ז¨™ט¨˜ח·¨ט¼¯ט³‡ז–™ט¼‰ו…¥ה¸­ן¼י¿ו…ט§¸ח™¼ח›¸וט³‡ז–™ו÷«ט­¦ו‘
                     isLoadingEditData = true;
 
-                    // ¶ס₪J TransferMappingCode
+                    // ו¡«ו…¥ TransferMappingCode
                     $('#TransferMappingCode').val(d.TransferMappingCode);
 
-                    // ³]©w¨׃·½DB¡Aִ²µo TABLE ₪U©װ­«¸ü
+                    // ט¨­ו®ה¾†ז÷DBן¼ט§¸ח™¼ TABLE ה¸‹ז‹‰י‡ט¼‰
                     $('#SrcDbTransferCode').val(d.SrcDbTransferCode).trigger('change');
-                    // ³]©w¥״×÷DB¡Aִ²µo TABLE ₪U©װ­«¸ü
+                    // ט¨­ו®ח›®ח„DBן¼ט§¸ח™¼ TABLE ה¸‹ז‹‰י‡ט¼‰
                     $('#DstDbTransferCode').val(d.DstDbTransferCode).trigger('change');
 
                     setTimeout(function () {
                         isLoadingEditData = false;
 
-                        // ³]©w¨׃·½×ם®ז
+                        // ט¨­ו®ה¾†ז÷ט¡¨ז ¼
                         const $srcTbl = $('#SrcTableName');
                         $srcTbl.val(d.SrcTableName).trigger('change');
 
-                        // ³]©w¥״¼׀×ם®ז
+                        // ט¨­ו®ח›®ז¨™ט¡¨ז ¼
                         const $dstTbl = $('#DstTableName');
                         $dstTbl.val(d.DstTableName).trigger('change');
 
                         $('#Description').val(d.Description);
 
-                        // ©I¥s GetColumns ¨ת±o₪l×םִז¦ל¹ןְ³¡A³v¦C¶ס₪J
+                        // ו‘¼ו« GetColumns ו–ו¾—ו­ט¡¨ז¬„ה½ו°ז‡‰ן¼י€וˆ—ו¡«ו…¥
                         const colPromise = $.get(API.GetColumns, { TransferMappingCode: d.TransferMappingCode }, function (colRes) {
                             $('#mappingRows').empty();
                             if (colRes.Success && colRes.Data?.length > 0) {
@@ -1001,7 +1001,7 @@
                             }
                         });
 
-                        // ¸ü₪J¿z¿ן±ר¥ף¡]₪ג¼g SQL ¼ׂ¦¡₪£»Ý­nִז¦ל§ײ¨ת¡A¥i×½±µ¸ü₪J¡Fbuilder ¼ׂ¦¡₪~»Ýµ¥«Ý§ײ¨ת¡^
+                        // ט¼‰ו…¥ח¯©י¸ז¢ה»¶ן¼ˆז‰‹ו¯« SQL ז¨¡ו¼ה¸י€ט¦ז¬„ה½ו¿«ו–ן¼ו¯ח›´ז¥ט¼‰ו…¥ן¼›builder ז¨¡ו¼ז‰י€ח­‰ו¾…ו¿«ו–ן¼‰
                         let filterPromise;
                         if (d.FilterCondition) {
                             let fc;
@@ -1029,14 +1029,14 @@
                 },
                 error: function () {
                     hideLoader();
-                    Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                 }
             });
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // §R°£¡]³זµ§¡^
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // וˆ×י™₪ן¼ˆו–®ח­†ן¼‰
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         $(document).on('click', '.remove-item-btn', function (e) {
             e.preventDefault();
             currentId = $(this).closest('tr').data('id');
@@ -1048,21 +1048,21 @@
                 success: function (res) {
                     bootstrap.Modal.getInstance(document.getElementById('deleteOrder')).hide();
                     if (!res.Success) {
-                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                        Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: 'ח¢÷ו®' });
                         return;
                     }
                     loadDatas();
-                    Swal.fire({ icon: 'success', title: '§R°£¦¨¥\', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'success', title: 'וˆ×י™₪זˆו', confirmButtonText: 'ח¢÷ו®' });
                 },
                 error: function () {
-                    Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                 }
             }).always(() => hideLoader());
         });
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // §R°£¡]¦hµ§¡^
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // וˆ×י™₪ן¼ˆו₪ח­†ן¼‰
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         function deleteMultiple() {
             const ids = [];
             document.querySelectorAll('.form-check [value=option1]').forEach(el => {
@@ -1078,12 +1078,12 @@
             }
 
             Swal.fire({
-                title: '±z½T©w­n§R°£¦¹¶µ¥״¶Ü¡H',
-                text: '±zµL×k÷M¾P³o­׃¾Þ§@¡I',
+                title: 'ז‚¨ח¢÷ו®ט¦וˆ×י™₪ז­₪י …ח›®ו—ן¼',
+                text: 'ז‚¨ח„¡ז³•ז’₪י·י€™ו€‹ז“ה½ן¼',
                 icon: 'warning', showCancelButton: true,
                 customClass: { confirmButton: 'btn btn-primary w-xs me-2 mt-2', cancelButton: 'btn btn-danger w-xs mt-2' },
-                confirmButtonText: '¬O×÷¡A§R°£¥¦¡I',
-                cancelButtonText: '¨ת®ר',
+                confirmButtonText: 'ז˜¯ח„ן¼וˆ×י™₪ו®ƒן¼',
+                cancelButtonText: 'ו–ז¶ˆ',
                 buttonsStyling: false, showCloseButton: true
             }).then(function (result) {
                 if (!result.value) return;
@@ -1092,22 +1092,22 @@
                     type: 'POST', url: API.Delete, dataType: 'json', data: { list: ids },
                     success: function (res) {
                         if (!res.Success) {
-                            Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: '½T©w' });
+                            Swal.fire({ icon: 'warning', title: res.Message, confirmButtonText: 'ח¢÷ו®' });
                             return;
                         }
                         loadDatas();
-                        Swal.fire({ title: '₪w§R°£¡I', text: '±z×÷¸ך®ֶ₪w³Q§R°£¡C', icon: 'success', customClass: { confirmButton: 'btn btn-info w-xs mt-2' }, buttonsStyling: false });
+                        Swal.fire({ title: 'ו·²וˆ×י™₪ן¼', text: 'ז‚¨ח„ט³‡ז–™ו·²ט¢«וˆ×י™₪ד€‚', icon: 'success', customClass: { confirmButton: 'btn btn-info w-xs mt-2' }, buttonsStyling: false });
                     },
                     error: function () {
-                        Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                        Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                     }
                 }).always(() => hideLoader());
             });
         }
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // »²§U¡Gִז¦ל§ײ¨ת & ¶ס¥R Select
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // ט¼”ו©ן¼ז¬„ה½ו¿«ו– & ו¡«ו…… Select
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         function getSrcColumns(tableName, cb) {
             if (srcColumnCache[tableName]) { cb(srcColumnCache[tableName]); return; }
             const guid = $('#SrcDbTransferCode').val();
@@ -1117,11 +1117,11 @@
                     cb(res.Data);
                 } else {
                         hideLoader();
-                    Swal.fire({ icon: 'warning', title: res.Message || '¸ü₪J¥¢±ׁ', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'warning', title: res.Message || 'ט¼‰ו…¥ו₪±ז•—', confirmButtonText: 'ח¢÷ו®' });
                     cb([]);
                 }
             }).fail(function () {
-                Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                 cb([]);
             });
         }
@@ -1135,11 +1135,11 @@
                     cb(res.Data);
                 } else {
                         hideLoader();
-                    Swal.fire({ icon: 'warning', title: res.Message || '¸ü₪J¥¢±ׁ', confirmButtonText: '½T©w' });
+                    Swal.fire({ icon: 'warning', title: res.Message || 'ט¼‰ו…¥ו₪±ז•—', confirmButtonText: 'ח¢÷ו®' });
                     cb([]);
                 }
             }).fail(function () {
-                Swal.fire({ icon: 'error', title: '¨t²־¿ש»~¡A½׀ֱpµ¸¨t²־÷Þ²z­û', confirmButtonText: '½T©w' });
+                Swal.fire({ icon: 'error', title: 'ח³»חµ±י¯ט×₪ן¼ט«‹ט¯חµ¡ח³»חµ±ח®¡ח†ו“¡', confirmButtonText: 'ח¢÷ו®' });
                 cb([]);
             });
         }
@@ -1147,7 +1147,7 @@
         function refreshColumnSelect($sel, cols, selectedVal) {
             const prev = selectedVal || $sel.val() || '';
             destroyColSelect2($sel);
-            $sel.html('<option value="">-- ½׀¿ן¾Ü --</option>');
+            $sel.html('<option value="">-- ט«‹י¸ז“‡ --</option>');
             cols.forEach(c => $sel.append(`<option value="${c}" ${c === prev ? 'selected' : ''}>${c}</option>`));
             initColSelect2($sel);
             if (prev) $sel.val(prev).trigger('change');
@@ -1156,7 +1156,7 @@
         function clearAllSrcColumns() {
             $('#mappingRows .src-col-select').each(function () {
                 destroyColSelect2($(this));
-                $(this).html('<option value="">-- ½׀¥‎¿ן¾Ü¨׃·½¸ך®ֶ×ם --</option>');
+                $(this).html('<option value="">-- ט«‹ו…ˆי¸ז“‡ה¾†ז÷ט³‡ז–™ט¡¨ --</option>');
                 initColSelect2($(this));
             });
         }
@@ -1164,29 +1164,29 @@
         function clearAllDstColumns() {
             $('#mappingRows .dst-col-select').each(function () {
                 destroyColSelect2($(this));
-                $(this).html('<option value="">-- ½׀¥‎¿ן¾Ü¥״¼׀¸ך®ֶ×ם --</option>');
+                $(this).html('<option value="">-- ט«‹ו…ˆי¸ז“‡ח›®ז¨™ט³‡ז–™ט¡¨ --</option>');
                 initColSelect2($(this));
             });
         }
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ¿z¿ן±ר¥ף
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // ח¯©י¸ז¢ה»¶
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         const FILTER_OPERATORS = [
-            { value: '=',           label: 'µ¥©ף (=)' },
-            { value: '!=',          label: '₪£µ¥©ף (!=)' },
-            { value: '>',           label: '₪j©ף (>)' },
-            { value: '>=',          label: '₪j©ףµ¥©ף (>=)' },
-            { value: '<',           label: '₪p©ף (<)' },
-            { value: '<=',          label: '₪p©ףµ¥©ף (<=)' },
-            { value: 'LIKE',        label: '¥]§t (LIKE)' },
-            { value: 'NOT LIKE',    label: '₪£¥]§t (NOT LIKE)' },
-            { value: 'IS NULL',     label: '¬°×ֵ (IS NULL)' },
-            { value: 'IS NOT NULL', label: '₪£¬°×ֵ (IS NOT NULL)' },
-            // { value: 'IN',          label: '¦b²M³ז₪÷ (IN)' },
+            { value: '=',           label: 'ח­‰ז–¼ (=)' },
+            { value: '!=',          label: 'ה¸ח­‰ז–¼ (!=)' },
+            { value: '>',           label: 'ו₪§ז–¼ (>)' },
+            { value: '>=',          label: 'ו₪§ז–¼ח­‰ז–¼ (>=)' },
+            { value: '<',           label: 'ו°ז–¼ (<)' },
+            { value: '<=',          label: 'ו°ז–¼ח­‰ז–¼ (<=)' },
+            { value: 'LIKE',        label: 'ו…ו« (LIKE)' },
+            { value: 'NOT LIKE',    label: 'ה¸ו…ו« (NOT LIKE)' },
+            { value: 'IS NULL',     label: 'ח‚÷ח©÷ (IS NULL)' },
+            { value: 'IS NOT NULL', label: 'ה¸ח‚÷ח©÷ (IS NOT NULL)' },
+            // { value: 'IN',          label: 'ו¨ז¸…ו–®ו…§ (IN)' },
         ];
 
-        // ·s¼W±ר¥ף¦C
+        // ז–°ו¢ז¢ה»¶וˆ—
         $('#btnAddFilterRow').on('click', function () {
             addFilterRow('AND', '', '=', '');
         });
@@ -1213,7 +1213,7 @@
                     </td>
                     <td>
                         <select class="form-select form-select-sm filter-col">
-                            <option value="">-- ½׀¿ן¾Ü --</option>
+                            <option value="">-- ט«‹י¸ז“‡ --</option>
                             ${srcCols}
                         </select>
                     </td>
@@ -1246,13 +1246,13 @@
             updateFilterEmpty();
         }
 
-        // ¹B÷ג₪l§ןֵÜ®ֱֹפֲֳ/ֵד¥Ü­ָ¿י₪J®״
+        // י‹ח®—ו­ז”¹ט®ז™‚י±ט—/י¡¯ח₪÷ו€¼ט¼¸ו…¥ז¡†
         $(document).on('change', '.filter-op', function () {
             const noVal = ['IS NULL', 'IS NOT NULL'].includes($(this).val());
             $(this).closest('tr').find('.filter-val').toggle(!noVal);
         });
 
-        // §R°£±ר¥ף¦C
+        // וˆ×י™₪ז¢ה»¶וˆ—
         $(document).on('click', '.btn-remove-filter', function () {
             const $tr = $(this).closest('tr');
             destroyColSelect2($tr.find('.filter-col, .filter-op'));
@@ -1271,7 +1271,7 @@
             return srcColumnCache[tbl].map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // ¦¬¶°¿z¿ן±ר¥ף
+        // ז”¶י›†ח¯©י¸ז¢ה»¶
         function collectFilterData() {
             const mode = $('input[name="filterMode"]:checked').val();
             if (mode === 'manual') {
@@ -1289,7 +1289,7 @@
             return { mode: 'builder', sql: '', rows };
         }
 
-        // ¸ü₪J¿z¿ן±ר¥ף¡]½s¿ט®ֹ¡^
+        // ט¼‰ו…¥ח¯©י¸ז¢ה»¶ן¼ˆח·¨ט¼¯ז™‚ן¼‰
         function loadFilterCondition(filterCondition, filterMode) {
             $('#filterRows').empty();
             $('#FilterConditionManual').val('');
@@ -1314,7 +1314,7 @@
                     (fc.rows || []).forEach((r, i) => addFilterRow(i === 0 ? 'AND' : r.logic, r.col, r.op, r.val));
                 }
             } catch {
-                // ¯ֲ₪ו¦rµר¬°₪ג¼g SQL
+                // ח´”ז–‡ו­—ט¦–ח‚÷ז‰‹ו¯« SQL
                 $('input[name="filterMode"][value="manual"]').prop('checked', true);
                 $('#filterBuilderArea').hide();
                 $('#btnAddFilterRow').hide();
@@ -1328,9 +1328,9 @@
             return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
-        // ­«¸m Modal
-        // שששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששששש
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
+        // י‡ח½® Modal
+        // ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•ג•
         function resetElement() {
             $('#submitForm input:not([type="radio"]):not([type="checkbox"])').val('');
             $('#submitForm textarea').val('');
@@ -1338,10 +1338,10 @@
             $('#SrcDbTransferCode').val('');
             $('#DstDbTransferCode').val('');
 
-            // ­«¸m Source Table ©M Target Table
+            // י‡ח½® Source Table ו’ Target Table
             const $srcTbl = $('#SrcTableName');
             const $dstTbl = $('#DstTableName');
-                const defaultMsg = '½׀¿ן¾Ü';
+                const defaultMsg = 'ט«‹י¸ז“‡';
 
             $srcTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');
             $dstTbl.empty().append(`<option value="">${defaultMsg}</option>`).trigger('change');

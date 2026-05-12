@@ -190,3 +190,13 @@ function getSaveAPIResponseSwalAlertInfo(response, defaultSuccessfulMsg = '', de
         text: text
     };
 }
+
+$('body').on('blur', 'input.websoft-positive-int', function () {
+    if (!/^\d+$/.test($(this).val())) {
+        $(this).val('1');
+    }
+});
+
+function escapeHtml(v) {
+    return $('<div>').text(v ?? '').html();
+}

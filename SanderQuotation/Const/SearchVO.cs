@@ -9,15 +9,15 @@
         /// <summary>
         /// 資料代號
         /// </summary>
-        public int? IdEq { get; set; }
+        public Guid? IdEq { get; set; }
         /// <summary>
         /// 資料代號
         /// </summary>
-        public int? IdNeq { get; set; }
+        public Guid? IdNeq { get; set; }
         /// <summary>
         /// 資料代號
         /// </summary>
-        public List<int> IdIn { get; set; } = [];
+        public List<Guid> IdIn { get; set; } = [];
         /// <summary>
         /// 狀態
         /// </summary>
@@ -53,7 +53,7 @@
         /// <summary>
         /// 檔案儲存代號
         /// </summary>
-        public string? UploadIdEq { get; set; }
+        public Guid? UploadIdEq { get; set; }
         /// <summary>
         /// 檔案儲存代號
         /// </summary>
@@ -87,6 +87,15 @@
         /// </summary>
         public int? TypeEq { get; set; }
     }
+
+    public partial class SearchVO
+    {
+        /// <summary>
+        /// 代碼
+        /// </summary>
+        public string? TransferMappingCodeEq { set; get; }
+    }
+
 
     public partial class SearchVO
     {

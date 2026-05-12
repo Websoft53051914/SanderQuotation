@@ -1,10 +1,9 @@
-﻿using Core.Utility.Base.Data;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.DataAccess.Entity
 {
     [Table("EsFileTransferMapping")]
-    public class EsFileTransferMappingEntity : BaseEntity
+    public class EsFileTransferMappingEntity : SP_BaseEntity
     {
         public string Status { set; get; }
 

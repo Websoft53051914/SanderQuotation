@@ -1,0 +1,628 @@
+@using ViewModel
+@{
+    ViewBag.Title = "轉入檔案上傳";
+    ViewBag.pTitle = "轉入檔案上傳";
+    ViewBag.pageTitle = "採購管理";
+
+    var ui = new
+    {
+        IdBtnBatchDelete = "remove-actions",
+        // 上傳 modal
+        ModalU = new
+        {
+            Id = "z" + Guid.NewGuid().ToString("N"),
+        },
+        // 刪除訊息 modal
+        ModalD = new
+        {
+            Id = "deleteOrder",
+            IdBtnOk = "delete-record",
+        },
+        // ImportFilepondCommon
+        PartialIFC = new ImportFilepondCommonVCM
+        {
+            ServerUrl = $"{Configuration["BackendURL"]}/api/FilepondEsFileTransferUpload/",
+        },
+    };
+
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="importFileListCard">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"></h5>
+                    <div class="flex-shrink-0">
+                        <button id="btnOpenUpload" class="btn btn-danger add-btn" type="button">
+                            <i class="ri-upload-2-line align-bottom me-1"></i>上傳
+                        </button>
+                        <button id="@(ui.IdBtnBatchDelete)" class="btn btn-soft-danger me-1" type="button"
+                                style="display:none;">
+                            <i class="ri-delete-bin-2-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" id="globalSearchInput"
+                                       class="form-control search bg-light border-light" placeholder="搜尋表格內容">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" id="keywordInput" class="form-control search bg-light border-light"
+                                       placeholder="搜尋關鍵字">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData()">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>篩選
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-body">
+                <div class="table-responsive table-card mb-4">
+                    <table class="table align-middle table-nowrap mb-0" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="checkAll" />
+                                    </div>
+                                </th>
+                                <th style="width:110px;">Action</th>
+                                <th style="width:40px;">項次</th>
+                                <th style="min-width:200px;" class="sort" data-sort="FileName">檔案名稱</th>
+                                <th style="min-width:150px;" class="sort" data-sort="TransferMappingCode">匯入規則</th>
+                                <th style="min-width:100px;" class="sort" data-sort="QuotationQty">報價數量</th>
+                                <th style="min-width:120px;" class="sort" data-sort="CustomerName">客戶名稱</th>
+                                <th style="width:100px;" class="sort" data-sort="ProcessStatus">狀態</th>
+                                <th style="width:120px;" class="sort" data-sort="CreatedAtText">建立日期</th>
+                                <th style="width:120px;" class="sort" data-sort="UpdatedAtText">更新日期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="import-file-list-data"></tbody>
+                    </table>
+                    <div class="noresult" style="display:none;">
+                        <div class="text-center">
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>
+                </div>
+                <!-- 分頁 -->
+                <div class="d-flex justify-content-end px-3 pb-2" id="paginationContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Modal：刪除確認 ═══ -->
+<div class="modal fade flip" id="@(ui.ModalD.Id)" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-5 text-center">
+                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop"
+                           colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                <div class="mt-4 text-center">
+                    <h4>確定要刪除此筆資料？</h4>
+                    <p class="text-muted"><small>刪除後將無法復原。</small></p>
+                    <div class="hstack gap-2 justify-content-center">
+                        <button class="btn btn-link link-success fw-medium text-decoration-none"
+                                data-bs-dismiss="modal">
+                            <i class="ri-close-line me-1 align-middle"></i>取消
+                        </button>
+                        <button class="btn btn-danger" id="@(ui.ModalD.IdBtnOk)">確定刪除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Modal：上傳檔案 ═══ -->
+<div class="modal fade" id="@(ui.ModalU.Id)" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-primary-subtle">
+                <h5 class="modal-title">
+                    <i class="ri-upload-2-line me-2"></i>上傳檔案
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- FilePond 上傳區 -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">選取檔案（可多選）</label>
+                    <input type="file" id="@(ui.PartialIFC.ViewId)" multiple />
+                    <div class="form-text text-muted">支援格式：xlsx、xls；可一次選取多個檔案。</div>
+                </div>
+
+                <!-- 設定表格（有已上傳檔案才顯示） -->
+                <div id="uploadConfigSection" style="display:none;">
+                    <hr class="my-3" />
+                    <h6 class="mb-3 fw-semibold">
+                        <i class="ri-settings-3-line me-1"></i>設定匯入參數
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle" id="uploadConfigTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:50px;"></th>
+                                    <th style="min-width:200px;">檔案名稱</th>
+                                    <th style="min-width:200px;" class="required">匯入設定規則</th>
+                                    <th style="width:200px;" class="required">客戶代碼</th>
+                                    <th style="width:100px;">報價數量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploadConfigBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                <button type="button" class="btn btn-primary" id="btnSaveUpload" disabled>
+                    <i class="ri-save-line me-1"></i>儲存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    @await Html.PartialAsync("_ImportFilepondCommon", ui.PartialIFC)
+    @await Html.PartialAsync("_CrudCommonScripts")
+
+    <style>
+        #dataTable .sort.asc::after {
+            opacity: 1;
+        }
+
+        #dataTable .sort.desc::before {
+            opacity: 1;
+        }
+    </style>
+
+    @* ══════════════════════════════════════════════════════════════════════
+        全域設定：常數、狀態、工具函式、_CrudCommonScripts Hooks
+        ══════════════════════════════════════════════════════════════════════ *@
+    <script>
+        // ── FilePond 建立 ──────────────────────────────────────────────────────
+        var pond = FilePond.create(document.getElementById('@(ui.PartialIFC.ViewId)'), $.extend({}, optionsFilePondCreate, {
+            acceptedFileTypes: [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+            ],
+        }));
+
+        // ── 欄位名稱（nameof 強型別，EsFileTransferUploadVM） ─────────────────
+        var EftuM = {
+            Id: '@nameof(EsFileTransferUploadVM.Id)',
+            No: '@nameof(EsFileTransferUploadVM.No)',
+            FileName: '@nameof(EsFileTransferUploadVM.FileName)',
+            TransferMappingCode: '@nameof(EsFileTransferUploadVM.TransferMappingCode)',
+            CustomerCode: '@nameof(EsFileTransferUploadVM.CustomerCode)',
+            CustomerName: '@nameof(EsFileTransferUploadVM.CustomerName)',
+            QuotationQty: '@nameof(EsFileTransferUploadVM.QuotationQty)',
+            ProcessStatus: '@nameof(EsFileTransferUploadVM.ProcessStatus)',
+            ProcessStatusText: '@nameof(EsFileTransferUploadVM.ProcessStatusText)',
+            CreatedAtText: '@nameof(EsFileTransferUploadVM.CreatedAtText)',
+            UpdatedAtText: '@nameof(EsFileTransferUploadVM.UpdatedAtText)',
+            UploadId: '@nameof(EsFileTransferUploadVM.UploadId)',
+            EsFileTransferMappingId: '@nameof(EsFileTransferUploadVM.EsFileTransferMappingId)',
+        };
+
+        // ── 狀態對應設定（EsFileTransferUploadProcessStatusEnum） ──────────────
+        var statusConfig = {
+            1: { text: '未轉檔', cls: 'badge bg-secondary-subtle text-secondary' },
+            2: { text: '已轉檔', cls: 'badge bg-info-subtle text-info' },
+            3: { text: '未查料', cls: 'badge bg-warning-subtle text-warning' },
+            4: { text: '已查料', cls: 'badge bg-primary-subtle text-primary' },
+            5: { text: '已查價', cls: 'badge bg-success-subtle text-success' },
+        };
+
+        // ── 選項快取 ───────────────────────────────────────────────────────────
+        var optionData = { TransferMappings: [], Customers: [] };
+
+        // ── 查詢狀態（分頁 / 排序 / 篩選） ────────────────────────────────────
+        var queryState = { page: 1, pageSize: 20, total: 0, sortField: EftuM.CreatedAtText, sortDir: 'desc', keyword: '' };
+
+        // ── 橋接 _CrudCommonScripts ────────────────────────────────────────────
+        function loadDatas() { loadList(1); }
+
+        // ── DOM ───────────────────────────────────────────────────────────────
+        var dom = {
+            uploadModal: $('#@(ui.ModalU.Id)'),
+        };
+
+        // ── 工具函式 ───────────────────────────────────────────────────────────
+        function showSysError() {
+            Swal.fire({ icon: 'error', title: pageConfig.messages.systemError, confirmButtonText: pageConfig.messages.confirm });
+        }
+    </script>
+    @* ══════════════════════════════════════════════════════════════════════
+         _CrudCommonScripts
+        ══════════════════════════════════════════════════════════════════════ *@
+    <script>
+        // ── API URL ────────────────────────────────────────────────────────────
+        var pageUrls = {
+            GetPageList: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/GetPageList',
+            GetOptionData: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/GetOptionData',
+            Delete: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/Delete',
+            SaveUpload: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/SaveUpload',
+        };
+
+        // ── Hooks（供 _CrudCommonScripts 呼叫） ─────────────────────────────────
+
+        /** initDropdownList hook：載入下拉選項 */
+        function initDropdownList() { loadOptionData(); }
+
+        /** onSearchData hook：同步關鍵字至 queryState */
+        function onSearchData() {
+            queryState.keyword = $('#keywordInput').val().trim();
+        }
+
+        /** onDocumentReady hook：麵包屑、globalSearch 修正、上傳 Modal 初始化 */
+        function onDocumentReady() {
+            var pTitle = '@(Html.Raw(ViewBag.pTitle))';
+            var pageTitle = '@(Html.Raw(ViewBag.pageTitle))';
+            $('#header-pTitle').text(pTitle);
+            var bElList = [];
+            if (pageTitle) bElList.push('<li class="breadcrumb-item"><a href="javascript: void(0);">' + pageTitle + '</a></li>');
+            bElList.push('<li class="breadcrumb-item active">' + pTitle + '</li>');
+            $('#_page_title_row .breadcrumb').html(bElList.join(''));
+
+            // 修正 globalSearchInput：指向本頁 tbody（_CrudCommonScripts 預設為 #data-list-data）
+            $('#globalSearchInput').off('input').on('input', function () {
+                const keyword = $(this).val().toLowerCase();
+                $('#import-file-list-data tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(keyword));
+                });
+            });
+
+            initUploadModal();
+        }
+
+        $('#@(ui.IdBtnBatchDelete)').on('click', deleteMultiple);
+    </script>
+    @* ══════════════════════════════════════════════════════════════════════
+         全域設定：常數、狀態、工具函式、_CrudCommonScripts Hooks
+        ══════════════════════════════════════════════════════════════════════ *@
+    <script>
+        // ── 載入下拉選項 ───────────────────────────────────────────────────────
+        function loadOptionData() {
+            $.ajax({
+                url: pageUrls.GetOptionData,
+                type: 'GET',
+                success: function (res) {
+                    if (!res.Success) return;
+                    optionData.TransferMappings = res.Data.TransferMappings || [];
+                    optionData.Customers = res.Data.Customers || [];
+                },
+            });
+        }
+
+        // ── 清單載入 ───────────────────────────────────────────────────────────
+        function loadList(page) {
+            if (page) queryState.page = page;
+            showLoader();
+            $.ajax({
+                url: pageUrls.GetPageList,
+                type: 'GET',
+                data: {
+                    Page: queryState.page,
+                    PageSize: queryState.pageSize,
+                    KeywordLike: queryState.keyword,
+                    SortField: queryState.sortField,
+                    SortDir: queryState.sortDir,
+                },
+                success: function (res) {
+                    if (!res.Success) { showSysError(); return; }
+                    renderList(res.Data.Data || []);
+                    renderPagination(res.Data.Total);
+                },
+                error: function () { showSysError(); },
+                complete: function () { hideLoader(); },
+            });
+        }
+
+        // ── 分頁渲染 ───────────────────────────────────────────────────────────
+        function renderPagination(total) {
+            queryState.total = total;
+            var totalPages = Math.ceil(total / queryState.pageSize) || 1;
+            var $container = $('#paginationContainer');
+            $container.empty();
+            if (totalPages <= 1) return;
+
+            var html = '<ul class="pagination mb-0">';
+            html += '<li class="page-item ' + (queryState.page <= 1 ? 'disabled' : '') + '">';
+            html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + Math.max(1, queryState.page - 1) + ')">上一頁</a></li>';
+
+            var maxPages = 5;
+            var startPage = Math.max(1, queryState.page - Math.floor(maxPages / 2));
+            var endPage = Math.min(totalPages, startPage + maxPages - 1);
+            startPage = Math.max(1, endPage - maxPages + 1);
+
+            if (startPage > 1) {
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadList(1)">1</a></li>';
+                if (startPage > 2) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+            for (var i = startPage; i <= endPage; i++) {
+                html += '<li class="page-item ' + (i === queryState.page ? 'active' : '') + '">';
+                html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + i + ')">' + i + '</a></li>';
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadList(' + totalPages + ')">' + totalPages + '</a></li>';
+            }
+            html += '<li class="page-item ' + (queryState.page >= totalPages ? 'disabled' : '') + '">';
+            html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + Math.min(totalPages, queryState.page + 1) + ')">下一頁</a></li>';
+            html += '</ul>';
+            $container.html(html);
+        }
+
+        // ── 清單渲染 ───────────────────────────────────────────────────────────
+        function renderList(list) {
+            var $tbody = $('#import-file-list-data');
+            $tbody.empty();
+            if (!list.length) {
+                $('.noresult').show();
+                return;
+            }
+            $('.noresult').hide();
+            list.forEach(function (r) {
+                $tbody.append(buildRow(r));
+            });
+
+            // 更新排序欄位視覺指示
+            $('#dataTable .sort').each(function () {
+                $(this).removeClass('asc desc');
+                if ($(this).data('sort') === queryState.sortField) {
+                    $(this).addClass(queryState.sortDir);
+                }
+            });
+        }
+
+        function buildRow(r) {
+            var sc = statusConfig[r[EftuM.ProcessStatus]] || { text: r[EftuM.ProcessStatusText], cls: 'badge bg-secondary-subtle text-secondary' };
+
+            return `
+                <tr data-id="${r[EftuM.Id]}">
+                    <th scope="row">
+                        <div class="form-check">
+                            <input class="form-check-input row-check" type="checkbox" value="option1">
+                        </div>
+                    </th>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-soft-secondary btn-sm" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ri-more-fill align-middle"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item remove-item-btn"
+                                        data-id="${r[EftuM.Id]}" data-bs-toggle="modal" href="#@(ui.ModalD.Id)">
+                                    <i class="ri-delete-bin-fill align-bottom me-2"></i>刪除
+                                </a></li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td class="text-muted">${r[EftuM.No]}</td>
+                    <td class="fw-semibold">${escapeHtml(r[EftuM.FileName])}</td>
+                    <td>${escapeHtml(r[EftuM.TransferMappingCode] || '')}</td>
+                    <td class="text-center">${r[EftuM.QuotationQty] || 0}</td>
+                    <td>${escapeHtml(r[EftuM.CustomerName] || '')}</td>
+                    <td class="text-center"><span class="${sc.cls}">${escapeHtml(sc.text)}</span></td>
+                    <td class="text-muted">${escapeHtml(r[EftuM.CreatedAtText])}</td>
+                    <td class="text-muted">${escapeHtml(r[EftuM.UpdatedAtText])}</td>
+                </tr>`;
+        }
+
+    </script>
+
+    @* ══════════════════════════════════════════════════════════════════════
+         上傳 Modal 相關
+        ══════════════════════════════════════════════════════════════════════ *@
+    <script>
+        /** 初始化上傳 Modal：掛載 FilePond 事件、btnSaveUpload、Modal 開關 */
+        function initUploadModal() {
+            // FilePond processfile：有檔案上傳完成 → 同步設定表格列
+            pond.on('processfile', function (err, file) {
+                if (err) return;
+                syncUploadConfigRow(file.serverId, file.filename);
+                refreshUploadConfigSection();
+                refreshBtnSaveUpload();
+            });
+
+            // FilePond removefile：移除已上傳列
+            pond.on('removefile', function (err, file) {
+                $('#uploadConfigBody').find('[data-upload-id="' + file.serverId + '"]').remove();
+                refreshUploadConfigSection();
+                refreshBtnSaveUpload();
+            });
+
+            // FilePond processfilestart：上傳中，禁用儲存
+            pond.on('processfilestart', function () {
+                $('#btnSaveUpload').prop('disabled', true);
+            });
+
+            // 打開 Modal 時清空
+            dom.uploadModal.on('show.bs.modal', function () {
+                pond.removeFiles({ revert: false });
+                $('#uploadConfigBody').empty();
+                $('#uploadConfigSection').hide();
+                $('#btnSaveUpload').prop('disabled', true);
+            });
+
+            // 儲存按鈕
+            $('#btnSaveUpload').on('click', function () {
+                var payload = buildSaveUploadPayload();
+                if (!payload) return;
+
+                showLoader();
+                $.ajax({
+                    url: pageUrls.SaveUpload,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (res) {
+                        if (!res.Success) {
+                            Swal.fire({ icon: 'error', title: '儲存失敗', text: res.Message, confirmButtonText: '確定' });
+                            return;
+                        }
+                        bootstrap.Modal.getInstance(dom.uploadModal[0]).hide();
+                        Swal.fire({ icon: 'success', title: '上傳成功', timer: 1200, showConfirmButton: false })
+                            .then(function () { loadList(1); });
+                    },
+                    error: function () { showSysError(); },
+                    complete: function () { hideLoader(); },
+                });
+            });
+
+            // 開啟 Modal 按鈕
+            $('#btnOpenUpload').on('click', function () {
+                bootstrap.Modal.getOrCreateInstance(dom.uploadModal[0]).show();
+            });
+        }
+
+        /** 同步設定表格列（processfile 後呼叫） */
+        function syncUploadConfigRow(uploadId, fileName) {
+            var $tbody = $('#uploadConfigBody');
+            var $existing = $tbody.find('[data-upload-id="' + uploadId + '"]');
+            if ($existing.length) return;
+
+            var $row = $(buildUploadConfigRow(uploadId, fileName));
+
+            $row.find('.up-import-rule').each(function () {
+                initMappingSelect2($(this));
+            });
+            $row.find('.up-customer-code').each(function () {
+                initCustomerSelect2($(this));
+            });
+
+            $tbody.append($row);
+        }
+
+        /** 顯示/隱藏設定表格區塊 */
+        function refreshUploadConfigSection() {
+            var hasRows = $('#uploadConfigBody tr').length > 0;
+            $('#uploadConfigSection').toggle(hasRows);
+        }
+
+        /** 是否可儲存（所有列必填欄位皆有值） */
+        function refreshBtnSaveUpload() {
+            var allReady = true;
+            $('#uploadConfigBody tr').each(function () {
+                var rule = $(this).find('.up-import-rule').val();
+                var isBom = $(this).attr('data-is-bom-rule') === 'true';
+                if (!rule) { allReady = false; return false; }
+                if (isBom && !$(this).find('.up-customer-code').val()) { allReady = false; return false; }
+            });
+            var hasRows = $('#uploadConfigBody tr').length > 0;
+            $('#btnSaveUpload').prop('disabled', !(hasRows && allReady));
+        }
+
+        /** 建立上傳設定表格單列 */
+        function buildUploadConfigRow(uploadId, fileName) {
+            return `
+                    <tr data-upload-id="${escapeHtml(uploadId)}">
+                        <td><button type="button" class="btn btn-sm btn-soft-danger btn-remove-row"><i class="ri-delete-bin-line"></i></button></td>
+                        <td class="small fw-semibold">${escapeHtml(fileName)}</td>
+                        <td><select class="form-select up-import-rule" required></select></td>
+                        <td><div class="cell-bom-extra"><select class="form-select up-customer-code" required></select></div></td>
+                        <td><div class="cell-bom-extra"><input type="number" class="form-control up-quotation-qty websoft-positive-int" min="1" value="1" /></div></td>
+                    </tr>`;
+        }
+
+        /** 建立客戶個代碼 select2（顯示名稱，値為 CustomerCode） */
+        function initCustomerSelect2($sel) {
+            var data = [{ id: '', text: '請選擇' }].concat(
+                optionData.Customers.map(function (c) { return { id: c.Value, text: c.Text }; })
+            );
+            $sel.select2({ width: '100%', data: data, dropdownParent: dom.uploadModal });
+            $sel.on('change', function () { refreshBtnSaveUpload(); });
+        }
+
+        /** 建立匯入規則 select2（顯示 Text，值為 Value） */
+        function initMappingSelect2($sel) {
+            var data = [{ id: '', text: '請選擇' }].concat(
+                optionData.TransferMappings.map(function (m) { return { id: m.Value, text: m.Text }; })
+            );
+            $sel.select2({ width: '100%', data: data, dropdownParent: dom.uploadModal });
+            $sel.on('change', function () {
+                var val = $(this).val() || '';
+                var mapping = optionData.TransferMappings.find(function (m) { return m.Value === val; });
+                var isBom = mapping ? !!mapping.IsBomFileRule : false;
+                var $tr = $(this).closest('tr');
+                $tr.attr('data-is-bom-rule', isBom ? 'true' : 'false');
+                $tr.find('.cell-bom-extra').toggle(isBom);
+                if (!isBom) { $tr.find('.up-customer-code').val(null).trigger('change'); }
+                refreshBtnSaveUpload();
+            });
+        }
+
+        /** 刪除設定列（同時 revert FilePond） */
+        $(document).on('click', '.btn-remove-row', function () {
+            var $tr = $(this).closest('tr');
+            var uploadId = $tr.data('upload-id');
+            pond.getFiles().forEach(function (f) {
+                if (f.serverId === uploadId) { pond.removeFile(f.id, { revert: true }); }
+            });
+            $tr.remove();
+            refreshUploadConfigSection();
+            refreshBtnSaveUpload();
+        });
+
+        /** 收集 payload 給 SaveUpload */
+        function buildSaveUploadPayload() {
+            var payload = [];
+            var valid = true;
+
+            $('#uploadConfigBody tr').each(function () {
+                var uploadId = $(this).data('upload-id') || '';
+                var fileName = $(this).find('td:first').text().trim();
+                var rule = $(this).find('.up-import-rule').val() || '';
+                var isBom = $(this).attr('data-is-bom-rule') === 'true';
+                var customer = isBom ? ($(this).find('.up-customer-code').val() || '') : '';
+                var qty = isBom ? (parseInt($(this).find('.up-quotation-qty').val()) || 1) : 0;
+
+                if (!rule || (isBom && !customer)) { valid = false; return false; }
+
+                var item = {};
+                item[EftuM.UploadId] = uploadId;
+                item[EftuM.FileName] = fileName;
+                item[EftuM.EsFileTransferMappingId] = rule;
+                item[EftuM.CustomerCode] = customer;
+                item[EftuM.QuotationQty] = qty;
+                payload.push(item);
+            });
+
+            if (!valid) {
+                Swal.fire({ icon: 'warning', title: '請填寫所有必填欄位', confirmButtonText: '確定' });
+                return null;
+            }
+            if (!payload.length) {
+                Swal.fire({ icon: 'warning', title: '請先上傳檔案', confirmButtonText: '確定' });
+                return null;
+            }
+            return payload;
+        }
+    </script>
+
+}

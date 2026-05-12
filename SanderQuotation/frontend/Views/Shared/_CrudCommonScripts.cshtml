@@ -420,10 +420,9 @@
         ids_array = [];
         var items = document.querySelectorAll('.form-check [value=option1]');
         for (var i = 0; i < items.length; i++) {
-            if (items[i].checked == true) {
+            if (items[i].checked == true) {             
                 var trNode = items[i].parentNode.parentNode.parentNode;
-                var tdDataId = trNode.querySelector("th [data-id]");
-                var id = tdDataId.getAttribute("data-id");
+                var id = trNode.getAttribute("data-id");
                 ids_array.push(id);
             }
         }

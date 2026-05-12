@@ -7,43 +7,48 @@ namespace Business.DomainModel
         public string Status { get; set; }
 
         /// <summary>
-        /// 系統編�? (?��??��?)
+        /// 蝟餌絞蝺刻? (?芸??Ｙ?)
         /// </summary>
         public string TransferMappingCode { set; get; }
 
         /// <summary>
-        /// ?�入範本檔�??�稱
+        /// ?臬蝭瑼??迂
         /// </summary>
         public string ExampleFileName { set; get; }
 
         /// <summary>
-        /// ?�入範本檔�?類�?
+        /// ?臬蝭瑼?憿?
         /// </summary>
         public int ExampleFileType { set; get; }
 
         /// <summary>
-        /// NAS 檔�?路�?
+        /// NAS 瑼?頝臬?
         /// </summary>
         public string SrcNasFilePath { set; get; }
 
         /// <summary>
-        /// ?�註
+        /// ?酉
         /// </summary>
         public string? Description { set; get; }
 
         /// <summary>
-        /// 實�?檔�??�稱
+        /// 撖阡?瑼??迂
         /// </summary>
         public string? FileName { set; get; }
 
         /// <summary>
-        /// 對�?資�?表�??��??��?，由 EsFileTransferMappingColumn JOIN ?��?�?
+        /// 撠?鞈?銵剁?????嚗 EsFileTransferMappingColumn JOIN ??嚗?
         /// </summary>
         public string? MappingTables { get; set; }
 
         /// <summary>
-        /// 欄�?對�?清單
+        /// 甈?撠?皜
         /// </summary>
         public List<EsFileTransferMappingColumnDM> Columns { set; get; } = new();
+
+        /// <summary>
+        /// 是否為 BOM 檔案規則（EsFileTransferMappingColumn 下有 TargetTableName = 'bomfilecontent'）
+        /// </summary>
+        public bool IsBomFileRule { get; set; }
     }
 }

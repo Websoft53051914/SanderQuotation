@@ -1,16 +1,15 @@
 using CommonClass.Model;
 using Const;
-using Core.Utility.Base.Data;
 using Core.Utility.Enums;
-using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
+using System.Text;
 
 namespace Data.DataAccess.Impl
 {
-    public class EsFileTransferMappingDaoImpl : BaseImpl<EsFileTransferMappingEntity>, IEsFileTransferMappingDAO
+    public class EsFileTransferMappingDaoImpl : Core.Utility.Base.Data.GuidId.BaseImpl<EsFileTransferMappingEntity>, IEsFileTransferMappingDAO
     {
         public PageResult<EsFileTransferMappingDTO> GetPageList(PageEntity pageEntity, EsFileTransferMappingDTO condition)
         {
@@ -48,21 +47,21 @@ WHERE 1=1";
             string whereSQL = string.Empty;
             var paras = new Dictionary<string, object>();
 
-//            if (!string.IsNullOrWhiteSpace(query.Keyword1))
-//            {
-//                whereSQL += $@" AND (
-//    m.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} LIKE @Keyword1
-//    OR m.{nameof(EsFileTransferMappingEntity.ExampleFileType)} LIKE @Keyword1
-//    OR m.{nameof(EsFileTransferMappingEntity.SrcNasFilePath)} LIKE @Keyword1
-//    OR m.{nameof(EsFileTransferMappingEntity.Description)} LIKE @Keyword1
-//    OR EXISTS (
-//        SELECT 1 FROM EsFileTransferMappingColumn c
-//        WHERE c.TransferMappingCode = m.TransferMappingCode
-//          AND c.{nameof(EsFileTransferMappingColumnEntity.TargetTableName)} LIKE @Keyword1
-//    )
-//) ";
-//                paras.Add("@Keyword1", $"%{query.Keyword1}%");
-//            }
+            //            if (!string.IsNullOrWhiteSpace(query.Keyword1))
+            //            {
+            //                whereSQL += $@" AND (
+            //    m.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} LIKE @Keyword1
+            //    OR m.{nameof(EsFileTransferMappingEntity.ExampleFileType)} LIKE @Keyword1
+            //    OR m.{nameof(EsFileTransferMappingEntity.SrcNasFilePath)} LIKE @Keyword1
+            //    OR m.{nameof(EsFileTransferMappingEntity.Description)} LIKE @Keyword1
+            //    OR EXISTS (
+            //        SELECT 1 FROM EsFileTransferMappingColumn c
+            //        WHERE c.TransferMappingCode = m.TransferMappingCode
+            //          AND c.{nameof(EsFileTransferMappingColumnEntity.TargetTableName)} LIKE @Keyword1
+            //    )
+            //) ";
+            //                paras.Add("@Keyword1", $"%{query.Keyword1}%");
+            //            }
 
             if (!string.IsNullOrWhiteSpace(query.Status))
             {
@@ -109,6 +108,45 @@ WHERE 1=1";
 FROM EsFileTransferMapping m
 WHERE 1=1 {whereSQL}
 ORDER BY m.{nameof(EsFileTransferMappingEntity.SortNo)}";
+
+            return DbHelper.FindList<EsFileTransferMappingDTO>(sql, paras);
+        }
+
+        /// <summary>
+        /// 取得所有匯入規則並包含 IsBomFileRule 標記
+        /// （判斷依據：EsFileTransferMappingColumn 下是否存在 TargetTableName == 'bomfilecontent'）
+        /// </summary>
+        public List<EsFileTransferMappingDTO> GetListWithBomFlag(SearchVO searchVO)
+        {
+            StringBuilder condition = new();
+            Dictionary<string, object> paras = [];
+
+            condition.Append("AND m.Status = @Status ");
+            paras.Add("@Status", (int)Status.Enable);
+
+            if (!string.IsNullOrWhiteSpace(searchVO.TransferMappingCodeEq))
+            {
+                condition.Append($"AND m.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} = @{nameof(searchVO.TransferMappingCodeEq)} ");
+                paras.Add(nameof(searchVO.TransferMappingCodeEq), $"{searchVO.TransferMappingCodeEq}");
+            }
+            if (searchVO.IdEq.HasValue)
+            {
+                condition.Append($"AND m.Id = @{nameof(searchVO.IdEq)} ");
+                paras.Add(nameof(searchVO.IdEq), searchVO.IdEq.Value);
+            }
+
+            string sql = $@"
+SELECT m.*,
+    CASE WHEN EXISTS (
+        SELECT 1
+        FROM EsFileTransferMappingColumn c
+        WHERE c.TransferMappingCode = m.TransferMappingCode
+          AND LOWER(c.TargetTableName) = 'bomfilecontent'
+    ) THEN 1 ELSE 0 END AS IsBomFileRule
+FROM EsFileTransferMapping m
+WHERE 1 = 1
+{condition}
+ORDER BY m.TransferMappingCode ";
 
             return DbHelper.FindList<EsFileTransferMappingDTO>(sql, paras);
         }

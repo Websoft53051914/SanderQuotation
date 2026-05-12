@@ -2,8 +2,6 @@
 using Core.Utility.Helper.DB;
 using Data.Common.SopDb;
 using Data.DataAccess.Dao;
-using Data.DataAccess.DTO;
-using Data.DataAccess.Entity;
 using Data.DataAccess.Impl;
 using Data.UnitOfWork;
 using Microsoft.Extensions.Configuration;
@@ -64,6 +62,8 @@ namespace Data.Register
                 .RegisterType<IESDbTransferMappingColumnDAO, ESDbTransferMappingColumnDaoImpl>()
                 .RegisterType<IEsFileTransferMappingDAO, EsFileTransferMappingDaoImpl>()
                 .RegisterType<IEsFileTransferMappingColumnDAO, EsFileTransferMappingColumnDaoImpl>()
+                .RegisterType<IEsFileTransferUploadDAO, EsFileTransferUploadDaoImpl>()
+                .RegisterType<IReportItemCustomerDAO, ReportItemCustomerDaoImpl>()
 
                 .RegisterType<IEsTransferErrorLogDAO, EsTransferErrorLogDaoImpl>()
                 .RegisterType<IEsScheduleCycleDAO, EsScheduleCycleDaoImpl>()
