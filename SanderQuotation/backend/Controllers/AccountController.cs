@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using ViewModel;
 using static Const.Enums;
 using backend.Common.Attribute;
+using Core.Utility.Extensions;
 
 namespace backend.Controllers
 {
@@ -195,7 +196,7 @@ namespace backend.Controllers
             {
                 GetAccountBL().Enable(id, enable);
                 LogSuccess(id, LogAction.Edit);
-                return JsonSuccess(enable == 1 ? "啟用成功" : "停用成功");
+                return JsonSuccess(enable == AccountStatusEnum.Enabled.ToInt() ? "啟用成功" : "停用成功");
             }
             catch (Exception ex)
             {

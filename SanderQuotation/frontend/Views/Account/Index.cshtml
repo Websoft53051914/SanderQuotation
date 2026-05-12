@@ -158,28 +158,28 @@
                         <div class="col-lg-6">
                             <div>
                                 <label for="MemberAccount" class="form-label required">帳號</label>
-                                <input type="text" name="MemberAccount" id="MemberAccount" class="form-control" placeholder="請輸入帳號" required />
+                                <input type="text" name="MemberAccount" id="MemberAccount" class="form-control" placeholder="請輸入帳號" required maxlength="100"/>
                                 <div class="invalid-feedback">請輸入帳號</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="AccountName" class="form-label required">姓名</label>
-                                <input type="text" name="AccountName" id="AccountName" class="form-control" placeholder="請輸入姓名" required />
+                                <input type="text" name="AccountName" id="AccountName" class="form-control" placeholder="請輸入姓名" required maxlength="100"/>
                                 <div class="invalid-feedback">請輸入姓名</div>
                             </div>
                         </div>
                         <div class="col-lg-12">
                             <div>
                                 <label for="AccountEmail" class="form-label">Email</label>
-                                <input type="email" name="AccountEmail" id="AccountEmail" class="form-control" placeholder="請輸入Email" pattern="[a-z0-9._%+-]+@@[a-z0-9.-]+\.[a-z]{2,4}$"/>
+                                <input type="email" name="AccountEmail" id="AccountEmail" class="form-control" placeholder="請輸入Email" pattern="[a-z0-9._%+-]+@@[a-z0-9.-]+\.[a-z]{2,4}$" maxlength="100"/>
                                 <div class="invalid-feedback">Email格式錯誤</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="MemberPWD" class="form-label required">密碼</label>
-                                <input type="password" name="MemberPWD" id="MemberPWD" class="form-control" placeholder="請輸入密碼" required />
+                                <input type="password" name="MemberPWD" id="MemberPWD" class="form-control" placeholder="請輸入密碼" required maxlength="100"/>
                                 <small class="text-muted" id="pwd-edit-hint" style="display:none;">不輸入則保持原密碼</small>
                                 <div class="invalid-feedback">請輸入密碼</div>
                             </div>
@@ -187,7 +187,7 @@
                         <div class="col-lg-6">
                             <div>
                                 <label for="ConfirmPassword" class="form-label required">確認密碼</label>
-                                <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="請再次輸入密碼" required />
+                                <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="請再次輸入密碼" required maxlength="100"/>
                                 <div class="invalid-feedback">請輸入密碼</div>
                             </div>
                         </div>
@@ -283,8 +283,8 @@
 
             rows.forEach(data => {
                 const statusBadge = data.AccountStatus === '@AccountStatusEnum.Enabled.ToInt()' ?
-                    '<span class="badge bg-success-subtle text-success">啟用</span>' : 
-                    '<span class="badge bg-secondary-subtle text-secondary">停用</span>';
+                    '<span class="badge bg-success-subtle text-success">@AccountStatusEnum.Enabled.GetDescription().ToHtmlString()</span>' :
+                    '<span class="badge bg-secondary-subtle text-secondary">@AccountStatusEnum.Disabled.GetDescription().ToHtmlString()</span>';
 
                 tbody.append(`
                     <tr data-id="${data.Id}">

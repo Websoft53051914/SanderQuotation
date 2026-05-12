@@ -108,7 +108,7 @@ order by  TBSF.FuncClassId ,TBSF.Sequence,TBSFD.Sequence
 
             paras.Add("Memo", "%" + dto.Memo + "%");
             paras.Add("RoleName", "%" + dto.RoleName + "%");
-            paras.Add("Status", "%" + dto.Status + "%");
+            paras.Add("Status", dto.Status);
 
             string whereSQL = "";
 
@@ -119,7 +119,7 @@ order by  TBSF.FuncClassId ,TBSF.Sequence,TBSFD.Sequence
                 whereSQL += @" and RoleName LIKE @RoleName  ";
 
             if (dto.Status!=null)
-                whereSQL += @" and Status LIKE @Status ";
+                whereSQL += @" and Status = @Status ";
 
 
 
@@ -131,7 +131,7 @@ from
 TB_SysRole a 
 
 where 1=1
-and status!=9
+and status!={StatusEnum.Cancel.ToInt()}
 
 {whereSQL}
 
@@ -158,7 +158,7 @@ and status!=9
  where 1=1 
 ";
 
-            return DbHelper.FindPageList<SysRoleDTO>(qrySQL, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, " id ");
+            return DbHelper.FindPageList<SysRoleDTO>(qrySQL, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, $"{pageEntity.Sort} {pageEntity.Asc}, id ");
         }
 
         public SysRoleDTO GetInfo(Guid id)

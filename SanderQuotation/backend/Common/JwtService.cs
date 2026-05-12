@@ -20,6 +20,7 @@ public class JwtService
         {
             new Claim("UserAccount", userInfo["UserAccount"]),
             new Claim("UserName", userInfo["UserName"]),
+            new Claim("PermissionCodeList", userInfo["PermissionCodeList"])
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

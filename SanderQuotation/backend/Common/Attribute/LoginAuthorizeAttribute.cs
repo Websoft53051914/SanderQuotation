@@ -1,9 +1,6 @@
-﻿using Business.BusinessLogic;
-using Core.Utility.Helper.DB;
-using Data.DataAccess.Dao;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using static Const.Enums;
 
 namespace backend.Common.Attribute
@@ -20,18 +17,12 @@ namespace backend.Common.Attribute
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            return;
-
-
             // 沒有設定任何需求權限時，直接放行
             if (functions == null || !functions.Any())
                 return;
 
-            // 取得登入帳號（DEBUG 時固定為 admin）
+            // 取得登入帳號
             string userAccount = context.HttpContext.User.FindFirst("UserAccount")?.Value ?? string.Empty;
-#if DEBUG
-            userAccount = "admin";
-#endif
 
             if (string.IsNullOrEmpty(userAccount))
             {
@@ -39,19 +30,14 @@ namespace backend.Common.Attribute
                 return;
             }
 
-            // 透過 DI 取得 IUnitOfWork，查詢該帳號擁有的 PermissionCode 清單
-            var unitOfWork = context.HttpContext.RequestServices.GetService<IUnitOfWork>();
-            if (unitOfWork == null)
+            List<string> permissionCodeList = new List<string>();
+            if (context.HttpContext.User.FindFirst("PermissionCodeList") != null)
             {
-                Deny(context);
-                return;
+                permissionCodeList = JsonConvert.DeserializeObject<List<string>>(context.HttpContext.User.FindFirst("PermissionCodeList").Value) ?? new List<string>();
             }
 
-            var dao = unitOfWork.Repository<ITB_SysFuncDAO>();
-            List<int> userPermissions = dao.FindPermissionCodesByAccount(userAccount);
-
             // 只要有任一要求的 FuncID 存在於該帳號的 PermissionCode 清單中，即視為授權通過
-            bool hasPermission = functions.Any(f => userPermissions.Contains(f));
+            bool hasPermission = functions.Any(f => permissionCodeList.Contains(f.ToString()));
             if (!hasPermission)
                 Deny(context);
         }

@@ -14,5 +14,11 @@ namespace Data.DataAccess.Dao
     {
         void DeleteByRoleId(Guid id);
         List<TB_SysRoleFuncDetailEntity> FindListByRoleId(Guid id);
+        /// <summary>
+        /// 根據帳號查詢權限資料
+        /// </summary>
+        /// <param name="memberAccount">帳號</param>
+        /// <returns></returns>
+        List<TB_SysFuncDetailEntity> FindListByMemberAccount(string memberAccount);
     }
 }

@@ -125,7 +125,18 @@ namespace Const
             ProcessSettingManagement_Create = 990192,
             ProcessSettingManagement_Edit =   990193,
             ProcessSettingManagement_Delete = 990194,
-            
+
+            //檔案轉入資料表對應設定
+            TableExcel_View = 990201,
+            TableExcel_Create = 990202,
+            TableExcel_Edit = 990203,
+            TableExcel_Delete = 990204,
+
+            HistoryFile_View = 990211,
+            HistoryFile_Create = 990212,
+            HistoryFile_Edit = 990213,
+            HistoryFile_Delete = 990214,
+
             //開發人員依此使用值，避免一個value被兩個功能使用，導致開啟一個權限卻可以使用兩個功能
             // Hugh 20000 LEO 30000 Jerri 40000 Jordan 50000 Ray 60000
 
@@ -137,13 +148,13 @@ namespace Const
         /// </summary>
         public enum StatusEnum
         {
-            [Description("Disable")]
+            [Description("停用")]
             /// <summary>
             /// 停用
             /// </summary>
             Disabled = 0,
 
-            [Description("Enable")]
+            [Description("啟用")]
             /// <summary>
             /// 啟用
             /// </summary>

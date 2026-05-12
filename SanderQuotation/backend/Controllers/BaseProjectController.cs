@@ -1,3 +1,5 @@
+using backend.Common;
+using backend.Models;
 using Business;
 using Business.BusinessLogic;
 using Business.Common;
@@ -8,14 +10,13 @@ using Core.Utility.Extensions;
 using Core.Utility.Helper.Message;
 using Core.Utility.Web.Base;
 using Data.DataAccess.DTO;
-using backend.Common;
-using backend.Models;
 using MES.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using static Const.Enums;
@@ -44,6 +45,10 @@ namespace backend.Controllers
             UserInfo.UserAccount = User.FindFirst("UserAccount")?.Value;
             UserInfo.UserName = User.FindFirst("UserName")?.Value;
             UserInfo.IP = Common.Method.GetClientIPAddress();
+            if (User.FindFirst("PermissionCodeList") != null)
+            {
+                UserInfo.PermissionCodeList = JsonConvert.DeserializeObject<List<string>>(User.FindFirst("PermissionCodeList").Value)??new List<string>();
+            }
             //UserInfo.RoleList = User.FindFirst("RoleList")?.Value;
 
             base.OnActionExecuting(context);

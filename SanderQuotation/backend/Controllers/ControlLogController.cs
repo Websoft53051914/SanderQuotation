@@ -1,5 +1,6 @@
 using AutoMapper;
 using backend.Common;
+using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
@@ -42,6 +43,7 @@ namespace backend.Controllers
         /// 取得 Log 分頁列表
         /// </summary>
         [HttpGet("GetPageList")]
+        [CustomAuthorization(FuncID.Log_View)]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, string? keyword, DateTime? dateGte, DateTime? dateLte, int? status)
         {
             try
@@ -85,6 +87,7 @@ namespace backend.Controllers
         /// 取得單筆 Exception 內容
         /// </summary>
         [HttpGet("GetException")]
+        [CustomAuthorization(FuncID.Log_View)]
         public IActionResult GetException(Guid id)
         {
             try

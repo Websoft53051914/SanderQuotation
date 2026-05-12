@@ -139,9 +139,10 @@ namespace Business.BusinessLogic
                 FuncClassId = dm.FuncClassId ?? Guid.Empty,
             };
 
-            dao.Insert(entity);
+            entity.Id = dao.Insert(entity).Id;
             dao.DbHelper.Commit();
 
+            
             dm.Id = entity.Id;
             return entity.Id;
         }

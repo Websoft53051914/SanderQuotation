@@ -10,16 +10,15 @@ namespace CommonClass.Model
     {
         public string AccessToken { get; set; }
         public string UserAccount { get; set; }
-        public string CompanyID { get; set; }
         public string UserName { get; set; }
         public string ExpireAt { get; set; }
         public List<string> RoleList { get; set; }
         public string IP { get; set; }
 
-        public string UserAgent { get; set; }
-
         public string SystemCode { get; set; } = "MUEIP";
 
         public string ModuleCode { get; set; } = "SYS";
+
+        public List<string> PermissionCodeList { get; set; } = new();
     }
 }

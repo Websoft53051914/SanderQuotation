@@ -31,9 +31,8 @@
 
         //public string Dept_Name { get; set; }
         public string IsDefault { get; set; }
-
-        public List<string> HRPermissionList { get; set; }
-        public string HRPermissionListStr { get; set; }
+        
+        public DateTime CreatedAt { get; set; }
     }
 
 

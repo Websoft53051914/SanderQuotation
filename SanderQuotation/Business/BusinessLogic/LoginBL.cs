@@ -38,6 +38,16 @@ namespace Business.BusinessLogic
             return tB_AccountDAO;
         }
 
+        private ITB_SysRoleFuncDetailDAO? tB_SysRoleFuncDetailDAO = null;
+        public ITB_SysRoleFuncDetailDAO GetSysRoleFuncDetailDAO()
+        {
+            if (tB_SysRoleFuncDetailDAO == null)
+            {
+                tB_SysRoleFuncDetailDAO = _unitOfWork.Repository<ITB_SysRoleFuncDetailDAO>();
+            }
+            return tB_SysRoleFuncDetailDAO;
+        }
+
         public void VaildForLogin(LoginDM model)
         {
             //驗證null
@@ -168,6 +178,10 @@ namespace Business.BusinessLogic
             LoginDM dm = new LoginDM();
             dm.MemberAccount = dto.MemberAccount??"";
             dm.AccountName = dto.AccountName??"";
+
+            List<TB_SysFuncDetailEntity> roleFuncDetails = GetSysRoleFuncDetailDAO().FindListByMemberAccount(userName);
+            dm.PermissionCodeList = roleFuncDetails.Select(x => x.PermissionCode).ToList();
+
             return dm;
         }
 

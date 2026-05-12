@@ -9,6 +9,8 @@ using backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using ViewModel;
 using static Const.Enums;
+using Core.Utility.Extensions;
+using backend.Common.Attribute;
 
 namespace backend.Controllers
 {
@@ -40,6 +42,7 @@ namespace backend.Controllers
         /// 取得分頁列表
         /// </summary>
         [HttpGet("GetPageList")]
+        [CustomAuthorization(FuncID.SysFuncRole_View)]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, SysRoleVM vm)
         {
             try
@@ -54,7 +57,7 @@ namespace backend.Controllers
                 {
                     var item = list[i];
                     item.No = (request.pageIndex - 1) * request.pageSize + i + 1;
-                    item.StatusName = item.Status == 1 ? "啟用" : "停用";
+                    item.StatusName = EnumUtility.GetDescriptionByInt<StatusEnum>(item.Status??0);
                 }
 
                 return JsonSuccess(new
@@ -74,6 +77,7 @@ namespace backend.Controllers
         /// 取得單筆資料
         /// </summary>
         [HttpPost("Get")]
+        [CustomAuthorization(FuncID.SysFuncRole_Edit)]
         public IActionResult Get(Guid id)
         {
             try
@@ -100,6 +104,7 @@ namespace backend.Controllers
         /// 新增
         /// </summary>
         [HttpPost("Create")]
+        [CustomAuthorization(FuncID.SysFuncRole_Create)]
         public IActionResult Create([FromBody] SysRoleVM vm)
         {
             try
@@ -132,7 +137,6 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
@@ -141,6 +145,7 @@ namespace backend.Controllers
         /// 編輯
         /// </summary>
         [HttpPost("Edit")]
+        [CustomAuthorization(FuncID.SysFuncRole_Edit)]
         public IActionResult Edit([FromBody] SysRoleVM vm)
         {
             try
@@ -158,7 +163,6 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
@@ -167,6 +171,7 @@ namespace backend.Controllers
         /// 刪除（批次）
         /// </summary>
         [HttpPost("Delete")]
+        [CustomAuthorization(FuncID.SysFuncRole_Delete)]
         public IActionResult Delete(List<Guid> list)
         {
             try
@@ -193,12 +198,13 @@ namespace backend.Controllers
         /// 啟用/停用
         /// </summary>
         [HttpPost("Enable")]
+        [CustomAuthorization(FuncID.SysFuncRole_Edit)]
         public IActionResult Enable(Guid id, int enable)
         {
             try
             {
                 GetSysRoleBL().Enable(id, enable);
-                return JsonSuccess(enable == 1 ? "啟用成功" : "停用成功");
+                return JsonSuccess(enable == StatusEnum.Enabled.ToInt() ? "啟用成功" : "停用成功");
             }
             catch (Exception ex)
             {
@@ -211,6 +217,7 @@ namespace backend.Controllers
         /// 取得所有功能列表（用於權限設定）
         /// </summary>
         [HttpGet("GetAllFuncList")]
+        [CustomAuthorization(FuncID.SysFuncRole_Edit,FuncID.SysFuncRole_Create)]
         public IActionResult GetAllFuncList(Guid id)
         {
             try
@@ -229,6 +236,7 @@ namespace backend.Controllers
         /// 編輯權限
         /// </summary>
         [HttpPost("EditPermission")]
+        [CustomAuthorization(FuncID.SysFuncRole_Edit)]
         public IActionResult EditPermission(SysRoleVM vm)
         {
             try

@@ -13,6 +13,8 @@
         Enable = $"{Configuration["BackendURL"]}/api/SysRole/Enable",
         GetFuncList = $"{Configuration["BackendURL"]}/api/SysFunc/GetSysFuncList",
     };
+
+    var statusList = ViewData["StatusSelectList"] as List<SelectListItem>;
 }
 
 <style>
@@ -99,9 +101,11 @@
                         </div>
                         <div class="col-xxl-2 col-sm-12">
                             <select class="form-control" id="Status" name="Status">
-                                <option value="">全部狀態</option>
-                                <option value="1">啟用</option>
-                                <option value="0">停用</option>
+                                <option value=""></option>
+                                @foreach (var status in statusList)
+                                {
+                                    <option value="@status.Value">@status.Text.ToHtmlString()</option>
+                                }
                             </select>
                         </div>
                         <div class="col-xxl-1 col-sm-4">
@@ -120,7 +124,7 @@
                             <tr>
                                
                                 <th data-sort="action">Action</th>
-                                <th data-sort="No">序號</th>
+                                <th data-sort="No">項次</th>
                                 <th class="sort" data-sort="RoleName">角色名稱</th>
                                 <th class="sort" data-sort="Memo">備註</th>
                                 <th class="sort" data-sort="Status">狀態</th>
@@ -199,15 +203,18 @@
                         <div class="col-lg-6">
                             <div>
                                 <label for="RoleName" class="form-label required">角色名稱</label>
-                                <input type="text" name="RoleName" id="RoleName_Modal" class="form-control" placeholder="請輸入角色名稱" required />
+                                <input type="text" name="RoleName" id="RoleName_Modal" class="form-control" placeholder="請輸入角色名稱" required maxlength="100"/>
+                                <div class="invalid-feedback">請輸入角色名稱</div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <div>
                                 <label for="Status" class="form-label required">狀態</label>
                                 <select name="Status" id="Status_Modal" class="form-control" required>
-                                    <option value="1">啟用</option>
-                                    <option value="0">停用</option>
+                                    @foreach(var status in statusList)
+                                    {
+                                        <option value="@status.Value">@status.Text.ToHtmlString()</option>
+                                    }
                                 </select>
                             </div>
                         </div>
@@ -216,7 +223,7 @@
                                 <label for="Memo" class="form-label">
                                     備註
                                 </label>
-                                <textarea name="Memo" id="Memo" class="form-control" placeholder="備註" rows="3"></textarea>
+                                <textarea name="Memo" id="Memo" class="form-control" placeholder="備註" rows="3" maxlength="500"></textarea>
                             </div>
                         </div>
 
@@ -277,8 +284,8 @@
         let queryState = {
             pageIndex: 1,
             pageSize: 10,
-            sortField: "CreateTime",
-            sortDir: "desc",
+            sortField: "CreatedAt",
+            sortOrder: "desc",
             roleName: "",
             status: "",
         };
@@ -294,7 +301,7 @@
                     hideLoader();
                     if (!res.Success) {
                         Swal.fire({
-                            icon: 'warning',
+                            icon: 'error',
                             title: res.Message,
                             confirmButtonText: '確定',
                         });
@@ -323,9 +330,9 @@
             $('.noresult').hide();
 
             rows.forEach(data => {
-                const statusBadge = data.Status === 1 ?
-                    '<span class="badge bg-success-subtle text-success">啟用</span>' :
-                    '<span class="badge bg-secondary-subtle text-secondary">停用</span>';
+                const statusBadge = data.Status =='@StatusEnum.Enabled.ToInt()' ?
+                    '<span class="badge bg-success-subtle text-success">@StatusEnum.Enabled.GetDescription().ToHtmlString()</span>' :
+                    '<span class="badge bg-secondary-subtle text-secondary">@StatusEnum.Disabled.GetDescription().ToHtmlString()</span>';
 
                 tbody.append(`
                     <tr data-id="${data.Id}">
@@ -340,9 +347,9 @@
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
                                     
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.Status === 1 ? '0' : '1'}">
-                                        <i class="ri-${data.Status === 1 ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i>
-                                        ${data.Status === 1 ? '停用' : '啟用'}
+                                    <li><a class="dropdown-item enable-item-btn" href="javascript:void(0)" data-enable="${data.Status === @StatusEnum.Enabled.ToInt() ? '@StatusEnum.Disabled.ToInt()' : '@StatusEnum.Enabled.ToInt()'}">
+                                        <i class="ri-${data.Status === @StatusEnum.Enabled.ToInt() ? 'lock' : 'lock-unlock'}-fill align-bottom me-2 text-muted"></i>
+                                        ${data.Status === @StatusEnum.Enabled.ToInt() ? '@StatusEnum.Disabled.GetDescription().ToHtmlString()' : '@StatusEnum.Enabled.GetDescription().ToHtmlString()'}
                                     </a></li>
                                 </ul>
                             </div>
@@ -351,7 +358,7 @@
                         <td class="RoleName">${data.RoleName || ''}</td>
                         <td class="Memo">${data.Memo || ''}</td>
                         <td class="Status">${statusBadge}</td>
-                        <td class="CreateTime">${data.CreateTime ? new Date(data.CreateTime).toLocaleString('zh-TW') : ''}</td>
+                        <td class="CreateTime">${data.CreatedAt ? new Date(data.CreatedAt).toLocaleString('zh-TW') : ''}</td>
                     </tr>
                 `);
             });
@@ -721,7 +728,9 @@
         $(document).ready(async function () {
             loadDatas();
             $('#Status').select2({
-                minimumResultsForSearch:-1
+                minimumResultsForSearch:-1,
+                allowClear:true,
+                placeholder:'請選擇狀態'
             })
 
             $('#globalSearchInput').on('input', function () {
@@ -742,10 +751,10 @@
             $('.sort').on('click', function () {
                 const field = $(this).data('sort');
                 if (queryState.sortField === field) {
-                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                    queryState.sortOrder = queryState.sortOrder === 'asc' ? 'desc' : 'asc';
                 } else {
                     queryState.sortField = field;
-                    queryState.sortDir = 'asc';
+                    queryState.sortOrder = 'asc';
                 }
                 loadDatas();
             });
@@ -829,7 +838,7 @@
                 error: function (xhr, status, error) {
                     Swal.fire({
                         icon: 'error',
-                        title: '系統錯誤',
+                        title: '@config.GetMessage("System_Error").ToHtmlString()',
                         confirmButtonText: '確定',
                     });
                 }
@@ -849,6 +858,7 @@
         });
 
         $(document).on('click', '.edit-item-btn', function (e) {
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#exampleModalLabel_Create').hide();
             $('#exampleModalLabel_Edit').show();
             postaction = 'edit';
@@ -1076,6 +1086,7 @@
         }
 
         function resetElement() {
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#showModal input').val('');
             $('#showModal textarea').val('');
             $('#showModal').find('[type="checkbox"]').prop('checked', false);

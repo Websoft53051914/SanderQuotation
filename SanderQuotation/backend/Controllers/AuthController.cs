@@ -5,6 +5,7 @@ using Core.Utility.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySqlX.XDevAPI.Common;
+using Newtonsoft.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using ViewModel;
@@ -415,6 +416,7 @@ namespace backend.Controllers
 
             userInfo["UserAccount"] = result.MemberAccount;
             userInfo["UserName"] = result.AccountName;
+            userInfo["PermissionCodeList"] = JsonConvert.SerializeObject(result.PermissionCodeList);
 
             var safeToken = Common.Method.CookieSafeEncode(_jwt.Generate(userInfo, out var jwtExpiresUtc));
             AppendJwtCookie(safeToken, jwtExpiresUtc);

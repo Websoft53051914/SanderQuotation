@@ -50,6 +50,8 @@ namespace Business.DomainModel
 
         public List<PermissionDM> Functions { get; set; }
 
+        public List<string> PermissionCodeList { get; set; } = new();
+
         //public string LoginDateTime { set; get; }
         public string LastMemberPWDTime { set; get; }
         ////public int LoginTime { set; get; }
