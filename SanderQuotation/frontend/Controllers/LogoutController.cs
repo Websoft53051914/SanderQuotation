@@ -27,6 +27,10 @@ namespace frontend.Controllers
                 SameSite = SameSiteMode.None
             });
 
+            // 移除 Cookie (透過設定過期時間為過去來移除)
+            Response.Cookies.Delete("Breadcrumb");
+            Response.Cookies.Delete("MenuCode");
+
             return View("Logout");
         }
     }

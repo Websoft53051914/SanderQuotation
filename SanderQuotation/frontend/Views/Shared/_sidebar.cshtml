@@ -23,8 +23,6 @@
                 string url = string.IsNullOrEmpty(item.Url) ? "#" : (item.Url.StartsWith("/") ? item.Url : "/" + item.Url);
                 var queryParams = new Dictionary<string, string>
 {
-    // { "systemCode", item.SystemCode },
-    { "moduleCode", item.ModuleCode },
     { "breadcrumb", item.Breadcrumb },
     { "menuCode", item.MenuCode }
 };
@@ -126,23 +124,20 @@
     <!-- LOGO -->
     <div class="navbar-brand-box" style="margin-top:10px;">
         <!-- Dark Logo-->
-        <!--<a href="@Url.Action("Index", "Home")" class="logo logo-dark">
+        <a href="@Url.Action("Index", "Home")" class="logo logo-dark">
             <span class="logo-sm">
                 <img src="~/assets/images/logo-sm.png" alt="" height="60">
             </span>
             <span class="logo-lg">
                 <img src="~/assets/images/logo-dark.png" alt="" height="60">
             </span>
-        </a>-->
+        </a>
         <!-- Light Logo-->
-        <!--<a href="@Url.Action("Index", "Home")" class="logo logo-light">
-            <span class="logo-sm">
-                <img src="~/assets/images/logo-sm.png" alt="" height="60">
-            </span>
+        <a href="@Url.Action("Index", "Home")" class="logo logo-light">
             <span class="logo-lg">
-                <img src="~/assets/images/logo-light.png" alt="" height="60">
+                <img src="~/assets/images/logo.png" alt="" height="50">
             </span>
-        </a>-->
+        </a>
         <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover">
             <i class="ri-record-circle-line"></i>
         </button>
