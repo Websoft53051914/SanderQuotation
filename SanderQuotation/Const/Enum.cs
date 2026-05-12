@@ -484,17 +484,12 @@ namespace Const
         }
 
 
-
-        public enum ProjectFileActionEnum
+        public enum EsDbTransferDbTypeEnum
         {
-            /// <summary>
-            /// 可新增檔案
-            /// </summary>
-            CanInsertFile = 1,
-            /// <summary>
-            /// 可刪除檔案
-            /// </summary>
-            CanDeleteFile = 2,
+            [Description("PostgreSQL")]
+            PostgreSQL = 1 ,
+            [Description("MSSQL")]
+            MSSQL = 2
         }
 
     }

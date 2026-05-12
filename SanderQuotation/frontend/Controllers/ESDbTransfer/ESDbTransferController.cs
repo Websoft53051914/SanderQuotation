@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ViewModel;
+using static Const.Enums;
 
 namespace frontend.Controllers.ESDbTransfer
 {
@@ -14,6 +15,7 @@ namespace frontend.Controllers.ESDbTransfer
 
         public IActionResult Index()
         {
+            ViewData["DbTypeSelectList"] = GetSelectListHandler().GetSelectListEnum<EsDbTransferDbTypeEnum>();
             return View();
         }
 

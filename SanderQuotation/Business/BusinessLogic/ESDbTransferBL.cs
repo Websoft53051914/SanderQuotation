@@ -3,12 +3,15 @@ using Business.Common;
 using Business.DomainModel;
 using CommonClass.Model;
 using CommonClass.Models;
+using Const;
+using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using Microsoft.VisualBasic;
+using static Const.Enums;
 
 namespace Business.BusinessLogic
 {
@@ -57,22 +60,27 @@ namespace Business.BusinessLogic
 
     public partial class ESDbTransferBL
     {
-        public ESDbTransferDM GetByCode(string srcDbTransferCode)
-        {
-            var dao = _unitOfWork.Repository<IESDbTransferDAO>();
-            var entity = dao.FindByPropertys(new Dictionary<string, object>
+        public void CheckExist(ESDbTransferDM dm)
+        {   
+            if(dm.Id == Guid.Empty)
             {
-                { nameof(ESDbTransferEntity.TransferCode), srcDbTransferCode }
-            });
-            return mapper.Map<ESDbTransferDM>(entity);
+                var entity = GetDAO().FindByPropertys(new Dictionary<string, object>() {
+                    {nameof(ESDbTransferEntity.TransferCode),dm.TransferCode },
+                    { nameof(ESDbTransferEntity.Status),StatusEnum.Enabled.ToInt()}
+                });
+                if (entity != null)
+                {
+                    GetMessage().SetAlert("此資料庫轉檔代碼已存在");
+                }
+            }
+            
         }
 
-        public PageResult<ESDbTransferDM> GetPageList(PageEntity pageEntity, ESDbTransferDM dm)
+        public PageResult<ESDbTransferDM> GetPageList(PageEntity pageEntity, SearchVO dm)
         {
             IESDbTransferDAO dao = _unitOfWork.Repository<IESDbTransferDAO>();
-            var dto = mapper.Map<ESDbTransferDTO>(dm);
 
-            PageResult<ESDbTransferDTO> dtos = dao.FindPageList(pageEntity, dto);
+            PageResult<ESDbTransferDTO> dtos = dao.FindPageList(pageEntity, dm);
 
             PageResult<ESDbTransferDM> dms = new PageResult<ESDbTransferDM>()
             {
@@ -88,7 +96,7 @@ namespace Business.BusinessLogic
         public Guid Create(ESDbTransferDM dm)
         {
             var entity = mapper.Map<ESDbTransferEntity>(dm);
-            entity.Status = 1;
+            entity.Status = StatusEnum.Enabled.ToInt();
             var dtNow = DateTime.Now;
             entity.CreatedBy = UserInfo.UserAccount;
             entity.UpdatedBy = UserInfo.UserAccount;
@@ -97,8 +105,6 @@ namespace Business.BusinessLogic
 
             IESDbTransferDAO dao = _unitOfWork.Repository<IESDbTransferDAO>();
             var result = dao.Insert(entity);
-            //dao.InsertAction(entity);
-            dao.DbHelper.Commit();
 
             return entity.Id;
         }
@@ -106,9 +112,13 @@ namespace Business.BusinessLogic
         public void Delete(List<Guid> ids)
         {
             IESDbTransferDAO dao = _unitOfWork.Repository<IESDbTransferDAO>();
-            foreach (var id in ids)
+            var entityList = dao.FindByPkList(ids);
+            foreach (var entity in entityList)
             {
-                dao.Delete(id);
+                entity.UpdatedAt = base.now;
+                entity.UpdatedBy = UserInfo.UserAccount;
+                entity.Status = StatusEnum.Cancel.ToInt();
+                dao.Update(entity);
             }
 
             dao.DbHelper.Commit();

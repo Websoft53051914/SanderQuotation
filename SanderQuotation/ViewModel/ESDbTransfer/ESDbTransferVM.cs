@@ -39,5 +39,7 @@ namespace ViewModel
         public string Description { set; get; }
 
         public int No { get; set; }
+
+        public string DbTypeDescription { set; get; }
     }
 }
