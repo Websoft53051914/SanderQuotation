@@ -9,6 +9,8 @@ using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using Microsoft.Extensions.Configuration;
+using static Const.Enums;
+using Core.Utility.Extensions;
 
 namespace Business.BusinessLogic
 {
@@ -91,7 +93,7 @@ namespace Business.BusinessLogic
         public Guid Create(ESDbTransferMappingDM dm)
         {
             var entity = mapper.Map<ESDbTransferMappingEntity>(dm);
-            entity.Status = 1;
+            entity.Status = StatusEnum.Enabled.ToInt();
             var dtNow = DateTime.Now;
             entity.CreatedBy = UserInfo.UserAccount;
             entity.UpdatedBy = UserInfo.UserAccount;
@@ -102,11 +104,11 @@ namespace Business.BusinessLogic
             //var result = dao.Insert(entity);
 
             dao.InsertAction(entity);
-            dao.DbHelper.Commit();
+
 
             if (dm.Columns?.Count > 0)
                 InsertColumns(entity.TransferMappingCode, dm.Columns, dtNow);
-
+            _unitOfWork.Commit();
             return entity.Id;
         }
 
@@ -118,7 +120,7 @@ namespace Business.BusinessLogic
             {
                 var colEntity = mapper.Map<ESDbTransferMappingColumnEntity>(col);
                 colEntity.TransferMappingCode = TransferMappingCode;
-                colEntity.Status = 1;
+                colEntity.Status = StatusEnum.Enabled.ToInt();
                 colEntity.CreatedBy = UserInfo.UserAccount;
                 colEntity.UpdatedBy = UserInfo.UserAccount;
                 colEntity.CreatedAt = dtNow;
@@ -129,6 +131,7 @@ namespace Business.BusinessLogic
 
                 index++;
             }
+
         }
 
         public void Delete(List<Guid> ids)
@@ -165,7 +168,8 @@ namespace Business.BusinessLogic
             var colDao = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
             var entities = colDao.FindListByPropertys(new Dictionary<string, object>
             {
-                { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), TransferMappingCode }
+                { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), TransferMappingCode },
+                    { nameof(ESDbTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() }
             });
             return entities.Select(x => mapper.Map<ESDbTransferMappingColumnDM>(x)).OrderBy(s => s.SortNo).ToList();
         }
@@ -200,12 +204,19 @@ namespace Business.BusinessLogic
             var colDao = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
             var oldCols = colDao.FindListByPropertys(new Dictionary<string, object> { { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode } });
             foreach (var old in oldCols)
-                colDao.Delete(old.Id);
+            {
+                old.UpdatedBy = UserInfo.UserAccount;
+                old.UpdatedAt = base.now;
+                old.Status = StatusEnum.Cancel.ToInt();
+                colDao.Update(old);
+
+
+            }
 
             if (dm.Columns?.Count > 0)
-                InsertColumns(entity.TransferMappingCode, dm.Columns, DateTime.Now);
+                InsertColumns(entity.TransferMappingCode, dm.Columns,base.now);
 
-            dao.DbHelper.Commit();
+            _unitOfWork.Commit();
         }
 
 
@@ -335,6 +346,24 @@ namespace Business.BusinessLogic
             catch (Exception ex)
             {
                 return ErrorResult($"執行傳輸時發生錯誤: {ex.Message}");
+            }
+        }
+
+
+        public void CheckExist(ESDbTransferMappingDM dm)
+        {
+            if(dm.Id == Guid.Empty)
+            {
+                IESDbTransferMappingDAO dao = _unitOfWork.Repository<IESDbTransferMappingDAO>();
+                var entity = dao.FindByPropertys(new Dictionary<string, object>
+                {
+                    { nameof(ESDbTransferMappingEntity.TransferMappingCode), dm.TransferMappingCode },
+                    { nameof(ESDbTransferMappingEntity.Status), StatusEnum.Enabled.ToInt() }
+                });
+                if (entity != null)
+                {
+                    GetMessage().SetAlert("此資料表轉檔設定代碼已存在");
+                }
             }
         }
     }

@@ -33,6 +33,9 @@ namespace Business.BusinessLogic
 
                 cfg.CreateMap<ESDbTransferDM, ESDbTransferDTO>();
                 cfg.CreateMap<ESDbTransferDTO, ESDbTransferDM>();
+
+                cfg.CreateMap<ESDbTransferMappingDM, ESDbTransferMappingEntity>();
+                cfg.CreateMap<ESDbTransferMappingEntity, ESDbTransferMappingDM>();
             });
 
             mapper = configuration.CreateMapper();
@@ -53,7 +56,7 @@ namespace Business.BusinessLogic
         public List<ESDbTransferDM> GetAll()
         {
             var dao = _unitOfWork.Repository<IESDbTransferDAO>();
-            var entities = dao.FindByAll();
+            var entities = dao.FindListByProperty(nameof(ESDbTransferEntity.Status),StatusEnum.Enabled.ToInt());
             return mapper.Map<List<ESDbTransferDM>>(entities);
         }
     }
@@ -79,15 +82,37 @@ namespace Business.BusinessLogic
         public PageResult<ESDbTransferDM> GetPageList(PageEntity pageEntity, SearchVO dm)
         {
             IESDbTransferDAO dao = _unitOfWork.Repository<IESDbTransferDAO>();
+            IESDbTransferMappingDAO eSDbTransferMappingDAO = _unitOfWork.Repository<IESDbTransferMappingDAO>();
 
             PageResult<ESDbTransferDTO> dtos = dao.FindPageList(pageEntity, dm);
+            var dmList = mapper.Map<List<ESDbTransferDM>>(dtos.Results);
+            var dbTransferMappingDMList = eSDbTransferMappingDAO.FindListByFilter(new SearchVO() { TransferCodeIn = dmList.Select(x => x.TransferCode).ToList() });
+            var dbTransferMappingSrcDict = dbTransferMappingDMList.GroupBy(x => x.SrcDbTransferCode).ToDictionary(x => x.Key, x => x.Select(m => mapper.Map<ESDbTransferMappingDM>(m)).ToList());
+            var dbTransferMappingDestDict = dbTransferMappingDMList.GroupBy(x => x.DstDbTransferCode).ToDictionary(x => x.Key, x => x.Select(m => mapper.Map<ESDbTransferMappingDM>(m)).ToList());
+
+            for(int i=0;i< dmList.Count;i++)
+            {
+                var dmItem = dmList[i];
+                if (dbTransferMappingSrcDict.ContainsKey(dmItem.TransferCode))
+                {
+                    dmItem.DbTransferMappingDMs = dbTransferMappingSrcDict[dmItem.TransferCode];
+                }
+                if (dbTransferMappingDestDict.ContainsKey(dmItem.TransferCode))
+                {
+                    if (dmItem.DbTransferMappingDMs.Count == 0)
+                    {
+                        dmItem.DbTransferMappingDMs = dbTransferMappingDestDict[dmItem.TransferCode];
+                    }
+                   
+                }
+            }
 
             PageResult<ESDbTransferDM> dms = new PageResult<ESDbTransferDM>()
             {
                 CurrentPage = dtos.CurrentPage,
                 DataCount = dtos.DataCount,
                 PageDataSize = dtos.PageDataSize,
-                Results = mapper.Map<List<ESDbTransferDM>>(dtos.Results)
+                Results = dmList
             };
 
             return dms;

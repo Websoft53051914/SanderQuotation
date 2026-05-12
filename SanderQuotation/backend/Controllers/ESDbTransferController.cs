@@ -62,6 +62,8 @@ namespace backend.Controllers
                     item.DbTypeDescription = EnumUtility.GetDescriptionByInt<EsDbTransferDbTypeEnum>(int.Parse(item.DbType));
                     if (string.IsNullOrEmpty(list[i].Description))
                         list[i].Description = "";
+
+                    item.CanDelete = pageResult.Results[i].DbTransferMappingDMs.Count == 0;
                 }
 
                 return JsonSuccess(new

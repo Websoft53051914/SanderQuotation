@@ -41,5 +41,9 @@ namespace ViewModel
         public int No { get; set; }
 
         public string DbTypeDescription { set; get; }
+        /// <summary>
+        /// 可否刪除(沒有任何資料表參照才可以刪除)
+        /// </summary>
+        public bool CanDelete { set; get; }
     }
 }

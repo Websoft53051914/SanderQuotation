@@ -1,3 +1,4 @@
+using Const;
 using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.DTO;
@@ -8,5 +9,7 @@ namespace Data.DataAccess.Dao
     public interface IESDbTransferMappingDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<ESDbTransferMappingEntity>
     {
         PageResult<ESDbTransferMappingDTO> FindPageList(PageEntity pageEntity, ESDbTransferMappingDTO dto);
+
+        List<ESDbTransferMappingEntity> FindListByFilter(SearchVO searchVO);
     }
 }

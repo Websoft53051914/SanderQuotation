@@ -199,12 +199,8 @@
     public partial class SearchVO
     {
         /// <summary>
-        /// TB_MessagePool.JobId
+        /// 資料庫轉檔代號
         /// </summary>
-        public int? JobIdEq { get; set; }
-        /// <summary>
-        /// TB_MessagePool.SendStatus
-        /// </summary>
-        public int? SendStatusEq { get; set; }
+        public List<string> TransferCodeIn { get; set; } = new List<string>();
     }
 }

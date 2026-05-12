@@ -19,5 +19,8 @@ namespace Business.DomainModel
         public string DbPassword { set; get; }
 
         public string Description { set; get; }
+
+        //ÃB¥~Äæ¦ì
+        public List<ESDbTransferMappingDM> DbTransferMappingDMs { set; get; } = new();
     }
 }

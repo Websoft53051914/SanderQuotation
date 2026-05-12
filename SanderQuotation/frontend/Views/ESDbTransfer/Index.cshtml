@@ -298,11 +298,14 @@
 
                 //*** 取得後端資料後產生tr
                 rows.forEach(data => {
+                        const deleteCheckbox = data.CanDelete
+        ? `<input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">`
+        : '';
                     tbody.append(`
                         <tr data-id="${data.Id}">
                             <th scope="row">
                                 <div class="form-check">
-                                    <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value=option1>
+                                    ${deleteCheckbox}
                                 </div>
                             </th>
                             <td>
@@ -312,7 +315,7 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i>編輯</a></li>
-                                        <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i>刪除</a></li>
+                                        ${(data.CanDelete?'<li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i>刪除</a></li>':'')}
                                     </ul>
                                 </div>
                             </td>

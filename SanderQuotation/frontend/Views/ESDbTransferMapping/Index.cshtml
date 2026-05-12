@@ -153,7 +153,8 @@
                         <div class="col-lg-4">
                             <label for="TransferMappingCode" class="form-label required">資料表轉檔代碼</label>
                             <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
-                                   placeholder="資料表轉檔代碼" />
+                                   placeholder="資料表轉檔代碼" maxlength="100"/>
+                            <div class="invalid-feedback">請輸入資料表轉檔代碼</div>
                         </div>
                     </div>
 
@@ -165,12 +166,14 @@
                             <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
                                 <option value="">-- 請選擇 --</option>
                             </select>
+                            <div class="invalid-feedback">請選擇來源資料庫</div>
                         </div>
                         <!-- Source TABLE -->
                         <div class="col-lg-4">
                             <label class="form-label required">來源資料表</label>
-                            <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled>
+                            <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled required>
                             </select>
+                            <div class="invalid-feedback">請選擇來源資料表</div>
                         </div>
                     </div>
 
@@ -181,12 +184,14 @@
                             <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
                                 <option value="">-- 請選擇 --</option>
                             </select>
+                            <div class="invalid-feedback">請選擇目標資料庫</div>
                         </div>
                         <!-- Target TABLE -->
                         <div class="col-lg-4">
                             <label class="form-label required">目標資料表</label>
-                            <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled>
+                            <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled required>
                             </select>
+                            <div class="invalid-feedback">請選擇目標資料表</div>
                         </div>
                     </div>
 
@@ -268,7 +273,7 @@
                 <div class="modal-footer">
                     <div class="hstack gap-2 justify-content-end">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                        <button type="button" class="btn btn-success" id="btnSaveAll">確認</button>
+                        <button type="submit" class="btn btn-success" id="btnSaveAll">確認</button>
                     </div>
                 </div>
             </form>
@@ -409,6 +414,8 @@
             srcColumnCache = {};
             const $tbl = $('#SrcTableName');
 
+            if (guid) $(this).removeClass('is-invalid');
+
             if (!guid) {
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                 clearAllSrcColumns();
@@ -416,9 +423,11 @@
             }
 
             // 顯示載入中
-            $tbl.empty().append('<option value="">-- 載入中 --</option>').trigger('change');
+            $tbl.empty();
+            showLoader();
 
             $.get(API.GetSourceTables, { dbTransferGuid: guid }, function (res) {
+                hideLoader();
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
@@ -426,7 +435,10 @@
                     Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
                 $tbl.val('').trigger('change');
-            });
+                    }).fail(function() {
+         hideLoader();
+         Swal.fire({ icon: 'warning', title: '載入失敗', confirmButtonText: '確定' });
+        });
 
             clearAllSrcColumns();
 
@@ -441,7 +453,7 @@
                     cancelButtonText: '取消'
                 }).then(result => {
                     if (!result.isConfirmed) {
-                        $('#SrcDbTransferCode').val('');
+                        $('#SrcDbTransferCode').val('').trigger('change');
                         $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                         clearAllSrcColumns();
                     }
@@ -492,6 +504,8 @@
             dstColumnCache = {};
             const $tbl = $('#DstTableName');
 
+            if (guid) $(this).removeClass('is-invalid');
+
             if (!guid) {
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                 clearAllDstColumns();
@@ -499,9 +513,11 @@
             }
 
             // 顯示載入中
-            $tbl.empty().append('<option value="">-- 載入中 --</option>').trigger('change');
+            $tbl.empty();
+            showLoader();
 
             $.get(API.GetTargetTables, { dbTransferGuid: guid }, function (res) {
+                hideLoader();
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
                     res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
@@ -509,7 +525,10 @@
                     Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
                 $tbl.val('').trigger('change');
-            });
+            }).fail(function() {
+         hideLoader();
+         Swal.fire({ icon: 'warning', title: '載入失敗', confirmButtonText: '確定' });
+        });
 
             clearAllDstColumns();
 
@@ -524,7 +543,7 @@
                     cancelButtonText: '取消'
                 }).then(result => {
                     if (!result.isConfirmed) {
-                        $('#DstDbTransferCode').val('');
+                        $('#DstDbTransferCode').val('').trigger('change');
                         $tbl.empty().append('<option value="">-- 請選擇 --</option>').trigger('change');
                         clearAllDstColumns();
                     }
@@ -649,73 +668,29 @@
         }
 
         // ── 儲存（一次送出主表 + Columns 陣列）──────────────────────────────────────
-        $('#btnSaveAll').on('click', function () {
-            const $form = $('#submitForm');
-
-            // 手動驗證必填欄位
-            let isValid = true;
-            let firstInvalidField = null;
-
-            // 驗證 TransferMappingCode
-            if (!$('#TransferMappingCode').val().trim()) {
-                $('#TransferMappingCode').addClass('is-invalid');
-                if (!firstInvalidField) firstInvalidField = $('#TransferMappingCode');
-                isValid = false;
-            } else {
-                $('#TransferMappingCode').removeClass('is-invalid');
-            }
-
-            // 驗證來源資料庫
-            if (!$('#SrcDbTransferCode').val()) {
-                $('#SrcDbTransferCode').addClass('is-invalid');
-                if (!firstInvalidField) firstInvalidField = $('#SrcDbTransferCode');
-                isValid = false;
-            } else {
-                $('#SrcDbTransferCode').removeClass('is-invalid');
-            }
-
-            // 驗證來源資料表
-            const srcTableVal = $('#SrcTableName').val();
-            if (!srcTableVal) {
-                $('#SrcTableName').addClass('is-invalid');
-                if (!firstInvalidField) firstInvalidField = $('#SrcTableName');
-                isValid = false;
-            } else {
-                $('#SrcTableName').removeClass('is-invalid');
-            }
-
-            // 驗證目標資料庫
-            if (!$('#DstDbTransferCode').val()) {
-                $('#DstDbTransferCode').addClass('is-invalid');
-                if (!firstInvalidField) firstInvalidField = $('#DstDbTransferCode');
-                isValid = false;
-            } else {
-                $('#DstDbTransferCode').removeClass('is-invalid');
-            }
-
-            // 驗證目標資料表
-            const dstTableVal = $('#DstTableName').val();
-            if (!dstTableVal) {
-                $('#DstTableName').addClass('is-invalid');
-                if (!firstInvalidField) firstInvalidField = $('#DstTableName');
-                isValid = false;
-            } else {
-                $('#DstTableName').removeClass('is-invalid');
-            }
-
-            if (!isValid) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: '請填寫所有必填欄位',
-                    text: '請確認已選擇來源資料庫、來源資料表、目標資料庫及目標資料表',
-                    confirmButtonText: '確定'
-                });
-                // 將焦點移到第一個無效欄位
-                if (firstInvalidField) {
-                    firstInvalidField.focus();
-                }
+        $('#submitForm').on('submit', function (e) {
+            e.preventDefault();
+            if($('#submitForm').is(':invalid')){
                 return;
             }
+
+            // 必填 select 驗證
+            let selectValid = true;
+            [
+                { id: 'SrcDbTransferCode' },
+                { id: 'SrcTableName' },
+                { id: 'DstDbTransferCode' },
+                { id: 'DstTableName' },
+            ].forEach(function (item) {
+                const $sel = $('#' + item.id);
+                if (!$sel.val()) {
+                    $sel.addClass('is-invalid');
+                    selectValid = false;
+                } else {
+                    $sel.removeClass('is-invalid');
+                }
+            });
+            if (!selectValid) return;
 
             if ($('#mappingRows tr').length === 0) {
                 Swal.fire({ icon: 'warning', title: '請至少新增一筆欄位對應', confirmButtonText: '確定' });
@@ -932,6 +907,7 @@
         // ═══════════════════════════════════════════════════════════════════════════
         $('#btnShowModal').on('click', function () {
             resetElement();
+            $('#TransferMappingCode').prop('readonly',false);
             $('#exampleModalLabel_Create').show();
             $('#exampleModalLabel_Edit').hide();
             postaction = 'create';
@@ -944,6 +920,7 @@
         // ═══════════════════════════════════════════════════════════════════════════
         $(document).on('click', '.edit-item-btn', function (e) {
             e.preventDefault();
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#exampleModalLabel_Create').hide();
             $('#exampleModalLabel_Edit').show();
             postaction = 'edit';
@@ -971,7 +948,7 @@
                     isLoadingEditData = true;
 
                     // 填入 TransferMappingCode
-                    $('#TransferMappingCode').val(d.TransferMappingCode);
+                    $('#TransferMappingCode').val(d.TransferMappingCode).prop('readonly',true);
 
                     // 設定來源DB，觸發 TABLE 下拉重載
                     $('#SrcDbTransferCode').val(d.SrcDbTransferCode).trigger('change');
@@ -1332,11 +1309,14 @@
         // 重置 Modal
         // ═══════════════════════════════════════════════════════════════════════════
         function resetElement() {
+            document.getElementById('submitForm').classList.remove('was-validated');
             $('#submitForm input:not([type="radio"]):not([type="checkbox"])').val('');
             $('#submitForm textarea').val('');
             $('#TransferMappingCode').val('');
-            $('#SrcDbTransferCode').val('');
-            $('#DstDbTransferCode').val('');
+            $('#SrcDbTransferCode').val('').removeClass('is-invalid');
+            $('#DstDbTransferCode').val('').removeClass('is-invalid');
+            $('#SrcTableName').removeClass('is-invalid');
+            $('#DstTableName').removeClass('is-invalid');
 
             // 重置 Source Table 和 Target Table
             const $srcTbl = $('#SrcTableName');

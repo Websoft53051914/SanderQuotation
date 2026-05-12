@@ -10,9 +10,12 @@ using backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SixLabors.ImageSharp.ColorSpaces;
+using System.Data;
 using System.Data.SqlClient;
+using Npgsql;
 using ViewModel;
 using static Const.Enums;
+using backend.Common.Attribute;
 
 namespace backend.Controllers
 {
@@ -130,6 +133,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("Create")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create)]
         public IActionResult Create(ESDbTransferMappingVM vm)
         {
             try
@@ -142,6 +146,11 @@ namespace backend.Controllers
                     IsEncrypt = c.IsEncrypt,
                     IsPrimaryKey = c.IsPrimaryKey
                 }).ToList();
+                GetBL().CheckExist(dm);
+                if (GetBL().GetMessage().IsError())
+                {
+                    return JsonValidFail(GetBL().GetMessage().GetAlert());
+                }
                 var guid = GetBL().Create(dm);
                 LogSuccess(guid, LogAction.Create);
                 return JsonSuccess("新增成功");
@@ -149,12 +158,12 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
         [HttpPost("Edit")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Edit)]
         public IActionResult Edit(ESDbTransferMappingVM vm)
         {
             try
@@ -246,24 +255,18 @@ namespace backend.Controllers
         /// 依來源DB連線取得所有 TABLE 名稱
         /// </summary>
         [HttpGet("GetSourceTables")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create,FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetSourceTables([FromQuery] string dbTransferGuid)
         {
             try
             {
-                var connStr = BuildSourceConnectionString(dbTransferGuid);
-                if (connStr == null)
+                var dm = GetTransferDm(dbTransferGuid);
+                if (dm == null)
                     return JsonValidFail(GetMsg(_config, "Data_Not_Found"));
 
-                var tables = new List<string>();
-                using var conn = new SqlConnection(connStr);
+                using var conn = CreateDbConnection(dm);
                 conn.Open();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME";
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                    tables.Add(reader.GetString(0));
-
-                return JsonSuccess(tables);
+                return JsonSuccess(QueryTables(conn));
             }
             catch (Exception ex)
             {
@@ -276,6 +279,7 @@ namespace backend.Controllers
         /// 依來源DB連線 + TABLE 名稱取得欄位清單
         /// </summary>
         [HttpGet("GetSourceColumns")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetSourceColumns([FromQuery] string dbTransferGuid, [FromQuery] string tableName)
         {
             try
@@ -283,12 +287,13 @@ namespace backend.Controllers
                 if (string.IsNullOrWhiteSpace(tableName))
                     return JsonValidFail(GetMsg(_config, "Please_Enter") + " " + GetMsg(_config, "ESDbTransferMapping_SrcTable"));
 
-                var connStr = BuildSourceConnectionString(dbTransferGuid);
-                if (connStr == null)
+                var dm = GetTransferDm(dbTransferGuid);
+                if (dm == null)
                     return JsonValidFail(GetMsg(_config, "Data_Not_Found"));
 
-                var columns = QueryColumns(connStr, tableName);
-                return JsonSuccess(columns);
+                using var conn = CreateDbConnection(dm);
+                conn.Open();
+                return JsonSuccess(QueryColumns(conn, tableName));
             }
             catch (Exception ex)
             {
@@ -303,31 +308,28 @@ namespace backend.Controllers
         /// 取得目的資料庫所有 TABLE 名稱（若指定 dbTransferGuid 則用該連線，否則用 MainConnection）
         /// </summary>
         [HttpGet("GetTargetTables")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetTargetTables([FromQuery] string? dbTransferGuid = null)
         {
             try
             {
-                string connStr;
+                List<string> tables;
                 if (!string.IsNullOrEmpty(dbTransferGuid))
                 {
-                    connStr = BuildSourceConnectionString(dbTransferGuid);
-                    if (connStr == null)
+                    var dm = GetTransferDm(dbTransferGuid);
+                    if (dm == null)
                         return JsonValidFail(GetMsg(_config, "Data_Not_Found"));
+
+                    using var conn = CreateDbConnection(dm);
+                    conn.Open();
+                    tables = QueryTables(conn);
                 }
                 else
                 {
-                    connStr = _config.GetConnectionString("MainConnection");
+                    using var conn = new SqlConnection(_config.GetConnectionString("MainConnection"));
+                    conn.Open();
+                    tables = QueryTables(conn);
                 }
-
-                var tables = new List<string>();
-                using var conn = new SqlConnection(connStr);
-                conn.Open();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME";
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                    tables.Add(reader.GetString(0));
-
                 return JsonSuccess(tables);
             }
             catch (Exception ex)
@@ -341,6 +343,7 @@ namespace backend.Controllers
         /// 取得目的資料庫指定 TABLE 的欄位清單（若指定 dbTransferGuid 則用該連線，否則用 MainConnection）
         /// </summary>
         [HttpGet("GetTargetColumns")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetTargetColumns([FromQuery] string tableName, [FromQuery] string? dbTransferGuid = null)
         {
             try
@@ -348,19 +351,23 @@ namespace backend.Controllers
                 if (string.IsNullOrWhiteSpace(tableName))
                     return JsonValidFail(GetMsg(_config, "Please_Enter") + " " + GetMsg(_config, "ESDbTransferMapping_DstTable"));
 
-                string connStr;
+                List<string> columns;
                 if (!string.IsNullOrEmpty(dbTransferGuid))
                 {
-                    connStr = BuildSourceConnectionString(dbTransferGuid);
-                    if (connStr == null)
+                    var dm = GetTransferDm(dbTransferGuid);
+                    if (dm == null)
                         return JsonValidFail(GetMsg(_config, "Data_Not_Found"));
+
+                    using var conn = CreateDbConnection(dm);
+                    conn.Open();
+                    columns = QueryColumns(conn, tableName);
                 }
                 else
                 {
-                    connStr = _config.GetConnectionString("MainConnection");
+                    using var conn = new SqlConnection(_config.GetConnectionString("MainConnection"));
+                    conn.Open();
+                    columns = QueryColumns(conn, tableName);
                 }
-
-                var columns = QueryColumns(connStr, tableName);
                 return JsonSuccess(columns);
             }
             catch (Exception ex)
@@ -372,24 +379,43 @@ namespace backend.Controllers
 
         // ── 私有輔助方法 ─────────────────────────────────────────────────────────
 
-        private string? BuildSourceConnectionString(string dbTransferGuid)
+        private ESDbTransferDM? GetTransferDm(string transferCode)
         {
-            var res = GetTransferBL().GetAll();
-            var dm = res.FirstOrDefault(x => x.TransferCode == dbTransferGuid);
-            if (dm == null) return null;
-
-            var portPart = string.IsNullOrWhiteSpace(dm.DbPort) ? "" : $",{dm.DbPort}";
-            return $"Data Source={dm.DbHost}{portPart};Initial Catalog={dm.DbName};User ID={dm.DbUser};Password={dm.DbPassword};TrustServerCertificate=true;Encrypt=true";
+            return GetTransferBL().GetAll().FirstOrDefault(x => x.TransferCode == transferCode);
         }
 
-        private List<string> QueryColumns(string connStr, string tableName)
+        private IDbConnection CreateDbConnection(ESDbTransferDM dm)
+        {
+            int dbType = int.TryParse(dm.DbType, out var t) ? t : 0;
+            if (dbType == (int)EsDbTransferDbTypeEnum.PostgreSQL)
+            {
+                var port = string.IsNullOrWhiteSpace(dm.DbPort) ? "5432" : dm.DbPort;
+                return new NpgsqlConnection($"Host={dm.DbHost};Port={port};Database={dm.DbName};Username={dm.DbUser};Password={dm.DbPassword}");
+            }
+            var portPart = string.IsNullOrWhiteSpace(dm.DbPort) ? "" : $",{dm.DbPort}";
+            return new SqlConnection($"Data Source={dm.DbHost}{portPart};Initial Catalog={dm.DbName};User ID={dm.DbUser};Password={dm.DbPassword};TrustServerCertificate=true;Encrypt=true");
+        }
+
+        private static List<string> QueryTables(IDbConnection conn)
+        {
+            var tables = new List<string>();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                tables.Add(reader.GetString(0));
+            return tables;
+        }
+
+        private static List<string> QueryColumns(IDbConnection conn, string tableName)
         {
             var columns = new List<string>();
-            using var conn = new SqlConnection(connStr);
-            conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tbl ORDER BY ORDINAL_POSITION";
-            cmd.Parameters.AddWithValue("@tbl", tableName);
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@tbl";
+            p.Value = tableName;
+            cmd.Parameters.Add(p);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
                 columns.Add(reader.GetString(0));
