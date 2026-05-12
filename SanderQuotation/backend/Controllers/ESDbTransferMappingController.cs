@@ -1,21 +1,23 @@
 using AutoMapper;
+using backend.Common;
+using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
 using CommonClass.Models;
+using Const;
 using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Utility;
 using Core.Utility.Web.EX;
-using backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Npgsql;
 using SixLabors.ImageSharp.ColorSpaces;
 using System.Data;
 using System.Data.SqlClient;
-using Npgsql;
 using ViewModel;
 using static Const.Enums;
-using backend.Common.Attribute;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace backend.Controllers
 {
@@ -55,15 +57,19 @@ namespace backend.Controllers
         // ── CRUD ────────────────────────────────────────────────────────────────
 
         [HttpGet("GetPageList")]
-        public IActionResult GetPageList([FromQuery] DataSourceRequest request, ESDbTransferMappingVM vm)
+        [CustomAuthorization(FuncID.ESDbTransferMapping_View)]
+        public IActionResult GetPageList([FromQuery] DataSourceRequest request, string Keyword)
         {
             try
             {
                 PageEntity pageEntity = base.GetPageEntity(request);
                 IMapper mapper = CommonUtility.CreateMapper<ESDbTransferMappingVM, ESDbTransferMappingDM>();
-                ESDbTransferMappingDM dm = mapper.Map<ESDbTransferMappingDM>(vm);
+                SearchVO searchVO = new SearchVO()
+                {
+                    KeywordLike = Keyword
+                };
 
-                var pageResult = GetBL().GetPageList(pageEntity, dm);
+                var pageResult = GetBL().GetPageList(pageEntity, searchVO);
                 var list = _mapper.Map<List<ESDbTransferMappingVM>>(pageResult.Results);
 
                 //取得所有資料庫設定
@@ -103,6 +109,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("Get")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Edit)]
         public IActionResult Get(Guid id)
         {
             try
@@ -183,6 +190,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("Delete")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Delete)]
         public IActionResult Delete(List<Guid> list)
         {
             try
@@ -204,6 +212,7 @@ namespace backend.Controllers
         /// 取得指定主表的欄位對應明細
         /// </summary>
         [HttpGet("GetColumns")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetColumns([FromQuery] string TransferMappingCode)
         {
             try
@@ -234,6 +243,7 @@ namespace backend.Controllers
         /// 取得所有已設定的來源資料庫連線清單（ESDbTransfer）
         /// </summary>
         [HttpGet("GetDbTransferList")]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
         public IActionResult GetDbTransferList()
         {
             try

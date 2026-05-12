@@ -48,8 +48,8 @@
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
-                        <div class="col-xxl-2 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入關鍵字" id="Keyword" name="Keyword">
+                        <div class="col-xxl-3 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入資料表轉檔代碼、來源或目標資料庫與資料表" id="Keyword" name="Keyword">
                         </div>
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
@@ -313,9 +313,8 @@
         // ── 查詢狀態 ────────────────────────────────────────────────────────────────
         let queryState = {
             pageIndex: 1, pageSize: 10,
-            sortField: 'SrcTableName', sortDir: 'asc',
-            Keyword1: '', Keyword2: '',
-            Status: '', StartDate: '', EndDate: '',
+            sortField: 'SrcTableName', sortOrder: 'asc',
+            Keyword: ''
         };
 
         // ── 快取 ────────────────────────────────────────────────────────────────────
@@ -824,7 +823,7 @@
                         <td class="SrcTableName">${data.SrcTableName || ''}</td>
                         <td class="DstTransferName">${data.DstTransferName || ''}</td>
                         <td class="DstTableName">${data.DstTableName || ''}</td>
-                        ${(data.Columns && data.Columns.length) || 0} 筆
+                        <td>${(data.Columns && data.Columns.length) || 0} 筆</td>
                         <td class="Description">${data.Description || ''}</td>
                     </tr>
                 `);
@@ -872,8 +871,7 @@
         function gotoPage(page) { queryState.pageIndex = page; loadDatas(); }
 
         function SearchData() {
-            queryState.Keyword1 = $('#Keyword1').val();
-            queryState.Keyword2 = $('#Keyword2').val();
+            queryState.Keyword = $('#Keyword').val();
             queryState.pageIndex = 1;
             $('#globalSearchInput').val('').trigger('input');
             loadDatas();
@@ -882,8 +880,8 @@
         $('.sort').on('click', function () {
             const field = $(this).data('sort');
             if (queryState.sortField === field)
-                queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
-            else { queryState.sortField = field; queryState.sortDir = 'asc'; }
+                queryState.sortOrder = queryState.sortOrder === 'asc' ? 'desc' : 'asc';
+            else { queryState.sortField = field; queryState.sortOrder = 'asc'; }
             loadDatas();
         });
 

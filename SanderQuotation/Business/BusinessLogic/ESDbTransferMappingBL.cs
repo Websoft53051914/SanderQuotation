@@ -11,6 +11,7 @@ using Data.DataAccess.Entity;
 using Microsoft.Extensions.Configuration;
 using static Const.Enums;
 using Core.Utility.Extensions;
+using Const;
 
 namespace Business.BusinessLogic
 {
@@ -56,10 +57,9 @@ namespace Business.BusinessLogic
 
     public partial class ESDbTransferMappingBL
     {
-        public PageResult<ESDbTransferMappingDM> GetPageList(PageEntity pageEntity, ESDbTransferMappingDM dm)
+        public PageResult<ESDbTransferMappingDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
         {
-            var dto = mapper.Map<ESDbTransferMappingDTO>(dm);
-            var result = GetDAO().FindPageList(pageEntity, dto);
+            var result = GetDAO().FindPageList(pageEntity, searchVO);
 
             var dms = mapper.Map<List<ESDbTransferMappingDM>>(result.Results);
 
@@ -137,10 +137,13 @@ namespace Business.BusinessLogic
         public void Delete(List<Guid> ids)
         {
             IESDbTransferMappingDAO dao = _unitOfWork.Repository<IESDbTransferMappingDAO>();
-            foreach (var id in ids)
+            dao.FindByPkList(ids).ForEach(x =>
             {
-                dao.Delete(id);
-            }
+                x.UpdatedBy = UserInfo.UserAccount;
+                x.UpdatedAt = base.now;
+                x.Status = StatusEnum.Cancel.ToInt();
+                dao.Update(x);
+            });
 
             dao.DbHelper.Commit();
         }
@@ -194,9 +197,8 @@ namespace Business.BusinessLogic
             entity.Type = dto.Type;
             entity.SortNo = dto.SortNo;
             entity.Priority = dto.Priority;
-            entity.CreatedAt = dto.CreatedAt;
-            entity.CreatedBy = dto.CreatedBy;
             entity.UpdatedAt = DateTime.Now;
+            entity.UpdatedBy = UserInfo.UserAccount;
 
             dao.Update(entity);
 

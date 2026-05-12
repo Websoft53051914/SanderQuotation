@@ -11,19 +11,24 @@ namespace Data.DataAccess.Impl
 {
     public class ESDbTransferMappingDaoImpl : Core.Utility.Base.Data.GuidId.BaseImpl<ESDbTransferMappingEntity>, IESDbTransferMappingDAO
     {
-        public PageResult<ESDbTransferMappingDTO> FindPageList(PageEntity pageEntity, ESDbTransferMappingDTO dto)
+        public PageResult<ESDbTransferMappingDTO> FindPageList(PageEntity pageEntity, SearchVO searchVO)
         {
             string whereSQL = string.Empty;
             var paras = new Dictionary<string, object>();
 
-            if (dto.Status != null)
+            whereSQL += $" AND m.{nameof(ESDbTransferMappingEntity.Status)} = @Status ";
+            paras.Add("@Status", StatusEnum.Enabled.ToInt());
+
+            if (!string.IsNullOrEmpty(searchVO.KeywordLike))
             {
-                whereSQL += $" AND m.{nameof(ESDbTransferMappingEntity.Status)} = @Status ";
-                paras.Add("@Status", dto.Status);
+                whereSQL += $" AND (m.{nameof(ESDbTransferMappingEntity.TransferMappingCode)} LIKE @Keyword OR m.{nameof(ESDbTransferMappingEntity.SrcTableName)} LIKE @Keyword OR m.{nameof(ESDbTransferMappingEntity.DstTableName)} LIKE @Keyword OR EDT1.{nameof(ESDbTransferEntity.TransferName)} LIKE @Keyword OR EDT2.{nameof(ESDbTransferEntity.TransferName)} LIKE @Keyword) ";
+                paras.Add("@Keyword", $"%{searchVO.KeywordLike}%");
             }
 
-            string sql = $@"SELECT m.*
+            string sql = $@"SELECT m.*, EDT1.{nameof(ESDbTransferEntity.TransferName)} AS SrcTransferName, EDT2.{nameof(ESDbTransferEntity.TransferName)} AS DstTransferName
 FROM ESDbTransferMapping m
+INNER JOIN ESDbTransfer EDT1 ON (m.{nameof(ESDbTransferMappingEntity.SrcDbTransferCode)} = EDT1.{nameof(ESDbTransferEntity.TransferCode)} AND EDT1.{nameof(ESDbTransferEntity.Status)} = @Status)
+INNER JOIN ESDbTransfer EDT2 ON (m.{nameof(ESDbTransferMappingEntity.DstDbTransferCode)} = EDT2.{nameof(ESDbTransferEntity.TransferCode)} AND EDT2.{nameof(ESDbTransferEntity.Status)} = @Status)
 WHERE 1=1 {whereSQL}";
 
             string countSQL = $@"
@@ -33,7 +38,7 @@ FROM (
 ) AS pageData
 WHERE 1=1";
 
-            return DbHelper.FindPageList<ESDbTransferMappingDTO>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, nameof(ESDbTransferMappingEntity.UpdatedAt));
+            return DbHelper.FindPageList<ESDbTransferMappingDTO>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras, $"{pageEntity.Sort} {pageEntity.Asc},Id");
         }
 
         public List<ESDbTransferMappingEntity> FindListByFilter(SearchVO searchVO)
