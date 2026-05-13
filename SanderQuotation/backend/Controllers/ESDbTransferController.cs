@@ -63,7 +63,7 @@ namespace backend.Controllers
                     if (string.IsNullOrEmpty(list[i].Description))
                         list[i].Description = "";
 
-                    item.CanDelete = pageResult.Results[i].DbTransferMappingDMs.Count == 0;
+                    item.CanDelete = pageResult.Results[i].DbTransferMappingDMs.Count == 0 && pageResult.Results[i].FileTransferMappingColumnDMs.Count == 0;
                 }
 
                 return JsonSuccess(new

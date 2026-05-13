@@ -36,6 +36,8 @@ namespace Business.BusinessLogic
 
                 cfg.CreateMap<ESDbTransferMappingDM, ESDbTransferMappingEntity>();
                 cfg.CreateMap<ESDbTransferMappingEntity, ESDbTransferMappingDM>();
+
+                cfg.CreateMap<EsFileTransferMappingColumnDM, EsFileTransferMappingColumnEntity>().ReverseMap();
             });
 
             mapper = configuration.CreateMapper();
@@ -83,6 +85,7 @@ namespace Business.BusinessLogic
         {
             IESDbTransferDAO dao = _unitOfWork.Repository<IESDbTransferDAO>();
             IESDbTransferMappingDAO eSDbTransferMappingDAO = _unitOfWork.Repository<IESDbTransferMappingDAO>();
+            IEsFileTransferMappingColumnDAO esFileTransferMappingColumnDAO = _unitOfWork.Repository<IEsFileTransferMappingColumnDAO>();
 
             PageResult<ESDbTransferDTO> dtos = dao.FindPageList(pageEntity, dm);
             var dmList = mapper.Map<List<ESDbTransferDM>>(dtos.Results);
@@ -90,7 +93,9 @@ namespace Business.BusinessLogic
             var dbTransferMappingSrcDict = dbTransferMappingDMList.GroupBy(x => x.SrcDbTransferCode).ToDictionary(x => x.Key, x => x.Select(m => mapper.Map<ESDbTransferMappingDM>(m)).ToList());
             var dbTransferMappingDestDict = dbTransferMappingDMList.GroupBy(x => x.DstDbTransferCode).ToDictionary(x => x.Key, x => x.Select(m => mapper.Map<ESDbTransferMappingDM>(m)).ToList());
 
-            for(int i=0;i< dmList.Count;i++)
+            var fileTransferMappingColumnDict = esFileTransferMappingColumnDAO.FindListByFilter(new SearchVO() { TransferCodeIn = dmList.Select(x => x.TransferCode).ToList() }).GroupBy(x => x.DBTransferMappingCode).ToDictionary(x => x.Key, x => x.Select(m => mapper.Map<EsFileTransferMappingColumnDM>(m)).ToList());
+
+            for (int i=0;i< dmList.Count;i++)
             {
                 var dmItem = dmList[i];
                 if (dbTransferMappingSrcDict.ContainsKey(dmItem.TransferCode))
@@ -104,6 +109,10 @@ namespace Business.BusinessLogic
                         dmItem.DbTransferMappingDMs = dbTransferMappingDestDict[dmItem.TransferCode];
                     }
                    
+                }
+                if (fileTransferMappingColumnDict.ContainsKey(dmItem.TransferCode))
+                {
+                    dmItem.FileTransferMappingColumnDMs = fileTransferMappingColumnDict[dmItem.TransferCode];
                 }
             }
 

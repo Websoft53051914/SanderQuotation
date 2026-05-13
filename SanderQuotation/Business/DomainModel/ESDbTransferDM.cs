@@ -22,5 +22,7 @@ namespace Business.DomainModel
 
         //ÃB¥~Äæ¦ì
         public List<ESDbTransferMappingDM> DbTransferMappingDMs { set; get; } = new();
+
+        public List<EsFileTransferMappingColumnDM> FileTransferMappingColumnDMs { set; get; } = new();
     }
 }

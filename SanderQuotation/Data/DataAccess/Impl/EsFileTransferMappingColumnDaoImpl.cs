@@ -38,6 +38,11 @@ ORDER BY c.{nameof(EsFileTransferMappingColumnEntity.SrcSheetIndex)}, c.{nameof(
                 param.Add("TransferMappingCodeIn", searchVO.TransferMappingCodeIn);
                 whereSql += " AND TransferMappingCode = ANY(@TransferMappingCodeIn) ";
             }
+            if (searchVO.TransferCodeIn != null && searchVO.TransferCodeIn.Count > 0)
+            {
+                param.Add("TransferCodeIn", searchVO.TransferCodeIn);
+                whereSql += " AND DBTransferMappingCode = ANY(@TransferCodeIn) ";
+            }
             string sql = @"SELECT * FROM ESFileTransferMappingColumn WHERE 1=1 " + whereSql;
             return base.DbHelper.FindList<EsFileTransferMappingColumnEntity>(sql, param);
         }
