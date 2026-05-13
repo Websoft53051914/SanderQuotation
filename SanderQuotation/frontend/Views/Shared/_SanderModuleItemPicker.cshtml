@@ -1,0 +1,310 @@
+@using ViewModel
+@model ViewModel.SanderModuleItemPickerVCM
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@*
+    ════════════════════════════════════════════════════════════════════════════
+    _SanderModuleItemPicker.cshtml
+    採購型號選取器 Partial View（Modal 元件）── 支援同頁多實例
+    ── 使用方式 ──────────────────────────────────────────────────────────────
+    ① 在父頁面主體（@section scripts 前）加入：
+         @{
+             var ui = new
+             {
+                 PartialSmip = new SanderModuleItemPickerVCM { },
+             };
+         }
+         @await Html.PartialAsync("_SanderModuleItemPicker", ui.PartialSmip)
+       UrlGetPageList 可選填；留空則使用後端預設 API。
+    ② 呼叫：
+         SanderModuleItemPicker['@(nameof(ui.PartialSmip.ViewId))'].open(function(no) { /* 取得選取的料號 no */ });
+    ════════════════════════════════════════════════════════════════════════════
+*@
+@{
+    var modalId = !string.IsNullOrEmpty(Model?.ViewId) ? Model.ViewId : "itemPickerModal";
+    var urlGetPageList = !string.IsNullOrEmpty(Model?.UrlGetPageList)
+        ? Model.UrlGetPageList
+        : $"{Configuration["BackendURL"]}/api/SanderModuleItem/GetPageList";
+}
+
+<!-- Modal: 採購型號選取（@modalId）-->
+<div class="modal fade" id="@modalId" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title">
+                    <i class="ri-search-line me-2"></i>選取採購型號
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- 搜尋列 -->
+                <div class="border border-dashed border-end-0 border-start-0 p-3 mb-3">
+                    <div class="row g-3">
+                        <div class="col-xxl-3 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="ip-search-input form-control search bg-light border-light"
+                                       placeholder="搜尋關鍵字">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100 ip-search-btn">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i>篩選
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 列表 -->
+                <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+                    <table class="ip-table table align-middle table-hover table-bordered table-sm mb-0">
+                        <thead class="table-light sticky-top" style="top:0; z-index:1;">
+                            <tr>
+                                <th style="width:90px;" class="text-center">選取</th>
+                                <th style="min-width:140px;">料號</th>
+                                <th style="min-width:140px;">品名</th>
+                                <th style="min-width:200px;">說明</th>
+                                <th style="min-width:280px;">長描述</th>
+                            </tr>
+                        </thead>
+                        <tbody class="ip-table-body">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">載入中…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="noresult" style="display:none;">
+                    <div class="text-center">
+                        <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop"
+                                   colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                        <h5 class="mt-2">查無資料</h5>
+                    </div>
+                </div>
+
+                <!-- 分頁 -->
+                <div class="d-flex justify-content-end mt-2 ip-pagination"></div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modalId = '@modalId';
+        var urlGetPageList = '@(urlGetPageList?.ToHtmlString())';
+
+        // ── 欄位名稱（nameof 強型別） ─────────────────────────────────────────
+        var FIP = {
+            Id: '@nameof(SanderModuleItemVM.Id)',
+            No: '@nameof(SanderModuleItemVM.No)',
+            Description: '@nameof(SanderModuleItemVM.Description)',
+            Description2: '@nameof(SanderModuleItemVM.Description2)',
+            LongDesc: '@nameof(SanderModuleItemVM.LongDesc)',
+            LongDesc2: '@nameof(SanderModuleItemVM.LongDesc2)'
+        };
+
+        // ── 查詢狀態 ──────────────────────────────────────────────────────────
+        var qs = { page: 1, pageSize: 20, total: 0, keyword: '' };
+
+        // ── 註冊此實例 ────────────────────────────────────────────────────────
+        window.SanderModuleItemPicker = window.SanderModuleItemPicker || {};
+        window.SanderModuleItemPicker[modalId] = {
+            _callback: null,
+
+            /// 開啟選取器；callback(no) 在確認後被呼叫
+            open: function (callback) {
+                this._callback = callback;
+                $('#' + modalId + ' .ip-search-input').val('');
+                qs.keyword = '';
+                bootstrap.Modal.getOrCreateInstance(
+                    document.getElementById(modalId)
+                ).show();
+                _fetchPage(1);
+            },
+
+            /// 確認選取：呼叫 callback 並關閉 Modal
+            _confirm: function (no) {
+                if (this._callback) {
+                    this._callback(no);
+                    this._callback = null;
+                }
+                bootstrap.Modal.getInstance(document.getElementById(modalId)).hide();
+            }
+        };
+
+        // ── 呼叫後端分頁 API ─────────────────────────────────────────────────
+        function _fetchPage(page) {
+            qs.page = page;
+            var $body = $('#' + modalId + ' .ip-table-body');
+
+            if (!urlGetPageList) {
+                $body.html('<tr><td colspan="5" class="text-center text-danger py-3">未設定 API 位址</td></tr>');
+                return;
+            }
+
+            $body.html(
+                '<tr><td colspan="5" class="text-center text-muted py-4">'
+                + '<span class="spinner-border spinner-border-sm me-2"></span>載入中…</td></tr>'
+            );
+            $('#' + modalId + ' .noresult').hide();
+            $('#' + modalId + ' .ip-pagination').empty();
+
+            $.ajax({
+                url: urlGetPageList,
+                type: 'GET',
+                data: {
+                    Page: qs.page,
+                    PageSize: qs.pageSize,
+                    KeywordLike: qs.keyword || ''
+                },
+                success: function (res) {
+                    if (!res.Success) {
+                        $body.html('<tr><td colspan="5" class="text-center text-danger py-3">載入失敗</td></tr>');
+                        return;
+                    }
+                    var list = res.Data.Data || [];
+                    qs.total = res.Data.Total || 0;
+                    _renderTable(list);
+                    _renderPagination(qs.total);
+                    _renderResultInfo(qs.total);
+                },
+                error: function () {
+                    $body.html('<tr><td colspan="5" class="text-center text-danger py-3">網路錯誤，請稍後再試</td></tr>');
+                }
+            });
+        }
+
+        // ── 渲染表格 ─────────────────────────────────────────────────────────
+        function _renderTable(list) {
+            var $body = $('#' + modalId + ' .ip-table-body');
+            $body.empty();
+            if (!list.length) {
+                $('#' + modalId + ' .noresult').show();
+                return;
+            }
+            $('#' + modalId + ' .noresult').hide();
+            list.forEach(function (item) { $body.append(_buildRow(item)); });
+        }
+
+        // ── 建立單行 HTML ────────────────────────────────────────────────────
+        function _buildRow(item) {
+            var longDescHtml = escapeHtml(item[FIP.LongDesc] || '').replace(/\n/g, '<br>');
+            return `<tr class="ip-data-row" data-no="${escapeHtml(item[FIP.No])}" style="cursor:pointer;">
+                <td class="text-center">
+                    <button type="button" class="btn btn-primary ip-select-btn" data-no="${escapeHtml(item[FIP.No])}">
+                        <i class="ri-check-line me-1"></i>選取
+                    </button>
+                </td>
+                <td><code class="fs-6">${escapeHtml(item[FIP.No])}</code></td>
+                <td class="fw-semibold">${escapeHtml(item[FIP.Description])}</td>
+                <td class="text-muted">${escapeHtml(item[FIP.Description2])}</td>
+                <td class="text-muted" style="white-space:pre-wrap;max-width:280px;">${longDescHtml}</td>
+            </tr>`;
+        }
+
+        // ── 渲染分頁 ─────────────────────────────────────────────────────────
+        function _renderPagination(total) {
+            var $container = $('#' + modalId + ' .ip-pagination');
+            $container.empty();
+            var totalPages = Math.ceil(total / qs.pageSize) || 1;
+            if (totalPages <= 1) return;
+
+            var $ul = $('<ul class="pagination pagination-sm mb-0"></ul>');
+
+            $ul.append(`
+                <li class="page-item ${qs.page <= 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-ip-page="${Math.max(1, qs.page - 1)}">上一頁</a>
+                </li>
+            `);
+
+            var maxPages = 5;
+            var startPage = Math.max(1, qs.page - Math.floor(maxPages / 2));
+            var endPage = Math.min(totalPages, startPage + maxPages - 1);
+            startPage = Math.max(1, endPage - maxPages + 1);
+
+            if (startPage > 1) {
+                $ul.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="javascript:void(0)" data-ip-page="1">首頁</a>
+                    </li>
+                `);
+                $ul.append(`
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                `);
+            }
+
+            for (var i = startPage; i <= endPage; i++) {
+                $ul.append(`
+                    <li class="page-item ${i === qs.page ? 'active' : ''}">
+                        <a class="page-link" href="javascript:void(0)" data-ip-page="${i}">${i}</a>
+                    </li>
+                `);
+            }
+
+            if (endPage < totalPages) {
+                $ul.append(`
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                `);
+                $ul.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="javascript:void(0)" data-ip-page="${totalPages}">末頁</a>
+                    </li>
+                `);
+            }
+
+            $ul.append(`
+                <li class="page-item ${qs.page >= totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-ip-page="${Math.min(totalPages, qs.page + 1)}">下一頁</a>
+                </li>
+            `);
+
+            $container.append($ul);
+        }
+
+        // ── 事件綁定（以 #modalId 為範圍，支援多實例） ───────────────────────
+
+        $(document).on('click', '#' + modalId + ' .ip-search-btn', function () {
+            qs.keyword = $('#' + modalId + ' .ip-search-input').val().trim();
+            _fetchPage(1);
+        });
+
+        $(document).on('keydown', '#' + modalId + ' .ip-search-input', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                qs.keyword = $(this).val().trim();
+                _fetchPage(1);
+            }
+        });
+
+        $(document).on('click', '#' + modalId + ' .ip-pagination .page-link[data-ip-page]', function () {
+            var page = parseInt($(this).data('ip-page'));
+            if (!isNaN(page)) _fetchPage(page);
+        });
+
+        $(document).on('click', '#' + modalId + ' .ip-select-btn', function (e) {
+            e.stopPropagation();
+            window.SanderModuleItemPicker[modalId]._confirm($(this).data('no'));
+        });
+
+        $(document).on('dblclick', '#' + modalId + ' .ip-data-row', function () {
+            window.SanderModuleItemPicker[modalId]._confirm($(this).data('no'));
+        });
+
+        $(document).on('click', '#' + modalId + ' .ip-data-row', function () {
+            $('#' + modalId + ' .ip-data-row').removeClass('table-active');
+            $(this).addClass('table-active');
+        });
+
+    }());
+</script>
+
