@@ -13,7 +13,7 @@
                     <h5 class="card-title mb-0 flex-grow-1"></h5>
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
-                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
+                            <button id="btnShowModal" class ="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
                             <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
                         </div>
                     </div>
@@ -32,8 +32,8 @@
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
-                        <div class="col-xxl-2 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入關鍵字" id="Keyword" name="Keyword">
+                        <div class="col-xxl-3 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入檔案轉檔代碼、匯入範本檔案名稱或對應資料表" id="Keyword" name="Keyword">
                         </div>
                         <!--end col-->
                         <div class="col-xxl-1 col-sm-4">
@@ -175,10 +175,12 @@
                             <div class="col-md-3 mb-3">
                                 <label class="form-label required">檔案轉檔代碼</label>
                                 <input type="text" class="form-control" id="transferMappingCode" maxlength="50" placeholder="請輸入" required/>
+                                <div class="invalid-feedback">請輸入檔案轉檔代碼</div>
                             </div>
                               <div class="col-md-4 mb-3">
                                 <label class="form-label required">NAS 檔案路徑</label>
                                 <input type="text" class="form-control" id="nasfilePath" placeholder="請輸入" maxlength="500" required />
+                                <div class="invalid-feedback">請輸入NAS 檔案路徑</div>
                             </div>
 
                             <div class="col-md-12 mb-3">
@@ -395,7 +397,7 @@
             Get: '@(Configuration["BackendURL"])/api/TableExcel/Get',
             GetExampleFile: '@(Configuration["BackendURL"])/api/TableExcel/GetExampleFile',
             GetTableList: '@(Configuration["BackendURL"])/api/TableExcel/GetTableList',
-            GetTableColumns: '@(Configuration["BackendURL"])/api/TableExcel/GetTableColumns',
+            GetTableColumns: '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetTargetColumns',
             GetDbTransferList: '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetDbTransferList',
             GetTargetTables: '@(Configuration["BackendURL"])/api/ESDbTransferMapping/GetTargetTables',
             GetExcelColumns: '@(Configuration["BackendURL"])/api/TableExcel/GetExcelColumns',
@@ -408,10 +410,7 @@
             pageSize: 40,
             sortField: "SrcNasFilePath",
             sortDir: "asc",
-            Keyword1: "",
-            Status: "",
-            StartDate: "",
-            EndDate: "",
+            Keyword: ""
         };
 
         // ========================================
@@ -425,6 +424,7 @@
         var parsedSheets = [];
         var editData = null;
         var isEditMode = false;
+        var isLoadingSheet = false;
 
         function createEmptySheet(name) {
             return {
@@ -525,6 +525,7 @@
         }
 
         function loadSheetToUI(sheet) {
+            isLoadingSheet = true;
             $('#sheetName').val(sheet.sheetName);
             $('#filePath').val('');
             $('#headerRowIndex').val(sheet.headerRowIndex || 1);
@@ -543,18 +544,19 @@
 
             // reload tables for selected DB，並在載入完成後預選 tableName
             if (sheet.dbName) {
-                loadTableList(sheet.dbName, sheet.tableName);
+                loadTableList(sheet.dbName, sheet.tableName, function () {
+                    isLoadingSheet = false;
+                    renderMappingTable(sheet.mappings, sheet.tableName);
+                    loadFilterCondition(sheet.filterCondition || null, sheet.filterMode || 'builder');
+                });
             } else {
                 // 無 dbName 時清空 tableName 選項與值
                 $('#tableName').find('option:not(:first)').remove();
-                $('#tableName').val('').trigger('change');
+                $('#tableName').val('');
+                isLoadingSheet = false;
+                renderMappingTable(sheet.mappings, sheet.tableName);
+                loadFilterCondition(sheet.filterCondition || null, sheet.filterMode || 'builder');
             }
-
-            // mappings
-            renderMappingTable(sheet.mappings, sheet.tableName);
-
-            // filter condition
-            loadFilterCondition(sheet.filterCondition || null, sheet.filterMode || 'builder');
         }
 
 
@@ -598,7 +600,7 @@
                 mappings = [createEmptyMapping()];
             }
 
-            var dbColumns = dbColumnCache[tableName] || [];
+            var dbColumns = dbColumnCache[(($('#DBName').val() || '') + '::' + tableName)] || [];
 
             mappings.forEach(function (m, i) {
                 appendMappingRow(m, i, dbColumns);
@@ -619,7 +621,7 @@
         function appendMappingRow(mapping, index, dbColumns) {
             var $body = $('#mappingBody');
             var rowNum = index !== undefined ? index : $body.find('tr').length;
-            dbColumns = dbColumns || dbColumnCache[$('#tableName').val()] || [];
+            dbColumns = dbColumns || dbColumnCache[(($('#DBName').val() || '') + '::' + $('#tableName').val())] || [];
 
             var excelOptions = buildExcelOptions(mapping.excelColumn);
             var dbOptions = buildDbColumnOptions(dbColumns, mapping.dbColumn);
@@ -717,7 +719,9 @@
 
         // Add mapping row
         $('#btnAddMappingRow').on('click', function () {
-            var dbColumns = dbColumnCache[$('#tableName').val()] || [];
+            var tableName = $('#tableName').val() || '';
+            var dbName = $('#DBName').val() || '';
+            var dbColumns = dbColumnCache[(dbName + '::' + tableName)] || [];
             appendMappingRow(createEmptyMapping(), $('#mappingBody tr').length, dbColumns);
         });
 
@@ -761,9 +765,9 @@
         // tableName 變更 → 載入 dbColumn
         // ========================================
         $('#tableName').on('change', function () {
+            if (isLoadingSheet) return;
             var tableName = $(this).val();
             if (!tableName) {
-                dbColumnCache[tableName] = [];
                 renderMappingTable([], tableName);
                 return;
             }
@@ -772,6 +776,7 @@
                 // 清除已選的 dbColumn（因為資料表已變更）
                 currentMappings.forEach(function (m) { m.dbColumn = ''; });
                 renderMappingTable(currentMappings, tableName);
+                resetFilterCondition();
             });
         });
 
@@ -779,6 +784,7 @@
         // DBName 變更 → 重新載入 tableName
         // ========================================
         $('#DBName').on('change', function () {
+            if (isLoadingSheet) return;
             var dbTransferCode = $(this).val();
             // Clear current tableName
             var el = document.getElementById('tableName');
@@ -790,30 +796,33 @@
             var currentMappings = collectMappingRows();
             currentMappings.forEach(function (m) { m.dbColumn = ''; });
             renderMappingTable(currentMappings, '');
+            resetFilterCondition();
             if (dbTransferCode) {
                 loadTableList(dbTransferCode);
             }
         });
 
-        function loadDbColumns(tableName, callback) {
-            if (dbColumnCache[tableName]) {
-                if (callback) callback(dbColumnCache[tableName]);
+        function loadDbColumns(tableName, callback, dbTransferGuid) {
+            var guid = (dbTransferGuid !== undefined && dbTransferGuid !== null) ? dbTransferGuid : $('#DBName').val();
+            var cacheKey = (guid || '') + '::' + tableName;
+            if (dbColumnCache[cacheKey]) {
+                if (callback) callback(dbColumnCache[cacheKey]);
                 return;
             }
             $.ajax({
                 url: pageUrls.GetTableColumns,
                 type: 'GET',
-                data: { tableName: tableName },
+                data: { tableName: tableName, dbTransferGuid: guid },
                 success: function (res) {
                     if (res.Success) {
-                        dbColumnCache[tableName] = res.Data || [];
+                        dbColumnCache[cacheKey] = res.Data || [];
                     } else {
-                        dbColumnCache[tableName] = [];
+                        dbColumnCache[cacheKey] = [];
                     }
-                    if (callback) callback(dbColumnCache[tableName]);
+                    if (callback) callback(dbColumnCache[cacheKey]);
                 },
                 error: function () {
-                    dbColumnCache[tableName] = [];
+                    dbColumnCache[cacheKey] = [];
                     if (callback) callback([]);
                 }
             });
@@ -851,7 +860,6 @@ function loadDbTransferList(selectedValue, callback) {
                 var $sel = $('#DBName');
                 resetChoicesSelect('DBName');
                 initSingleChoices('DBName');
-                $sel.find('option:not(:first)').remove();
                 list.forEach(function (item) {
                     $sel.append('<option value="' + item.TransferCode + '">' + item.TransferName + ' (' + item.DbHost + '/' + item.DbName + ')' + '</option>');
                 });
@@ -904,7 +912,7 @@ function loadDbTransferList(selectedValue, callback) {
         //     });
         // }
 
-        function loadTableList(dbTransferGuid, selectedValue) {
+        function loadTableList(dbTransferGuid, selectedValue, callback) {
             var params = {};
             if (dbTransferGuid) params.dbTransferGuid = dbTransferGuid;
             $.ajax({
@@ -923,6 +931,10 @@ function loadDbTransferList(selectedValue, callback) {
                             $sel.val(selectedValue).trigger('change');
                         }
                     }
+                    if (callback) callback();
+                },
+                error: function () {
+                    if (callback) callback();
                 }
             });
         }
@@ -971,6 +983,10 @@ function loadDbTransferList(selectedValue, callback) {
             editData = null;
             uploadedFilePath = '';
             parsedSheets = [];
+            sheets = [];
+            activeSheetIndex = 0;
+            dbTableList = [];
+            dbColumnCache = {};
             $('#excelFileInput').val('');
             $('#excelParseResult').hide();
             $('#excelDropZone').show().removeClass('drag-over');
@@ -1442,7 +1458,7 @@ function loadDbTransferList(selectedValue, callback) {
                     if (pending === 0) {
                         loadSheetToUI(sheets[0]);
                     }
-                });
+                }, sheet.dbName);
             });
         }
 
@@ -1515,7 +1531,7 @@ function loadDbTransferList(selectedValue, callback) {
         }
 
         function onSearchData() {
-            queryState.Keyword1 = $('#Keyword1').val() || '';
+            queryState.Keyword = $('#Keyword').val() || '';
         }
 
         // ========================================
@@ -1577,7 +1593,8 @@ function loadDbTransferList(selectedValue, callback) {
         function addFilterRow(logic, column, operator_, value) {
             var isFirst = $('#filterRows tr').length === 0;
             var tableName = $('#tableName').val() || (sheets && sheets[activeSheetIndex] && sheets[activeSheetIndex].tableName) || '';
-            var dbCols = dbColumnCache[tableName] || [];
+            var dbName = $('#DBName').val() || (sheets && sheets[activeSheetIndex] && sheets[activeSheetIndex].dbName) || '';
+            var dbCols = dbColumnCache[(dbName + '::' + tableName)] || [];
             var colOptions = dbCols.map(function (c) {
                 return '<option value="' + c + '" ' + (c === column ? 'selected' : '') + '>' + c + '</option>';
             }).join('');

@@ -354,7 +354,7 @@
     function showResponseWarningAlert(message) {
         Swal.fire({
             icon: 'warning',
-            html: "<div style='text-align:center'>" + (message || '').replace(/\n/g, "<br>") + "</div>",
+            title: "<div style='text-align:center'>" + (message || '').replace(/\n/g, "<br>") + "</div>",
             confirmButtonText: pageConfig.messages.confirm
         });
     }

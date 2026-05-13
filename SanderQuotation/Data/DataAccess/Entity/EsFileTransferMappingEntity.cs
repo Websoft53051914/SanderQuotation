@@ -5,8 +5,6 @@ namespace Data.DataAccess.Entity
     [Table("EsFileTransferMapping")]
     public class EsFileTransferMappingEntity : SP_BaseEntity
     {
-        public string Status { set; get; }
-
         public string Type { set; get; }
 
         public string SortNo { set; get; }

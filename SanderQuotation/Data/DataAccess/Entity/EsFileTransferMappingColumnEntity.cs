@@ -1,4 +1,4 @@
-﻿using Core.Utility.Base.Data;
+﻿using Core.Utility.Base.Data.GuidId;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.DataAccess.Entity
@@ -6,7 +6,7 @@ namespace Data.DataAccess.Entity
     [Table("EsFileTransferMappingColumn")]
     public class EsFileTransferMappingColumnEntity : BaseEntity
     {
-        public string Status { set; get; }
+        public int Status { set; get; }
 
         public string Type { set; get; }
 

@@ -4,7 +4,7 @@ namespace Business.DomainModel
     {
         public Guid Id { get; set; }
 
-        public string Status { get; set; }
+        public int Status { get; set; }
 
         /// <summary>
         /// 蝟餌絞蝺刻? (?芸??Ｙ?)

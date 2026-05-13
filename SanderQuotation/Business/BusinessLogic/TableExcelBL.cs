@@ -5,11 +5,14 @@ using CommonClass.Model;
 using CommonClass.Models;
 using Const;
 using Core.Utility.Enums;
+using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.Entity;
+using DocumentFormat.OpenXml.Bibliography;
 using System.Transactions;
+using static Const.Enums;
 
 namespace Business.BusinessLogic
 {
@@ -89,9 +92,9 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 取得分頁列表
         /// </summary>
-        public PageResult<EsFileTransferMappingDM> GetPageList(CommonSearchQuery query)
+        public PageResult<EsFileTransferMappingDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
         {
-            var pageResult = GetMappingDAO().GetPageList(query);
+            var pageResult = GetMappingDAO().GetPageList(pageEntity, searchVO);
 
             return new PageResult<EsFileTransferMappingDM>
             {
@@ -100,13 +103,13 @@ namespace Business.BusinessLogic
                 PageDataSize = pageResult.PageDataSize,
                 Results = pageResult.Results.Select(dto => new EsFileTransferMappingDM
                 {
-                    //Id                 = dto.Id,
+                    Id                 = dto.Id,
                     TransferMappingCode = dto.TransferMappingCode,
                     ExampleFileName = dto.ExampleFileName,
                     ExampleFileType = dto.ExampleFileType,
                     SrcNasFilePath = dto.SrcNasFilePath,
                     Description = dto.Description,
-                    Status = dto.Status,
+                    Status = dto.Status??0,
                     MappingTables = dto.MappingTables,
                 }).ToList()
             };
@@ -115,45 +118,27 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 刪除對應設定（同時刪除 EsFileTransferMappingColumn + EsFileTransferMapping）
         /// </summary>
-        public DispatcherReturnMsg Delete(List<string> ids)
+        public void Delete(List<string> ids)
         {
-            try
+            var pkList = GetMappingDAO().FindByPkList(ids.Select(x => Guid.Parse(x)).ToList());
+            pkList.ForEach(x =>
             {
-                using var scope = new TransactionScope();
-
-                foreach (var id in ids)
-                {
-                    if (!Guid.TryParse(id, out var rowGuid)) continue;
-
-                    var entity = GetMappingDAO().FindByPropertys(new Dictionary<string, object>
-                    {
-                        { nameof(EsFileTransferMappingEntity.Id), rowGuid }
-                    });
-                    if (entity == null) continue;
-
-                    GetColumnDAO().DeleteByPropertys(new Dictionary<string, object>
-                    {
-                        { nameof(EsFileTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode }
-                    });
-                    _unitOfWork.Commit();
-
-                    //GetMappingDAO().Delete(rowGuid);
-                    _unitOfWork.Commit();
-                }
-
-                scope.Complete();
-                return new DispatcherReturnMsg { IsSuccess = "Y" };
-            }
-            catch (Exception ex)
+                x.UpdatedBy = UserInfo.UserAccount;
+                x.UpdatedAt = base.now;
+                x.Status = StatusEnum.Cancel.ToInt();
+                GetMappingDAO().Update(x);
+            });
+            GetColumnDAO().FindListByFilter(new SearchVO
             {
-                return new DispatcherReturnMsg
-                {
-                    IsSuccess = "N",
-                    AlertLevel = "error",
-                    ReturnCode = "E500",
-                    ReturnMsg = ex.Message
-                };
-            }
+                TransferMappingCodeIn = pkList.Select(x => x.TransferMappingCode).ToList(),
+            }).ForEach(x =>
+            {
+                x.UpdatedBy = UserInfo.UserAccount;
+                x.UpdatedAt = base.now;
+                x.Status = StatusEnum.Cancel.ToInt();
+                GetColumnDAO().Update(x);
+            });
+            _unitOfWork.Commit();
         }
 
         /// <summary>
@@ -176,19 +161,18 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 新增對應設定主檔及其欄位明細（同時寫入 EsFileTransferMapping + EsFileTransferMappingColumn）
         /// </summary>
-        public (DispatcherReturnMsg result, string? error, string? transferCode) Insert(EsFileTransferMappingDM dm)
+        public string? Insert(EsFileTransferMappingDM dm)
         {
             var entity = mapper.Map<EsFileTransferMappingEntity>(dm);
             //entity.RowGuid = Guid.NewGuid();
             //entity.TransferMappingCode = Guid.NewGuid().ToString("N").ToUpper();
-            entity.Status = Status.Enable.ToValueString();
+            entity.Status = Status.Enable.ToInt();
             entity.CreatedAt = DateTime.Now;
             entity.CreatedBy = UserInfo?.UserAccount;
 
             using var scope = new TransactionScope();
 
             GetMappingDAO().Insert(entity);
-            _unitOfWork.Commit();
 
             for (int i = 0; i < dm.Columns.Count; i++)
             {
@@ -196,79 +180,80 @@ namespace Business.BusinessLogic
                 //colEntity.RowGuid = Guid.NewGuid();
                 colEntity.TransferMappingCode = entity.TransferMappingCode;
                 colEntity.EsFileTransferMappingColumnID = Guid.NewGuid().ToString("N").ToUpper();
-                colEntity.Status = Status.Enable.ToValueString();
+                colEntity.Status = StatusEnum.Enabled.ToInt();
                 colEntity.SortNo = (i + 1).ToString();
                 colEntity.CreatedAt = DateTime.Now;
                 colEntity.CreatedBy = UserInfo?.UserAccount;
-                GetColumnDAO().Insert(colEntity);
+                GetColumnDAO().InsertAction(colEntity);
             }
 
             _unitOfWork.Commit();
             scope.Complete();
 
-            return (new DispatcherReturnMsg { IsSuccess = "Y" }, null, entity.TransferMappingCode);
+            return entity.TransferMappingCode;
+        }
+
+
+        public void CheckExist(EsFileTransferMappingDM dm)
+        {
+            if(dm.Id == Guid.Empty)
+            {
+                var existEntity = GetMappingDAO().FindByPropertys(new Dictionary<string, object>
+                {
+                    { nameof(EsFileTransferMappingEntity.TransferMappingCode), dm.TransferMappingCode },
+                     { nameof(EsFileTransferMappingEntity.Status), StatusEnum.Enabled.ToInt() },
+                });
+                if (existEntity != null)
+                {
+                    GetMessage().SetAlert("此檔案轉檔代碼已存在");
+                }
+            }
         }
 
         /// <summary>
         /// 更新對應設定主檔及其欄位明細（先刪除舊欄位再重新寫入）
         /// </summary>
-        public DispatcherReturnMsg Update(EsFileTransferMappingDM dm)
+        public void Update(EsFileTransferMappingDM dm)
         {
-            try
-            {
-                var entity = GetMappingDAO().FindByPropertys(new Dictionary<string, object>
+            var entity = GetMappingDAO().FindByPk(dm.Id);
+
+            entity.ExampleFileName = dm.ExampleFileName;
+            entity.ExampleFileType = dm.ExampleFileType;
+            entity.SrcNasFilePath = dm.SrcNasFilePath;
+            entity.Description = dm.Description;
+            entity.UpdatedAt = base.now;
+            entity.UpdatedBy = UserInfo?.UserAccount;
+
+
+            GetMappingDAO().Update(entity);
+
+            var columnEntitys = GetColumnDAO().FindListByPropertys(new Dictionary<string, object>
                 {
-                    { nameof(EsFileTransferMappingEntity.Id), dm.Id }
+                    { nameof(EsFileTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode },
+                    { nameof(EsFileTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() },
                 });
-                if (entity == null)
-                    return new DispatcherReturnMsg { IsSuccess = "N", ReturnCode = "E404", ReturnMsg = "資料不存在" };
-
-                entity.ExampleFileName = dm.ExampleFileName;
-                entity.ExampleFileType = dm.ExampleFileType;
-                entity.SrcNasFilePath = dm.SrcNasFilePath;
-                entity.Description = dm.Description;
-                entity.UpdatedAt = DateTime.Now;
-                entity.UpdatedBy = UserInfo?.UserAccount;
-
-                using var scope = new TransactionScope();
-
-                GetMappingDAO().Update(entity);
-                _unitOfWork.Commit();
-
-                GetColumnDAO().DeleteByPropertys(new Dictionary<string, object>
-                {
-                    { nameof(EsFileTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode }
-                });
-                _unitOfWork.Commit();
-
-                for (int i = 0; i < dm.Columns.Count; i++)
-                {
-                    var colEntity = mapper.Map<EsFileTransferMappingColumnEntity>(dm.Columns[i]);
-                    //colEntity.RowGuid                       = Guid.NewGuid();
-                    colEntity.TransferMappingCode = entity.TransferMappingCode;
-                    colEntity.EsFileTransferMappingColumnID = Guid.NewGuid().ToString("N").ToUpper();
-                    colEntity.Status = Status.Enable.ToValueString();
-                    colEntity.SortNo = (i + 1).ToString();
-                    colEntity.CreatedAt = DateTime.Now;
-                    colEntity.CreatedBy = UserInfo?.UserAccount;
-                    GetColumnDAO().Insert(colEntity);
-                }
-
-                _unitOfWork.Commit();
-                scope.Complete();
-
-                return new DispatcherReturnMsg { IsSuccess = "Y" };
-            }
-            catch (Exception ex)
+            foreach (var col in columnEntitys)
             {
-                return new DispatcherReturnMsg
-                {
-                    IsSuccess = "N",
-                    AlertLevel = "error",
-                    ReturnCode = "E500",
-                    ReturnMsg = ex.Message
-                };
+                col.Status = StatusEnum.Cancel.ToInt();
+                col.UpdatedAt = base.now;
+                col.UpdatedBy = UserInfo?.UserAccount;
+                GetColumnDAO().Update(col);
             }
+
+            for (int i = 0; i < dm.Columns.Count; i++)
+            {
+                var colEntity = mapper.Map<EsFileTransferMappingColumnEntity>(dm.Columns[i]);
+                //colEntity.RowGuid                       = Guid.NewGuid();
+                colEntity.TransferMappingCode = entity.TransferMappingCode;
+                colEntity.EsFileTransferMappingColumnID = Guid.NewGuid().ToString("N").ToUpper();
+                colEntity.Status = Status.Enable.ToInt();
+                colEntity.SortNo = (i + 1).ToString();
+                colEntity.CreatedAt = DateTime.Now;
+                colEntity.CreatedBy = UserInfo?.UserAccount;
+                GetColumnDAO().InsertAction(colEntity);
+            }
+
+            _unitOfWork.Commit();
         }
     }
 

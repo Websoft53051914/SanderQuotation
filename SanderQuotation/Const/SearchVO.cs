@@ -94,25 +94,11 @@
         /// 代碼
         /// </summary>
         public string? TransferMappingCodeEq { set; get; }
-    }
-
-
-    public partial class SearchVO
-    {
-        /// <summary>
-        /// 帳號狀態
-        /// </summary>
-        public string? AccountStatusEq { get; set; }
 
         /// <summary>
-        /// 帳號狀態
+        /// 代碼
         /// </summary>
-        public string? AccountStatusNeq { get; set; }
-
-        /// <summary>
-        /// 帳號資料代號
-        /// </summary>
-        public int? AccountIdEq { get; set; }
+        public List<string> TransferMappingCodeIn { set; get; } = new List<string>();
     }
 
     public partial class SearchVO

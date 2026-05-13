@@ -243,7 +243,7 @@ namespace backend.Controllers
         /// 取得所有已設定的來源資料庫連線清單（ESDbTransfer）
         /// </summary>
         [HttpGet("GetDbTransferList")]
-        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit, FuncID.TableExcel_Create, FuncID.TableExcel_Edit)]
         public IActionResult GetDbTransferList()
         {
             try
@@ -318,7 +318,7 @@ namespace backend.Controllers
         /// 取得目的資料庫所有 TABLE 名稱（若指定 dbTransferGuid 則用該連線，否則用 MainConnection）
         /// </summary>
         [HttpGet("GetTargetTables")]
-        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit,FuncID.TableExcel_Create,FuncID.TableExcel_Edit)]
         public IActionResult GetTargetTables([FromQuery] string? dbTransferGuid = null)
         {
             try
@@ -353,7 +353,7 @@ namespace backend.Controllers
         /// 取得目的資料庫指定 TABLE 的欄位清單（若指定 dbTransferGuid 則用該連線，否則用 MainConnection）
         /// </summary>
         [HttpGet("GetTargetColumns")]
-        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
+        [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit, FuncID.TableExcel_Create, FuncID.TableExcel_Edit)]
         public IActionResult GetTargetColumns([FromQuery] string tableName, [FromQuery] string? dbTransferGuid = null)
         {
             try

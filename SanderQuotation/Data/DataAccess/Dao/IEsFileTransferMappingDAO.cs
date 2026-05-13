@@ -10,7 +10,7 @@ namespace Data.DataAccess.Dao
     {
         PageResult<EsFileTransferMappingDTO> GetPageList(PageEntity pageEntity, EsFileTransferMappingDTO condition);
 
-        PageResult<EsFileTransferMappingDTO> GetPageList(CommonSearchQuery query);
+        PageResult<EsFileTransferMappingDTO> GetPageList(PageEntity pageEntity, SearchVO searchVO);
 
         List<EsFileTransferMappingDTO> GetList(EsFileTransferMappingDTO condition);
 

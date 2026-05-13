@@ -137,12 +137,25 @@ namespace Business.BusinessLogic
         public void Delete(List<Guid> ids)
         {
             IESDbTransferMappingDAO dao = _unitOfWork.Repository<IESDbTransferMappingDAO>();
-            dao.FindByPkList(ids).ForEach(x =>
+            var pkList = dao.FindByPkList(ids);
+            pkList.ForEach(x =>
             {
                 x.UpdatedBy = UserInfo.UserAccount;
                 x.UpdatedAt = base.now;
                 x.Status = StatusEnum.Cancel.ToInt();
                 dao.Update(x);
+            });
+
+            IESDbTransferMappingColumnDAO eSDbTransferMappingColumnDAO = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
+            eSDbTransferMappingColumnDAO.FindListByFilter(new SearchVO
+            {
+               TransferMappingCodeIn = pkList.Select(x => x.TransferMappingCode).ToList(),
+            }).ForEach(x =>
+            {
+                x.UpdatedBy = UserInfo.UserAccount;
+                x.UpdatedAt = base.now;
+                x.Status = StatusEnum.Cancel.ToInt();
+                eSDbTransferMappingColumnDAO.Update(x);
             });
 
             dao.DbHelper.Commit();
@@ -204,7 +217,7 @@ namespace Business.BusinessLogic
 
             // 先刪除舊欄位對應，再寫入新的
             var colDao = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
-            var oldCols = colDao.FindListByPropertys(new Dictionary<string, object> { { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode } });
+            var oldCols = colDao.FindListByPropertys(new Dictionary<string, object> { { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode },{ nameof(ESDbTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() } });
             foreach (var old in oldCols)
             {
                 old.UpdatedBy = UserInfo.UserAccount;

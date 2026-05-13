@@ -9,5 +9,7 @@ namespace Const
     public class Value
     {
         public const string JWT_TokenName = "jwtname";
+
+        public const string FileTransferDirectory= "SanderQuotation.frontend";
     }
 }

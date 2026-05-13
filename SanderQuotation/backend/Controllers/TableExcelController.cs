@@ -1,8 +1,10 @@
+using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
 using CommonClass.Models;
 using Const;
+using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
@@ -39,15 +41,16 @@ namespace backend.Controllers
         /// 取得對應設定分頁列表
         /// </summary>
         [HttpGet("GetPageList")]
-        public ActionResult GetPageList([FromQuery] CommonSearchQuery query)
+        [CustomAuthorization(Enums.FuncID.TableExcel_View)]
+        public ActionResult GetPageList([FromQuery] ListPageEntity request,string Keyword)
         {
             try
             {
-                var res = GetTableExcelBL().GetPageList(query);
-
+                var pageEntity = base.GetPageEntity(request);
+                var res = GetTableExcelBL().GetPageList(pageEntity, new SearchVO { KeywordLike = Keyword });
                 var vmList = res.Results.Select((dm, i) => new TableExcelGridVM
                 {
-                    No                      = (res.CurrentPage - 1) * res.PageDataSize + i + 1,
+                    No                      = (request.Page - 1) * request.PageSize + i + 1,
                     RowGuid                 = dm.Id,
                     TransferMappingCode     = dm.TransferMappingCode,
                     ExampleFileName         = dm.ExampleFileName,
@@ -55,7 +58,7 @@ namespace backend.Controllers
                     SrcNasFilePath          = dm.SrcNasFilePath,
                     Description             = dm.Description,
                     MappingTables           = dm.MappingTables,
-                    Status                  = dm.Status,
+                    Status                  = dm.Status.ToString(),
                 }).ToList();
 
                 return JsonSuccess(new
@@ -79,6 +82,7 @@ namespace backend.Controllers
         /// 新增對應設定（同時寫入 EsFileTransferMapping + EsFileTransferMappingColumn）
         /// </summary>
         [HttpPost("Create")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Create)]
         public ActionResult Create([FromBody] TableExcelSettingVM vm)
         {
             if (vm == null)
@@ -121,38 +125,36 @@ namespace backend.Controllers
                         .ToList()
                 };
 
-                var (res, errorKey, transferCode) = GetTableExcelBL().Insert(dm);
-                if (errorKey != null)
-                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentCulture.Name}:{errorKey}"]);
-
-                if (res.IsSuccess == "Y")
+                GetTableExcelBL().CheckExist(dm);
+                if (GetTableExcelBL().GetMessage().IsError())
                 {
-                    res.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    res.ReturnMsg  = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Insert_Success"];
-
-                    // 將暫存的 Excel 檔案移至 wwwroot/image/{TransferMappingCode}/
-                    // 使用 BL 回傳的自動產生編號 (res.EntityID)，而非前端傳入的 vm.TransferMappingCode
-                    if (!string.IsNullOrWhiteSpace(vm.UploadedFilePath)
-                        && !string.IsNullOrWhiteSpace(transferCode)
-                        && System.IO.File.Exists(vm.UploadedFilePath))
-                    {
-                        // 優先使用設定檔指定路徑（指向 EIP.frontend/wwwroot）
-                        // 若未設定則自動推算同層的 EIP.frontend/wwwroot
-                        var configuredPath = _config["FileStoragePath"];
-                        var wwwRoot = !string.IsNullOrWhiteSpace(configuredPath)
-                            ? configuredPath
-                            : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "EIP.frontend", "wwwroot"));
-
-                        var destDir = Path.Combine(wwwRoot, _FileSaveFolder, transferCode);
-                        Directory.CreateDirectory(destDir);
-                        var destPath = Path.Combine(destDir, originalFileName);
-                        System.IO.File.Copy(vm.UploadedFilePath, destPath, overwrite: true);
-
-                        // 複製完成後刪除暫存檔
-                        try { System.IO.File.Delete(vm.UploadedFilePath); } catch { /* 暫存清除失敗不影響主流程 */ }
-                    }
+                    return JsonValidFail(GetTableExcelBL().GetMessage().GetErrMsg());
                 }
-                return JsonSuccess<DispatcherReturnMsg>(res);
+
+                var transferCode = GetTableExcelBL().Insert(dm);
+
+                // 將暫存的 Excel 檔案移至 wwwroot/image/{TransferMappingCode}/
+                // 使用 BL 回傳的自動產生編號 (res.EntityID)，而非前端傳入的 vm.TransferMappingCode
+                if (!string.IsNullOrWhiteSpace(vm.UploadedFilePath)
+                    && !string.IsNullOrWhiteSpace(transferCode)
+                    && System.IO.File.Exists(vm.UploadedFilePath))
+                {
+                    // 優先使用設定檔指定路徑（指向 EIP.frontend/wwwroot）
+                    // 若未設定則自動推算同層的 EIP.frontend/wwwroot
+                    var configuredPath = _config["FileStoragePath"];
+                    var wwwRoot = !string.IsNullOrWhiteSpace(configuredPath)
+                        ? configuredPath
+                        : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", Value.FileTransferDirectory, "wwwroot"));
+
+                    var destDir = Path.Combine(wwwRoot, _FileSaveFolder, transferCode);
+                    Directory.CreateDirectory(destDir);
+                    var destPath = Path.Combine(destDir, originalFileName);
+                    System.IO.File.Copy(vm.UploadedFilePath, destPath, overwrite: true);
+
+                    // 複製完成後刪除暫存檔
+                    try { System.IO.File.Delete(vm.UploadedFilePath); } catch { /* 暫存清除失敗不影響主流程 */ }
+                }
+                return JsonSuccess("新增成功");
             }
             catch (Exception ex)
             {
@@ -167,6 +169,7 @@ namespace backend.Controllers
         /// 依 RowGuid 取得單筆對應設定（含所有 Sheet 欄位對應）
         /// </summary>
         [HttpGet("Get")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Edit)]
         public ActionResult Get([FromQuery] Guid id)
         {
             try
@@ -228,6 +231,7 @@ namespace backend.Controllers
         /// 依 RowGuid 取得新增時上傳的範本檔案
         /// </summary>
         [HttpGet("GetExampleFile")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Edit)]
         public IActionResult GetExampleFile([FromQuery] Guid id)
         {
             try
@@ -239,7 +243,7 @@ namespace backend.Controllers
                 var configuredPath = _config["FileStoragePath"];
                 var wwwRoot = !string.IsNullOrWhiteSpace(configuredPath)
                     ? configuredPath
-                    : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "EIP.frontend", "wwwroot"));
+                    : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", Value.FileTransferDirectory, "wwwroot"));
               
                 var filePath = Path.Combine(wwwRoot, _FileSaveFolder, dm.TransferMappingCode, dm.FileName);
                 if (!System.IO.File.Exists(filePath))
@@ -270,6 +274,7 @@ namespace backend.Controllers
         /// 更新對應設定（同時重建 EsFileTransferMappingColumn，SheetName 變動亦一併套用）
         /// </summary>
         [HttpPost("Update")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Edit)]
         public ActionResult Update([FromBody] TableExcelSettingVM vm)
         {
             if (vm == null)
@@ -305,13 +310,8 @@ namespace backend.Controllers
                         .ToList()
                 };
 
-                var res = GetTableExcelBL().Update(dm);
-                if (res.IsSuccess == "Y")
-                {
-                    res.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    res.ReturnMsg  = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Update_Success"];
-                }
-                return JsonSuccess<DispatcherReturnMsg>(res);
+                GetTableExcelBL().Update(dm);
+                return JsonSuccess("編輯成功");
             }
             catch (Exception ex)
             {
@@ -325,6 +325,7 @@ namespace backend.Controllers
         /// 刪除對應設定（同時刪除 EsFileTransferMappingColumn + EsFileTransferMapping）
         /// </summary>
         [HttpPost("Delete")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Delete)]
         public ActionResult Delete([FromBody] List<string> ids)
         {
             try
@@ -333,7 +334,7 @@ namespace backend.Controllers
                 var configuredPath = _config["FileStoragePath"];
                 var wwwRoot = !string.IsNullOrWhiteSpace(configuredPath)
                     ? configuredPath
-                    : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "EIP.frontend", "wwwroot"));
+                    : Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", Value.FileTransferDirectory, "wwwroot"));
 
                 var dirsToDel = ids
                     .Select(id => Guid.TryParse(id, out var g) ? GetTableExcelBL().GetOne(g) : null)
@@ -341,24 +342,18 @@ namespace backend.Controllers
                     .Select(dm => Path.Combine(wwwRoot, _FileSaveFolder, dm!.TransferMappingCode))
                     .ToList();
 
-                DispatcherReturnMsg res = GetTableExcelBL().Delete(ids);
-                if (res.IsSuccess == "Y")
+                GetTableExcelBL().Delete(ids);
+                // 刪除對應的實體檔案目錄
+                foreach (var dir in dirsToDel)
                 {
-                    res.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    res.ReturnMsg  = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Delete_Success"];
-
-                    // 刪除對應的實體檔案目錄
-                    foreach (var dir in dirsToDel)
+                    try
                     {
-                        try
-                        {
-                            if (Directory.Exists(dir))
-                                Directory.Delete(dir, recursive: true);
-                        }
-                        catch { /* 檔案清除失敗不影響主流程 */ }
+                        if (Directory.Exists(dir))
+                            Directory.Delete(dir, recursive: true);
                     }
+                    catch { /* 檔案清除失敗不影響主流程 */ }
                 }
-                return JsonSuccess<DispatcherReturnMsg>(res);
+                return JsonSuccess("刪除成功");
             }
             catch (Exception ex)
             {
@@ -373,6 +368,7 @@ namespace backend.Controllers
         /// </summary>
         [HttpPost("UploadExcel")]
         [Consumes("multipart/form-data")]
+        [CustomAuthorization(Enums.FuncID.TableExcel_Create, Enums.FuncID.TableExcel_Edit)]
         public async Task<IActionResult> UploadExcel(IFormFile file)
         {
             try
@@ -381,7 +377,7 @@ namespace backend.Controllers
                     return JsonValidFail(GetMsg(_config, "Upload_Please_Select_File"));
 
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (ext != ".xlsx" && ext != ".xls" && ext != ".csv")
+                if (ext != ".xlsx" && ext != ".xls")
                     return JsonValidFail(GetMsg(_config, "Upload_Excel_Format_Only"));
 
                 // 儲存至伺服器暫存目錄

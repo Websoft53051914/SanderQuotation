@@ -4,6 +4,7 @@ using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using NPOI.SS.Formula.Functions;
 
 namespace Core.Utility.Web.Base
 {
@@ -119,6 +120,8 @@ namespace Core.Utility.Web.Base
         protected PageEntity GetPageEntity(ListPageEntity request)
         {
             PageEntity result = new();
+            result.Sort = !string.IsNullOrEmpty(request.SortField) ? request.SortField : string.Empty;
+            result.Asc = string.IsNullOrWhiteSpace(request.SortDir) || (request.SortDir.ToUpper() != "ASC" && request.SortDir.ToUpper() != "DESC") ? "ASC" : request.SortDir.ToUpper();
             result.CurrentPage = request.Page;
             result.PageDataSize = request.PageSize;
             return result;
