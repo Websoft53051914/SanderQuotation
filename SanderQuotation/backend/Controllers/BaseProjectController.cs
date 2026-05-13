@@ -1,4 +1,5 @@
 using backend.Common;
+using backend.Common.ConfigurationHelper;
 using backend.Models;
 using Business;
 using Business.BusinessLogic;
@@ -16,16 +17,31 @@ using static Const.Enums;
 
 namespace backend.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [Authorize]
     public class BaseProjectController : ApiBaseController
     {
+        /// <summary>
+        /// 
+        /// </summary>
         protected readonly IConfiguration _config;
+        /// <summary>
+        /// 
+        /// </summary>
+        protected readonly ConfigurationHelper _configHelper;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="configuration"></param>
         public BaseProjectController(IConfiguration configuration)
         {
             _config = configuration;
+            _configHelper = new ConfigurationHelper(configuration);
         }
 
-        public CommonClass.Model.UserInfo UserInfo { get; set; }
+        public CommonClass.Model.UserInfo UserInfo { get; set; } = null;
 
 
 
@@ -39,7 +55,7 @@ namespace backend.Controllers
             UserInfo.IP = Common.Method.GetClientIPAddress();
             if (User.FindFirst("PermissionCodeList") != null)
             {
-                UserInfo.PermissionCodeList = JsonConvert.DeserializeObject<List<string>>(User.FindFirst("PermissionCodeList").Value)??new List<string>();
+                UserInfo.PermissionCodeList = JsonConvert.DeserializeObject<List<string>>(User.FindFirst("PermissionCodeList").Value) ?? new List<string>();
             }
             //UserInfo.RoleList = User.FindFirst("RoleList")?.Value;
 

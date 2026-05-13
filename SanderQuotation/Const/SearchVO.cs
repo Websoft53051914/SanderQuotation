@@ -189,4 +189,20 @@
         /// </summary>
         public List<string> TransferCodeIn { get; set; } = new List<string>();
     }
+
+    public partial class SearchVO
+    {
+        /// <summary>
+        /// BomFileContent.Id
+        /// </summary>
+        public Guid? BomFileContentIdEq { get; set; }
+    }
+
+    public partial class SearchVO
+    {
+        /// <summary>
+        /// SanderModuleItem 採購型號
+        /// </summary>
+        public string? SanderModuleItemNoEq { get; set; }
+    }
 }

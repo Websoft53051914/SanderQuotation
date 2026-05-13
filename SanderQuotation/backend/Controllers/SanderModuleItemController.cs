@@ -1,54 +1,136 @@
-using backend.Models;
-using CommonClass.Models;
-using Core.Utility.Web.Base;
+using AutoMapper;
+using Business.BusinessLogic;
+using Business.DomainModel;
+using Const;
+using Core.Utility.Helper.DB.Entity;
+using Core.Utility.Helper.Excel;
+using Data.DataAccess.DTO;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using ViewModel.SanderModule;
+using ViewModel;
 
 namespace backend.Controllers
 {
-    /// <summary>Sander 採購型號主檔 API Controller</summary>
+    /// <summary>
+    /// Sander 採購型號主檔 API Controller
+    /// </summary>
     [Route("api/SanderModuleItem")]
-    public class SanderModuleItemController : ApiBaseController
+    public partial class SanderModuleItemController : BaseProjectController
     {
-        /// <summary>將 SanderModuleItemData 對應至 ViewModel。</summary>
-        private static SanderModuleItemVM MapToVM(SanderModuleItemData d)
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="configuration"></param>
+        public SanderModuleItemController(IConfiguration configuration, IWebHostEnvironment webHostEnvironment) : base(configuration)
         {
-            SanderModuleItemVM vm = new();
-            vm.Id = d.Id;
-            vm.No = d.No;
-            vm.Description = d.Description;
-            vm.Description2 = d.Description2;
-            vm.LongDesc = d.LongDesc;
-            vm.LongDesc2 = d.LongDesc2;
-            return vm;
+            _webHostEnvironment = webHostEnvironment;
+
+            MapperConfiguration cfg = new(c =>
+            {
+                c.AllowNullCollections = true;
+                c.CreateMap<SanderModuleItemDM, SanderModuleItemVM>().ReverseMap();
+            });
+            _mapper = cfg.CreateMapper();
         }
 
-        /// <summary>取得採購型號清單（支援關鍵字搜尋）</summary>
-        [HttpGet("GetList")]
-        public ActionResult GetList(string? keyword = null)
+        private readonly IMapper _mapper;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        private SanderModuleItemBL? _blSanderModuleItem = null;
+
+        /// <summary>
+        /// 取得 SanderModuleItemBL 實例
+        /// </summary>
+        protected SanderModuleItemBL GetBlSanderModuleItem()
+        {
+            _blSanderModuleItem ??= GetBLInstance<SanderModuleItemBL>();
+
+            return _blSanderModuleItem;
+        }
+
+        /// <summary>
+        /// 分頁取得採購型號清單（從資料庫）
+        /// </summary>
+        [HttpGet("GetPageList")]
+        public ActionResult GetPageList([FromQuery] SanderModuleItemSearchVM filter)
         {
             try
             {
-                List<SanderModuleItemData> items = SanderModuleJsonHelper.GetList(keyword);
-                List<SanderModuleItemVM> list = items.Select(MapToVM).ToList();
-                return JsonSuccess(list);
+                PageEntity pageEntity = GetPageEntity<SanderModuleItemVM>(filter);
+
+                SearchVO searchVO = new();
+                searchVO.KeywordLike = filter.KeywordLike;
+
+                PageResult<SanderModuleItemDM> pageResult = GetBlSanderModuleItem().GetPageList(pageEntity, searchVO);
+
+                List<SanderModuleItemVM> list = [];
+                foreach (SanderModuleItemDM dm in pageResult.Results)
+                {
+                    SanderModuleItemVM vm = _mapper.Map<SanderModuleItemVM>(dm);
+
+                    list.Add(vm);
+                }
+
+                return JsonSuccess(new
+                {
+                    Data = list,
+                    Total = pageResult.DataCount,
+                    Page = pageResult.CurrentPage,
+                    PageSize = pageResult.PageDataSize,
+                });
             }
             catch (Exception ex)
             {
-                return JsonSuccess(HandleError(ex));
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
+    }
 
-        /// <summary>統一錯誤處理，回傳包含錯誤訊息的 DispatcherReturnMsg。</summary>
-        private DispatcherReturnMsg HandleError(Exception ex)
+    public partial class SanderModuleItemController
+    {
+        /// <summary>
+        /// 匯入內部料號資料
+        /// </summary>
+        /// <returns></returns>
+        private void ImportSandermoduleItem()
         {
-            System.Diagnostics.Debug.WriteLine($"Error: {ex}");
-            DispatcherReturnMsg dispatcherReturnMsg = new();
-            dispatcherReturnMsg.IsSuccess = "N";
-            dispatcherReturnMsg.ReturnMsg = ex.Message;
-            dispatcherReturnMsg.ReturnCode = "E500";
-            dispatcherReturnMsg.AlertLevel = "error";
-            return dispatcherReturnMsg;
+            try
+            {
+                string pathTmpl = Path.Combine(_webHostEnvironment.WebRootPath, "file", "SanderModule_Item.xlsx");
+                ExcelReaderHelper reader = new();
+                reader.SetWorkBook(pathTmpl);
+                reader.SetSheet(reader.GetWorkBook().GetSheetAt(0));
+                List<SanderModuleItemDM> dmList = [];
+                int startRowIndex = 2;
+                for (int i = startRowIndex; i <= reader.GetSheet().LastRowNum; i++)
+                {
+                    SanderModuleItemDM dm = new();
+                    reader.SetRowCellIndex(i, 0);
+                    dm.No = reader.GetStringValue()?.Trim() ?? string.Empty;
+                    reader.NextCell();
+                    dm.Description = reader.GetStringValue()?.Trim();
+                    reader.NextCell();
+                    dm.Description2 = reader.GetStringValue()?.Trim();
+                    reader.NextCell();
+                    dm.LongDesc = reader.GetStringValue()?.Trim() ?? string.Empty;
+                    reader.NextCell();
+                    dm.LongDesc2 = reader.GetStringValue()?.Trim();
+
+                    dmList.Add(dm);
+                }
+                reader.GetWorkBook().Dispose();
+
+                foreach (SanderModuleItemDM dm in dmList)
+                {
+                    GetBlSanderModuleItem().DoCreate(dm);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+            }
         }
     }
 }
+

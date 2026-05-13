@@ -5,11 +5,11 @@
     ViewBag.pTitle = "定時查價結果編輯";
     ViewBag.pageTitle = "採購管理";
 
-    long quotationFileId = ViewBag.QuotationFileId as long? ?? 0L;
+    Guid? quotationFileId = ViewBag.QuotationFileId as Guid?;
 
-    var mapData = new
+    var ui = new
     {
-        ItemPicker = new ItemPickerVCM(),
+        PartialSmip = new SanderModuleItemPickerVCM ()
     };
 }
 
@@ -24,43 +24,32 @@
                     <input type="hidden" id="e_Id" />
                     <div class="row g-2 align-items-end mb-3">
                         <div class="col-lg-2 col-md-3">
-                            <label class="col-form-label pt-0">BOM File 名稱</label>
-                            <input type="text" id="e_BomFileName" class="form-control" readonly />
+                            <label class="col-form-label pt-0">BOM 檔案名稱</label>
+                            <input type="text" id="e_FileName" class="form-control" readonly />
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="col-form-label pt-0">客戶代碼</label>
+                            <input type="text" id="e_CustomerCode" class="form-control" readonly />
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="col-form-label pt-0">客戶名稱</label>
                             <input type="text" id="e_CustomerName" class="form-control" readonly />
                         </div>
-                        <div class="col-lg-2 col-md-3">
+                        <div class="col-lg-2 col-md-3 d-none">
                             <label class="col-form-label pt-0">產品料號</label>
-                            <input type="text" id="e_ProductNo" class="form-control" readonly />
+                            <input type="text" id="e_ProdNo" class="form-control" readonly />
                         </div>
                         <div class="col-lg-2 col-md-3">
-                            <label class="col-form-label pt-0 required">客戶別</label>
-                            <select id="e_CustomerType" class="form-select" required>
-                                <option value="">請選擇</option>
-                                <option value="MM">MM</option>
-                                <option value="D3">D3</option>
-                                <option value="STL">STL</option>
-                                <option value="CTB">CTB</option>
-                                <option value="WT">WT</option>
-                                <option value="AED">AED</option>
-                                <option value="EDS">EDS</option>
-                            </select>
-                            @*<div class="invalid-feedback">請選擇客戶別。</div>*@
-                        </div>
-                        <div class="col-lg-2 col-md-3">
-                            <label class="col-form-label pt-0 required">採購數量</label>
-                            <input type="number" id="e_PurchaseQty" class="form-control" min="1" required />
-                            @*<div class="invalid-feedback">請輸入採購數量。</div>*@
+                            <label class="col-form-label pt-0">報價數量</label>
+                            <input type="text" id="e_QuotationQty" class="form-control" readonly />
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="col-form-label pt-0">建立時間</label>
-                            <input type="text" id="e_CreateTime" class="form-control" readonly />
+                            <input type="text" id="e_CreatedAtText" class="form-control" readonly />
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="col-form-label pt-0">最後更新</label>
-                            <input type="text" id="e_UpdateTime" class="form-control" readonly />
+                            <input type="text" id="e_UpdatedAtText" class="form-control" readonly />
                         </div>
                     </div>
                 </form>
@@ -69,20 +58,20 @@
             <div class="card-body">
 
                 <!-- ── 查價結果表 ── -->
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="text-muted mb-0">
+                        <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
+                    </h6>
+                    <button type="button" class="btn btn-warning" id="btnToggleRecommended"
+                            title="切換建議採購型號的勾選狀態">
+                        <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
+                    </button>
+                </div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <h6 class="text-muted mb-0">
-                            <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
-                        </h6>
-                        <button type="button" class="btn btn-warning" id="btnToggleRecommended"
-                                title="切換建議採購型號的勾選狀態">
-                            <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
-                        </button>
+                    <div class="text-muted small mb-2">
+                        <i class="ri-checkbox-blank-circle-fill me-1"></i>採購型號欄位黃底標示表示系統建議採購型號
                     </div>
                     <span class="badge bg-info-subtle text-info" id="itemCountBadge">— 筆料項</span>
-                </div>
-                <div class="text-muted small mb-2">
-                    <i class="ri-checkbox-blank-circle-fill me-1"></i>採購型號欄位黃底標示表示系統建議採購型號
                 </div>
 
                 <div class="table-responsive" style="max-height:600px; overflow-y:auto;">
@@ -130,10 +119,16 @@
                 <!-- ── 底部按鈕列 ── -->
                 <div class="d-flex justify-content-end mt-3 gap-2">
                     <a href="@Url.Action("Index", "QuotationResult")" class="btn btn-secondary">
-                        <i class="ri-arrow-left-line me-1"></i>返回
+                        <i class="ri-arrow-left-line"></i>返回
                     </a>
-                    <button type="button" class="btn btn-success" id="btnSaveHeader">
-                        <i class="ri-refresh-line me-1"></i>重新查價
+                    <button type="button" class="btn btn-success" id="btnReQuotation">
+                        <i class="ri-refresh-line"></i>重新查價
+                    </button>
+                    <button type="button" class="btn btn-success">
+                        <i class="ri-search-line"></i>Digikey查價
+                    </button>
+                    <button type="button" class="btn btn-success">
+                        <i class="ri-search-line"></i>Mouser查價
                     </button>
                 </div>
 
@@ -143,74 +138,61 @@
     </div>
 </div>
 
-@await Html.PartialAsync("~/Views/QuotationResult/_ItemPicker.cshtml", mapData.ItemPicker)
+@await Html.PartialAsync("_SanderModuleItemPicker", ui.PartialSmip)
 
 @section scripts {
     <script>
         $(document).ready(function () {
-            var pTitle = '@(Html.Raw(ViewBag.pTitle))';
-            var pageTitle = '@(Html.Raw(ViewBag.pageTitle))';
-            $('#header-pTitle').text(pTitle);
-            var bElList = [];
-            if (pageTitle) bElList.push('<li class="breadcrumb-item"><a href="javascript: void(0);">' + pageTitle + '</a></li>');
-            bElList.push('<li class="breadcrumb-item active">' + pTitle + '</li>');
-            $('#_page_title_row .breadcrumb').html(bElList.join(''));
-
-            $('#e_CustomerType').select2({ width: '100%' });
             loadDetail();
         });
 
-        window.currentFileId = @quotationFileId;
+        var currentFileId = '@(quotationFileId?.ToString() ?? "")';
 
-        var apiUrls = {
+        var pageUrls = {
             GetById: '@(Configuration["BackendURL"])/api/QuotationResult/GetById',
-            SaveHeader: '@(Configuration["BackendURL"])/api/QuotationResult/SaveHeader',
+            ReQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReQuotation',
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
         var FH = {
             Id: '@nameof(QuotationFileEditVM.Id)',
-            BomFileName: '@nameof(QuotationFileEditVM.BomFileName)',
+            FileName: '@nameof(QuotationFileEditVM.FileName)',
+            CustomerCode: '@nameof(QuotationFileEditVM.CustomerCode)',
             CustomerName: '@nameof(QuotationFileEditVM.CustomerName)',
-            ProductNo: '@nameof(QuotationFileEditVM.ProductNo)',
-            CustomerType: '@nameof(QuotationFileEditVM.CustomerType)',
-            PurchaseQty: '@nameof(QuotationFileEditVM.PurchaseQty)',
-            CreateTime: '@nameof(QuotationFileEditVM.CreateTime)',
-            UpdateTime: '@nameof(QuotationFileEditVM.UpdateTime)',
+            ProdNo: '@nameof(QuotationFileEditVM.ProdNo)',
+            QuotationQty: '@nameof(QuotationFileEditVM.QuotationQty)',
+            CreatedAtText: '@nameof(QuotationFileEditVM.CreatedAtText)',
+            UpdatedAtText: '@nameof(QuotationFileEditVM.UpdatedAtText)',
             Items: '@nameof(QuotationFileEditVM.Items)'
         };
 
         var FI = {
             Id: '@nameof(QuotationItemVM.Id)',
+            ComponentPart: '@nameof(QuotationItemVM.ComponentPart)',
             Description: '@nameof(QuotationItemVM.Description)',
-            Manufacturer1: '@nameof(QuotationItemVM.Manufacturer1)',
-            ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
-            Quantity: '@nameof(QuotationItemVM.Quantity)',
-            InternalProcurementDate: '@nameof(QuotationItemVM.InternalProcurementDate)',
-            InternalUnitPriceOrig: '@nameof(QuotationItemVM.InternalUnitPriceOrig)',
+            Qty: '@nameof(QuotationItemVM.Qty)',
+            Manufacturer: '@nameof(QuotationItemVM.Manufacturer)',
+            ManufacturerPartNumber: '@nameof(QuotationItemVM.ManufacturerPartNumber)',
+            No: '@nameof(QuotationItemVM.No)',
+            InternalPurchaseOrderDate: '@nameof(QuotationItemVM.InternalPurchaseOrderDate)',
+            InternalUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.InternalUnitPriceOriginalCurrency)',
             InternalUnitPriceTwd: '@nameof(QuotationItemVM.InternalUnitPriceTwd)',
-            InternalQty: '@nameof(QuotationItemVM.InternalQty)',
+            InternalQuantity: '@nameof(QuotationItemVM.InternalQuantity)',
             InternalCurrency: '@nameof(QuotationItemVM.InternalCurrency)',
             InternalSupplierName: '@nameof(QuotationItemVM.InternalSupplierName)',
             ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
-            ExternalUnitPriceOrig: '@nameof(QuotationItemVM.ExternalUnitPriceOrig)',
+            ExternalUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.ExternalUnitPriceOriginalCurrency)',
             ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
-            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',
+            ExternalMoq: '@nameof(QuotationItemVM.ExternalMoq)',
             ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
             ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
-            ProcurementModel: '@nameof(QuotationItemVM.ProcurementModel)',
-            IsRecommended: '@nameof(QuotationItemVM.IsRecommended)',
-            ProcurementModelOptions: '@nameof(QuotationItemVM.ProcurementModelOptions)'
+            IsRecommendedNo: '@nameof(QuotationItemVM.IsRecommendedNo)'
         };
 
         // 目前載入的料項清單（用於儲存採購型號）
         var currentItems = [];
 
         // ── 工具函式 ──────────────────────────────────────────────────────────
-        function escapeHtml(value) {
-            return $('<div>').text(value ?? '').html();
-        }
-
         function showSysError() {
             Swal.fire({ icon: 'error', title: '系統錯誤', text: '操作失敗，請稍後再試。' });
         }
@@ -237,19 +219,19 @@
 
         // ── 採購型號選取器 ─────────────────────────────────────────────────────
         function openItemPicker(itemId) {
-            ItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
+            SanderModuleItemPicker['@(ui.PartialSmip.ViewId)'].open(function (no) {
                 $('.procurement-model-input[data-id="' + itemId + '"]').val(no);
             });
         }
 
         // ── 載入詳細資料 ──────────────────────────────────────────────────────
         function loadDetail() {
-            if (!window.currentFileId) return;
+            if (!currentFileId) return;
             showLoader();
             $.ajax({
-                url: apiUrls.GetById,
+                url: pageUrls.GetById,
                 type: 'GET',
-                data: { id: window.currentFileId },
+                data: { id: currentFileId },
                 success: function (res) {
                     if (!res.Success || !res.Data) { showSysError(); return; }
                     fillHeader(res.Data);
@@ -262,13 +244,13 @@
 
         function fillHeader(d) {
             $('#e_Id').val(d[FH.Id]);
-            $('#e_BomFileName').val(d[FH.BomFileName]);
+            $('#e_FileName').val(d[FH.FileName]);
+            $('#e_CustomerCode').val(d[FH.CustomerCode]);
             $('#e_CustomerName').val(d[FH.CustomerName]);
-            $('#e_ProductNo').val(d[FH.ProductNo]);
-            $('#e_CustomerType').val(d[FH.CustomerType]).trigger('change');
-            $('#e_PurchaseQty').val(d[FH.PurchaseQty]);
-            $('#e_CreateTime').val(d[FH.CreateTime]);
-            $('#e_UpdateTime').val(d[FH.UpdateTime]);
+            $('#e_ProdNo').val(d[FH.ProdNo]);
+            $('#e_QuotationQty').val(d[FH.QuotationQty]);
+            $('#e_CreatedAtText').val(d[FH.CreatedAtText]);
+            $('#e_UpdatedAtText').val(d[FH.UpdatedAtText]);
         }
 
         function renderItems(items) {
@@ -292,47 +274,45 @@
 
         function buildItemRow(r, no) {
             var itemId = r[FI.Id];
-            var isRecommended = r[FI.IsRecommended] === true;
+            var isRecommended = r[FI.IsRecommendedNo] === true;
+            var currentModel = escapeHtml(r[FI.No] || '');
+            var rowClass = '';
             var checked = isRecommended ? ' checked' : '';
-            var currentModel = escapeHtml(r[FI.ProcurementModel] || '');
 
-            return '<tr data-id="' + itemId + '">'
-                + '<td class="text-center">'
-                + '<div class="form-check">'
-                + '<input class="form-check-input item-check" type="checkbox" value="' + itemId + '"'
-                + ' data-recommended="' + isRecommended + '"' + checked + '>'
-                + '</div>'
-                + '</td>'
-                + '<td class="text-center text-muted">' + no + '</td>'
-                + '<td><span title="' + escapeHtml(r[FI.Description]) + '">' + escapeHtml(r[FI.Description]) + '</span></td>'
-                + '<td class="text-muted">' + escapeHtml(r[FI.Manufacturer1]) + '</td>'
-                + '<td><code class="fs-6">' + escapeHtml(r[FI.ManufacturerPartNo1]) + '</code></td>'
-                + '<td class="text-center">' + fmtNum(r[FI.Quantity]) + '</td>'
-                // 採購型號（唯讀 InputGroup + 選取按鈕）
-                + '<td class="p-1' + (isRecommended ? ' bg-warning-subtle' : '') + '">'
-                + '<div class="input-group">'
-                + '<input type="text" class="form-control font-monospace procurement-model-input"'
-                + ' data-id="' + itemId + '" value="' + currentModel + '" readonly placeholder="—" />'
-                + '<button class="btn btn-outline-secondary" type="button" onclick="openItemPicker(' + itemId + ')">'
-                + '<i class="ri-search-line"></i>'
-                + '</button>'
-                + '</div>'
-                + '</td>'
-                // 內部採購紀錄
-                + '<td>' + fmtDate(r[FI.InternalProcurementDate]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[FI.InternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[FI.InternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center">' + fmtNum(r[FI.InternalQty]) + '</td>'
-                + '<td class="text-center">' + fmtCurrency(r[FI.InternalCurrency]) + '</td>'
-                + '<td>' + escapeHtml(r[FI.InternalSupplierName] || '') + '</td>'
-                // 外部查價
-                + '<td>' + fmtDate(r[FI.ExternalQuotationDate]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[FI.ExternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[FI.ExternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center">' + fmtNum(r[FI.ExternalMOQ]) + '</td>'
-                + '<td class="text-center">' + fmtCurrency(r[FI.ExternalCurrency]) + '</td>'
-                + '<td>' + escapeHtml(r[FI.ExternalSupplierName] || '') + '</td>'
-                + '</tr>';
+            return `<tr data-id="${itemId}"${rowClass}>
+                <td class="text-center">
+                    <div class="form-check">
+                        <input class="form-check-input item-check" type="checkbox" value="${itemId}"
+                            data-recommended="${isRecommended}"${checked}>
+                    </div>
+                </td>
+                <td class="text-center text-muted">${escapeHtml(no)}</td>
+                <td><span title="${escapeHtml(r[FI.Description])}">${escapeHtml(r[FI.Description])}</span></td>
+                <td class="text-muted">${escapeHtml(r[FI.Manufacturer] || '')}</td>
+                <td><code class="fs-6">${escapeHtml(r[FI.ManufacturerPartNumber] || '')}</code></td>
+                <td class="text-center">${fmtNum(r[FI.Qty])}</td>
+                <td class="p-1${isRecommended ? ' bg-warning-subtle' : ''}">
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace procurement-model-input"
+                            data-id="${itemId}" value="${currentModel}" readonly placeholder="—" />
+                        <button class="btn btn-outline-secondary" type="button" onclick="openItemPicker('${itemId}')">
+                            <i class="ri-search-line"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>${fmtDate(r[FI.InternalPurchaseOrderDate])}</td>
+                <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceOriginalCurrency])}</td>
+                <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceTwd])}</td>
+                <td class="text-center">${fmtNum(r[FI.InternalQuantity])}</td>
+                <td class="text-center">${fmtCurrency(r[FI.InternalCurrency])}</td>
+                <td>${escapeHtml(r[FI.InternalSupplierName] != null ? String(r[FI.InternalSupplierName]) : '')}</td>
+                <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
+                <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
+                <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>
+                <td class="text-center">${fmtNum(r[FI.ExternalMoq])}</td>
+                <td class="text-center">${fmtCurrency(r[FI.ExternalCurrency])}</td>
+                <td>${escapeHtml(r[FI.ExternalSupplierName] != null ? String(r[FI.ExternalSupplierName]) : '')}</td>
+            </tr>`;
         }
 
         // ── 全選 / 取消全選（料項 checkbox） ─────────────────────────────────
@@ -359,30 +339,38 @@
             syncCheckAllState();
         });
 
-        // ── 重新查價（儲存 Header） ───────────────────────────────────────────
-        $('#btnSaveHeader').on('click', function () {
-            var $form = $('#headerForm');
-            if (!$form[0].checkValidity()) {
-                $form.addClass('was-validated');
+        // ── 重新查價 ───────────────────────────────────────────────────
+        $('#btnReQuotation').on('click', function () {
+            var checkedItems = [];
+            $('.item-check:checked').each(function () {
+                var itemId = $(this).val();
+                var no = $('.procurement-model-input[data-id="' + itemId + '"]').val() || '';
+                checkedItems.push({ Id: itemId, No: no });
+            });
+
+            if (!checkedItems.length) {
+                Swal.fire({ icon: 'warning', title: '請先勾選料項', confirmButtonText: '確定' });
                 return;
             }
 
-            var headerPayload = {};
-            headerPayload[FH.Id] = parseInt($('#e_Id').val()) || 0;
-            headerPayload[FH.CustomerType] = $('#e_CustomerType').val();
-            headerPayload[FH.PurchaseQty] = parseInt($('#e_PurchaseQty').val()) || 0;
+            var payload = { UploadId: currentFileId, Items: checkedItems };
 
             showLoader();
             $.ajax({
-                url: apiUrls.SaveHeader,
+                url: pageUrls.ReQuotation,
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(headerPayload),
+                data: JSON.stringify(payload),
                 success: function (res) {
-                    showResponseResultAlert(res, '重新查價', function () { loadDetail(); });
+                    if (!res.Success) {
+                        Swal.fire({ icon: 'error', title: '查價失敗', text: res.Message, confirmButtonText: '確定' });
+                        return;
+                    }
+                    Swal.fire({ icon: 'success', title: '重新查價完成', timer: 1200, showConfirmButton: false })
+                        .then(function () { loadDetail(); });
                 },
                 error: function () { showSysError(); },
-                complete: function () { hideLoader(); }
+                complete: function () { hideLoader(); },
             });
         });
     </script>

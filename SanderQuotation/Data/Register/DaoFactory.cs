@@ -82,6 +82,9 @@ namespace Data.Register
                 .RegisterType<ITB_SysFuncDetailDAO, TB_SysFuncDetailDaoImpl>()
                 .RegisterType<ITB_SysRoleDAO, TB_SysRoleDaoImpl>()
                 .RegisterType<ITB_SysRoleFuncDetailDAO, TB_SysRoleFuncDetailDaoImpl>()
+                .RegisterType<ITBBomFileQuotationDAO, TBBomFileQuotationDaoImpl>()
+                .RegisterType<IBomFileContentDAO, BomFileContentDaoImpl>()
+                .RegisterType<ISanderModuleItemDAO, SanderModuleItemDaoImpl>()
 
                 // SOP 資料庫專用 DAO
                 .RegisterType<ISopWorkRuleDAO, SopWorkRuleDAOImpl>()

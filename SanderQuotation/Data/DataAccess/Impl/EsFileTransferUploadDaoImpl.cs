@@ -4,6 +4,7 @@ using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using System.Text;
+using static Const.Enums;
 
 namespace Data.DataAccess.Impl
 {
@@ -74,9 +75,11 @@ OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.Key
             }
 
             string sql = $@"
-SELECT u.*, eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)}, rc.CustomerName
+SELECT u.*
+, eftm.TransferMappingCode
+, rc.CustomerName
 FROM EsFileTransferUpload u
-LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.{nameof(EsFileTransferUploadEntity.EsFileTransferMappingId)}
+LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
 LEFT JOIN ReportItemCustomer rc ON rc.CustomerCode = u.CustomerCode
 WHERE 1 = 1 
 {condition}";
@@ -109,7 +112,7 @@ WHERE 1=1";
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
-            else if(searchVO.IdIn?.Count > 0)
+            else if (searchVO.IdIn?.Count > 0)
             {
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
                 paras.Add(nameof(searchVO.IdIn), searchVO.IdIn);
@@ -142,6 +145,50 @@ WHERE
 {condition}";
 
             DbHelper.Execute(sql, paras);
+        }
+
+        /// <summary>
+        /// 分頁查詢清單-定時查價結果
+        /// </summary>
+        public PageResult<EsFileTransferUploadDTO> GetPageListQuotationResult(PageEntity pageEntity, SearchVO searchVO)
+        {
+            string condition = string.Empty;
+            var paras = new Dictionary<string, object>();
+            condition += $" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.Status)}, 0) <> {(int)Enums.StatusEnum.Cancel} ";
+            // 已完成查價的資料
+            condition += $" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.ProcessStatus)}, 0) = {(int)EsFileTransferUploadProcessStatusEnum.PricingDone} ";
+
+            if (!string.IsNullOrWhiteSpace(searchVO.KeywordLike))
+            {
+                condition += $@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.KeywordLike)}
+)";
+                paras.Add(nameof(searchVO.KeywordLike), $"%{searchVO.KeywordLike}%");
+            }
+
+            string sql = $@"
+SELECT u.*
+, eftm.TransferMappingCode
+, rc.CustomerName
+, (SELECT COUNT(*) FROM bomfilecontent bfc WHERE bfc.UploadId = u.UploadId) AS ItemCount
+FROM EsFileTransferUpload u
+LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
+LEFT JOIN ReportItemCustomer rc ON rc.CustomerCode = u.CustomerCode
+WHERE 1 = 1 
+{condition}";
+
+            string countSQL = $@"
+SELECT COUNT(0) AS RowNum
+FROM (
+{sql}
+) AS pageData
+WHERE 1=1";
+
+            return DbHelper.FindPageList<EsFileTransferUploadDTO>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras,
+                string.IsNullOrWhiteSpace(pageEntity.Sort)
+                    ? $"{nameof(EsFileTransferUploadEntity.UpdatedAt)} DESC"
+                    : $"{pageEntity.Sort} {pageEntity.Asc}");
         }
     }
 }

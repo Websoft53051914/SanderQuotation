@@ -137,14 +137,20 @@ namespace Const
             HistoryFile_Edit = 990213,
             HistoryFile_Delete = 990214,
 
+            // 轉入檔案上傳
+            EsFileTransferUpload_View = 990221,
+            EsFileTransferUpload_Create = 990222,
+            EsFileTransferUpload_Edit = 990223,
+            EsFileTransferUpload_Delete = 990224,
+
             //開發人員依此使用值，避免一個value被兩個功能使用，導致開啟一個權限卻可以使用兩個功能
             // Hugh 20000 LEO 30000 Jerri 40000 Jordan 50000 Ray 60000
 
-            // 轉入檔案上傳
-            EsFileTransferUpload_View = 40001,
-            EsFileTransferUpload_Create = 40002,
-            EsFileTransferUpload_Edit = 40003,
-            EsFileTransferUpload_Delete = 40004,
+            // 定時查價結果
+            QuotationResult_View = 40001,
+            QuotationResult_Create = 40002,
+            QuotationResult_Edit = 40003,
+            QuotationResult_Delete = 40004,
         }
 
         /// <summary>

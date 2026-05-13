@@ -1,264 +1,201 @@
-using backend.Models;
-using CommonClass.Models;
-using Core.Utility.Web.Base;
+using AutoMapper;
+using backend.Common.Attribute;
+using Business.BusinessLogic;
+using Business.DomainModel;
+using Const;
+using Core.Utility.Extensions;
+using Core.Utility.Helper.DB.Entity;
+using Data.DataAccess.DTO;
 using Microsoft.AspNetCore.Mvc;
 using ViewModel.QuotationResult;
+using static Const.Enums;
 
 namespace backend.Controllers
 {
-    /// <summary>定時查價結果 API Controller</summary>
+    /// <summary>
+    /// 定時查價結果 API Controller
+    /// </summary>
     [Route("api/QuotationResult")]
-    public class QuotationResultController : ApiBaseController
+    public partial class QuotationResultController : BaseProjectController
     {
-        #region -- 私有輔助 --
+        private readonly IMapper _mapper;
 
-        /// <summary>將 QuotationFileData 對應至清單 ViewModel。</summary>
-        private static QuotationFileGridVM MapToGridVM(QuotationFileData f)
+        /// <summary>
+        /// constructor
+        /// </summary>
+        public QuotationResultController(IConfiguration configuration) : base(configuration)
         {
-            QuotationFileGridVM vm = new();
-            vm.Id = f.Id;
-            vm.BomFileName = f.BomFileName;
-            vm.CustomerName = f.CustomerName;
-            vm.ProductNo = f.ProductNo;
-            vm.CustomerType = f.CustomerType;
-            vm.PurchaseQty = f.PurchaseQty;
-            vm.ItemCount = QuotationJsonHelper.GetItemCount(f.Id);
-            vm.CreateTime = f.CreateTime.ToString("yyyy/MM/dd");
-            vm.UpdateTime = f.UpdateTime.ToString("yyyy/MM/dd");
-            return vm;
+            MapperConfiguration cfg = new(c =>
+            {
+                c.AllowNullCollections = true;
+                c.CreateMap<BomFileContentQuotationDTO, QuotationItemVM>()
+                    .ForMember(dest => dest.InternalPurchaseOrderDate,
+                        opt => opt.MapFrom(src => src.InternalPurchaseOrderDate.HasValue
+                            ? src.InternalPurchaseOrderDate.Value.ToString("yyyy/MM/dd")
+                            : null))
+                    .ForMember(dest => dest.ExternalQuotationDate,
+                        opt => opt.MapFrom(src => src.ExternalQuotationDate.HasValue
+                            ? src.ExternalQuotationDate.Value.ToString("yyyy/MM/dd")
+                            : null));
+            });
+            _mapper = cfg.CreateMapper();
         }
 
-        /// <summary>將 QuotationItemData 對應至料項 ViewModel。</summary>
-        private static QuotationItemVM MapToItemVM(QuotationItemData i)
+        private EsFileTransferUploadBL? _blEsFileTransferUpload = null;
+        /// <summary>
+        /// EsFileTransferUploadBL
+        /// </summary>
+        protected EsFileTransferUploadBL GetBlEsFileTransferUpload()
         {
-            QuotationItemVM vm = new();
-            vm.Id = i.Id;
-            vm.FileId = i.FileId;
-            vm.Description = i.Description;
-            vm.Manufacturer1 = i.Manufacturer1;
-            vm.ManufacturerPartNo1 = i.ManufacturerPartNo1;
-            vm.Quantity = i.Quantity;
-            vm.InternalProcurementDate = i.InternalProcurementDate;
-            vm.InternalUnitPriceOrig = i.InternalUnitPriceOrig;
-            vm.InternalUnitPriceTwd = i.InternalUnitPriceTwd;
-            vm.InternalQty = i.InternalQty;
-            vm.InternalCurrency = i.InternalCurrency;
-            vm.InternalSupplierName = i.InternalSupplierName;
-            vm.ExternalQuotationDate = i.ExternalQuotationDate;
-            vm.ExternalUnitPriceOrig = i.ExternalUnitPriceOrig;
-            vm.ExternalUnitPriceTwd = i.ExternalUnitPriceTwd;
-            vm.ExternalMOQ = i.ExternalMOQ;
-            vm.ExternalCurrency = i.ExternalCurrency;
-            vm.ExternalSupplierName = i.ExternalSupplierName;
-            vm.ProcurementModel = i.ProcurementModel;
-            vm.IsRecommended = i.IsRecommended;
-            vm.ProcurementModelOptions = i.ProcurementModelOptions;
-            return vm;
+            _blEsFileTransferUpload ??= GetBLInstance<EsFileTransferUploadBL>();
+            return _blEsFileTransferUpload;
         }
 
-        #endregion
+        private BomFileContentBL? _blBomFileContent = null;
+        /// <summary>
+        /// BomFileContentBL
+        /// </summary>
+        protected BomFileContentBL GetBlBomFileContent()
+        {
+            _blBomFileContent ??= GetBLInstance<BomFileContentBL>();
+            return _blBomFileContent;
+        }
 
+
+        /// <summary>
+        /// 將 ProcessStatus 代碼轉換為對應的中文描述文字
+        /// </summary>
+        private static string GetProcessStatusText(int? code)
+        {
+            return code switch
+            {
+                (int)EsFileTransferUploadProcessStatusEnum.Pending => EsFileTransferUploadProcessStatusEnum.Pending.GetDescription(),
+                (int)EsFileTransferUploadProcessStatusEnum.Transferred => EsFileTransferUploadProcessStatusEnum.Transferred.GetDescription(),
+                (int)EsFileTransferUploadProcessStatusEnum.PendingPartSearch => EsFileTransferUploadProcessStatusEnum.PendingPartSearch.GetDescription(),
+                (int)EsFileTransferUploadProcessStatusEnum.PartSearchDone => EsFileTransferUploadProcessStatusEnum.PartSearchDone.GetDescription(),
+                (int)EsFileTransferUploadProcessStatusEnum.PricingDone => EsFileTransferUploadProcessStatusEnum.PricingDone.GetDescription(),
+                _ => code?.ToString() ?? string.Empty,
+            };
+        }
+    }
+
+    public partial class QuotationResultController
+    {
         #region -- 查詢 --
 
-        /// <summary>取得查價檔案清單（支援關鍵字搜尋）</summary>
-        [HttpGet("GetList")]
-        public ActionResult GetList(string? keyword = null)
+        /// <summary>
+        /// 分頁取得定時查價結果清單
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_View)]
+        [HttpGet("GetPageList")]
+        public ActionResult GetPageList([FromQuery] QuotationResultSearchVM filter)
         {
             try
             {
-                List<QuotationFileData> files = QuotationJsonHelper.GetFileList(keyword);
-                List<QuotationFileGridVM> list = files.Select(MapToGridVM).ToList();
-                return JsonSuccess(list);
+                PageEntity pageEntity = GetPageEntity<QuotationFileGridVM>(filter);
+
+                SearchVO searchVO = new();
+                searchVO.KeywordLike = filter.KeywordLike;
+
+                PageResult<EsFileTransferUploadDM> pageResult = GetBlEsFileTransferUpload().GetPageListQuotationResult(pageEntity, searchVO);
+                int baseNo = (filter.Page - 1) * filter.PageSize;
+
+                List<QuotationFileGridVM> list = new();
+                int no = 0;
+                foreach (EsFileTransferUploadDM d in pageResult.Results)
+                {
+                    QuotationFileGridVM vm = new();
+                    vm.No = baseNo + no + 1;
+                    vm.Id = d.Id;
+                    vm.FileName = d.FileName ?? string.Empty;
+                    vm.CustomerCode = d.CustomerCode;
+                    vm.CustomerName = d.CustomerName;
+                    vm.ProdNo = d.ProdNo;
+                    vm.QuotationQty = d.QuotationQty ?? 0;
+                    vm.ItemCount = d.ItemCount;
+                    vm.ProcessStatus = d.ProcessStatus ?? (int)EsFileTransferUploadProcessStatusEnum.Pending;
+                    vm.ProcessStatusText = GetProcessStatusText(d.ProcessStatus);
+                    vm.CreatedAtText = d.CreatedAt?.ToString("yyyy/MM/dd") ?? string.Empty;
+                    vm.UpdatedAtText = d.UpdatedAt?.ToString("yyyy/MM/dd") ?? string.Empty;
+                    list.Add(vm);
+                    no++;
+                }
+
+                return JsonSuccess(new
+                {
+                    Data = list,
+                    Total = pageResult.DataCount,
+                    Page = pageResult.CurrentPage,
+                    PageSize = pageResult.PageDataSize,
+                });
             }
             catch (Exception ex)
             {
-                return JsonSuccess(HandleError(ex));
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
-        /// <summary>依 Id 取得單筆查價檔案（含 BOM 料項明細）</summary>
+        /// <summary>
+        /// 依 Id 取得單筆查價結果詳細（Header + BOM 料項）
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetById")]
-        public ActionResult GetById(long id)
+        public ActionResult GetById(Guid id)
         {
             try
             {
-                QuotationFileData? file = QuotationJsonHelper.GetFileById(id);
-                if (file == null)
-                    return JsonValidFail("查無查價資料");
+                EsFileTransferUploadDM? dm = GetBlEsFileTransferUpload().GetOneForEditQuotationResult(id);
+                if (dm == null)
+                    return JsonValidFail("資料不存在");
 
                 QuotationFileEditVM vm = new();
-                vm.Id = file.Id;
-                vm.BomFileName = file.BomFileName;
-                vm.CustomerName = file.CustomerName;
-                vm.ProductNo = file.ProductNo;
-                vm.CustomerType = file.CustomerType;
-                vm.PurchaseQty = file.PurchaseQty;
-                vm.CreateTime = file.CreateTime.ToString("yyyy/MM/dd HH:mm");
-                vm.UpdateTime = file.UpdateTime.ToString("yyyy/MM/dd HH:mm");
-                vm.Items = QuotationJsonHelper.GetItemsByFileId(id).Select(MapToItemVM).ToList();
+                vm.Id = dm.Id;
+                vm.FileName = dm.FileName ?? string.Empty;
+                vm.CustomerCode = dm.CustomerCode;
+                vm.CustomerName = dm.CustomerName;
+                vm.ProdNo = dm.ProdNo;
+                vm.QuotationQty = dm.QuotationQty;
+                vm.CreatedAtText = dm.CreatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
+                vm.UpdatedAtText = dm.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
+                vm.Items = new();
+                foreach (BomFileContentQuotationDTO dto in GetBlBomFileContent().GetListWithQuotationByUploadId(dm.UploadId))
+                {
+                    vm.Items.Add(_mapper.Map<QuotationItemVM>(dto));
+                }
 
                 return JsonSuccess(vm);
             }
             catch (Exception ex)
             {
-                return JsonSuccess(HandleError(ex));
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
         #endregion
 
-        #region -- 儲存 --
+        #region -- 操作 --
 
-        /// <summary>儲存查價檔案 Header（客戶別 / 採購數量）</summary>
-        [HttpPost("SaveHeader")]
-        public ActionResult SaveHeader([FromBody] QuotationFileEditVM payload)
+        /// <summary>
+        /// 重新查價：接收勾選料項及採購型號，執行查價作業
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_Edit)]
+        [HttpPost("ReQuotation")]
+        public ActionResult ReQuotation([FromBody] QuotationReQuotationRequestVM request)
         {
             try
             {
-                if (payload.Id == 0)
-                    return JsonValidFail("無效的檔案 ID");
-
-                // QuotationFileData data = new();
-                // data.Id = payload.Id;
-                // data.CustomerType = payload.CustomerType;
-                // data.PurchaseQty = payload.PurchaseQty;
-                // data.Updater = 1;
-
-                // QuotationJsonHelper.SaveFile(data);
-                return JsonOK("儲存成功");
+                // TODO: 實作查價業務邏輯
+                return JsonOK();
             }
             catch (Exception ex)
             {
-                return JsonSuccess(HandleError(ex));
-            }
-        }
-
-        /// <summary>批次儲存 BOM 料項採購型號</summary>
-        [HttpPost("SaveProcurementModels")]
-        public ActionResult SaveProcurementModels([FromBody] List<QuotationItemVM> payload)
-        {
-            try
-            {
-                if (payload == null || payload.Count == 0)
-                    return JsonValidFail("無資料可儲存");
-
-                List<QuotationItemData> updates = payload.Select(p =>
-                {
-                    QuotationItemData d = new();
-                    d.Id = p.Id;
-                    d.ProcurementModel = p.ProcurementModel ?? "";
-                    return d;
-                }).ToList();
-
-                QuotationJsonHelper.SaveItemProcurementModels(updates);
-                return JsonOK("儲存成功");
-            }
-            catch (Exception ex)
-            {
-                return JsonSuccess(HandleError(ex));
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
         #endregion
-
-        #region -- 料號快查 --
-
-        /// <summary>料號快查：依製造商料號模糊搜尋 BOM 料項。</summary>
-        [HttpGet("QuickSearch")]
-        public ActionResult QuickSearch(string? manufacturerPartNo = null)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(manufacturerPartNo))
-                    return JsonSuccess(new List<QuotationItemVM>());
-
-                List<QuotationItemData> items = QuotationJsonHelper.GetItemsByManufacturerPartNo(manufacturerPartNo);
-                List<QuotationItemVM> list = items.Select(MapToItemVM).ToList();
-                return JsonSuccess(list);
-            }
-            catch (Exception ex)
-            {
-                return JsonSuccess(HandleError(ex));
-            }
-        }
-
-        /// <summary>快查視窗儲存單筆料項採購型號與建議採購型號旗標。</summary>
-        [HttpPost("SaveQuickItem")]
-        public ActionResult SaveQuickItem([FromBody] QuotationItemVM payload)
-        {
-            try
-            {
-                if (payload.Id == 0)
-                    return JsonValidFail("無效的料項 ID");
-
-                //bool ok = QuotationJsonHelper.SaveQuickItem(payload.Id, payload.ProcurementModel ?? "", payload.IsRecommended);
-                //if (!ok)
-                //    return JsonValidFail("查無此料項");
-
-                return JsonOK("重新查價成功");
-            }
-            catch (Exception ex)
-            {
-                return JsonSuccess(HandleError(ex));
-            }
-        }
-
-        #endregion
-
-        #region -- 刪除 --
-
-        /// <summary>刪除單筆查價檔案</summary>
-        [HttpDelete("Delete")]
-        public ActionResult Delete(long id)
-        {
-            try
-            {
-                bool ok = QuotationJsonHelper.DeleteFile(id);
-                if (!ok)
-                    return JsonValidFail("查無資料");
-                return JsonOK("刪除成功");
-            }
-            catch (Exception ex)
-            {
-                return JsonSuccess(HandleError(ex));
-            }
-        }
-
-        /// <summary>批次刪除查價檔案（ids 以逗號分隔）</summary>
-        [HttpDelete("BatchDelete")]
-        public ActionResult BatchDelete(string ids)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(ids))
-                    return JsonValidFail("未指定要刪除的資料");
-
-                List<long> idList = ids.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => long.TryParse(s.Trim(), out long v) ? v : 0L)
-                    .Where(v => v > 0)
-                    .ToList();
-
-                int deleted = QuotationJsonHelper.BatchDeleteFiles(idList);
-                return JsonOK($"已刪除 {deleted} 筆");
-            }
-            catch (Exception ex)
-            {
-                return JsonSuccess(HandleError(ex));
-            }
-        }
-
-        #endregion
-
-        /// <summary>統一錯誤處理，回傳包含錯誤訊息的 DispatcherReturnMsg。</summary>
-        protected DispatcherReturnMsg HandleError(Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error: {ex}");
-            DispatcherReturnMsg dispatcherReturnMsg = new();
-            dispatcherReturnMsg.IsSuccess = "N";
-            dispatcherReturnMsg.ReturnMsg = ex.Message;
-            dispatcherReturnMsg.ReturnCode = "E500";
-            dispatcherReturnMsg.AlertLevel = "error";
-            return dispatcherReturnMsg;
-        }
     }
 }

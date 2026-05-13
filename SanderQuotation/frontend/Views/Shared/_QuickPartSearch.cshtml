@@ -4,7 +4,7 @@
 @{
     var mapData = new
     {
-        ItemPicker = new ItemPickerVCM(),
+        ItemPicker = new SanderModuleItemPickerVCM(),
     };
 }
 
@@ -103,7 +103,7 @@
     </div>
 </div>
 
-@await Html.PartialAsync("~/Views/QuotationResult/_ItemPicker.cshtml", mapData.ItemPicker)
+@await Html.PartialAsync("_SanderModuleItemPicker", mapData.ItemPicker)
 
 <script>
     (function () {
@@ -112,7 +112,7 @@
 
         var F = {
             Id: '@nameof(QuotationItemVM.Id)',
-            ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
+            @*ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
             ProcurementModel: '@nameof(QuotationItemVM.ProcurementModel)',
             IsRecommended: '@nameof(QuotationItemVM.IsRecommended)',
             InternalProcurementDate: '@nameof(QuotationItemVM.InternalProcurementDate)',
@@ -124,7 +124,7 @@
             ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
             ExternalUnitPriceOrig: '@nameof(QuotationItemVM.ExternalUnitPriceOrig)',
             ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
-            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',
+            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',*@
             ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
             ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
         };
@@ -232,7 +232,7 @@
         var _qsCurrentPickerId = null;
         $(document).on('click', '#quickPartSearchModal .qs-pick-btn', function () {
             _qsCurrentPickerId = $(this).data('id');
-            ItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
+            SanderModuleItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
                 $('.qs-model-input[data-id="' + _qsCurrentPickerId + '"]').val(no);
             });
         });

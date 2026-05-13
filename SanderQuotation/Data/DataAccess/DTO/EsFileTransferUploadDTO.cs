@@ -13,5 +13,10 @@ namespace Data.DataAccess.DTO
         /// 匯入規則代碼 (由 JOIN EsFileTransferMapping 帶入)
         /// </summary>
         public string? TransferMappingCode { get; set; }
+
+        /// <summary>
+        /// BOM 料項數 (由子查詢帶入)
+        /// </summary>
+        public int? ItemCount { get; set; }
     }
 }

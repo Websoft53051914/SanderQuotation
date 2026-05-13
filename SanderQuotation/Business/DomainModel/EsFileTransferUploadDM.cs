@@ -54,5 +54,10 @@ namespace Business.DomainModel
         /// 匯入規則代碼 (EsFileTransferMapping.TransferMappingCode，顯示用)
         /// </summary>
         public string? TransferMappingCode { set; get; }
+
+        /// <summary>
+        /// BOM 料項數
+        /// </summary>
+        public int? ItemCount { get; set; }
     }
 }

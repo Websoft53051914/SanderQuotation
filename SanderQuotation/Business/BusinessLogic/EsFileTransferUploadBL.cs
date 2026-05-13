@@ -235,12 +235,56 @@ namespace Business.BusinessLogic
 
     public partial class EsFileTransferUploadBL
     {
+
         /// <summary>
-        /// 取得 BL 實例
+        /// 分頁查詢清單 - 定時查價結果
         /// </summary>
-        public EsFileTransferUploadBL GetBL()
+        public PageResult<EsFileTransferUploadDM> GetPageListQuotationResult(PageEntity pageEntity, SearchVO searchVO)
         {
-            return this;
+            PageResult<EsFileTransferUploadDTO> pageResult = GetDAO().GetPageListQuotationResult(pageEntity, searchVO);
+
+            List<EsFileTransferUploadDM> results = [];
+            foreach (EsFileTransferUploadDTO item in pageResult.Results)
+            {
+                EsFileTransferUploadDM dm = _mapper.Map<EsFileTransferUploadDM>(item);
+                results.Add(dm);
+            }
+
+            return new PageResult<EsFileTransferUploadDM>
+            {
+                CurrentPage = pageResult.CurrentPage,
+                DataCount = pageResult.DataCount,
+                PageDataSize = pageResult.PageDataSize,
+                Results = results,
+            };
+        }
+
+        /// <summary>
+        /// 查詢編輯資料
+        /// </summary>
+        public EsFileTransferUploadDM? GetOneForEditQuotationResult(Guid id, StatusEnum? statusEnum = StatusEnum.Enabled)
+        {
+            SearchVO searchVO = new();
+            searchVO.IdEq = id;
+            if (statusEnum.HasValue)
+            {
+                searchVO.StatusEq = (int)statusEnum.Value;
+            }
+
+            PageEntity pageEntity = new();
+            pageEntity.CurrentPage = 1;
+            pageEntity.PageDataSize = 10;
+
+            PageResult<EsFileTransferUploadDTO> pageResult = GetDAO().GetPageListQuotationResult(pageEntity, searchVO);
+
+            if (pageResult.DataCount == 0)
+            {
+                return null;
+            }
+
+            EsFileTransferUploadDM dm = _mapper.Map<EsFileTransferUploadDM>(pageResult.Results[0]);
+
+            return dm;
         }
     }
 }

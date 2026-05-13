@@ -34,7 +34,7 @@
                             </div>
                         </div>
                         <div class="col-xxl-1 col-sm-4">
-                            <button type="button" class="btn btn-primary w-100" onclick="loadList();">
+                            <button type="button" class="btn btn-primary w-100" onclick="loadList(1)">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>篩選
                             </button>
                         </div>
@@ -49,14 +49,13 @@
                             <tr>
                                 <th style="width:100px;">Action</th>
                                 <th style="width:40px;">項次</th>
-                                <th class="sort" data-sort="BomFileName">BOM File 名稱</th>
+                                <th class="sort" data-sort="FileName">BOM 檔案名稱</th>
                                 <th class="sort" data-sort="CustomerName">客戶名稱</th>
-                                <th class="sort" data-sort="ProductNo">產品料號</th>
-                                <th class="sort" data-sort="CustomerType">客戶別</th>
-                                <th class="sort" data-sort="PurchaseQty">採購數量</th>
+                                <th class="sort" data-sort="CustomerCode">客戶代碼</th>
+                                <th class="sort" data-sort="QuotationQty">報價數量</th>
                                 <th class="sort" data-sort="ItemCount">料項數</th>
-                                <th class="sort" data-sort="CreateTime">建立日期</th>
-                                <th class="sort" data-sort="UpdateTime">最後更新</th>
+                                <th class="sort" data-sort="CreatedAtText">建立日期</th>
+                                <th class="sort" data-sort="UpdatedAtText">最後更新</th>
                             </tr>
                         </thead>
                         <tbody id="quotation-list-data">
@@ -70,125 +69,133 @@
                         </div>
                     </div>
                 </div>
-
-
+                <!-- 分頁 -->
+                <div class="d-flex justify-content-end px-3 pb-2" id="paginationContainer"></div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    #dataTable .sort { cursor: pointer; padding-right: 1.5rem; }
-    #dataTable .sort::after  { top: 65%;  transform: translateY(calc(-100% - 1px)); }
-    #dataTable .sort::before { top: 35%;  transform: translateY(1px); }
+    #dataTable .sort {
+        cursor: pointer;
+        padding-right: 1.5rem;
+    }
+
+        #dataTable .sort.asc::after {
+            opacity: 1;
+        }
+
+        #dataTable .sort.desc::before {
+            opacity: 1;
+        }
 </style>
 
 @section scripts {
+    @await Html.PartialAsync("_CrudCommonScripts")
     <script>
-        $(document).ready(function () {
-            var pTitle = '@(Html.Raw(ViewBag.pTitle))';
-            var pageTitle = '@(Html.Raw(ViewBag.pageTitle))';
-            $('#header-pTitle').text(pTitle);
-            var bElList = [];
-            if (pageTitle) bElList.push('<li class="breadcrumb-item"><a href="javascript: void(0);">' + pageTitle + '</a></li>');
-            bElList.push('<li class="breadcrumb-item active">' + pTitle + '</li>');
-            $('#_page_title_row .breadcrumb').html(bElList.join(''));
+        // ── _CrudCommonScripts Hooks ──────────────────────────────────────────
+        function loadDatas() { loadList(1); }
 
-            loadList();
-        });
-    </script>
-    <script>
-        var apiUrls = {
-            GetList: '@(Configuration["BackendURL"])/api/QuotationResult/GetList',
-            Delete: '@(Configuration["BackendURL"])/api/QuotationResult/Delete',
-            BatchDelete: '@(Configuration["BackendURL"])/api/QuotationResult/BatchDelete',
+        function onDocumentReady() {
+
+        }
+
+        var pageUrls = {
+            GetPageList: '@(Configuration["BackendURL"])/api/QuotationResult/GetPageList',
             EditPage: '@Url.Action("Edit", "QuotationResult")'
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
-        var F = {
+        var QfgM = {
+            No: '@nameof(QuotationFileGridVM.No)',
             Id: '@nameof(QuotationFileGridVM.Id)',
-            BomFileName: '@nameof(QuotationFileGridVM.BomFileName)',
+            FileName: '@nameof(QuotationFileGridVM.FileName)',
+            CustomerCode: '@nameof(QuotationFileGridVM.CustomerCode)',
             CustomerName: '@nameof(QuotationFileGridVM.CustomerName)',
-            ProductNo: '@nameof(QuotationFileGridVM.ProductNo)',
-            CustomerType: '@nameof(QuotationFileGridVM.CustomerType)',
-            PurchaseQty: '@nameof(QuotationFileGridVM.PurchaseQty)',
+            ProdNo: '@nameof(QuotationFileGridVM.ProdNo)',
+            QuotationQty: '@nameof(QuotationFileGridVM.QuotationQty)',
             ItemCount: '@nameof(QuotationFileGridVM.ItemCount)',
-            CreateTime: '@nameof(QuotationFileGridVM.CreateTime)',
-            UpdateTime: '@nameof(QuotationFileGridVM.UpdateTime)'
+            CreatedAtText: '@nameof(QuotationFileGridVM.CreatedAtText)',
+            UpdatedAtText: '@nameof(QuotationFileGridVM.UpdatedAtText)'
         };
 
-        var deleteId = 0;        var sortState = { field: 'CreateTime', dir: 'desc' };
-        var cachedList = [];
+        // ── 查詢狀態 ──────────────────────────────────────────────────────────
+        var queryState = { page: 1, pageSize: 20, total: 0, sortField: QfgM.CreatedAtText, sortDir: 'desc', keyword: '' };
+
         // ── DOM ──────────────────────────────────────────────────────────────
         var dom = {
             listBody: $('#quotation-list-data'),
             noresult: $('.noresult'),
-            globalSearch: $('#globalSearchInput'),
             keywordInput: $('#keywordInput')
         };
 
         // ── 工具函式 ──────────────────────────────────────────────────────────
-        function escapeHtml(value) {
-            return $('<div>').text(value ?? '').html();
-        }
-
         function showSysError() {
             Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
         }
 
-        var customerTypeBadgeMap = {
-            'MM': 'bg-primary-subtle text-primary',
-            'D3': 'bg-success-subtle text-success',
-            'STL': 'bg-info-subtle text-info',
-            'CTB': 'bg-warning-subtle text-warning',
-            'WT': 'bg-danger-subtle text-danger',
-            'AED': 'bg-secondary-subtle text-secondary',
-            'EDS': 'bg-dark-subtle text-dark'
-        };
-
-        function customerTypeBadge(ct) {
-            return escapeHtml(ct || '—');
-        }
-
         // ── 清單載入 ─────────────────────────────────────────────────────────
-        function loadList() {
+        function loadList(page) {
+            if (page) queryState.page = page;
+            queryState.keyword = dom.keywordInput.val().trim();
             showLoader();
             $.ajax({
-                url: apiUrls.GetList,
+                url: pageUrls.GetPageList,
                 type: 'GET',
-                data: { keyword: dom.keywordInput.val() },
+                data: {
+                    Page: queryState.page,
+                    PageSize: queryState.pageSize,
+                    KeywordLike: queryState.keyword,
+                    SortField: queryState.sortField,
+                    SortDir: queryState.sortDir,
+                },
                 success: function (res) {
                     if (!res.Success) { showSysError(); return; }
-                    var list = res.Data || [];
-                    var globalKw = dom.globalSearch.val().trim().toLowerCase();
-                    if (globalKw) {
-                        list = list.filter(function (r) {
-                            return [
-                                r[F.BomFileName], r[F.CustomerName], r[F.ProductNo], r[F.CustomerType]
-                            ].some(function (v) {
-                                return (v || '').toLowerCase().includes(globalKw);
-                            });
-                        });
-                    }
-                    cachedList = list;
-                    renderList(applySortFilter(cachedList));
+                    renderList(res.Data.Data || []);
+                    renderPagination(res.Data.Total);
                 },
                 error: function () { showSysError(); },
                 complete: function () { hideLoader(); }
             });
         }
 
-        function applySortFilter(list) {
-            return list.slice().sort(function (a, b) {
-                var va = a[sortState.field] ?? '';
-                var vb = b[sortState.field] ?? '';
-                if (va < vb) return sortState.dir === 'asc' ? -1 : 1;
-                if (va > vb) return sortState.dir === 'asc' ? 1 : -1;
-                return 0;
-            });
+        // ── 分頁渲染 ─────────────────────────────────────────────────────────
+        function renderPagination(total) {
+            queryState.total = total;
+            var totalPages = Math.ceil(total / queryState.pageSize) || 1;
+            var $container = $('#paginationContainer');
+            $container.empty();
+            if (totalPages <= 1) return;
+
+            var html = '<ul class="pagination mb-0">';
+            html += '<li class="page-item ' + (queryState.page <= 1 ? 'disabled' : '') + '">';
+            html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + Math.max(1, queryState.page - 1) + ')">上一頁</a></li>';
+
+            var maxPages = 5;
+            var startPage = Math.max(1, queryState.page - Math.floor(maxPages / 2));
+            var endPage = Math.min(totalPages, startPage + maxPages - 1);
+            startPage = Math.max(1, endPage - maxPages + 1);
+
+            if (startPage > 1) {
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadList(1)">1</a></li>';
+                if (startPage > 2) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+            for (var i = startPage; i <= endPage; i++) {
+                html += '<li class="page-item ' + (i === queryState.page ? 'active' : '') + '">';
+                html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + i + ')">' + i + '</a></li>';
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadList(' + totalPages + ')">' + totalPages + '</a></li>';
+            }
+            html += '<li class="page-item ' + (queryState.page >= totalPages ? 'disabled' : '') + '">';
+            html += '<a class="page-link" href="javascript:void(0)" onclick="loadList(' + Math.min(totalPages, queryState.page + 1) + ')">下一頁</a></li>';
+            html += '</ul>';
+            $container.html(html);
         }
 
+        // ── 清單渲染 ─────────────────────────────────────────────────────────
         function renderList(list) {
             dom.listBody.empty();
             if (!list.length) {
@@ -196,46 +203,41 @@
                 return;
             }
             dom.noresult.hide();
-            list.forEach(function (r, idx) {
-                dom.listBody.append(buildRow(r, idx + 1));
+            list.forEach(function (r) {
+                dom.listBody.append(buildRow(r));
+            });
+
+            // 更新排序欄位視覺指示
+            $('#dataTable .sort').each(function () {
+                $(this).removeClass('asc desc');
+                if ($(this).data('sort') === queryState.sortField) {
+                    $(this).addClass(queryState.sortDir);
+                }
             });
         }
 
-        function buildRow(r, no) {
-            return '<tr data-id="' + r[F.Id] + '">' +
-                '<td>' +
-                '<div class="dropdown">' +
-                '<button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">' +
-                '<i class="ri-more-fill align-middle"></i>' +
-                '</button>' +
-                '<ul class="dropdown-menu dropdown-menu-end">' +
-                '<li><a class="dropdown-item" href="' + apiUrls.EditPage + '?Id=' + r[F.Id] + '">' +
-                '<i class="ri-pencil-fill align-bottom me-2 text-muted"></i>結果</a></li>' +
-                '</ul>' +
-                '</div>' +
-                '</td>' +
-                '<td>' + no + '</td>' +
-                '<td><span class="fw-semibold">' + escapeHtml(r[F.BomFileName]) + '</span></td>' +
-                '<td>' + escapeHtml(r[F.CustomerName]) + '</td>' +
-                '<td><code class="fs-6">' + escapeHtml(r[F.ProductNo]) + '</code></td>' +
-                '<td>' + customerTypeBadge(r[F.CustomerType]) + '</td>' +
-                '<td class="text-end">' + (r[F.PurchaseQty] || 0).toLocaleString() + '</td>' +
-                '<td><span class="badge bg-secondary-subtle text-secondary">' + r[F.ItemCount] + '</span></td>' +
-                '<td>' + escapeHtml(r[F.CreateTime]) + '</td>' +
-                '<td>' + escapeHtml(r[F.UpdateTime]) + '</td>' +
-                '</tr>';
+        function buildRow(r) {
+            return `<tr data-id="${r[QfgM.Id]}">
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ri-more-fill align-middle"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="${pageUrls.EditPage}?Id=${r[QfgM.Id]}">
+                                <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>結果</a></li>
+                        </ul>
+                    </div>
+                </td>
+                <td>${r[QfgM.No]}</td>
+                <td><span class="fw-semibold">${escapeHtml(r[QfgM.FileName])}</span></td>
+                <td>${escapeHtml(r[QfgM.CustomerName] || '')}</td>
+                <td><code class="fs-6">${escapeHtml(r[QfgM.CustomerCode] || '')}</code></td>
+                <td class="text-end">${(r[QfgM.QuotationQty] || 0).toLocaleString()}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary">${r[QfgM.ItemCount] ?? '—'}</span></td>
+                <td class="text-muted">${escapeHtml(r[QfgM.CreatedAtText])}</td>
+                <td class="text-muted">${escapeHtml(r[QfgM.UpdatedAtText])}</td>
+            </tr>`;
         }
-
-        $(document).on('click', '#dataTable .sort', function () {
-            var field = $(this).data('sort');
-            if (sortState.field === field) {
-                sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortState.field = field;
-                sortState.dir = 'asc';
-            }
-            renderList(applySortFilter(cachedList));
-        });
-
     </script>
 }

@@ -18,6 +18,11 @@ namespace Data.DataAccess.Dao
         PageResult<EsFileTransferUploadDTO> GetPageList(PageEntity pageEntity, SearchVO searchVO);
 
         /// <summary>
+        /// 分頁查詢清單-定時查價結果
+        /// </summary>
+        PageResult<EsFileTransferUploadDTO> GetPageListQuotationResult(PageEntity pageEntity, SearchVO searchVO);
+
+        /// <summary>
         /// 依條件刪除資料 (邏輯刪除)
         /// </summary>
         void DeleteByFilter(SearchVO searchVO, string account);
