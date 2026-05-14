@@ -18,13 +18,13 @@ namespace frontend.Controllers
 #if DEBUG
             domain = "";
 #endif
-
+            var isHttps = Request.IsHttps;
             Response.Cookies.Delete(Const.Value.JWT_TokenName, new CookieOptions
             {
                 Path = "/",
-                Domain = domain,
-                Secure = true,
-                SameSite = SameSiteMode.None
+                //Domain = domain,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
             });
 
             // 移除 Cookie (透過設定過期時間為過去來移除)

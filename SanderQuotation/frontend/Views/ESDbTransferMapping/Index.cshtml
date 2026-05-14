@@ -799,11 +799,13 @@
             $('.noresult').hide();
 
             rows.forEach(data => {
+                const chkEl = data.CanDelete ? `<input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">` : '';
+                const deleteBtn = data.CanDelete?`<li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>`:''
                 tbody.append(`
                     <tr data-id="${data.Id}">
                         <th scope="row">
                             <div class="form-check">
-                                <input class="form-check-input row-check" type="checkbox" data-id="${data.Id}" value="option1">
+                                ${chkEl}
                             </div>
                         </th>
                         <td>
@@ -813,7 +815,7 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="javascript:void(0)"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
-                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
+                                    ${deleteBtn}
                                 </ul>
                             </div>
                         </td>

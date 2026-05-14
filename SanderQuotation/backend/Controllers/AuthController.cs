@@ -404,7 +404,7 @@ namespace backend.Controllers
             var isHttps = Request.IsHttps;
             Response.Cookies.Append(Const.Value.JWT_TokenName, safeToken, new CookieOptions
             {
-                Domain = domain,
+                //Domain = domain,
                 HttpOnly = true,
                 Secure = isHttps,
                 SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,

@@ -1,13 +1,20 @@
 using AutoMapper;
 using backend.Common;
+using backend.Common.Attribute;
 using backend.MESSource;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
+using Const;
+using Core.Utility.Extensions;
+using Core.Utility.Utility;
+using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using MySqlX.XDevAPI.Common;
 using System.Globalization;
 using ViewModel;
+using static Const.Enums;
 namespace backend.Controllers
 {
     [Route("api/cycle-settings")]
@@ -41,16 +48,19 @@ namespace backend.Controllers
 
         // GET api/cycle-settings/GetPageList
         [HttpGet("GetPageList")]
-        public IActionResult GetPageList([FromQuery] CommonSearchQuery query)
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
+        public IActionResult GetPageList([FromQuery] ListPageEntity request,string Keyword)
         {
             try
             {
-                var pageResult = GetBL().GetPageList(query);
+                var pageEntity = base.GetPageEntity(request);
+                var pageResult = GetBL().GetPageList(pageEntity, new SearchVO { KeywordLike = Keyword });
                 var list = _mapper.Map<List<EsScheduleCycleVM>>(pageResult.Results);
                 for (int i = 0; i < list.Count; i++)
                 {
-                    list[i].No = (query.Page - 1) * query.PageSize + i + 1;
-                    list[i].IsEnabled = list[i].Status == "1";
+                    list[i].No = (pageEntity.CurrentPage - 1) * pageEntity.PageDataSize + i + 1;
+                    list[i].IsEnabled = list[i].Status == StatusEnum.Enabled.ToValueString();
+                    list[i].OtherTransferDescriptionSettings = list[i].OtherTransferSettings.Select(x=> EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(x)).ToList();
                 }
 
                 return JsonSuccess(new
@@ -70,6 +80,7 @@ namespace backend.Controllers
 
         // GET api/cycle-settings/Get?id=...
         [HttpGet("Get")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult Get([FromQuery] Guid id)
         {
             try
@@ -78,13 +89,12 @@ namespace backend.Controllers
                 if (dm == null)
                     return NotFound();
                 var vm = _mapper.Map<EsScheduleCycleVM>(dm);
-                vm.IsEnabled = vm.Status == "1";
+                vm.IsEnabled = vm.Status == StatusEnum.Enabled.ToValueString();
                 return JsonSuccess(vm);
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
                 //return JsonValidFail(HandleError(ex));
                 return JsonValidFail(ex.Message);
             }
@@ -92,101 +102,79 @@ namespace backend.Controllers
 
         // POST api/cycle-settings/Create
         [HttpPost("Create")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Create)]
         public IActionResult Create([FromBody] EsScheduleCycleVM vm)
         {
             try
             {
                 var dm = _mapper.Map<EsScheduleCycleDM>(vm);
-                var result = GetBL().Create(dm);
-                if (result.IsSuccess == "Y")
+                GetBL().CheckExist(dm);
+                if (GetBL().GetMessage().IsError())
                 {
-                    result.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    result.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Insert_Success"];
-
-                    if (vm.IsEnabled)
-                        _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
-
-                    return JsonSuccess(result);
+                    return JsonValidFail(GetBL().GetMessage().GetErrMsg());
                 }
-                else
-                {
-                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentCulture.Name}:ScheduleCycleCode"]);
-                }
+                GetBL().Create(dm);
+                if (vm.IsEnabled)
+                    _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
+                return JsonSuccess("新增成功");
 
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
-                return JsonValidFail(ex.Message);
+                return JsonValidFail(GetMsg(_config,"System_Error"));
             }
         }
 
         // POST api/cycle-settings/Edit
         [HttpPost("Edit")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult Edit([FromBody] EsScheduleCycleVM vm)
         {
             try
             {
                 var dm = _mapper.Map<EsScheduleCycleDM>(vm);
-                var result = GetBL().Edit(dm);
-
-                if (result.IsSuccess == "Y")
+                GetBL().Edit(dm);
+                _hangfireSchedulerHelper.RemoveRecurringJob(dm.ScheduleCycleCode);
+                if (vm.IsEnabled)
                 {
-                    result.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    result.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Update_Success"];
-
-                    _hangfireSchedulerHelper.RemoveRecurringJob(dm.ScheduleCycleCode);
-                    if (vm.IsEnabled)
-                    {
-                        _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
-                    }
-
-                    return JsonSuccess(result);
+                    _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
                 }
-                else
-                {
-                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentCulture.Name}:ScheduleCycleCode"]);
-                }
+
+                return JsonSuccess("編輯成功");
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                Response.StatusCode = 500;
-                return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:System_Error"]);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
         // POST api/cycle-settings/Delete
         [HttpPost("Delete")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Delete)]
         public IActionResult Delete([FromBody] List<Guid> rowGuids)
         {
             try
             {
-                if (rowGuids == null || rowGuids.Count == 0)
-                    return JsonValidFail(_config[$"message:{CultureInfo.CurrentUICulture.Name}:Data_Not_Found"]);
 
-                var result = GetBL().Delete(rowGuids);
-                if (result.Item1.IsSuccess == "Y")
+                var codes = GetBL().Delete(rowGuids);
+                foreach (var code in codes)
                 {
-                    result.Item1.ReturnCode = _config[$"message:{CultureInfo.CurrentCulture.Name}:OKCode"];
-                    result.Item1.ReturnMsg = _config[$"message:{CultureInfo.CurrentCulture.Name}:MSG_Delete_Success"];
-                    foreach (var code in result.Item2)
-                    {
-                        _hangfireSchedulerHelper.RemoveRecurringJob(code);
-                    }
+                    _hangfireSchedulerHelper.RemoveRecurringJob(code);
                 }
-                return JsonSuccess(result.Item1);
+                return JsonSuccess("刪除成功");
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                return JsonValidFail(ex.Message);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
 
         [HttpGet("GetSelectList")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Create, Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult GetSelectList()
         {
             try
@@ -213,6 +201,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("ExecuteNow/{rowGuid}")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
         public IActionResult ExecuteNow(Guid rowGuid)
         {
             try
@@ -234,7 +223,7 @@ namespace backend.Controllers
                     }
                 });
 
-                return JsonSuccess(_config[$"message:{CultureInfo.CurrentCulture.Name}:Schedule_Triggered"]);
+                return JsonSuccess("排程已觸發");
             }
             catch (Exception ex)
             {

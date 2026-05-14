@@ -34,6 +34,9 @@ namespace Business.DomainModel
 
         // 篩選條件模式：'manual'=手寫SQL, 'builder'=條件列
         public string FilterMode { set; get; }
+
+        //額外條件
+        public List<EsScheduleCycleDM> EsScheduleCycleDMs { get; set; } = new();
     }
 }
 

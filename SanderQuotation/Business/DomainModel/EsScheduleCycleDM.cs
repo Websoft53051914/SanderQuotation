@@ -41,6 +41,7 @@ namespace Business.DomainModel
         public List<string> DBTransferSettings { get; set; } = new(); // EXP_*
         public List<string> DbCsvTransferSettings { get; set; } = new(); // CSV_*
         public List<string> FileTransferSettings { get; set; } = new(); // IMP_*
+        public List<int> OtherTransferSettings { get; set; } = new(); // 其他類型的設定（如：查價)，參照ScheduleCycleActionTypeEnum來定義具體的值
 
         public int No { get; set; }
     }

@@ -54,6 +54,8 @@ namespace ViewModel
         public string FilterMode { set; get; }
 
         public int No { get; set; }
+
+        public bool CanDelete { get; set; }
     }
 }
 

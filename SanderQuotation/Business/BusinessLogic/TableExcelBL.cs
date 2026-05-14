@@ -60,6 +60,13 @@ namespace Business.BusinessLogic
             return dbTransferDAO;
         }
 
+        private IEsScheduleCycleExcelDAO? scheduleCycleExcelDAO;
+        private IEsScheduleCycleExcelDAO GetScheduleCycleExcelDAO()
+        {
+            scheduleCycleExcelDAO ??= _unitOfWork.Repository<IEsScheduleCycleExcelDAO>();
+            return scheduleCycleExcelDAO;
+        }
+
         /// <summary>
         /// 依 TransferMappingCode 取得檔案轉入設定（含欄位明細）
         /// </summary>
@@ -96,22 +103,40 @@ namespace Business.BusinessLogic
         {
             var pageResult = GetMappingDAO().GetPageList(pageEntity, searchVO);
 
+            var list = GetScheduleCycleExcelDAO().GetListByFilter(new SearchVO
+            {
+                TransferCodeIn = pageResult.Results.Select(r => r.TransferMappingCode).ToList()
+            });
+            var dms = pageResult.Results.Select(dto => new EsFileTransferMappingDM
+            {
+                Id = dto.Id,
+                TransferMappingCode = dto.TransferMappingCode,
+                ExampleFileName = dto.ExampleFileName,
+                ExampleFileType = dto.ExampleFileType,
+                SrcNasFilePath = dto.SrcNasFilePath,
+                Description = dto.Description,
+                Status = dto.Status ?? 0,
+                MappingTables = dto.MappingTables,
+            }).ToList();
+            var scheduleCycleDict = list.GroupBy(x => x.TransferCode).ToDictionary(g => g.Key, g => g.Select(s =>new EsScheduleCycleDM()
+            {
+                ScheduleCycleCode = s.ScheduleCycleCode
+            }).ToList());
+            for(int i = 0; i < dms.Count; i++)
+            {
+                if(scheduleCycleDict.ContainsKey(dms[i].TransferMappingCode))
+                {
+                    dms[i].EsScheduleCycleDMs = scheduleCycleDict[dms[i].TransferMappingCode];
+                }
+            }
+               
+
             return new PageResult<EsFileTransferMappingDM>
             {
                 CurrentPage = pageResult.CurrentPage,
                 DataCount = pageResult.DataCount,
                 PageDataSize = pageResult.PageDataSize,
-                Results = pageResult.Results.Select(dto => new EsFileTransferMappingDM
-                {
-                    Id                 = dto.Id,
-                    TransferMappingCode = dto.TransferMappingCode,
-                    ExampleFileName = dto.ExampleFileName,
-                    ExampleFileType = dto.ExampleFileType,
-                    SrcNasFilePath = dto.SrcNasFilePath,
-                    Description = dto.Description,
-                    Status = dto.Status??0,
-                    MappingTables = dto.MappingTables,
-                }).ToList()
+                Results = dms
             };
         }
 

@@ -13,6 +13,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static Org.BouncyCastle.Math.EC.ECCurve;
+using static Const.Enums;
+using Const;
 
 namespace backend.MESSource
 {
@@ -40,7 +42,7 @@ namespace backend.MESSource
             {
                 EsScheduleCycleBL bl = BLFactory.GetInstanceBackGround<EsScheduleCycleBL>();
                 var data = bl.GetByCode(scheduleCycleCode);
-                if (data == null || data.Status != "1" || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0))
+                if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0))
                 {
                     // log not found
                     return;

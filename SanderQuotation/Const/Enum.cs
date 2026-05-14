@@ -498,5 +498,11 @@ namespace Const
             MSSQL = 2
         }
 
+        public enum ScheduleCycleActionTypeEnum
+        {
+            [Description("查價")]
+            PriceSearch = 1,
+        }
+
     }
 }

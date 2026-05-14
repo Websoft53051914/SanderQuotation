@@ -1,5 +1,7 @@
+using Core.Utility.Utility;
 using frontend.Common;
 using Microsoft.AspNetCore.Mvc;
+using static Const.Enums;
 
 namespace frontend.Controllers.CycleSettings
 {
@@ -16,6 +18,7 @@ namespace frontend.Controllers.CycleSettings
 
         public IActionResult Index()
         {
+            ViewData["OtherTransferSettingSelectList"] = GetSelectListHandler().GetSelectListEnum<ScheduleCycleActionTypeEnum>();
             return View();
         }
     }

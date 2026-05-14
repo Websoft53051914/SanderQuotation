@@ -41,11 +41,15 @@ namespace ViewModel
         public List<string> DBTransferSettings { get; set; } = new();
         public List<string> FileTransferSettings { get; set; } = new();
 
+        public List<int> OtherTransferSettings { get; set; } = new();
+
         public DateTime? LastRunAt { get; set; }
         public string LastRunStatus { get; set; }
         public string LastRunMessage { get; set; }
 
         public int No { get; set; }
+
+        public List<string> OtherTransferDescriptionSettings { get; set; } = new();
     }
 
     public class EsScheduleCycleGridVM

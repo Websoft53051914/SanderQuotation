@@ -27,5 +27,7 @@ namespace ViewModel.TableExcel
         public string? MappingTables { get; set; }
 
         public string Status { get; set; } = "";
+
+        public bool CanDelete { get; set; }
     }
 }

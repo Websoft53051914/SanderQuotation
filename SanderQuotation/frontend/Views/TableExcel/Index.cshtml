@@ -1494,12 +1494,13 @@ function loadDbTransferList(selectedValue, callback) {
                 var description = data.Description || data.description || '';
                 var mappingTables = data.MappingTables || data.mappingTables || '';
                 var status = data.Status || data.status || '';
-
+                const chkEl = data.CanDelete?`<input class="form-check-input row-check" type="checkbox" data-id="${rowGuid}" value="option1">`:'';
+                        const deleteBtn = data.CanDelete?`<li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>`:''
                 tbody.append(`
                     <tr data-id="${rowGuid}">
                         <th scope="row">
                             <div class="form-check">
-                                <input class="form-check-input row-check" type="checkbox" data-id="${rowGuid}" value="option1">
+                                ${chkEl}
                             </div>
                         </th>
                         <td>
@@ -1509,7 +1510,7 @@ function loadDbTransferList(selectedValue, callback) {
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> 編輯</a></li>
-                                    <li><a class="dropdown-item remove-item-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> 刪除</a></li>
+                                    ${deleteBtn}
                                 </ul>
                             </div>
                         </td>

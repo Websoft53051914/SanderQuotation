@@ -109,6 +109,16 @@
         /// 代碼
         /// </summary>
         public List<string> TransferMappingCodeIn { set; get; } = new List<string>();
+
+        /// <summary>
+        /// 代碼
+        /// </summary>
+        public string? ScheduleCycleCodeEq { set; get; }
+
+        /// <summary>
+        /// 代碼
+        /// </summary>
+        public List<string> ScheduleCycleCodeIn { set; get; } = new List<string>();
     }
 
     public partial class SearchVO

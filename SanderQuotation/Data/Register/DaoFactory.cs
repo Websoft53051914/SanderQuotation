@@ -71,6 +71,7 @@ namespace Data.Register
                 .RegisterType<IEsScheduleCycleMonthDayDAO, EsScheduleCycleMonthDayDaoImpl>()
                 .RegisterType<IEsScheduleCycleDbTransferDAO, EsScheduleCycleDbTransferDaoImpl>()
                 .RegisterType<IEsScheduleCycleExcelDAO, EsScheduleCycleExcelDaoImpl>()
+                .RegisterType<IEsScheduleCycleOtherTransferDAO, EsScheduleCycleOtherTransferDaoImpl>()
                 .RegisterType<IEsScheduleCycleLogDAO, EsScheduleCycleLogDaoImpl>()
                 .RegisterType<IEsScheduleCycleLogDetailDAO, EsScheduleCycleLogDetailDaoImpl>()
 

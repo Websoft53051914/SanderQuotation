@@ -59,6 +59,7 @@ namespace backend.Controllers
                     Description             = dm.Description,
                     MappingTables           = dm.MappingTables,
                     Status                  = dm.Status.ToString(),
+                    CanDelete               = dm.EsScheduleCycleDMs.Count ==0
                 }).ToList();
 
                 return JsonSuccess(new

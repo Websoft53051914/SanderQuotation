@@ -50,5 +50,8 @@ namespace Business.DomainModel
         /// 是否為 BOM 檔案規則（EsFileTransferMappingColumn 下有 TargetTableName = 'bomfilecontent'）
         /// </summary>
         public bool IsBomFileRule { get; set; }
+
+        //額外欄位
+        public List<EsScheduleCycleDM> EsScheduleCycleDMs { get; set; } = new();
     }
 }

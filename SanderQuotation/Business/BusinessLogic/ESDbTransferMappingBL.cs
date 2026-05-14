@@ -3,15 +3,16 @@ using Business.Common;
 using Business.DomainModel;
 using CommonClass.Model;
 using CommonClass.Models;
-using Core.Utility.Helper.DB.Entity;
+using Const;
+using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
+using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using Microsoft.Extensions.Configuration;
+using MySqlX.XDevAPI.Common;
 using static Const.Enums;
-using Core.Utility.Extensions;
-using Const;
 
 namespace Business.BusinessLogic
 {
@@ -53,6 +54,13 @@ namespace Business.BusinessLogic
             dao ??= _unitOfWork.Repository<IESDbTransferMappingDAO>();
             return dao;
         }
+
+        private IEsScheduleCycleDbTransferDAO? esScheduleCycleDbTransferDAO = null;
+        private IEsScheduleCycleDbTransferDAO GetScheduleCycleDbTransferDAO()
+        {
+            esScheduleCycleDbTransferDAO ??= _unitOfWork.Repository<IEsScheduleCycleDbTransferDAO>();
+            return esScheduleCycleDbTransferDAO;
+        }
     }
 
     public partial class ESDbTransferMappingBL
@@ -60,8 +68,23 @@ namespace Business.BusinessLogic
         public PageResult<ESDbTransferMappingDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
         {
             var result = GetDAO().FindPageList(pageEntity, searchVO);
+            var list = GetScheduleCycleDbTransferDAO().GetListByFilter(new SearchVO
+            {
+                TransferCodeIn = result.Results.Select(r => r.TransferMappingCode).ToList()
+            });
 
-            var dms = mapper.Map<List<ESDbTransferMappingDM>>(result.Results);
+            var dms = result.Results.Select(dto => mapper.Map<ESDbTransferMappingDM>(dto)).ToList();
+            var scheduleCycleDict = list.GroupBy(x => x.TransferCode).ToDictionary(g => g.Key, g => g.Select(s => new EsScheduleCycleDM()
+            {
+                ScheduleCycleCode = s.ScheduleCycleCode
+            }).ToList());
+            for (int i = 0; i < dms.Count; i++)
+            {
+                if (scheduleCycleDict.ContainsKey(dms[i].TransferMappingCode))
+                {
+                    dms[i].EsScheduleCycleDMs = scheduleCycleDict[dms[i].TransferMappingCode];
+                }
+            }
 
             return new PageResult<ESDbTransferMappingDM>
             {

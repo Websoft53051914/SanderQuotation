@@ -91,6 +91,8 @@ namespace backend.Controllers
                         list[i].SrcTransferName = dicDb[list[i].SrcDbTransferCode];
 
                     list[i].Columns = _mapper.Map<List<ESDbTransferMappingColumnVM>>(GetBL().GetColumns(list[i].TransferMappingCode));
+
+                    list[i].CanDelete = pageResult.Results[i].EsScheduleCycleDMs.Count == 0; // 若有排程綁定則不可刪除
                 }
 
                 return JsonSuccess(new
