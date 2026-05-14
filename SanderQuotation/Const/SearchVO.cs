@@ -86,6 +86,16 @@
         /// 類別
         /// </summary>
         public int? TypeEq { get; set; }
+
+        /// <summary>
+        /// 類型（字串）
+        /// </summary>
+        public string? TypeStrEq { get; set; }
+
+        /// <summary>
+        /// 參數名稱
+        /// </summary>
+        public string? ParamEq { get; set; }
     }
 
     public partial class SearchVO
@@ -104,105 +114,18 @@
     public partial class SearchVO
     {
         /// <summary>
-        /// 客戶姓名
-        /// </summary>
-        public string? CustomerNameLike { get; set; }
-        /// <summary>
-        /// 對話開始時間
-        /// </summary>
-        public DateTime? AILogStartTimeGte { get; set; }
-        /// <summary>
-        /// 對話開始時間
-        /// </summary>
-        public DateTime? AILogStartTimeLte { get; set; }
-        /// <summary>
-        /// 對應的 Enum
-        /// </summary>
-        public List<string> CategoryTypeIn { get; set; } = [];
-        /// <summary>
-        /// tb_aialert.Id
-        /// </summary>
-        public List<long> AIAlertIdIn { get; set; } = [];
-        /// <summary>
-        /// tb_aialert.Status
-        /// </summary>
-        public List<int> AIAlertStatusIn { get; set; } = [];
-        /// <summary>
-        /// tb_aiclose.Id
-        /// </summary>
-        public List<long> AICloseIdIn { get; set; } = [];
-        /// <summary>
-        /// tb_aiclose.Status
-        /// </summary>
-        public List<int> AICloseStatusIn { get; set; } = [];
-    }
-
-    public partial class SearchVO
-    {
-        /// <summary>
-        /// 員工資料代號
-        /// </summary>
-        public int? EmployeeIdEq { get; set; }
-        /// <summary>
-        /// 員工資料代號
-        /// </summary>
-        public List<long> EmployeeIdIn { get; set; } = [];
-        /// <summary>
-        /// 員工資料代號
-        /// </summary>
-        public bool EmployeeIdIsNull { get; set; } = false;
-        /// <summary>
-        /// 差勤類型
-        /// </summary>
-        public int? AttendanceTypeEq { get; set; }
-        /// <summary>
-        /// 差勤類型
-        /// </summary>
-        public List<int> AttendanceTypeIn { get; set; } = [];
-        /// <summary>
-        /// 差勤子類型
-        /// </summary>
-        public int? AttendanceSubTypeEq { get; set; }
-
-        public int? DeptIdEq { get; set; }
-
-        /// <summary>
-        /// 明細資料資料代號
-        /// </summary>
-        public int? DetailIdEq { get; set; }
-
-        /// <summary>
-        /// 統計日期
-        /// </summary>
-        public DateTime? ReportDateEq { get; set; }
-
-        /// <summary>
-        /// 年度
-        /// </summary>
-        public int? YearEq { get; set; }
-    }
-
-    public partial class SearchVO
-    {
-        /// <summary>
         /// 資料庫轉檔代號
         /// </summary>
         public List<string> TransferCodeIn { get; set; } = new List<string>();
-    }
 
-    public partial class SearchVO
-    {
-        /// <summary>
-        /// BomFileContent.Id
-        /// </summary>
-        public Guid? BomFileContentIdEq { get; set; }
-    }
-
-    public partial class SearchVO
-    {
         /// <summary>
         /// SanderModuleItem 採購型號
         /// </summary>
         public string? SanderModuleItemNoEq { get; set; }
+
+        /// <summary>
+        /// BomFileContent.Id
+        /// </summary>
+        public Guid? BomFileContentIdEq { get; set; }
     }
 }

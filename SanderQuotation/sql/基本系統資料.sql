@@ -1,3 +1,19 @@
+-- Function
+-- 更新 updatedat 欄位
+CREATE OR REPLACE FUNCTION update_column_updatedat()
+RETURNS TRIGGER AS
+$$
+BEGIN
+    NEW.updatedat = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Table Schema
+
+-- 
+
+-- Data
 --系統管理員帳號
 INSERT INTO TB_Account
 (Id, MemberAccount, AccountName, PermissionId, AccountStatus, LastLoginTime, MemberPWD, LastMemberPWDTime, AccountEmail, ResetPWDCode, LastForgetPWDTime, Logins, LockTime, LogoutTime, Status, LineUserId, Type, CreatedBy, UpdatedBy, CreatedAt, UpdatedAt)

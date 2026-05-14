@@ -63,7 +63,7 @@ namespace Data.Register
                 .RegisterType<IEsFileTransferMappingDAO, EsFileTransferMappingDaoImpl>()
                 .RegisterType<IEsFileTransferMappingColumnDAO, EsFileTransferMappingColumnDaoImpl>()
                 .RegisterType<IEsFileTransferUploadDAO, EsFileTransferUploadDaoImpl>()
-                .RegisterType<IReportItemCustomerDAO, ReportItemCustomerDaoImpl>()
+                
 
                 .RegisterType<IEsTransferErrorLogDAO, EsTransferErrorLogDaoImpl>()
                 .RegisterType<IEsScheduleCycleDAO, EsScheduleCycleDaoImpl>()
@@ -83,8 +83,13 @@ namespace Data.Register
                 .RegisterType<ITB_SysRoleDAO, TB_SysRoleDaoImpl>()
                 .RegisterType<ITB_SysRoleFuncDetailDAO, TB_SysRoleFuncDetailDaoImpl>()
                 .RegisterType<ITBBomFileQuotationDAO, TBBomFileQuotationDaoImpl>()
+                .RegisterType<ITBSysSettingDAO, TBSysSettingDaoImpl>()
+                // ERP 相關資料表
                 .RegisterType<IBomFileContentDAO, BomFileContentDaoImpl>()
                 .RegisterType<ISanderModuleItemDAO, SanderModuleItemDaoImpl>()
+                .RegisterType<IReportItemCustomerDAO, ReportItemCustomerDaoImpl>()
+                .RegisterType<ISanderModuleItemVariantDAO, SanderModuleItemVariantDaoImpl>()
+                .RegisterType<ISanderModulePurchaseLineDAO, SanderModulePurchaseLineDaoImpl>()
 
                 // SOP 資料庫專用 DAO
                 .RegisterType<ISopWorkRuleDAO, SopWorkRuleDAOImpl>()

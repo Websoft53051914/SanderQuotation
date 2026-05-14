@@ -97,16 +97,47 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 依 BomFileContent.Id 取得資料清單
+        /// 依條件刪除資料 (邏輯刪除)
         /// </summary>
-        /// <param name="bomFileContentId">BomFileContent.Id</param>
-        /// <returns>DM 清單</returns>
-        public List<TBBomFileQuotationDM> GetListByBomFileContentId(Guid bomFileContentId)
+        /// <param name="searchVO">查詢條件</param>
+        public void DeleteByFilter(SearchVO searchVO)
         {
-            SearchVO searchVO = new();
-            searchVO.BomFileContentIdEq = bomFileContentId;
+            string account = SessionVO?.Account ?? string.Empty;
+            GetDAO().DeleteByFilter(searchVO, account);
+            _unitOfWork.Commit();
+        }
 
-            return GetListByFilter(searchVO);
+        #endregion -- TBBomFileQuotation --
+    }
+
+    public partial class TBBomFileQuotationBL
+    {
+        /// <summary>
+        /// 分頁查詢清單
+        /// </summary>
+        /// <param name="pageEntity">分頁資訊</param>
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>分頁 DM 清單</returns>
+        public PageResult<TBBomFileQuotationDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
+        {
+            searchVO.StatusEq = (int)StatusEnum.Enabled;
+
+            PageResult<TBBomFileQuotationDTO> pageResult = GetDAO().GetPageList(pageEntity, searchVO);
+
+            List<TBBomFileQuotationDM> results = [];
+            foreach (TBBomFileQuotationDTO item in pageResult.Results)
+            {
+                TBBomFileQuotationDM dm = _mapper.Map<TBBomFileQuotationDM>(item);
+                results.Add(dm);
+            }
+
+            return new PageResult<TBBomFileQuotationDM>
+            {
+                CurrentPage = pageResult.CurrentPage,
+                DataCount = pageResult.DataCount,
+                PageDataSize = pageResult.PageDataSize,
+                Results = results,
+            };
         }
 
         /// <summary>
@@ -158,50 +189,6 @@ namespace Business.BusinessLogic
 
                 GetDAO().Update(entity);
             }
-        }
-
-        /// <summary>
-        /// 依條件刪除資料 (邏輯刪除)
-        /// </summary>
-        /// <param name="searchVO">查詢條件</param>
-        public void DeleteByFilter(SearchVO searchVO)
-        {
-            string account = SessionVO?.Account ?? string.Empty;
-            GetDAO().DeleteByFilter(searchVO, account);
-            _unitOfWork.Commit();
-        }
-
-        #endregion -- TBBomFileQuotation --
-    }
-
-    public partial class TBBomFileQuotationBL
-    {
-        /// <summary>
-        /// 分頁查詢清單
-        /// </summary>
-        /// <param name="pageEntity">分頁資訊</param>
-        /// <param name="searchVO">查詢條件</param>
-        /// <returns>分頁 DM 清單</returns>
-        public PageResult<TBBomFileQuotationDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
-        {
-            searchVO.StatusEq = (int)StatusEnum.Enabled;
-
-            PageResult<TBBomFileQuotationDTO> pageResult = GetDAO().GetPageList(pageEntity, searchVO);
-
-            List<TBBomFileQuotationDM> results = [];
-            foreach (TBBomFileQuotationDTO item in pageResult.Results)
-            {
-                TBBomFileQuotationDM dm = _mapper.Map<TBBomFileQuotationDM>(item);
-                results.Add(dm);
-            }
-
-            return new PageResult<TBBomFileQuotationDM>
-            {
-                CurrentPage = pageResult.CurrentPage,
-                DataCount = pageResult.DataCount,
-                PageDataSize = pageResult.PageDataSize,
-                Results = results,
-            };
         }
     }
 }

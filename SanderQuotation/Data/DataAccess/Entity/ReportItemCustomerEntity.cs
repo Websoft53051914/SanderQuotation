@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.DataAccess.Entity
 {
+    /// <summary>
+    /// 客戶代碼與 Variant Code 對照表
+    /// </summary>
     [Table("reportitemcustomer")]
     public class ReportItemCustomerEntity : Core.Utility.Base.Data.GuidId.BaseEntity
     {

@@ -3,13 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Data.DataAccess.Entity
 {
     /// <summary>
-    /// ERP 料號基本資料
+    /// 內部料品表
     /// </summary>
     [Table("sandermoduleitem")]
     public class SanderModuleItemEntity : Core.Utility.Base.Data.GuidId.BaseEntity
     {
         /// <summary>
-        /// 採購型號
+        /// 內部料號
         /// </summary>
         [Column("no")]
         public string? No { get; set; }
@@ -33,5 +33,10 @@ namespace Data.DataAccess.Entity
         /// 長描述 2
         /// </summary>
         public string? LongDesc2 { get; set; }
+
+        /// <summary>
+        /// 判斷是否需比對廠牌之類別代碼
+        /// </summary>
+        public string? ItemCategoryCode { get; set; }
     }
 }

@@ -1,5 +1,8 @@
 namespace Business.DomainModel
 {
+    /// <summary>
+    /// 客戶代碼與 Variant Code 對照表
+    /// </summary>
     public class ReportItemCustomerDM : BaseDM
     {
         /// <summary>
