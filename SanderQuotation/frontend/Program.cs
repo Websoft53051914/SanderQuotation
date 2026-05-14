@@ -133,7 +133,7 @@ builder.Services.AddControllersWithViews()
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 builder.Configuration.AddJsonFile("message.json", optional: true, reloadOnChange: true);
-
+var useHttps = builder.Configuration.GetValue<bool>("IsHttps");
 builder.Services.AddSingleton<ConfigurationHelper>();
 
 var app = builder.Build();
@@ -145,8 +145,11 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     //app.UseHsts(); //架設http 非 https 要註解
 }
+if (useHttps)
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 #region Localization

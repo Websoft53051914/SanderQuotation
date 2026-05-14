@@ -77,18 +77,7 @@ builder.Services.AddSession(options =>
     //options.Cookie.SameSite = SameSiteMode.None;
 });
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
-})
- .AddCookie(options =>
- {
-     options.Cookie.HttpOnly = true;
-     //options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  //架設http 非 https 要註解 2025-12-08 解除
 
-     // ⭐ 新增：跨埠/跨站點傳輸必須設定為 None
-     options.Cookie.SameSite = SameSiteMode.None;
- });
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddHttpClient();
@@ -102,6 +91,26 @@ builder.Services.AddControllersWithViews()
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 builder.Configuration.AddJsonFile("message.json", optional: true, reloadOnChange: true);
+var useHttps = builder.Configuration.GetValue<bool>("IsHttps");
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
+})
+ .AddCookie(options =>
+ {
+     options.Cookie.HttpOnly = true;
+     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // 改為隨請求決定
+
+     // SameSite=None 需要 Secure=true (HTTPS)，HTTP 環境改為 Lax
+     if (useHttps)
+     {
+         options.Cookie.SameSite = SameSiteMode.None; // 跨站點傳輸
+     }
+     else
+     {
+        options.Cookie.SameSite = SameSiteMode.Lax; // HTTP 環境使用 Lax
+     }
+ });
 
 // 註冊 CORS - 統一設定，適用於所有環境
 builder.Services.AddCors(options =>
@@ -110,10 +119,11 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy.WithOrigins(
-                  "https://localhost:7067",          // Windows 前端 local 開發環境   
-                  "http://localhost:7067",          // Windows 前端 local 開發環境 
-                  "http://192.168.1.107:1011",          // Windows 前端 local 開發環境 
-                  "http://localhost:1011"          // Windows 前端 local 開發環境 
+                  "https://localhost:7067",          // Windows 前端 local HTTPS 開發環境   
+                  "http://localhost:7067",           // Windows 前端 local 開發環境 
+                  "http://localhost:5134",           // Windows 前端 local HTTP 開發環境
+                  "http://192.168.1.46:1011",       // Linux 前端環境 
+                  "http://localhost:1011"            // Linux 前端環境 
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -190,7 +200,11 @@ app.UseStaticFiles(); // ⭐ 必須有
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+if (useHttps)
+{
+    app.UseHttpsRedirection();
+}
+
 
 // 使用 CORS
 app.UseCors("AllowHost");

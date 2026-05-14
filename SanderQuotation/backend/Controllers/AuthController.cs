@@ -399,12 +399,15 @@ namespace backend.Controllers
             domain = "";
 #endif
 
+            // HTTP 環境：Secure=false、SameSite=Lax
+            // HTTPS 環境：Secure=true、SameSite=None（跨站）
+            var isHttps = Request.IsHttps;
             Response.Cookies.Append(Const.Value.JWT_TokenName, safeToken, new CookieOptions
             {
                 Domain = domain,
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
                 Path = "/",
                 Expires = new DateTimeOffset(jwtExpiresUtc)
             });
