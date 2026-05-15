@@ -1,23 +1,10 @@
-﻿using Core.Utility.Utility;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Math;
-using DocumentFormat.OpenXml.Wordprocessing;
-using backend.Models.Cookie;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.AspNetCore.Http;
+﻿using backend.Models.Cookie;
+using Core.Utility.Utility;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Graph.Models;
 using Newtonsoft.Json;
-using NPOI.OpenXmlFormats.Wordprocessing;
-using NPOI.SS.Formula.Functions;
-using System.IO;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Web;
 using static CommonClass.Model.SynoNasTreeNodeDM;
 using static Const.Enums;
 
@@ -67,6 +54,7 @@ namespace backend.Common
 
     public partial class SynoNasHelper
     {
+        private const string NasCredentialEncryptedPrefix = "ENC::";
         private class ApiInfo
         {
             public int maxVersion { get; set; }
@@ -94,9 +82,9 @@ namespace backend.Common
         public async Task<SynoNasLoginResponse> LoginAsync(string url, string account, string password)
         {
             string baseUrl = url.TrimEnd('/') + "/webapi";
-            
+
             await GetApiInfo(baseUrl);
-            
+
             ApiInfo info = await GetApiInfoSpecific("SYNO.API.Auth");
             var loginUrl = $"{baseUrl}/{info.path}?api=SYNO.API.Auth&version={info.maxVersion}&method=login&account={account}&passwd={password}&session=FileStation&format=sid";
 
@@ -115,7 +103,7 @@ namespace backend.Common
                     };
                 }
             }
-            
+
             return new SynoNasLoginResponse
             {
                 Success = false,
@@ -129,8 +117,8 @@ namespace backend.Common
         /// <returns></returns>
         private async Task GetApiInfo(string baseUrl)
         {
-            
-            if (!_cache.TryGetValue("ApiInfoCache" , out var e))
+
+            if (!_cache.TryGetValue("ApiInfoCache", out var e))
             {
                 string apiInfo = await QueryApiAllAsync(baseUrl);
                 using var doc = JsonDocument.Parse(apiInfo);
@@ -153,7 +141,7 @@ namespace backend.Common
                     _cache.Set("ApiInfoCache", apiInfoCache);
                 }
             }
-           
+
         }
 
 
@@ -399,8 +387,8 @@ namespace backend.Common
                 {
                     Url = $"https://{cookieValue.Url}",
                     Sid = cookieValue.Sid,
-                    Account = cookieValue.Account,
-                    Password = cookieValue.Password,
+                    Account = DecryptNasCredentialField(cookieValue.Account, key, iv),
+                    Password = DecryptNasCredentialField(cookieValue.Password, key, iv),
                     RootFolderPath = cookieValue.Path.StartsWith("/") ? cookieValue.Path : "/" + cookieValue.Path
                 };
 
@@ -424,13 +412,37 @@ namespace backend.Common
             }
         }
 
+        private static string DecryptNasCredentialField(string value, string key, string iv)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            // Backward compatibility: old cookie data stores plaintext fields.
+            if (!value.StartsWith(NasCredentialEncryptedPrefix, StringComparison.Ordinal))
+                return value;
+
+            var encryptedPayload = value.Substring(NasCredentialEncryptedPrefix.Length);
+            if (string.IsNullOrEmpty(encryptedPayload))
+                return string.Empty;
+
+            try
+            {
+                return SecurityUtility.Decrypt(encryptedPayload, key, iv);
+            }
+            catch
+            {
+                // Graceful fallback to avoid breaking existing sessions on malformed data.
+                return value;
+            }
+        }
+
 
     }
 
     //FileStation
     public partial class SynoNasHelper
     {
-       
+
         public class DirSizeStartData
         {
             [JsonProperty("taskid")]
@@ -501,7 +513,7 @@ namespace backend.Common
         }
 
 
-       
+
         /// <summary>
         /// [SYNO.FileStation.List - list_share] 列出所有分享資料夾
         /// </summary>
@@ -715,10 +727,10 @@ namespace backend.Common
             }
 
             ApiInfo info = apiInfoCache["SYNO.FileStation.Upload"];
-            
+
             // 組合完整的上傳 URL
             var url = $"{baseUrl}/{info.path}?api=SYNO.FileStation.Upload&version={info.maxVersion}&method=upload&_sid={context.Sid}&path={Uri.EscapeDataString(destFolderPath)}&create_parents=true&overwrite=true";
-            
+
             return url;
         }
 
@@ -732,7 +744,7 @@ namespace backend.Common
         {
             SynoNasCommonResponse res = new SynoNasCommonResponse();
             var @params = new Dictionary<string, string>
-            {                                  
+            {
                 { "folder_path",JsonConvert.SerializeObject(new [] { model.Folder_Path }) },
                 { "name", JsonConvert.SerializeObject(new [] { model.Name }) },
                 { "force_parent", model.ForceParent ? "true" : "false" },
@@ -1834,17 +1846,17 @@ namespace backend.Common
             var result = System.Text.Json.JsonSerializer.Deserialize<SynologyListShareResponse>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            });           
+            });
 
-                     
+
             return result.Data?.Shares ?? new List<SynologyFileItem>();
         }
 
         public async Task<List<SynologyFileItem>> ListDirectoriesAsync(SynoNasConnectionContext context, string folderPath)
         {
             var @params = new Dictionary<string, string>
-            {               
-                { "folder_path", folderPath }               
+            {
+                { "folder_path", folderPath }
             };
             var content = await ExecuteGetAsync(context, "SYNO.FileStation.List", "list", @params);
 
@@ -1966,12 +1978,73 @@ namespace backend.Common
             throw new SynoApiException(code, doc.RootElement.GetProperty("error").ToString());
         }
 
-      
+
     }
 
     public class SynoApiException : Exception
     {
         public int Code { get; }
         public SynoApiException(int code, string message) : base(message) => Code = code;
+    }
+
+    /// <summary>
+    /// CopyMove 任務
+    /// </summary>
+    public partial class SynoNasHelper
+    {
+        public record CopyMoveStartData(string taskid);
+        public record CopyMoveStatusData(bool finished, double progress);
+
+        /// <summary>
+        /// [SYNO.FileStation.CopyMove - start] 啟動複製/移動任務
+        /// </summary>
+        /// <param name="context">連線資訊</param>
+        /// <param name="paths">來源路徑清單</param>
+        /// <param name="destFolderPath">目標資料夾</param>
+        /// <param name="removeSrc">true=移動，false=複製</param>
+        public async Task<CopyMoveStartData> CopyMove_StartAsync(SynoNasConnectionContext context, List<string> paths, string destFolderPath, bool removeSrc = true)
+        {
+            var @params = new Dictionary<string, string>
+            {
+                { "path", JsonConvert.SerializeObject(paths) },
+                { "dest_folder_path", destFolderPath },
+                { "remove_src", removeSrc ? "true" : "false" }
+            };
+
+            var json = await ExecuteGetAsync(context, "SYNO.FileStation.CopyMove", "start", @params);
+
+            using var doc = JsonDocument.Parse(json);
+            EnsureSuccessOrThrow(doc);
+
+            var taskId = doc.RootElement.GetProperty("data").GetProperty("taskid").GetString();
+            if (string.IsNullOrWhiteSpace(taskId))
+                throw new SynoNasMsgException("Nas_CopyMove_TaskId_Missing");
+
+            return new CopyMoveStartData(taskId);
+        }
+
+        /// <summary>
+        /// [SYNO.FileStation.CopyMove - status] 查詢任務狀態
+        /// </summary>
+        /// <param name="context">連線資訊</param>
+        /// <param name="taskid">任務 ID</param>
+        public async Task<CopyMoveStatusData> CopyMove_StatusAsync(SynoNasConnectionContext context, string taskid)
+        {
+            var @params = new Dictionary<string, string>
+            {
+                { "taskid", taskid }
+            };
+
+            var json = await ExecuteGetAsync(context, "SYNO.FileStation.CopyMove", "status", @params);
+
+            using var doc = JsonDocument.Parse(json);
+            EnsureSuccessOrThrow(doc);
+
+            var data = doc.RootElement.GetProperty("data");
+            return new CopyMoveStatusData(
+                finished: data.GetProperty("finished").GetBoolean(),
+                progress: data.TryGetProperty("progress", out var p) ? p.GetDouble() : 0.0
+            );
+        }
     }
 }

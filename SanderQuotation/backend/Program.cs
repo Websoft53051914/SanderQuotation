@@ -1,9 +1,11 @@
-﻿using backend.MESSource;
+﻿using backend.AI;
 using backend.Common;
+using backend.EIPSource;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.SemanticKernel;
 using System.Reflection;
 using System.Text;
 
@@ -185,12 +187,34 @@ builder.Services.AddHangfireServer(options =>
     options.SchedulePollingInterval = TimeSpan.FromSeconds(5);
     options.WorkerCount = Environment.ProcessorCount * 5;
 });
+builder.Services.AddSingleton<ExtractKeywordHandler>();
+builder.Services.AddSingleton<ManualBatchEmbedding>();
+builder.Services.AddSingleton<ExtractKeywordJob>();
+builder.Services.AddSingleton<DesideSanderModuleItemNoJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();
 #if !DEBUG
 //builder.Services.AddHostedService<MESSourceScheduleHostService>();
 #endif
 builder.Services.AddSingleton<TransferJob>();
+builder.Services.AddSingleton<ExtractKeywordJob>();
 
+#region AI - Semantic Kernel
+builder.Services.AddHttpClient("GeminiHttpClient", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(10);
+});
+string geminiApiKey = builder.Configuration["GeminiApiKey"] ?? string.Empty;
+var httpClientFactory = builder.Services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
+var geminiHttpClient = httpClientFactory.CreateClient("GeminiHttpClient");
+builder.Services.AddKernel()
+                .AddGoogleAIGeminiChatCompletion(
+                    modelId: "gemini-3.1-flash-lite-preview",
+                    apiKey: geminiApiKey,
+                    httpClient: geminiHttpClient
+                );
+#endregion
+
+builder.Services.AddSingleton<ManualBatchEmbedding>();
 
 var app = builder.Build();
 
@@ -226,4 +250,10 @@ app.UseRequestLocalization(localizationoptions);
 var container = new Unity.UnityContainer();
 Business.BusinessFactory.Register(container);
 backend.Common.HttpContext.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
+
+#if DEBUG
+// 測試用：啟動時立即將 ExtractKeywordJob.ExecuteAsync 排入 Hangfire Queue
+//BackgroundJob.Enqueue<ExtractKeywordJob>(job => job.ExecuteAsync());
+#endif
+
 app.Run();

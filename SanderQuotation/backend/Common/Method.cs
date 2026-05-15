@@ -1,5 +1,8 @@
-﻿using Business.Common;
+﻿using Business.BusinessLogic;
+using Business.Common;
+using Business.DomainModel;
 using CommonClass.Model;
+using Core.Utility.Extensions;
 using Core.Utility.Utility;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,11 +11,10 @@ using System.Net;
 using System.Net.Mail;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using static Const.Enums;
-using System.Text.Json;
-using Core.Utility.Extensions;
 
 namespace backend.Common
 {
@@ -848,6 +850,35 @@ namespace backend.Common
                 }
             }
             return list;
+        }
+
+        /// <summary>
+        /// 寫入系統日誌（如例外訊息等），不會丟出例外，確保不影響主流程
+        /// </summary>
+        /// <param name="message">日誌訊息</param>
+        /// <param name="logStatusEnum">日誌狀態</param>
+        /// <param name="ControllerName">控制器名稱</param>
+        public static void LogSystem(string message
+            , LogStatusEnum logStatusEnum = LogStatusEnum.Failed
+            , string ControllerName = "")
+        {
+            try
+            {
+                ControlLogDM logDM = new()
+                {
+                    IP = string.Empty,
+                    Status = (int)logStatusEnum,
+                    ControllerName = ControllerName,
+                    ActionName = string.Empty,
+                    Exception = message
+                };
+                LogBL bl = BLFactory.GetInstanceBackGround<LogBL>();
+                bl.InsertLog(logDM);
+            }
+            catch
+            {
+
+            }
         }
 
     }

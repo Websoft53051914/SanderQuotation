@@ -105,7 +105,7 @@ namespace Business.BusinessLogic
         /// <returns>DM 清單</returns>
         public List<EsFileTransferUploadDM> GetListEnabled(SearchVO searchVO)
         {
-            searchVO.StatusEq = (int)Enums.AccountStatusEnum.Enabled;
+            searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
 
             return GetListByFilter(searchVO);
         }
@@ -213,6 +213,30 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 更新處理狀態
+        /// </summary>
+        /// <param name="id">檔案儲存代號</param>
+        /// <param name="processStatus">目標處理狀態</param>
+        public void DoUpdateProcessStatus(Guid id, int processStatus)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+
+            EsFileTransferUploadEntity entity = GetDAO().FindByPk(id);
+            if (entity != null)
+            {
+                entity.UpdatedBy = account;
+                entity.UpdatedAt = DateTime.Now;
+                entity.ProcessStatus = (int)processStatus;
+
+                GetDAO().Update(entity);
+                if (DoSaveChange)
+                {
+                    _unitOfWork.Commit();
+                }
+            }
+        }
+
+        /// <summary>
         /// 更新資料-編輯
         /// </summary>
         /// <param name="dm">DM 物件</param>
@@ -286,5 +310,10 @@ namespace Business.BusinessLogic
 
             return dm;
         }
+    }
+
+    public partial class EsFileTransferUploadBL
+    {
+
     }
 }

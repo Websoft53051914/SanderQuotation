@@ -1,17 +1,13 @@
 using AutoMapper;
 using backend.Common;
 using backend.Common.Attribute;
-using backend.MESSource;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
 using Const;
-using Core.Utility.Extensions;
 using Core.Utility.Utility;
-using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using MySqlX.XDevAPI.Common;
 using System.Globalization;
 using ViewModel;
 using static Const.Enums;

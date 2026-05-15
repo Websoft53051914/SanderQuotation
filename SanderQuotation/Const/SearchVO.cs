@@ -96,6 +96,11 @@
         /// 參數名稱
         /// </summary>
         public string? ParamEq { get; set; }
+
+        /// <summary>
+        /// 查詢筆數上限（用於批次取資料）
+        /// </summary>
+        public int? LimitRows { get; set; }
     }
 
     public partial class SearchVO
@@ -134,8 +139,28 @@
         public string? SanderModuleItemNoEq { get; set; }
 
         /// <summary>
+        /// SanderModuleItem 採購型號清單
+        /// </summary>
+        public List<string> SanderModuleItemNoIn { get; set; } = [];
+
+        /// <summary>
         /// BomFileContent.Id
         /// </summary>
         public Guid? BomFileContentIdEq { get; set; }
+
+        /// <summary>
+        /// TBSanderModuleItemKeyword 欄位名稱
+        /// </summary>
+        public string? SanderModuleItemKeywordColumnNameEq { get; set; }
+
+        /// <summary>
+        /// SanderModuleItem 是否需要執行 AI 關鍵字抽取
+        /// </summary>
+        public bool? SanderModuleItemFlagNeedExtractKeywordEq { get; set; }
+
+        /// <summary>
+        /// EsFileTransferUpload 執行狀態
+        /// </summary>
+        public int? ProcessStatusEq { get; set; }
     }
 }

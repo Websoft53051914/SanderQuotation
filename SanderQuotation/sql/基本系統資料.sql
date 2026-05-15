@@ -1,13 +1,34 @@
+-- gen_random_uuid() 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- 模糊查詢
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Function
 -- 更新 updatedat 欄位
-CREATE OR REPLACE FUNCTION update_column_updatedat()
+CREATE OR REPLACE FUNCTION trg_update_column_updatedat()
 RETURNS TRIGGER AS
 $$
 BEGIN
+-- 更新 updatedat 欄位
     NEW.updatedat = NOW();
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+-- 檢查 sandermoduleitem 規格內容是否有更新
+CREATE OR REPLACE FUNCTION trg_sandermoduleitem_check_update() RETURNS TRIGGER AS 
+$$ 
+BEGIN
+-- 檢查 sandermoduleitem 規格內容是否有更新
+	IF OLD.description IS DISTINCT FROM NEW.description
+	   OR OLD.description2 IS DISTINCT FROM NEW.description2
+	   OR OLD.longdesc IS DISTINCT FROM NEW.longdesc
+	   OR OLD.longdesc2 IS DISTINCT FROM NEW.longdesc2 
+	THEN 
+	  NEW.flagneedextractkeyword = '1'::bit; 
+	END IF;
+	RETURN NEW; 
+END; 
+$$ LANGUAGE plpgsql;
 
 -- Table Schema
 

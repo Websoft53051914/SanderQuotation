@@ -37,6 +37,15 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND s.\"no\" = @{nameof(searchVO.SanderModuleItemNoEq)} ");
                 paras.Add(nameof(searchVO.SanderModuleItemNoEq), searchVO.SanderModuleItemNoEq);
             }
+            if (searchVO.SanderModuleItemFlagNeedExtractKeywordEq.HasValue)
+            {
+                condition.Append($"AND s.{nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = @{nameof(searchVO.SanderModuleItemFlagNeedExtractKeywordEq)} ");
+                paras.Add(nameof(searchVO.SanderModuleItemFlagNeedExtractKeywordEq), searchVO.SanderModuleItemFlagNeedExtractKeywordEq.Value);
+            }
+            if (searchVO.LimitRows.HasValue)
+            {
+                sqlLimit = $" LIMIT {searchVO.LimitRows.Value} ";
+            }
 
             string sql = $@"
 SELECT s.*
@@ -115,6 +124,28 @@ DELETE FROM sandermoduleitem s
 WHERE
     1 = 1
 {condition}";
+
+            DbHelper.Execute(sql, paras);
+        }
+
+        /// <summary>
+        /// 批次更新 FlagNeedExtractKeyword 旗標
+        /// </summary>
+        /// <param name="ids">要更新的資料代號清單</param>
+        /// <param name="value">目標旗標值</param>
+        public void UpdateFlagNeedExtractKeyword(List<Guid> ids, bool value)
+        {
+            if (ids.Count == 0)
+                return;
+
+            Dictionary<string, object> paras = [];
+            paras.Add("ids", ids.ToArray());
+            paras.Add("value", value);
+
+            string sql = $@"
+UPDATE sandermoduleitem
+SET {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = @value
+WHERE {nameof(SanderModuleItemEntity.Id)} = ANY(@ids)";
 
             DbHelper.Execute(sql, paras);
         }

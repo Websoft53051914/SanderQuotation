@@ -161,5 +161,30 @@ namespace Business.BusinessLogic
             GetDAO().Insert(entity);
             dm.Id = entity.Id;
         }
+
+        /// <summary>
+        /// 取得指定批次數量的待處理料品（FlagNeedExtractKeyword = true）
+        /// </summary>
+        /// <param name="batchSize">批次筆數上限</param>
+        /// <returns>待處理的 DM 清單</returns>
+        public List<SanderModuleItemDM> GetListNeedExtractKeyword(int batchSize)
+        {
+            SearchVO searchVO = new();
+            searchVO.SanderModuleItemFlagNeedExtractKeywordEq = true;
+            searchVO.LimitRows = batchSize;
+
+            return GetListByFilter(searchVO);
+        }
     }
+
+    /**
+        private SanderModuleItemBL? _blSanderModuleItem = null;
+        protected SanderModuleItemBL GetBLSanderModuleItem()
+        {
+            _blSanderModuleItem ??= new SanderModuleItemBL(_unitOfWork, SessionVO ?? new());
+            _blSanderModuleItem._Configuration = _Configuration;
+
+            return _blSanderModuleItem;
+        }
+     */
 }

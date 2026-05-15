@@ -13,7 +13,7 @@ namespace backend.Controllers
     public partial class FilepondEsFileTransferUploadController : BaseProjectController
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly string _uploadDir = Path.Combine("Uploads", FileDirectoryConst.EsFileTransferUpload);
+        private readonly string _uploadDir = FileDirectoryConst.EsFileTransferUpload;
 
         /// <summary>建構子</summary>
         public FilepondEsFileTransferUploadController(

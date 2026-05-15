@@ -99,31 +99,31 @@ namespace Const
             ESDbTransferMapping_Delete = 990084,
 
             //排程設定
-            Cyclesettings_View =   990091,
+            Cyclesettings_View = 990091,
             Cyclesettings_Create = 990092,
-            Cyclesettings_Edit =   990093,
+            Cyclesettings_Edit = 990093,
             Cyclesettings_Delete = 990094,
 
             //DashBoard設計
-            DashBoard_View =   990121,
+            DashBoard_View = 990121,
             DashBoard_Create = 990122,
-            DashBoard_Edit =   990123,
+            DashBoard_Edit = 990123,
             DashBoard_Delete = 990124,
 
             //DashBoard監看
-            DashboardHome_View =   990131,
+            DashboardHome_View = 990131,
             DashboardHome_Create = 990132,
-            DashboardHome_Edit =   990133,
+            DashboardHome_Edit = 990133,
             DashboardHome_Delete = 990134,
 
-            FoupLot_View =   990181,
+            FoupLot_View = 990181,
             FoupLot_Create = 990182,
-            FoupLot_Edit =   990183,
+            FoupLot_Edit = 990183,
             FoupLot_Delete = 990184,
 
-            ProcessSettingManagement_View =   990191,
+            ProcessSettingManagement_View = 990191,
             ProcessSettingManagement_Create = 990192,
-            ProcessSettingManagement_Edit =   990193,
+            ProcessSettingManagement_Edit = 990193,
             ProcessSettingManagement_Delete = 990194,
 
             //檔案轉入資料表對應設定
@@ -493,7 +493,7 @@ namespace Const
         public enum EsDbTransferDbTypeEnum
         {
             [Description("PostgreSQL")]
-            PostgreSQL = 1 ,
+            PostgreSQL = 1,
             [Description("MSSQL")]
             MSSQL = 2
         }
@@ -502,6 +502,37 @@ namespace Const
         {
             [Description("查價")]
             PriceSearch = 1,
+            [Description("內部料品表 AI 解析")]
+            ExtractKeyword = 2,
+            [Description("BOM 表採購型號決策")]
+            DesideSanderModuleItemNo = 3,
+        }
+
+        public enum ParameterTypeEnum
+        {
+            /// <summary>
+            /// 內部參數，系統內部使用，不對使用者顯示，且不允許使用者修改
+            /// </summary>
+            [Description("Internal")]
+            Internal = -1,
+
+            /// <summary>
+            /// 優先供應商清單
+            /// </summary>
+            [Description("優先供應商清單")]
+            PreferredVendorList = 1,
+
+            /// <summary>
+            /// 需比對廠牌之料品類別清單
+            /// </summary>
+            [Description("需比對廠牌之料品類別清單")]
+            BrandComparisonCategoryList = 2,
+
+            /// <summary>
+            /// AI 決策過程顯示開關
+            /// </summary>
+            [Description("AI 決策過程顯示開關")]
+            AIDecisionProcessDisplaySwitch = 3,
         }
 
     }
