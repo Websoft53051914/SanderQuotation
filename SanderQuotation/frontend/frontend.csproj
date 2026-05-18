@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Core.8.Utility" Version="3.26.512.2" />
+    <PackageReference Include="Core.8.Utility" Version="3.26.518.1" />
     <PackageReference Include="Core.8.Utility.Web" Version="2.26.313" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.23" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="8.0.0" />
