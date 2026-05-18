@@ -1,0 +1,351 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    var mapAttr = new
+    {
+        IdPreferredVendorListContainer = Guid.NewGuid().ToString(),
+        IdBrandComparisonCategoryListContainer = Guid.NewGuid().ToString(),
+    };
+}
+<div class="row">
+    <div class="col-lg-6 col-12">
+        <div class="card">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">@ParameterTypeEnum.PreferredVendorList.GetDescription().ToHtmlString()</h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-type="@ParameterTypeEnum.PreferredVendorList.ToString()"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <div class="row g-3">
+                    <ul class="list list-group list-group-flush mb-0" id="@mapAttr.IdPreferredVendorListContainer">
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-12">
+        <div class="card">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">@ParameterTypeEnum.BrandComparisonCategoryList.GetDescription().ToHtmlString()</h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-type="@ParameterTypeEnum.BrandComparisonCategoryList.ToString()"><i class="ri-add-line align-bottom me-1"></i> 新增</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <div class="row g-3">
+                    <ul class="list list-group list-group-flush mb-0" id="@mapAttr.IdBrandComparisonCategoryListContainer">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-12">
+        <div class="card">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">其他設定</h5>
+                </div>
+            </div>
+            <div class="card-body border border-dashed border-end-0 border-start-0">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch form-switch-md mb-3" dir="ltr">
+                            <input type="checkbox" class="form-check-input" id="@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()">
+                            <label class="form-check-label" for="@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()">@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.GetDescription().ToHtmlString()</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="hstack gap-2 justify-content-end">
+                     <button type="button" class="btn btn-success w-sm" id="btnSaveOther">儲存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+ <!-- Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>
+                                        您確定要刪除此項目嗎？
+                                    </h4>
+
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
+                                            <i class="ri-close-line me-1 align-middle"></i>
+                                            關閉
+                                        </button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它！</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+<!-- 新增 Modal -->
+<div class="modal fade" id="showModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-info-subtle">
+                <h5 class="modal-title" id="showModalTitle">新增</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form class="needs-validation" novalidate="" method="post" id="formCreate">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">名稱</label>
+                        <input type="text" class="form-control" id="inputCreateValue" name="Value" placeholder="請輸入名稱" required maxlength="100">
+                        <div class="invalid-feedback">請輸入名稱</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmCreate">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script src="@Url.Content("~/assets/libs/list.js/list.min.js")"></script>
+    <script>
+        //初始化
+        function init(){
+            showLoader();
+            $.ajax({
+                url: '@(Configuration["BackendURL"])/api/SysSetting/GetData',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    hideLoader();
+                    if(data.Success){
+                        //處理資料
+                        $('#@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()').prop('checked', data.Data.IsAIDecisionProcessDisplay);
+
+                        $('#@mapAttr.IdPreferredVendorListContainer').empty();
+                        const pList = data.Data.PreferredVendorList.map(function(v){
+                            return `<li class="list-group-item" data-value="${v.Id}" data-type="@ParameterTypeEnum.PreferredVendorList.ToString()">
+                            <div class="d-flex align-items-start">
+
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h5 class="contact-name fs-13 mb-1 text-body">${v.Value}</h5>
+                                </div>
+                                <div class="text-end dropdown">
+                                    <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false" class="">
+                                        <i class="ri-more-fill fs-17"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="">
+                                        <li><a class="dropdown-item btn-edit-member" href="javascript:void(0);"><i class="ri-pencil-fill text-muted me-2 align-bottom"></i>編輯</a></li>
+                                        <li><a class="dropdown-item remove-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-5-fill text-muted me-2 align-bottom"></i>刪除</a></li>
+                                     </ul>
+                                </div>
+                                                                
+                                                              
+                                                            
+                            </div>
+                        </li>`
+                        })
+                        $('#@mapAttr.IdPreferredVendorListContainer').append(pList);
+                        if(data.Data.PreferredVendorList.length == 0){
+                            $('#@mapAttr.IdPreferredVendorListContainer').append(`<div class="noresult">
+                        <div class="text-center">
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>`);
+                        }
+                        $('#@mapAttr.IdBrandComparisonCategoryListContainer').empty();
+                        const bList = data.Data.BrandComparisonCategoryList.map(function(v){
+                            return `<li class="list-group-item" data-value="${v.Id}" data-type="@ParameterTypeEnum.BrandComparisonCategoryList.ToString()">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h5 class="contact-name fs-13 mb-1 text-body">${v.Value}</h5>
+                                </div>
+                                <div class="text-end dropdown">
+                                    <a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false" class="">
+                                        <i class="ri-more-fill fs-17"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="">
+                                        <li><a class="dropdown-item btn-edit-member" href="javascript:void(0);"><i class="ri-pencil-fill text-muted me-2 align-bottom"></i>編輯</a></li>
+                                        <li><a class="dropdown-item remove-btn" data-bs-toggle="modal" href="#deleteOrder"><i class="ri-delete-bin-5-fill text-muted me-2 align-bottom"></i>刪除</a></li>
+                                     </ul>
+                                </div>
+                            </div>
+                            </li>`
+                            })
+                            $('#@mapAttr.IdBrandComparisonCategoryListContainer').append(bList);
+                            if(data.Data.BrandComparisonCategoryList.length == 0){
+                            $('#@mapAttr.IdBrandComparisonCategoryListContainer').append(`<div class="noresult">
+                        <div class="text-center">
+                            <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-2">查無資料</h5>
+                        </div>
+                    </div>`);
+                        }
+                    }else{
+                         Swal.fire({
+                            icon: 'warning',
+                            title: resp.Message,
+                            confirmButtonText: "確定",
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    hideLoader();
+                     Swal.fire({
+                            icon: 'error',
+                            title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                            confirmButtonText: "確定",
+                        });
+                }
+            })
+        }
+        var currentId = '';
+        var currentCreateType = '';
+        $(document).ready(function(){
+            init();
+            // 新增按鈕：記錄 Type 並開啟 showModal
+            $(document).on('click', '.add-btn', function () {
+                currentCreateType = $(this).data('type');
+                currentId = '';
+                $('#inputCreateValue').val('');
+                $('#showModalTitle').text('新增');
+                $('#formCreate')[0].reset();
+                $('#formCreate').removeClass('was-validated');
+                var modal = new bootstrap.Modal(document.getElementById('showModal'));
+                modal.show();
+            });
+            // 編輯按鈕：帶入現有値並開啟 showModal
+            $(document).on('click', '.btn-edit-member', function () {
+                var $li = $(this).closest('li.list-group-item');
+                currentCreateType = $li.data('type');
+                currentId = $li.data('value');
+                $('#inputCreateValue').val($li.find('.contact-name').text());
+                $('#showModalTitle').text('編輯');
+                $('#formCreate').removeClass('was-validated');
+                var modal = new bootstrap.Modal(document.getElementById('showModal'));
+                modal.show();
+            });
+            // 確定新增/編輯（form submit）
+            $('#formCreate').on('submit', function (e) {
+                e.preventDefault();
+                if (!$(this)[0].checkValidity()) {
+                    $(this).addClass('was-validated');
+                    return;
+                }
+                var editId =currentId;
+                var isEdit = !!editId;
+                var url = isEdit
+                    ? '@(Configuration["BackendURL"])/api/SysSetting/Edit'
+                    : '@(Configuration["BackendURL"])/api/SysSetting/Create';
+                showLoader();
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    data: JSON.stringify({ Id: editId || '00000000-0000-0000-0000-000000000000', Value: $('#inputCreateValue').val(), Type: currentCreateType }),
+                    success: function (response) {
+                        hideLoader();
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('showModal'));
+                        
+                        if (response.Success) {
+                            if (modal) modal.hide();
+                            Swal.fire({ icon: 'success', title: response.Data, confirmButtonText: '確定' })
+                                .then(function () { init(); });
+                        } else {
+                            Swal.fire({ icon: 'warning', title: response.Message, confirmButtonText: '確定' });
+                        }
+                    },
+                    error: function () {
+                        hideLoader();
+                        Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                    }
+                });
+            });
+            $(document).on('click','.remove-btn',function(e){
+                e.preventDefault();
+                currentId = $(this).closest('li.list-group-item').data('value');
+   
+            })
+             $("#delete-record").click(function () {
+                $.ajax({
+                    type: "POST",
+                    url: '@(Configuration["BackendURL"])/api/SysSetting/Delete',
+                    dataType: "json",
+                    data: { id: currentId },
+                    cache: false,
+                    success: function (response) {
+                        hideLoader();
+                        const modal = bootstrap.Modal.getInstance(deleteOrder);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        if (response.Success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: response.Data,
+                                confirmButtonText:"確定",
+                            }).then((result) => {
+                                init();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: response.Message,
+                                confirmButtonText: "確定",
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        hideLoader();
+                        Swal.fire({
+                            icon: 'error',
+                            title: pageConfig.messages.systemError,
+                            confirmButtonText: "確定",
+                        });
+                    }
+            })
+             })
+            $('#btnSaveOther').on('click',function(){
+                showLoader();
+                $.ajax({
+                    type: 'POST',
+                    url: '@(Configuration["BackendURL"])/api/SysSetting/SaveOther',
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    data: JSON.stringify({ IsAIDecisionProcessDisplay: $('#@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()').prop('checked') }),
+                    success: function (response) {
+                        hideLoader();
+                        if (response.Success) {
+                            Swal.fire({ icon: 'success', title: response.Data, confirmButtonText: '確定' });
+                        } else {
+                            Swal.fire({ icon: 'warning', title: response.Message, confirmButtonText: '確定' });
+                        }
+                    },
+                    error: function () {
+                        hideLoader();
+                        Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '確定' });
+                    }
+                });
+            })
+        })
+    </script>
+}

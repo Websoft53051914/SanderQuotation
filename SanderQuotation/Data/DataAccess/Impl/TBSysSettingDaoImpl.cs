@@ -42,6 +42,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND s.{nameof(TBSysSettingEntity.Type)} = @{nameof(searchVO.TypeStrEq)} ");
                 paras.Add(nameof(searchVO.TypeStrEq), searchVO.TypeStrEq);
             }
+            if (searchVO.TypeStrIn.Count>0)
+            {
+                condition.Append($"AND s.{nameof(TBSysSettingEntity.Type)} = ANY(@{nameof(searchVO.TypeStrIn)}) ");
+                paras.Add(nameof(searchVO.TypeStrIn), searchVO.TypeStrIn);
+            }
 
             string sql = $@"
 SELECT s.*

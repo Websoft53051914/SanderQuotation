@@ -101,6 +101,11 @@
         /// 查詢筆數上限（用於批次取資料）
         /// </summary>
         public int? LimitRows { get; set; }
+
+        /// <summary>
+        /// 類別
+        /// </summary>
+        public List<string> TypeStrIn { get; set; } = [];
     }
 
     public partial class SearchVO

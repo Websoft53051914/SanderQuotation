@@ -151,6 +151,9 @@ namespace Const
             QuotationResult_Create = 40002,
             QuotationResult_Edit = 40003,
             QuotationResult_Delete = 40004,
+
+            //系統設定
+            SysSetting_View = 50001
         }
 
         /// <summary>

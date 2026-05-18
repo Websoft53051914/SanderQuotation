@@ -2,6 +2,7 @@ using AutoMapper;
 using Business.Common;
 using Business.DomainModel;
 using Const;
+using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
@@ -232,4 +233,100 @@ namespace Business.BusinessLogic
     /**
      
      */
+
+    public partial class TBSysSettingBL
+    {
+        public void DoSave(List<TBSysSettingDM> settings)
+        {
+            var list = GetDAO().GetListByFilter(new SearchVO()
+            {
+                StatusEq = StatusEnum.Enabled.ToInt(),
+                TypeStrIn = settings.Select(x=>x.Type).Distinct().ToList()
+            });
+            list.Where(x => x.Type != ParameterTypeEnum.Internal.ToString()).ToList().ForEach(x =>
+            {
+                x.Status = (int)StatusEnum.Cancel;
+                x.UpdatedBy = UserInfo?.UserAccount ?? string.Empty;
+                x.UpdatedAt = base.now;
+                GetDAO().Update(x);
+            });
+            foreach (var item in settings)
+            {
+                TBSysSettingEntity entity = _mapper.Map<TBSysSettingEntity>(item);
+                entity.CreatedBy = UserInfo?.UserAccount ?? string.Empty;
+                entity.CreatedAt = base.now;
+                entity.Status = StatusEnum.Enabled.ToInt();
+                GetDAO().InsertAction(entity);
+            }
+            _unitOfWork.Commit();
+        }
+
+
+        public void Delete(Guid id)
+        {
+            TBSysSettingEntity? entity = GetDAO().FindByPk(id);
+            if (entity != null)
+            {
+                entity.Status = (int)StatusEnum.Cancel;
+                entity.UpdatedBy = UserInfo?.UserAccount ?? string.Empty;
+                entity.UpdatedAt = base.now;
+                GetDAO().Update(entity);
+                _unitOfWork.Commit();
+            }
+        }
+
+        public void Insert(TBSysSettingDM dm)
+        {
+            GetDAO().Insert(new TBSysSettingEntity()
+            {
+                Type = dm.Type,
+                Param = dm.Param,
+                Value = dm.Value,
+                Status = (int)StatusEnum.Enabled,
+                CreatedBy = UserInfo?.UserAccount ?? string.Empty,
+                CreatedAt = base.now,
+                UpdatedBy = UserInfo?.UserAccount ?? string.Empty,
+                UpdatedAt = base.now
+            });
+        }
+
+
+        public void Edit(TBSysSettingDM dm)
+        {
+            var entity = GetDAO().FindByPk(dm.Id);
+            entity.Value = dm.Value;
+            entity.UpdatedBy = UserInfo?.UserAccount ?? string.Empty;
+            entity.Param = dm.Param;
+            entity.UpdatedAt = base.now;
+            GetDAO().Update(entity);
+             _unitOfWork.Commit();
+        }
+
+
+        public void CheckExist(TBSysSettingDM dm)
+        {
+            bool isExist = false;
+            if (dm.Id == Guid.Empty)
+            {
+                isExist = GetDAO().FindListByPropertys(new Dictionary<string, object>()
+                {
+                    {nameof(TBSysSettingEntity.Type), dm.Type },
+                     {nameof(TBSysSettingEntity.Value), dm.Value },
+                     {nameof(TBSysSettingEntity.Status), StatusEnum.Enabled.ToInt() },
+                }).Count>0;
+            }
+            else
+            {
+                isExist = GetDAO().FindListByPropertys(new Dictionary<string, object>()
+                {
+                    {nameof(TBSysSettingEntity.Type), dm.Type },
+                     {nameof(TBSysSettingEntity.Value), dm.Value },
+                     {nameof(TBSysSettingEntity.Status), StatusEnum.Enabled.ToInt() },
+                }).Where(x=>x.Id != dm.Id).Count()>0;
+            }
+            if (isExist) { 
+                GetMessage().SetAlert("已存在相同的設定值");
+            }
+        }
+    }
 }
