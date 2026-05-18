@@ -1,6 +1,8 @@
-﻿using Business.BusinessLogic;
+﻿using backend.EIPSource;
+using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
+using Const;
 using Core.Utility.Utility;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
@@ -10,7 +12,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static Const.Enums;
-using Const;
 
 namespace backend.Common
 {
@@ -43,7 +44,7 @@ namespace backend.Common
             {
                 EsScheduleCycleBL bl = BLFactory.GetInstanceBackGround<EsScheduleCycleBL>();
                 var data = bl.GetByCode(scheduleCycleCode);
-                if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0))
+                if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0 && data.OtherTransferSettings.Count == 0))
                 {
                     // log not found
                     return;
@@ -55,15 +56,17 @@ namespace backend.Common
 
                 var dbTasks = data.DBTransferSettings.Select(setting => DBTransfer(setting));
                 var fileTasks = data.FileTransferSettings.Select(setting => FileTransfer(setting));
+                var otherTasks = data.OtherTransferSettings.Select(setting => OtherTransfer(setting));
                 //var dbCsvTasks = data.DbCsvTransferSettings.Select(setting => DBToCSVTransfer(setting));
 
                 var dbResults = await Task.WhenAll(dbTasks);
                 var fileResults = await Task.WhenAll(fileTasks);
+                var otherResults = await Task.WhenAll(otherTasks);
                 //var dbCsvResults = await Task.WhenAll(dbCsvTasks);
 
                 log.ScheduleCycleCode = scheduleCycleCode;
                 log.DurationMs = (int)(DateTime.Now - st).TotalMilliseconds;
-                //log.Details = dbResults.Concat(fileResults).Concat(dbCsvResults).ToList();
+                log.Details = dbResults.Concat(fileResults).Concat(otherResults).ToList();
                 log.TriggerType = TriggerType;
                 EsScheduleCycleLogBL esScheduleCycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>();
                 esScheduleCycleLogBL.InserLog(log);
@@ -1365,6 +1368,58 @@ namespace backend.Common
                 .TrimStart('/')
                 .Replace('/', Path.DirectorySeparatorChar);
             return Path.Combine(_webHostEnvironment.ContentRootPath, relativePath);
+        }
+    }
+
+    /// <summary>
+    /// 其他排程
+    /// </summary>
+    public partial class TransferJob
+    {
+        /// <summary>
+        /// 其他排程：根據 ActionType 執行對應排程工作
+        /// </summary>
+        /// <param name="actionType">排程動作類型（對應 ScheduleCycleActionTypeEnum）</param>
+        /// <returns>執行結果</returns>
+        public async Task<EsScheduleCycleLogDetailDM> OtherTransfer(int actionType)
+        {
+            DateTime st = DateTime.Now;
+
+            EsScheduleCycleLogDetailDM logDM = new();
+            logDM.OtherActionType = actionType;
+            logDM.DataCount = 0;
+            logDM.RunAt = st;
+
+            try
+            {
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                switch ((ScheduleCycleActionTypeEnum)actionType)
+                {
+                    case ScheduleCycleActionTypeEnum.ExtractKeyword:
+                        ExtractKeywordJob extractKeywordJob = scope.ServiceProvider.GetRequiredService<ExtractKeywordJob>();
+                        await extractKeywordJob.ExecuteAsync(logDM);
+                        break;
+                    case ScheduleCycleActionTypeEnum.DesideSanderModuleItemNo:
+                        DesideSanderModuleItemNoJob desideSanderModuleItemNoJob = scope.ServiceProvider.GetRequiredService<DesideSanderModuleItemNoJob>();
+                        await desideSanderModuleItemNoJob.ExecuteAsync(logDM);
+                        break;
+                    default:
+                        logDM.JobStatus = "Failed";
+                        logDM.ErrorMessage = $"未支援的 ActionType：{actionType}";
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                logDM.JobStatus = "Failed";
+                logDM.ErrorMessage = ex.Message;
+            }
+            finally
+            {
+                logDM.DurationMs = (int)(DateTime.Now - st).TotalMilliseconds;
+            }
+
+            return logDM;
         }
     }
 }

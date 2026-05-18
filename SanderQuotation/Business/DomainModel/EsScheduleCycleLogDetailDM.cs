@@ -12,6 +12,9 @@ namespace Business.DomainModel
 
         public string FileTransferCode { get; set; }
 
+        /// <summary>å…¶ä»–æ’ç¨‹å‹•ä½œé¡å‹ï¼ˆå°æ‡‰ ScheduleCycleActionTypeEnumï¼‰</summary>
+        public int? OtherActionType { get; set; }
+
         public DateTime RunAt { get; set; }
 
         public int? DurationMs { get; set; }
@@ -19,24 +22,24 @@ namespace Business.DomainModel
         /// <summary>Success / PartialFail / Failed</summary>
         public string JobStatus { get; set; }
 
-        /// <summary>¥ô°È¼h¯Å¨Ò¥~°T®§¡]DB³s½u¥¢±Ñµ¥¡^</summary>
+        /// <summary>ä»»å‹™å±¤ç´šä¾‹å¤–è¨Šæ¯ï¼ˆDBé€£ç·šå¤±æ•—ç­‰ï¼‰</summary>
         public string ErrorMessage { get; set; }
 
         public List<EsTransferErrorLogDM> ErrorLogs = new();
 
-        /// <summary>¨ú±o¸Óµ§ Detail ªº TransferCode¡]¨ÌÀu¥ı¶¶§Ç¡GDBÂà¤J > Âà¥XCSV > ÀÉ®×Âà¤J¡^</summary>
+        /// <summary>å–å¾—è©²ç­† Detail çš„ TransferCodeï¼ˆä¾å„ªå…ˆé †åºï¼šDBè½‰å…¥ > è½‰å‡ºCSV > æª”æ¡ˆè½‰å…¥ï¼‰</summary>
         public string GetTransferCode()
         {
             if (!string.IsNullOrEmpty(DBTransferCode)) return DBTransferCode;
             return FileTransferCode;
         }
 
-        /// <summary>¨ú±o¤¤¤åÃş«¬¦WºÙ¡G¸ê®ÆÂà¤J / Âà¥XÀÉ®× / ÀÉ®×Âà¤J</summary>
+        /// <summary>å–å¾—ä¸­æ–‡é¡å‹åç¨±ï¼šè³‡æ–™è½‰å…¥ / è½‰å‡ºæª”æ¡ˆ / æª”æ¡ˆè½‰å…¥</summary>
         public string GetTransferTypeDisplay()
         {
-            if (!string.IsNullOrEmpty(DBTransferCode)) return "¸ê®ÆÂà¤J";
-            if (!string.IsNullOrEmpty(FileTransferCode)) return "ÀÉ®×Âà¤J";
-            return "¥¼ª¾Ãş«¬";
+            if (!string.IsNullOrEmpty(DBTransferCode)) return "è³‡æ–™è½‰å…¥";
+            if (!string.IsNullOrEmpty(FileTransferCode)) return "æª”æ¡ˆè½‰å…¥";
+            return "æœªçŸ¥é¡å‹";
         }
     }
 }

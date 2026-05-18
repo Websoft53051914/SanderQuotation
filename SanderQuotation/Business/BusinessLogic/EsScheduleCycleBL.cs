@@ -48,7 +48,7 @@ namespace Business.BusinessLogic
 
     public partial class EsScheduleCycleBL
     {
-        // ¢w¢w ¦Cªí¬d¸ß ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ åˆ—è¡¨æŸ¥è©¢ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public PageResult<EsScheduleCycleDM> GetPageList(PageEntity pageEntity, SearchVO query)
         {
             var pageResult = GetDao().GetPageList(pageEntity,query);
@@ -66,7 +66,7 @@ namespace Business.BusinessLogic
             };
         }
 
-        // ¢w¢w ³æµ§¬d¸ß ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ å–®ç­†æŸ¥è©¢ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public EsScheduleCycleDM? Get(Guid rowGuid)
         {
             var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), rowGuid);
@@ -96,12 +96,12 @@ namespace Business.BusinessLogic
                 });
                 if (list.Count > 0)
                 {
-                    GetMessage().SetAlert("¦¹¶g´Á¥N½X¤w¦s¦b");
+                    GetMessage().SetAlert("æ­¤é€±æœŸä»£ç¢¼å·²å­˜åœ¨");
                 }
             }
         }
 
-        // ¢w¢w ·s¼W ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ æ–°å¢ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public void Create(EsScheduleCycleDM dm)
         {
 
@@ -118,13 +118,13 @@ namespace Business.BusinessLogic
             _unitOfWork.Commit();
         }
 
-        // ¢w¢w ½s¿è ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ ç·¨è¼¯ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public void Edit(EsScheduleCycleDM dm)
         {
 
             var now = DateTime.Now;
             var entity = _mapper.Map<EsScheduleCycleEntity>(dm);
-            // «O¯d«Ø¥ß¸ê°T
+            // ä¿ç•™å»ºç«‹è³‡è¨Š
             //entity.RowGuid = existing.RowGuid;
             entity.UpdatedAt = now;
             entity.UpdatedBy = UserInfo?.UserAccount;
@@ -133,13 +133,13 @@ namespace Business.BusinessLogic
 
             GetDao().Update(entity);
 
-            // ¤lªí¥ı¥ş§R¦A­««Ø
+            // å­è¡¨å…ˆå…¨åˆªå†é‡å»º
             DeleteSubTables(dm.ScheduleCycleCode);
             SaveSubTables(dm, now);
             _unitOfWork.Commit();
         }
 
-        // ¢w¢w §R°£¡]¤ä´©¦hµ§¡^¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ åˆªé™¤ï¼ˆæ”¯æ´å¤šç­†ï¼‰â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public List<string> Delete(List<Guid> rowGuids)
         {
             List<string> codes = new();
@@ -168,7 +168,7 @@ namespace Business.BusinessLogic
         }
 
 
-        // ¢w¢w ¨p¦³»²§U ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€ ç§æœ‰è¼”åŠ© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void FillSubTablesBatch(List<EsScheduleCycleDM> dms)
         {
             if (dms.Count == 0) return;

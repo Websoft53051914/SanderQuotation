@@ -37,7 +37,8 @@ namespace backend.EIPSource
         /// 取 ProcessStatus = Transferred(2) 且為 BOM 檔案規則的上傳檔案，對每筆 BomFileContent 執行查料，
         /// 結果寫入 TBBomFileQuotation，全部處理完畢後更新 ProcessStatus = PendingPartSearch(3)
         /// </summary>
-        public async Task ExecuteAsync()
+        /// <param name="logDM">排程執行紀錄，供呼叫端彙總結果；傳入 null 時略過紀錄更新</param>
+        public async Task ExecuteAsync(EsScheduleCycleLogDetailDM logDM = null)
         {
             try
             {
@@ -53,12 +54,20 @@ namespace backend.EIPSource
 
                 foreach (EsFileTransferUploadDM upload in uploads)
                 {
-                    await ProcessUploadAsync(upload);
+                    await ProcessUploadAsync(upload, logDM);
                 }
+
+                if (logDM != null)
+                    logDM.JobStatus = logDM.ErrorCount == 0 ? "Success" : logDM.DataCount > 0 ? "PartialFail" : "Failed";
             }
             catch (Exception ex)
             {
                 Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                if (logDM != null)
+                {
+                    logDM.JobStatus = "Failed";
+                    logDM.ErrorMessage = ex.Message;
+                }
             }
         }
 
@@ -66,7 +75,8 @@ namespace backend.EIPSource
         /// 處理單一上傳檔案的查料作業
         /// </summary>
         /// <param name="upload">上傳檔案 DM</param>
-        private async Task ProcessUploadAsync(EsFileTransferUploadDM upload)
+        /// <param name="logDM">排程執行紀錄；傳入 null 時略過紀錄更新</param>
+        private async Task ProcessUploadAsync(EsFileTransferUploadDM upload, EsScheduleCycleLogDetailDM logDM = null)
         {
             try
             {
@@ -83,10 +93,14 @@ namespace backend.EIPSource
                         (string? foundNo, string remark) = await GetSandermoduleItemNoAsync(content);
                         Method.LogSystem($"[查料] UploadId={upload.UploadId} ContentId={content.Id} No={foundNo}\n{remark}", ControllerName: LogControllerName);
                         results.Add((content.Id, foundNo));
+                        if (logDM != null)
+                            logDM.DataCount++;
                     }
                     catch (Exception ex)
                     {
                         Method.LogSystem($"[查料錯誤] UploadId={upload.UploadId} ContentId={content.Id}\n{ex}", ControllerName: LogControllerName);
+                        if (logDM != null)
+                            logDM.ErrorCount++;
                     }
                 }
 
@@ -96,6 +110,8 @@ namespace backend.EIPSource
             catch (Exception ex)
             {
                 Method.LogSystem($"[查料流程錯誤] UploadId={upload.UploadId}\n{ex}", ControllerName: LogControllerName);
+                if (logDM != null)
+                    logDM.ErrorCount++;
             }
         }
     }
