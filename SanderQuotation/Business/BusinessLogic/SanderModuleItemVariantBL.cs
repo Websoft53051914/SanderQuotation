@@ -82,4 +82,42 @@ namespace Business.BusinessLogic
 
         #endregion
     }
+
+    public partial class SanderModuleItemVariantBL
+    {
+        /// <summary>
+        /// 新增資料
+        /// </summary>
+        /// <param name="dm">DM 物件</param>
+        public void DoCreate(SanderModuleItemVariantDM dm)
+        {
+            SanderModuleItemVariantEntity entity = _mapper.Map<SanderModuleItemVariantEntity>(dm);
+
+            GetDAO().Insert(entity);
+            dm.Id = entity.Id;
+        }
+    }
+
+    /**
+        private SanderModuleItemVariantBL? _blSanderModuleItemVariant = null;
+        protected SanderModuleItemVariantBL GetBLSanderModuleItemVariant()
+        {
+            _blSanderModuleItemVariant ??= new SanderModuleItemVariantBL(_unitOfWork, SessionVO ?? new());
+            _blSanderModuleItemVariant._Configuration = _Configuration;
+
+            return _blSanderModuleItemVariant;
+        }
+
+        private SanderModuleItemVariantBL? _blSanderModuleItemVariant = null;
+
+        /// <summary>
+        /// 取得 SanderModuleItemVariantBL 實例
+        /// </summary>
+        protected SanderModuleItemVariantBL GetBlSanderModuleItemVariant()
+        {
+            _blSanderModuleItemVariant ??= GetBLInstance<SanderModuleItemVariantBL>();
+
+            return _blSanderModuleItemVariant;
+        }
+     */
 }
