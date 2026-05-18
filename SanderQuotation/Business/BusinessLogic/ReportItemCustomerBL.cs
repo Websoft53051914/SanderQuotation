@@ -121,4 +121,42 @@ namespace Business.BusinessLogic
 
         #endregion -- ReportItemCustomer --
     }
+
+    public partial class ReportItemCustomerBL
+    {
+        /// <summary>
+        /// 新增資料
+        /// </summary>
+        /// <param name="dm">DM 物件</param>
+        public void DoCreate(ReportItemCustomerDM dm)
+        {
+            ReportItemCustomerEntity entity = _mapper.Map<ReportItemCustomerEntity>(dm);
+
+            GetDAO().Insert(entity);
+            dm.Id = entity.Id;
+        }
+    }
+
+    /**
+        private ReportItemCustomerBL? _blReportItemCustomer = null;
+        protected ReportItemCustomerBL GetBLReportItemCustomer()
+        {
+            _blReportItemCustomer ??= new ReportItemCustomerBL(_unitOfWork, SessionVO ?? new());
+            _blReportItemCustomer._Configuration = _Configuration;
+
+            return _blReportItemCustomer;
+        }
+
+        private ReportItemCustomerBL? _blReportItemCustomer = null;
+
+        /// <summary>
+        /// 取得 ReportItemCustomerBL 實例
+        /// </summary>
+        protected ReportItemCustomerBL GetBlReportItemCustomer()
+        {
+            _blReportItemCustomer ??= GetBLInstance<ReportItemCustomerBL>();
+
+            return _blReportItemCustomer;
+        }
+     */
 }

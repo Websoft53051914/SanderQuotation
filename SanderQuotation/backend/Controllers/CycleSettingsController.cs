@@ -1,4 +1,4 @@
-using AutoMapper;
+ï»¿using AutoMapper;
 using backend.Common;
 using backend.Common.Attribute;
 using Business.BusinessLogic;
@@ -56,7 +56,7 @@ namespace backend.Controllers
                 {
                     list[i].No = (pageEntity.CurrentPage - 1) * pageEntity.PageDataSize + i + 1;
                     list[i].IsEnabled = list[i].Status == StatusEnum.Enabled.ToValueString();
-                    list[i].OtherTransferDescriptionSettings = list[i].OtherTransferSettings.Select(x=> EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(x)).ToList();
+                    list[i].OtherTransferDescriptionSettings = list[i].OtherTransferSettings.Select(x => EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(x)).ToList();
                 }
 
                 return JsonSuccess(new
@@ -112,7 +112,7 @@ namespace backend.Controllers
                 GetBL().Create(dm);
                 if (vm.IsEnabled)
                     _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
 
             }
             catch (Exception ex)
@@ -137,7 +137,7 @@ namespace backend.Controllers
                     _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
                 }
 
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -159,7 +159,7 @@ namespace backend.Controllers
                 {
                     _hangfireSchedulerHelper.RemoveRecurringJob(code);
                 }
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -219,7 +219,7 @@ namespace backend.Controllers
                     }
                 });
 
-                return JsonSuccess("±Æµ{¤wÄ²µo");
+                return JsonSuccess("æ’ç¨‹å·²è§¸ç™¼");
             }
             catch (Exception ex)
             {

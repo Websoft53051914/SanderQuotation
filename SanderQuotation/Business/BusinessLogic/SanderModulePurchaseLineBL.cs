@@ -83,4 +83,42 @@ namespace Business.BusinessLogic
 
         #endregion
     }
+
+    public partial class SanderModulePurchaseLineBL
+    {
+        /// <summary>
+        /// 新增資料
+        /// </summary>
+        /// <param name="dm">DM 物件</param>
+        public void DoCreate(SanderModulePurchaseLineDM dm)
+        {
+            SanderModulePurchaseLineEntity entity = _mapper.Map<SanderModulePurchaseLineEntity>(dm);
+
+            GetDAO().Insert(entity);
+            dm.Id = entity.Id;
+        }
+    }
+
+    /**
+        private SanderModulePurchaseLineBL? _blSanderModulePurchaseLine = null;
+        protected SanderModulePurchaseLineBL GetBLSanderModulePurchaseLine()
+        {
+            _blSanderModulePurchaseLine ??= new SanderModulePurchaseLineBL(_unitOfWork, SessionVO ?? new());
+            _blSanderModulePurchaseLine._Configuration = _Configuration;
+
+            return _blSanderModulePurchaseLine;
+        }
+
+        private SanderModulePurchaseLineBL? _blSanderModulePurchaseLine = null;
+
+        /// <summary>
+        /// 取得 SanderModulePurchaseLineBL 實例
+        /// </summary>
+        protected SanderModulePurchaseLineBL GetBlSanderModulePurchaseLine()
+        {
+            _blSanderModulePurchaseLine ??= GetBLInstance<SanderModulePurchaseLineBL>();
+
+            return _blSanderModulePurchaseLine;
+        }
+     */
 }

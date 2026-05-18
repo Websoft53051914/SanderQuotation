@@ -39,7 +39,8 @@ namespace backend.EIPSource
         /// 執行關鍵字抽取工作
         /// 取 FlagNeedExtractKeyword = true 的料品，每批 50 筆，處理後更新旗標為 false
         /// </summary>
-        public async Task ExecuteAsync()
+        /// <param name="logDM">排程執行紀錄，供呼叫端彙總結果；傳入 null 時略過紀錄更新</param>
+        public async Task ExecuteAsync(EsScheduleCycleLogDetailDM logDM = null)
         {
             try
             {
@@ -62,18 +63,30 @@ namespace backend.EIPSource
                     {
                         List<TBSanderModuleItemKeywordDM> dataList = await ProcessBatchAsync(batch);
                         blTBSanderModuleItemKeyword.DoSaveExtractKeyword(batchNos, batchIds, dataList);
+                        if (logDM != null)
+                            logDM.DataCount += batch.Count;
                     }
                     catch (Exception ex)
                     {
                         Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                        if (logDM != null)
+                            logDM.ErrorCount += batch.Count;
                     }
 
                     await Task.Delay(1000); // 每批次處理完後暫停 1 秒，避免對 API 造成過大壓力
                 }
+
+                if (logDM != null)
+                    logDM.JobStatus = logDM.ErrorCount == 0 ? "Success" : logDM.DataCount > 0 ? "PartialFail" : "Failed";
             }
             catch (Exception ex)
             {
                 Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                if (logDM != null)
+                {
+                    logDM.JobStatus = "Failed";
+                    logDM.ErrorMessage = ex.Message;
+                }
             }     
         }
 

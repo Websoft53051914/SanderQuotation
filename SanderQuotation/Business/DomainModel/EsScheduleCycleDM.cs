@@ -35,13 +35,13 @@ namespace Business.DomainModel
         public string LastRunStatus { get; set; }
         public string LastRunMessage { get; set; }
 
-        // ¤lªí¶°¦X¡]®i¶}¥Î¡^
+        // å­è¡¨é›†åˆï¼ˆå±•é–‹ç”¨ï¼‰
         public List<string> WeekDays { get; set; } = new();          // 0~6
         public List<string> MonthDays { get; set; } = new();         // 1~31
         public List<string> DBTransferSettings { get; set; } = new(); // EXP_*
         public List<string> DbCsvTransferSettings { get; set; } = new(); // CSV_*
         public List<string> FileTransferSettings { get; set; } = new(); // IMP_*
-        public List<int> OtherTransferSettings { get; set; } = new(); // ¨ä¥LÃş«¬ªº³]©w¡]¦p¡G¬d»ù)¡A°Ñ·ÓScheduleCycleActionTypeEnum¨Ó©w¸q¨ãÅéªº­È
+        public List<int> OtherTransferSettings { get; set; } = new(); // å…¶ä»–é¡å‹çš„è¨­å®šï¼ˆå¦‚ï¼šæŸ¥åƒ¹)ï¼Œåƒç…§ScheduleCycleActionTypeEnumä¾†å®šç¾©å…·é«”çš„å€¼
 
         public int No { get; set; }
     }

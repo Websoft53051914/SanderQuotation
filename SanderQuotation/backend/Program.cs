@@ -193,7 +193,7 @@ builder.Services.AddSingleton<ExtractKeywordJob>();
 builder.Services.AddSingleton<DesideSanderModuleItemNoJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();
 #if !DEBUG
-//builder.Services.AddHostedService<MESSourceScheduleHostService>();
+//builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 #endif
 builder.Services.AddSingleton<TransferJob>();
 builder.Services.AddSingleton<ExtractKeywordJob>();

@@ -21,7 +21,7 @@ namespace backend.Controllers
     /// 
     /// </summary>
     [Authorize]
-    public class BaseProjectController : ApiBaseController
+    public partial class BaseProjectController : ApiBaseController
     {
         /// <summary>
         /// 
@@ -258,6 +258,57 @@ namespace backend.Controllers
         {
             _selectListHandler ??= new SelectListHandler(_config);
             return _selectListHandler;
+        }
+    }
+
+    public partial class BaseProjectController
+    {
+        private SanderModuleItemBL? _blSanderModuleItem = null;
+
+        /// <summary>
+        /// 取得 SanderModuleItemBL 實例
+        /// </summary>
+        protected SanderModuleItemBL GetBlSanderModuleItem()
+        {
+            _blSanderModuleItem ??= GetBLInstance<SanderModuleItemBL>();
+
+            return _blSanderModuleItem;
+        }
+
+        private SanderModuleItemVariantBL? _blSanderModuleItemVariant = null;
+
+        /// <summary>
+        /// 取得 SanderModuleItemVariantBL 實例
+        /// </summary>
+        protected SanderModuleItemVariantBL GetBlSanderModuleItemVariant()
+        {
+            _blSanderModuleItemVariant ??= GetBLInstance<SanderModuleItemVariantBL>();
+
+            return _blSanderModuleItemVariant;
+        }
+
+        private ReportItemCustomerBL? _blReportItemCustomer = null;
+
+        /// <summary>
+        /// 取得 ReportItemCustomerBL 實例
+        /// </summary>
+        protected ReportItemCustomerBL GetBlReportItemCustomer()
+        {
+            _blReportItemCustomer ??= GetBLInstance<ReportItemCustomerBL>();
+
+            return _blReportItemCustomer;
+        }
+
+        private SanderModulePurchaseLineBL? _blSanderModulePurchaseLine = null;
+
+        /// <summary>
+        /// 取得 SanderModulePurchaseLineBL 實例
+        /// </summary>
+        protected SanderModulePurchaseLineBL GetBlSanderModulePurchaseLine()
+        {
+            _blSanderModulePurchaseLine ??= GetBLInstance<SanderModulePurchaseLineBL>();
+
+            return _blSanderModulePurchaseLine;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Data.DataAccess.Entity
         /// <summary>
         /// 單據日期
         /// </summary>
-        public DateOnly? DocumentDate { get; set; }
+        public DateTime? DocumentDate { get; set; }
 
         /// <summary>
         /// 內部料號

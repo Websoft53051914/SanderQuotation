@@ -186,5 +186,17 @@ namespace Business.BusinessLogic
 
             return _blSanderModuleItem;
         }
+
+        private SanderModuleItemBL? _blSanderModuleItem = null;
+
+        /// <summary>
+        /// 取得 SanderModuleItemBL 實例
+        /// </summary>
+        protected SanderModuleItemBL GetBlSanderModuleItem()
+        {
+            _blSanderModuleItem ??= GetBLInstance<SanderModuleItemBL>();
+
+            return _blSanderModuleItem;
+        }
      */
 }
