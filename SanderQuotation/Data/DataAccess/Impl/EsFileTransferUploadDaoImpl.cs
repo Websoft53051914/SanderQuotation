@@ -38,6 +38,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.UploadId)} = @{nameof(searchVO.UploadIdEq)} ");
                 paras.Add(nameof(searchVO.UploadIdEq), searchVO.UploadIdEq);
             }
+            if (searchVO.ProcessStatusEq.HasValue)
+            {
+                condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.ProcessStatus)} = @{nameof(searchVO.ProcessStatusEq)} ");
+                paras.Add(nameof(searchVO.ProcessStatusEq), searchVO.ProcessStatusEq);
+            }
 
             string sql = $@"
 SELECT u.*, eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)}
@@ -189,6 +194,29 @@ WHERE 1=1";
                 string.IsNullOrWhiteSpace(pageEntity.Sort)
                     ? $"{nameof(EsFileTransferUploadEntity.UpdatedAt)} DESC"
                     : $"{pageEntity.Sort} {pageEntity.Asc}");
+        }
+
+        /// <summary>
+        /// 更新處理狀態
+        /// </summary>
+        /// <param name="uploadId">檔案儲存代號</param>
+        /// <param name="processStatus">目標處理狀態</param>
+        public void UpdateProcessStatus(Guid uploadId, int processStatus)
+        {
+            Dictionary<string, object> paras = [];
+            paras.Add("uploadId", uploadId);
+            paras.Add("processStatus", processStatus);
+            paras.Add("updatedAt", DateTime.Now);
+
+            string sql = @"
+UPDATE EsFileTransferUpload
+SET
+    ProcessStatus = @processStatus
+    , UpdatedAt = @updatedAt
+WHERE
+    UploadId = @uploadId";
+
+            DbHelper.Execute(sql, paras);
         }
     }
 }

@@ -31,5 +31,12 @@ namespace Data.DataAccess.Dao
         /// <param name="searchVO">查詢條件</param>
         /// <param name="account">執行帳號</param>
         void DeleteByFilter(SearchVO searchVO, string account);
+
+        /// <summary>
+        /// 批次更新 FlagNeedExtractKeyword 旗標
+        /// </summary>
+        /// <param name="ids">要更新的資料代號清單</param>
+        /// <param name="value">目標旗標值</param>
+        void UpdateFlagNeedExtractKeyword(List<Guid> ids, bool value);
     }
 }

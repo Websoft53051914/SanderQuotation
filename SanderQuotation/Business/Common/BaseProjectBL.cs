@@ -15,6 +15,11 @@ namespace Business.Common
         public SessionVO? SessionVO = null;
 
         /// <summary>
+        /// 是否要儲存變更
+        /// </summary>
+        public bool DoSaveChange { get; set; } = true;
+
+        /// <summary>
         /// 依目前 UI 文化讀取 message.json（Message:{culture}:{key}），找不到則嘗試 zh-tw、en-us，最後回傳 fallback。
         /// </summary>
         protected string GetLocalizedMessage(string messageKey, string? fallbackDefault = null)

@@ -1,22 +1,18 @@
 ﻿using Business.BusinessLogic;
+using Business.Common;
 using Business.DomainModel;
-using CommonClass.Model;
-using Core.Utility.Helper.DB;
 using Core.Utility.Utility;
-using DocumentFormat.OpenXml.InkML;
-using backend.Common;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 using static Const.Enums;
 using Const;
 
-namespace backend.MESSource
+namespace backend.Common
 {
 
     public partial class TransferJob
@@ -28,12 +24,17 @@ namespace backend.MESSource
         private EsFileTransferMappingDM _mapping;
         private readonly Dictionary<string, ESDbTransferDM> _dbConfigCache = new();
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public TransferJob(IConfiguration config, IServiceScopeFactory scopeFactory, SynoNasHelper nasHelper)
+        public TransferJob(IConfiguration config
+            , IServiceScopeFactory scopeFactory
+            , SynoNasHelper nasHelper
+            , IWebHostEnvironment webHostEnvironment)
         {
             _config = config;
             _scopeFactory = scopeFactory;
             _nasHelper = nasHelper;
+            _webHostEnvironment = webHostEnvironment;
         }
         public async Task ExecuteTask(string scheduleCycleCode, string TriggerType)
         {
@@ -53,11 +54,11 @@ namespace backend.MESSource
                 log.RunAt = st;
 
                 var dbTasks = data.DBTransferSettings.Select(setting => DBTransfer(setting));
-                //var fileTasks = data.FileTransferSettings.Select(setting => FileTransfer(setting));
+                var fileTasks = data.FileTransferSettings.Select(setting => FileTransfer(setting));
                 //var dbCsvTasks = data.DbCsvTransferSettings.Select(setting => DBToCSVTransfer(setting));
 
                 var dbResults = await Task.WhenAll(dbTasks);
-                //var fileResults = await Task.WhenAll(fileTasks);
+                var fileResults = await Task.WhenAll(fileTasks);
                 //var dbCsvResults = await Task.WhenAll(dbCsvTasks);
 
                 log.ScheduleCycleCode = scheduleCycleCode;
@@ -134,8 +135,47 @@ namespace backend.MESSource
 
             return logDM;
         }
-         
 
+        /// <summary>
+        /// NAS 檔案轉入：根據轉入代碼取得設定，從 NAS 讀取並轉入。
+        /// </summary>
+        /// <param name="transferCode">檔案轉入代碼</param>
+        /// <returns>執行結果</returns>
+        /// <exception cref="InvalidOperationException">找不到轉入設定時擲出</exception>
+        public async Task<EsScheduleCycleLogDetailDM> FileTransfer(string transferCode)
+        {
+            EsScheduleCycleLogDetailDM logDM = new();
+            logDM.FileTransferCode = transferCode;
+            logDM.DataCount = 0;
+
+            TableExcelBL bl = BLFactory.GetInstanceBackGround<TableExcelBL>();
+            _mapping = bl.GetByCode(transferCode)
+                ?? throw new InvalidOperationException($"找不到檔案轉入設定：{transferCode}");
+
+            //logDM = await RunNasTransfer();
+            logDM = await RunLocalTransfer();
+
+            return logDM;
+        }
+
+        /// <summary>
+        /// 本地檔案轉入：根據轉入代碼取得設定，從本地上傳目錄讀取並轉入。
+        /// </summary>
+        /// <param name="transferCode">檔案轉入代碼</param>
+        /// <returns>執行結果</returns>
+        /// <exception cref="InvalidOperationException">找不到轉入設定時擲出</exception>
+        public Task<EsScheduleCycleLogDetailDM> LocalFileTransfer(string transferCode)
+        {
+            EsScheduleCycleLogDetailDM logDM = new();
+            logDM.FileTransferCode = transferCode;
+            logDM.DataCount = 0;
+
+            TableExcelBL bl = BLFactory.GetInstanceBackGround<TableExcelBL>();
+            _mapping = bl.GetByCode(transferCode)
+                ?? throw new InvalidOperationException($"找不到檔案轉入設定：{transferCode}");
+
+            return RunLocalTransfer();
+        }
     }
 
     /// <summary>
@@ -143,6 +183,60 @@ namespace backend.MESSource
     /// </summary>
     public partial class TransferJob
     {
+        /// <summary>
+        /// 從 NAS 讀取符合設定副檔名的檔案，逐一執行轉入，成功後將檔案移至完成資料夾
+        /// </summary>
+        private async Task<EsScheduleCycleLogDetailDM> RunNasTransfer()
+        {
+            var logDM = new EsScheduleCycleLogDetailDM
+            {
+                FileTransferCode = _mapping.TransferMappingCode,
+                RunAt = DateTime.Now
+            };
+
+            try
+            {
+                var configError = ValidateNasConfig(out var nasUrl, out var nasAccount, out var nasPassword, out var srcPath, out var finishPath);
+                if (configError != null)
+                    return FailedResult(logDM, configError);
+
+                var (context, loginError) = await ConnectNasAsync(nasUrl, nasAccount, nasPassword);
+                if (loginError != null)
+                    return FailedResult(logDM, loginError);
+
+                var (matchedFiles, listError) = await FetchMatchedFilesAsync(context, srcPath);
+                if (listError != null)
+                    return FailedResult(logDM, listError);
+
+                if (matchedFiles.Count == 0)
+                {
+                    logDM.JobStatus = "Success";
+                    return logDM;
+                }
+
+                var successPaths = await ProcessFilesAsync(context, matchedFiles, logDM);
+
+                await MoveSuccessFilesAsync(context, successPaths, finishPath);
+
+                // 7. 刪除完成資料夾中的所有檔案（保留資料夾本身）
+                //await ClearNasFinishFolderAsync(context, finishPath);
+
+                logDM.JobStatus = ResolveJobStatus(logDM.DataCount, logDM.ErrorCount);
+            }
+            catch (Exception ex)
+            {
+                //LogError(ex);
+                logDM.JobStatus = "Failed";
+                logDM.ErrorMessage = ex.Message;
+            }
+            finally
+            {
+                logDM.DurationMs = (int)(DateTime.Now - logDM.RunAt).TotalMilliseconds;
+            }
+
+            return logDM;
+        }
+
         /// <summary>
         /// 驗證 NAS 相關設定是否齊全，同時輸出各設定值。
         /// 回傳 null 表示驗證通過；否則回傳錯誤訊息。
@@ -268,7 +362,71 @@ namespace backend.MESSource
 
             return successPaths;
         }
-         
+
+        /// <summary>
+        /// 將轉入成功的 NAS 檔案逐一移動至完成資料夾。
+        /// 移動失敗不影響整體結果。
+        /// </summary>
+        private async Task MoveSuccessFilesAsync(
+            SynoNasConnectionContext context,
+            List<string> successPaths,
+            string finishPath)
+        {
+            foreach (var nasFilePath in successPaths)
+            {
+                try
+                {
+                    await MoveNasFileAsync(context, nasFilePath, finishPath);
+                }
+                catch (Exception ex)
+                {
+                    //LogError(ex);
+                    // 移動失敗不影響整體結果，繼續處理其他檔案
+                }
+            }
+        }
+
+        /// <summary>
+        /// 將單一 NAS 檔案移動至目標資料夾。
+        /// 若目標已存在同名檔案，先刪除再移動；移動後輪詢直到完成（最多等 60 秒）。
+        /// </summary>
+        private async Task MoveNasFileAsync(
+            SynoNasConnectionContext context,
+            string nasFilePath,
+            string finishPath)
+        {
+            var fileName = nasFilePath.Contains('/')
+                ? nasFilePath[(nasFilePath.LastIndexOf('/') + 1)..]
+                : nasFilePath;
+            var destFilePath = finishPath.TrimEnd('/') + "/" + fileName;
+
+            // 若目標資料夾已存在同名檔案，先刪除再移動
+            var checkResp = await _nasHelper.FileStation_List(context, new FileStationListRequest { FolderPath = finishPath });
+            if (checkResp.Success &&
+                checkResp.Data?.files?.Any(f => string.Equals(f.name, fileName, StringComparison.OrdinalIgnoreCase)) == true)
+            {
+                await _nasHelper.FileStation_Delete(context, new FileStationDeleteRequest
+                {
+                    path = new List<string> { destFilePath },
+                    recursive = false
+                });
+            }
+
+            var startData = await _nasHelper.CopyMove_StartAsync(
+                context,
+                new List<string> { nasFilePath },
+                finishPath,
+                removeSrc: true);
+
+            // 輪詢直到完成（最多等 60 秒）
+            for (int i = 0; i < 120; i++)
+            {
+                await Task.Delay(500);
+                var statusData = await _nasHelper.CopyMove_StatusAsync(context, startData.taskid);
+                if (statusData.finished) break;
+            }
+        }
+
         /// <summary>
         /// 依副檔名類型代碼回傳對應的副檔名。
         /// </summary>
@@ -353,9 +511,10 @@ namespace backend.MESSource
                 {
                     case 1: // xlsx
                     case 2: // xls
+                        ProcessExcel(filePath, result);
                         break;
                     case 0: // CSV
-                    default: 
+                    default:
                         break;
                 }
             }
@@ -375,9 +534,174 @@ namespace backend.MESSource
         }
 
         // ─── Excel 解析 ───────────────────────────────────────────────
-         
+
+        private void ProcessExcel(string filePath, EsScheduleCycleLogDetailDM result)
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            IWorkbook workbook = _mapping.ExampleFileType == 1
+                ? (IWorkbook)new XSSFWorkbook(stream)   // xlsx
+                : new HSSFWorkbook(stream);              // xls
+
+            // 依 SrcSheetIndex 分組（同一工作表可能對應多個 TargetTable，但 HeaderRowIndex 相同）
+            var sheetGroups = _mapping.Columns
+                .GroupBy(c => c.SrcSheetIndex)
+                .OrderBy(g => g.Key);
+
+            foreach (var sheetGroup in sheetGroups)
+            {
+                int sheetIndex = sheetGroup.Key;
+                ISheet sheet;
+                try
+                {
+                    // R02: SrcSheetIndex 優先，SrcSheetName 備用
+                    sheet = (sheetIndex >= 0 && sheetIndex < workbook.NumberOfSheets)
+                        ? workbook.GetSheetAt(sheetIndex)
+                        : workbook.GetSheet(sheetGroup.First().SrcSheetName);
+                }
+                catch
+                {
+                    result.ErrorCount++;
+                    result.ErrorLogs.Add(new EsTransferErrorLogDM
+                    {
+                        Exception = $"工作表索引 {sheetIndex} 不存在"
+                    });
+                    continue;
+                }
+
+                if (sheet == null)
+                {
+                    result.ErrorCount++;
+                    result.ErrorLogs.Add(new EsTransferErrorLogDM
+                    {
+                        Exception = $"找不到工作表：index={sheetIndex}, name={sheetGroup.First().SrcSheetName}"
+                    });
+                    continue;
+                }
+
+                // R03: HeaderRowIndex 是 1-based
+                int headerRowIndex = sheetGroup.First().HeaderRowIndex - 1; // 轉為 0-based
+                IRow headerRow = sheet.GetRow(headerRowIndex);
+                if (headerRow == null) continue;
+
+                // 建立標題 → 欄索引的對應
+                var headerMap = BuildHeaderMap(headerRow);
+
+                // 資料從 HeaderRowIndex + 1 開始（0-based: headerRowIndex + 1）
+                int dataStartRow = headerRowIndex + 1;
+
+                // 依 (TargetTableName, DBTransferMappingCode) 再分組，支援一張 Sheet 寫入多資料表
+                var tableGroups = sheetGroup
+                    .GroupBy(c => (c.TargetTableName, c.DBTransferMappingCode))
+                    .ToList();
+
+                // 每個 tableGroup 只開啟一次資料庫連線，供整張 Sheet 所有列共用
+                Dictionary<(string, string), (DbConnection conn, IDbDialect dialect)> tableConnections = new();
+                try
+                {
+                    foreach (var tg in tableGroups)
+                    {
+                        ESDbTransferDM dbConfig = GetOrCacheDbConfig(tg.Key.DBTransferMappingCode);
+                        if (dbConfig == null) continue;
+                        IDbDialect dialect = DbDialectFactory.CreateDialect(dbConfig);
+                        DbConnection conn = dialect.CreateConnection();
+                        conn.Open();
+                        tableConnections[tg.Key] = (conn, dialect);
+                    }
+
+                    // 以 uploadId（副檔名前的檔名）查詢 EsFileTransferUpload 是否存在
+                    string uploadId = Path.GetFileNameWithoutExtension(filePath);
+                    Guid? resolvedUploadId = null;
+                    if (Guid.TryParse(uploadId, out Guid parsedUploadId) && QueryBomUploadExists(parsedUploadId))
+                        resolvedUploadId = parsedUploadId;
+
+                    // bomfilecontent 特殊處理：若找不到對應上傳記錄則略過
+                    Dictionary<(string, string), Guid> bomUploadIds = new();
+                    HashSet<(string, string)> skippedBomGroups = new();
+
+                    foreach (var tg in tableGroups)
+                    {
+                        if (!string.Equals(tg.Key.TargetTableName, "bomfilecontent", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        if (!resolvedUploadId.HasValue)
+                        {
+                            skippedBomGroups.Add(tg.Key);
+                            continue;
+                        }
+                        bomUploadIds[tg.Key] = resolvedUploadId.Value;
+                    }
+
+                    for (int rowIdx = dataStartRow; rowIdx <= sheet.LastRowNum; rowIdx++)
+                    {
+                        IRow row = sheet.GetRow(rowIdx);
+                        if (row == null || IsRowEmpty(row)) continue;
+
+                        // 讀取此列的所有標題值
+                        var rowData = ReadExcelRow(row, headerRow, headerMap);
+
+                        foreach (var tableGroup in tableGroups)
+                        {
+                            var columns = tableGroup.ToList();
+                            if (!ApplyRowFilter(rowData, columns, out string filterError))
+                            {
+                                if (!string.IsNullOrEmpty(filterError))
+                                {
+                                    result.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = filterError });
+                                }
+                                continue;
+                            }
+
+                            if (skippedBomGroups.Contains(tableGroup.Key))
+                                continue;
+
+                            if (!tableConnections.TryGetValue(tableGroup.Key, out (DbConnection conn, IDbDialect dialect) connTuple))
+                                continue;
+
+                            Dictionary<string, object> extraValues = null;
+                            if (bomUploadIds.TryGetValue(tableGroup.Key, out Guid bomUploadId))
+                            {
+                                extraValues = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                                extraValues["uploadid"] = bomUploadId;
+                            }
+
+                            try
+                            {
+                                UpsertRow(rowData, columns, tableGroup.Key.TargetTableName, connTuple.conn, connTuple.dialect, extraValues);
+                                result.DataCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                result.ErrorCount++;
+                                result.ErrorLogs.Add(new EsTransferErrorLogDM
+                                {
+                                    Exception = $"第 {rowIdx + 1} 列寫入失敗：{ex.Message}"
+                                });
+                            }
+                        }
+                    }
+
+                    // 轉檔結束後更新 EsFileTransferUpload 處理狀態
+                    if (resolvedUploadId.HasValue)
+                    {
+                        bool hasBomTable = tableGroups.Any(tg =>
+                            string.Equals(tg.Key.TargetTableName, "bomfilecontent", StringComparison.OrdinalIgnoreCase));
+                        EsFileTransferUploadProcessStatusEnum newStatus = hasBomTable
+                            ? EsFileTransferUploadProcessStatusEnum.PendingPartSearch
+                            : EsFileTransferUploadProcessStatusEnum.Transferred;
+                        EsFileTransferUploadDM? uploadDM = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>().GetOneInfoByUploadId(resolvedUploadId.Value);
+                        if (uploadDM != null)
+                            BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>().DoUpdateProcessStatus(uploadDM.Id, (int)newStatus);
+                    }
+                }
+                finally
+                {
+                    foreach ((DbConnection conn, IDbDialect _) in tableConnections.Values)
+                        try { conn.Dispose(); } catch { /* 釋放連線失敗不影響主流程 */ }
+                }
+            }
+        }
+
         // ─── CSV 解析 ─────────────────────────────────────────────────
-         
+
         // ─── 共用輔助：讀取一列 ──────────────────────────────────────
 
         private static Dictionary<string, string> ReadExcelRow(IRow row, IRow headerRow, Dictionary<string, int> headerMap)
@@ -693,31 +1017,41 @@ namespace backend.MESSource
         // ─── DB Upsert ───────────────────────────────────────────────
 
         /// <summary>
-        /// 使用已開啟的連線執行 Upsert（供 Sheet/CSV 迴圈共用連線呼叫）
+        /// 使用已開啟的連線執行 Upsert（供 Sheet/CSV 迴圈共用連線呼叫）。
+        /// extraValues 中的鍵值對會在欄位對應完成後直接寫入目標資料，可用於注入額外欄位（如 uploadid）。
         /// </summary>
         private void UpsertRow(
             Dictionary<string, string> rowData,
             List<EsFileTransferMappingColumnDM> columns,
             string targetTableName,
-            SqlConnection conn)
+            DbConnection conn,
+            IDbDialect dialect,
+            Dictionary<string, object> extraValues = null)
         {
-            using var transaction = conn.BeginTransaction();
+            using DbTransaction transaction = conn.BeginTransaction();
             try
             {
-                var targetData = BuildTargetData(rowData, columns);
+                Dictionary<string, object> targetData = BuildTargetData(rowData, columns);
 
-                var pkColumns = columns.Where(c => c.IsPrimaryKey).ToList();
+                // 注入呼叫端傳入的額外欄位（如 bomfilecontent.uploadid）
+                if (extraValues != null)
+                {
+                    foreach (KeyValuePair<string, object> kvp in extraValues)
+                        targetData[kvp.Key] = kvp.Value;
+                }
+
+                List<EsFileTransferMappingColumnDM> pkColumns = columns.Where(c => c.IsPrimaryKey).ToList();
                 if (pkColumns.Count > 0)
                 {
-                    bool exists = CheckExists(conn, transaction, targetTableName, pkColumns, targetData);
+                    bool exists = CheckExists(conn, transaction, targetTableName, pkColumns, targetData, dialect);
                     if (exists)
-                        UpdateRecord(conn, transaction, targetTableName, targetData, pkColumns);
+                        UpdateRecord(conn, transaction, targetTableName, targetData, pkColumns, dialect);
                     else
-                        InsertRecord(conn, transaction, targetTableName, targetData);
+                        InsertRecord(conn, transaction, targetTableName, targetData, dialect);
                 }
                 else
                 {
-                    InsertRecord(conn, transaction, targetTableName, targetData);
+                    InsertRecord(conn, transaction, targetTableName, targetData, dialect);
                 }
 
                 transaction.Commit();
@@ -728,7 +1062,7 @@ namespace backend.MESSource
                 throw;
             }
         }
-         
+
         /// <summary>
         /// 將 rowData 依欄位設定（DefaultValue、加密）轉換為目標欄位值字典
         /// </summary>
@@ -764,89 +1098,114 @@ namespace backend.MESSource
             return targetData;
         }
 
-        private bool CheckExists(
-            SqlConnection conn,
-            SqlTransaction tran,
+        private static bool CheckExists(
+            DbConnection conn,
+            DbTransaction tran,
             string tableName,
             List<EsFileTransferMappingColumnDM> pkColumns,
-            Dictionary<string, object> targetData)
+            Dictionary<string, object> targetData,
+            IDbDialect dialect)
         {
-            var whereParts = new List<string>();
-            using var cmd = conn.CreateCommand();
+            List<string> whereParts = new();
+            using DbCommand cmd = conn.CreateCommand();
             cmd.Transaction = tran;
 
             for (int i = 0; i < pkColumns.Count; i++)
             {
-                var pName = $"@pk{i}";
-                whereParts.Add($"[{pkColumns[i].TargetTableColumnName}] = {pName}");
-                cmd.Parameters.AddWithValue(pName, targetData[pkColumns[i].TargetTableColumnName]);
+                string pName = $"@pk{i}";
+                whereParts.Add($"{dialect.QuoteIdentifier(pkColumns[i].TargetTableColumnName)} = {pName}");
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = pName;
+                param.Value = targetData[pkColumns[i].TargetTableColumnName];
+                cmd.Parameters.Add(param);
             }
 
-            cmd.CommandText = $"SELECT COUNT(1) FROM [{tableName}] WHERE {string.Join(" AND ", whereParts)}";
+            cmd.CommandText = $"SELECT COUNT(1) FROM {dialect.QuoteIdentifier(tableName)} WHERE {string.Join(" AND ", whereParts)}";
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
 
         private static void InsertRecord(
-            SqlConnection conn,
-            SqlTransaction tran,
+            DbConnection conn,
+            DbTransaction tran,
             string tableName,
-            Dictionary<string, object> targetData)
+            Dictionary<string, object> targetData,
+            IDbDialect dialect)
         {
-            var cols = targetData.Keys.Select(k => $"[{k}]");
-            var pNames = targetData.Keys.Select((k, i) => $"@p{i}");
+            IEnumerable<string> cols = targetData.Keys.Select(k => dialect.QuoteIdentifier(k));
+            IEnumerable<string> pNames = targetData.Keys.Select((k, i) => $"@p{i}");
 
-            using var cmd = conn.CreateCommand();
+            using DbCommand cmd = conn.CreateCommand();
             cmd.Transaction = tran;
-            cmd.CommandText = $"INSERT INTO [{tableName}] ({string.Join(",", cols)}) VALUES ({string.Join(",", pNames)})";
+            cmd.CommandText = $"INSERT INTO {dialect.QuoteIdentifier(tableName)} ({string.Join(",", cols)}) VALUES ({string.Join(",", pNames)})";
 
             int idx = 0;
-            foreach (var kvp in targetData)
-                cmd.Parameters.AddWithValue($"@p{idx++}", kvp.Value);
+            foreach (KeyValuePair<string, object> kvp in targetData)
+            {
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = $"@p{idx++}";
+                param.Value = kvp.Value;
+                cmd.Parameters.Add(param);
+            }
 
             cmd.ExecuteNonQuery();
         }
 
         private static void UpdateRecord(
-            SqlConnection conn,
-            SqlTransaction tran,
+            DbConnection conn,
+            DbTransaction tran,
             string tableName,
             Dictionary<string, object> targetData,
-            List<EsFileTransferMappingColumnDM> pkColumns)
+            List<EsFileTransferMappingColumnDM> pkColumns,
+            IDbDialect dialect)
         {
-            var pkNames = pkColumns.Select(c => c.TargetTableColumnName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var updateCols = targetData.Where(kv => !pkNames.Contains(kv.Key)).ToList();
+            HashSet<string> pkNames = pkColumns.Select(c => c.TargetTableColumnName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            List<KeyValuePair<string, object>> updateCols = targetData.Where(kv => !pkNames.Contains(kv.Key)).ToList();
             if (updateCols.Count == 0) return;
 
-            var setClauses = updateCols.Select((kv, i) => $"[{kv.Key}] = @set{i}").ToList();
-            var whereClauses = pkColumns.Select((c, i) => $"[{c.TargetTableColumnName}] = @where{i}").ToList();
+            List<string> setClauses = updateCols.Select((kv, i) => $"{dialect.QuoteIdentifier(kv.Key)} = @set{i}").ToList();
+            List<string> whereClauses = pkColumns.Select((c, i) => $"{dialect.QuoteIdentifier(c.TargetTableColumnName)} = @where{i}").ToList();
 
-            using var cmd = conn.CreateCommand();
+            using DbCommand cmd = conn.CreateCommand();
             cmd.Transaction = tran;
-            cmd.CommandText = $"UPDATE [{tableName}] SET {string.Join(",", setClauses)} WHERE {string.Join(" AND ", whereClauses)}";
+            cmd.CommandText = $"UPDATE {dialect.QuoteIdentifier(tableName)} SET {string.Join(",", setClauses)} WHERE {string.Join(" AND ", whereClauses)}";
 
             for (int i = 0; i < updateCols.Count; i++)
-                cmd.Parameters.AddWithValue($"@set{i}", updateCols[i].Value);
+            {
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = $"@set{i}";
+                param.Value = updateCols[i].Value;
+                cmd.Parameters.Add(param);
+            }
             for (int i = 0; i < pkColumns.Count; i++)
-                cmd.Parameters.AddWithValue($"@where{i}", targetData[pkColumns[i].TargetTableColumnName]);
+            {
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = $"@where{i}";
+                param.Value = targetData[pkColumns[i].TargetTableColumnName];
+                cmd.Parameters.Add(param);
+            }
 
             cmd.ExecuteNonQuery();
         }
 
         // ─── 連線輔助 ────────────────────────────────────────────────
-         
-        private static string BuildConnectionString(ESDbTransferDM dbConfig)
+
+        private ESDbTransferDM GetOrCacheDbConfig(string dbTransferMappingCode)
         {
-            var builder = new SqlConnectionStringBuilder
-            {
-                DataSource = string.IsNullOrWhiteSpace(dbConfig.DbPort)
-                    ? dbConfig.DbHost
-                    : $"{dbConfig.DbHost},{dbConfig.DbPort}",
-                InitialCatalog = dbConfig.DbName,
-                UserID = dbConfig.DbUser,
-                Password = dbConfig.DbPassword,
-                TrustServerCertificate = true
-            };
-            return builder.ConnectionString;
+            if (_dbConfigCache.TryGetValue(dbTransferMappingCode, out var cached)) return cached;
+            var bl = BLFactory.GetInstanceBackGround<TableExcelBL>();
+            var cfg = bl.GetDbTransferConfig(dbTransferMappingCode);
+            if (cfg != null) _dbConfigCache[dbTransferMappingCode] = cfg;
+            return cfg;
+        }
+
+        /// <summary>
+        /// 查詢 EsFileTransferUpload 是否存在指定 UploadId 的記錄。
+        /// 用於 bomfilecontent 轉入前驗證對應的上傳記錄是否存在。
+        /// </summary>
+        private static bool QueryBomUploadExists(Guid uploadId)
+        {
+            EsFileTransferUploadBL bl = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>();
+            return bl.GetOneInfoByUploadId(uploadId) != null;
         }
 
         // ─── 靜態工廠方法 ────────────────────────────────────────────
@@ -862,5 +1221,150 @@ namespace backend.MESSource
             };
     }
 
+    /// <summary>
+    /// 本地檔案轉入資料庫
+    /// </summary>
+    public partial class TransferJob
+    {
+        /// <summary>
+        /// 從本地上傳目錄讀取符合設定副檔名的檔案，逐一執行轉入，成功後將檔案移至完成資料夾。
+        /// </summary>
+        private Task<EsScheduleCycleLogDetailDM> RunLocalTransfer()
+        {
+            EsScheduleCycleLogDetailDM logDM = new();
+            logDM.FileTransferCode = _mapping.TransferMappingCode;
+            logDM.RunAt = DateTime.Now;
 
+            try
+            {
+                string uploadDir = BuildLocalUploadPath();
+                string completeDir = BuildLocalCompletePath();
+
+                if (!Directory.Exists(uploadDir))
+                    return Task.FromResult(FailedResult(logDM, $"本地上傳目錄不存在：{uploadDir}"));
+
+                string allowedExt = GetAllowedExtension(_mapping.ExampleFileType);
+                List<string> matchedFiles = Directory.GetFiles(uploadDir)
+                    .Where(f => string.Equals(Path.GetExtension(f), allowedExt, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (matchedFiles.Count == 0)
+                {
+                    logDM.JobStatus = "Success";
+                    return Task.FromResult(logDM);
+                }
+
+                List<string> successPaths = ProcessLocalFiles(matchedFiles, logDM);
+                MoveLocalSuccessFiles(successPaths, completeDir);
+
+                logDM.JobStatus = ResolveJobStatus(logDM.DataCount, logDM.ErrorCount);
+            }
+            catch (Exception ex)
+            {
+                logDM.JobStatus = "Failed";
+                logDM.ErrorMessage = ex.Message;
+            }
+            finally
+            {
+                logDM.DurationMs = (int)(DateTime.Now - logDM.RunAt).TotalMilliseconds;
+            }
+
+            return Task.FromResult(logDM);
+        }
+
+        /// <summary>
+        /// 逐一處理本地檔案並執行轉入，彙總結果至 logDM。
+        /// 回傳全部轉入成功的本地檔案完整路徑清單。
+        /// </summary>
+        private List<string> ProcessLocalFiles(
+            List<string> files,
+            EsScheduleCycleLogDetailDM logDM)
+        {
+            List<string> successPaths = new();
+
+            foreach (string filePath in files)
+            {
+                try
+                {
+                    EsScheduleCycleLogDetailDM transferResult = Execute(filePath);
+                    logDM.DataCount += transferResult.DataCount;
+                    logDM.ErrorCount += transferResult.ErrorCount;
+                    logDM.ErrorLogs.AddRange(transferResult.ErrorLogs);
+
+                    if (transferResult.ErrorCount == 0)
+                        successPaths.Add(filePath);
+                }
+                catch (Exception ex)
+                {
+                    logDM.ErrorCount++;
+                    logDM.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = ex.Message });
+                }
+            }
+
+            return successPaths;
+        }
+
+        /// <summary>
+        /// 將轉入成功的本地檔案逐一移動至完成資料夾。
+        /// 移動失敗不影響整體結果。
+        /// </summary>
+        private static void MoveLocalSuccessFiles(
+            List<string> successPaths,
+            string completeDir)
+        {
+            if (!Directory.Exists(completeDir))
+                Directory.CreateDirectory(completeDir);
+
+            foreach (string srcPath in successPaths)
+            {
+                try
+                {
+                    MoveLocalFile(srcPath, completeDir);
+                }
+                catch
+                {
+                    // 移動失敗不影響整體結果，繼續處理其他檔案
+                }
+            }
+        }
+
+        /// <summary>
+        /// 將單一本地檔案移動至目標資料夾。
+        /// 若目標已存在同名檔案，先刪除再移動。
+        /// </summary>
+        private static void MoveLocalFile(
+            string srcFilePath,
+            string completeDir)
+        {
+            string fileName = Path.GetFileName(srcFilePath);
+            string destFilePath = Path.Combine(completeDir, fileName);
+
+            if (File.Exists(destFilePath))
+                File.Delete(destFilePath);
+
+            File.Move(srcFilePath, destFilePath);
+        }
+
+        /// <summary>
+        /// 建立本地上傳目錄的完整路徑（對應 FileDirectoryConst.EsFileTransferUpload）。
+        /// </summary>
+        private string BuildLocalUploadPath()
+        {
+            string relativePath = Const.FileDirectoryConst.EsFileTransferUpload
+                .TrimStart('/')
+                .Replace('/', Path.DirectorySeparatorChar);
+            return Path.Combine(_webHostEnvironment.ContentRootPath, relativePath);
+        }
+
+        /// <summary>
+        /// 建立本地轉入完成目錄的完整路徑（對應 FileDirectoryConst.EsFileTransferUploadComplete）。
+        /// </summary>
+        private string BuildLocalCompletePath()
+        {
+            string relativePath = Const.FileDirectoryConst.EsFileTransferUploadComplete
+                .TrimStart('/')
+                .Replace('/', Path.DirectorySeparatorChar);
+            return Path.Combine(_webHostEnvironment.ContentRootPath, relativePath);
+        }
+    }
 }

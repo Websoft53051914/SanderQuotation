@@ -95,6 +95,22 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 依條件刪除資料
+        /// </summary>
+        /// <param name="searchVO">查詢條件</param>
+        public void DeleteByFilter(SearchVO searchVO)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            GetDAO().DeleteByFilter(searchVO, account);
+            if (DoSaveChange)
+            {
+                _unitOfWork.Commit();
+            }
+        }
+
+        #endregion -- BomFileContent --
+
+        /// <summary>
         /// 依上傳 ID 取得資料清單
         /// </summary>
         /// <param name="uploadId">檔案儲存代號</param>
@@ -108,58 +124,24 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 新增資料
-        /// </summary>
-        /// <param name="dm">DM 物件</param>
-        public void DoCreate(BomFileContentDM dm)
-        {
-            BomFileContentEntity entity = _mapper.Map<BomFileContentEntity>(dm);
-
-            GetDAO().Insert(entity);
-            dm.Id = entity.Id;
-        }
-
-        /// <summary>
-        /// 更新資料
-        /// </summary>
-        /// <param name="dm">DM 物件</param>
-        public void DoUpdate(BomFileContentDM dm)
-        {
-            BomFileContentEntity? entity = GetDAO().FindByPk(dm.Id);
-            if (entity != null)
-            {
-                entity.ComponentPart = dm.ComponentPart;
-                entity.Description = dm.Description;
-                entity.Qty = dm.Qty;
-                entity.Manufacturer = dm.Manufacturer;
-                entity.ManufacturerPartNumber = dm.ManufacturerPartNumber;
-                entity.DisplayPart = dm.DisplayPart;
-                entity.UploadId = dm.UploadId;
-
-                GetDAO().Update(entity);
-            }
-        }
-
-        /// <summary>
-        /// 依條件刪除資料
-        /// </summary>
-        /// <param name="searchVO">查詢條件</param>
-        public void DeleteByFilter(SearchVO searchVO)
-        {
-            string account = SessionVO?.Account ?? string.Empty;
-            GetDAO().DeleteByFilter(searchVO, account);
-        }
-
-        /// <summary>
         /// 依 UploadId 查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
         /// </summary>
         /// <param name="uploadId">EsFileTransferUpload.UploadId</param>
         /// <returns>聯合查詢清單</returns>
-        public List<Data.DataAccess.DTO.BomFileContentQuotationDTO> GetListWithQuotationByUploadId(Guid uploadId)
+        public List<BomFileContentQuotationDTO> GetListWithQuotationByUploadId(Guid uploadId)
         {
             return GetDAO().GetListWithQuotationByUploadId(uploadId);
         }
-
-        #endregion -- BomFileContent --
     }
+
+    /**
+        private BomFileContentBL? _blBomFileContent = null;
+        protected BomFileContentBL GetBLBomFileContent()
+        {
+            _blBomFileContent ??= new BomFileContentBL(_unitOfWork, SessionVO ?? new());
+            _blBomFileContent._Configuration = _Configuration;
+
+            return _blBomFileContent;
+        }
+     */
 }

@@ -26,5 +26,12 @@ namespace Data.DataAccess.Dao
         /// 依條件刪除資料 (邏輯刪除)
         /// </summary>
         void DeleteByFilter(SearchVO searchVO, string account);
+
+        /// <summary>
+        /// 更新處理狀態
+        /// </summary>
+        /// <param name="uploadId">檔案儲存代號</param>
+        /// <param name="processStatus">目標處理狀態</param>
+        void UpdateProcessStatus(Guid uploadId, int processStatus);
     }
 }

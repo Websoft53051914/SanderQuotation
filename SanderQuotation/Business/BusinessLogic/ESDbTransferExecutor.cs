@@ -1,19 +1,15 @@
-using Business.DomainModel;
+using Business.Common;
 using Business.DomainModel;
 using Core.Utility.Helper.DB;
 using Core.Utility.Utility;
-using Data.DataAccess.Dao;
-using Data.DataAccess.Entity;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
-using System.Text;
 
 namespace Business.BusinessLogic
 {
     /// <summary>
-    /// ESDbTransferMapping ¸ê®Æ¶Ç¿é°õ¦æ¾¹
-    /// ­t³d±N¸ê®Æ±q¨Ó·½¸ê®Æ®w¶Ç°e¦Ü¥Øªº¸ê®Æ®w
+    /// ESDbTransferMapping è³‡æ–™å‚³è¼¸åŸ·è¡Œå™¨
+    /// è² è²¬å°‡è³‡æ–™å¾ä¾†æºè³‡æ–™åº«å‚³é€è‡³ç›®çš„è³‡æ–™åº«
     /// </summary>
     public class ESDbTransferExecutor
     {
@@ -24,6 +20,8 @@ namespace Business.BusinessLogic
         private readonly ESDbTransferDM _dstDbConfig;
         private readonly string _secretKey;
         private readonly string _secretIV;
+        private readonly IDbDialect _srcDialect;
+        private readonly IDbDialect _dstDialect;
 
         public ESDbTransferExecutor(
             IUnitOfWork unitOfWork,
@@ -41,18 +39,20 @@ namespace Business.BusinessLogic
             _dstDbConfig = dstDbConfig;
             _secretKey = secretKey ?? string.Empty;
             _secretIV = secretIV ?? string.Empty;
+            _srcDialect = DbDialectFactory.CreateDialect(srcDbConfig);
+            _dstDialect = DbDialectFactory.CreateDialect(dstDbConfig);
         }
 
         /// <summary>
-        /// °õ¦æ¸ê®Æ¶Ç¿é
+        /// åŸ·è¡Œè³‡æ–™å‚³è¼¸
         /// </summary>
-        /// <returns>¶Ç¿éµ²ªG <see cref="EsScheduleCycleLogDetailDM"/></returns>
+        /// <returns>å‚³è¼¸çµæœ <see cref="EsScheduleCycleLogDetailDM"/></returns>
         public EsScheduleCycleLogDetailDM Execute()
         {
             var result = new EsScheduleCycleLogDetailDM();
             try
             {
-                // ÅçÃÒ³]©w
+                // é©—è­‰è¨­å®š
                 if (!ValidateConfiguration(out string validationError))
                 {
                     result.ErrorCount = 1;
@@ -60,24 +60,24 @@ namespace Business.BusinessLogic
                     return result;
                 }
 
-                // «Ø¥ß¨Ó·½¸ê®Æ®w³s½u
-                using var srcConnection = CreateConnection(_srcDbConfig);
+                // å»ºç«‹ä¾†æºè³‡æ–™åº«é€£ç·š
+                using var srcConnection = _srcDialect.CreateConnection();
                 srcConnection.Open();
 
-                // «Ø¥ß¥Øªº¸ê®Æ®w³s½u
-                using var dstConnection = CreateConnection(_dstDbConfig);
+                // å»ºç«‹ç›®çš„è³‡æ–™åº«é€£ç·š
+                using var dstConnection = _dstDialect.CreateConnection();
                 dstConnection.Open();
 
-                // ±q¨Ó·½¸ê®Æ®wÅª¨ú¸ê®Æ
+                // å¾ä¾†æºè³‡æ–™åº«è®€å–è³‡æ–™
                 var sourceData = FetchSourceData(srcConnection);
 
                 if (sourceData == null || sourceData.Rows.Count == 0)
                     return result;
 
-                // ³B²z¨C¤@µ§¸ê®Æ
+                // è™•ç†æ¯ä¸€ç­†è³‡æ–™
                 foreach (DataRow row in sourceData.Rows)
                 {
-                    // ¨Cµ§¸ê®Æ¨Ï¥Î¿W¥ß¥æ©ö
+                    // æ¯ç­†è³‡æ–™ä½¿ç”¨ç¨ç«‹äº¤æ˜“
                     using var transaction = dstConnection.BeginTransaction();
                     try
                     {
@@ -103,43 +103,43 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ÅçÃÒ³]©w¬O§_§¹¾ã
+        /// é©—è­‰è¨­å®šæ˜¯å¦å®Œæ•´
         /// </summary>
         private bool ValidateConfiguration(out string errorMessage)
         {
             if (_mapping == null)
             {
-                errorMessage = "¶Ç¿é¹ïÀ³³]©w¤£¥i¬°ªÅ";
+                errorMessage = "å‚³è¼¸å°æ‡‰è¨­å®šä¸å¯ç‚ºç©º";
                 return false;
             }
 
             if (_columns == null || _columns.Count == 0)
             {
-                errorMessage = "Äæ¦ì¹ïÀ³³]©w¤£¥i¬°ªÅ";
+                errorMessage = "æ¬„ä½å°æ‡‰è¨­å®šä¸å¯ç‚ºç©º";
                 return false;
             }
 
             if (_srcDbConfig == null)
             {
-                errorMessage = "¨Ó·½¸ê®Æ®w³]©w¤£¥i¬°ªÅ";
+                errorMessage = "ä¾†æºè³‡æ–™åº«è¨­å®šä¸å¯ç‚ºç©º";
                 return false;
             }
 
             if (_dstDbConfig == null)
             {
-                errorMessage = "¥Øªº¸ê®Æ®w³]©w¤£¥i¬°ªÅ";
+                errorMessage = "ç›®çš„è³‡æ–™åº«è¨­å®šä¸å¯ç‚ºç©º";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(_mapping.SrcTableName))
             {
-                errorMessage = "¨Ó·½¸ê®Æªí¦WºÙ¤£¥i¬°ªÅ";
+                errorMessage = "ä¾†æºè³‡æ–™è¡¨åç¨±ä¸å¯ç‚ºç©º";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(_mapping.DstTableName))
             {
-                errorMessage = "¥Øªº¸ê®Æªí¦WºÙ¤£¥i¬°ªÅ";
+                errorMessage = "ç›®çš„è³‡æ–™è¡¨åç¨±ä¸å¯ç‚ºç©º";
                 return false;
             }
 
@@ -148,65 +148,31 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// «Ø¥ß¸ê®Æ®w³s½u
-        /// </summary>
-        private DbConnection CreateConnection(ESDbTransferDM dbConfig)
-        {
-            var connectionString = BuildConnectionString(dbConfig);
-
-            // ®Ú¾Ú¸ê®Æ®wÃş«¬«Ø¥ß³s½u
-            return dbConfig.DbType?.ToUpper() switch
-            {
-                "SQLSERVER" or "MSSQL" => new SqlConnection(connectionString),
-                _ => new SqlConnection(connectionString) // ¹w³]¨Ï¥Î SQL Server
-            };
-        }
-
-        /// <summary>
-        /// «Ø¥ß³s½u¦r¦ê
-        /// </summary>
-        private string BuildConnectionString(ESDbTransferDM dbConfig)
-        {
-            var builder = new SqlConnectionStringBuilder
-            {
-                DataSource = string.IsNullOrWhiteSpace(dbConfig.DbPort)
-                    ? dbConfig.DbHost
-                    : $"{dbConfig.DbHost},{dbConfig.DbPort}",
-                InitialCatalog = dbConfig.DbName,
-                UserID = dbConfig.DbUser,
-                Password = dbConfig.DbPassword,
-                TrustServerCertificate = true
-            };
-
-            return builder.ConnectionString;
-        }
-
-        /// <summary>
-        /// ±q¨Ó·½¸ê®Æ®wÅª¨ú¸ê®Æ
+        /// å¾ä¾†æºè³‡æ–™åº«è®€å–è³‡æ–™
         /// </summary>
         private DataTable FetchSourceData(DbConnection connection)
         {
-            var query = BuildSourceQuery();
-            using var command = connection.CreateCommand();
+            string query = BuildSourceQuery();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = query;
 
-            using var adapter = new SqlDataAdapter((SqlCommand)command);
-            var dataTable = new DataTable();
-            adapter.Fill(dataTable);
+            DataTable dataTable = new DataTable();
+            using DbDataReader reader = command.ExecuteReader();
+            dataTable.Load(reader);
 
             return dataTable;
         }
 
         /// <summary>
-        /// «Ø¥ß¨Ó·½¬d¸ßSQL
+        /// å»ºç«‹ä¾†æºæŸ¥è©¢SQL
         /// </summary>
         private string BuildSourceQuery()
         {
-            var columnNames = _columns.Select(c => $"[{c.SrcColumnName}]");
-            var query = $"SELECT {string.Join(", ", columnNames)} FROM [{_mapping.SrcTableName}]";
+            IEnumerable<string> columnNames = _columns.Select(c => _srcDialect.QuoteIdentifier(c.SrcColumnName));
+            string query = $"SELECT {string.Join(", ", columnNames)} FROM {_srcDialect.QuoteIdentifier(_mapping.SrcTableName)}";
 
-            // ³B²z¹LÂo±ø¥ó
-            var whereClause = BuildWhereClause();
+            // è™•ç†éæ¿¾æ¢ä»¶
+            string whereClause = BuildWhereClause();
             if (!string.IsNullOrWhiteSpace(whereClause))
             {
                 query += $" WHERE {whereClause}";
@@ -216,49 +182,49 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ®Ú¾Ú FilterMode «Ø¥ß WHERE ¤l¥y
+        /// æ ¹æ“š FilterMode å»ºç«‹ WHERE å­å¥
         /// </summary>
         private string BuildWhereClause()
         {
-            // ¦pªG¨S¦³³]©w¹LÂo±ø¥ó¡A¦^¶ÇªÅ¦r¦ê
+            // å¦‚æœæ²’æœ‰è¨­å®šéæ¿¾æ¢ä»¶ï¼Œå›å‚³ç©ºå­—ä¸²
             if (string.IsNullOrWhiteSpace(_mapping.FilterCondition))
             {
                 return string.Empty;
             }
 
-            // §PÂ_ FilterMode
+            // åˆ¤æ–· FilterMode
             if (string.IsNullOrWhiteSpace(_mapping.FilterMode))
             {
-                // ¦pªG¨S¦³³]©w FilterMode¡A¹w³]¬° manual
+                // å¦‚æœæ²’æœ‰è¨­å®š FilterModeï¼Œé è¨­ç‚º manual
                 return _mapping.FilterCondition;
             }
 
             switch (_mapping.FilterMode.ToLower())
             {
                 case "manual":
-                    // ¤â¼g SQL ¼Ò¦¡¡Gª½±µ¨Ï¥Î FilterCondition
+                    // æ‰‹å¯« SQL æ¨¡å¼ï¼šç›´æ¥ä½¿ç”¨ FilterCondition
                     return _mapping.FilterCondition;
 
                 case "builder":
-                    // ±ø¥ó«Øºc¾¹¼Ò¦¡¡G¸ÑªR JSON ¨Ã«Ø¥ß WHERE ¤l¥y
+                    // æ¢ä»¶å»ºæ§‹å™¨æ¨¡å¼ï¼šè§£æ JSON ä¸¦å»ºç«‹ WHERE å­å¥
                     return BuildWhereClauseFromJson(_mapping.FilterCondition);
 
                 default:
-                    // ¥¼ª¾¼Ò¦¡¡A¹w³]¬° manual
+                    // æœªçŸ¥æ¨¡å¼ï¼Œé è¨­ç‚º manual
                     return _mapping.FilterCondition;
             }
         }
 
         /// <summary>
-        /// ±q JSON ®æ¦¡ªº±ø¥ó°}¦C«Ø¥ß WHERE ¤l¥y
+        /// å¾ JSON æ ¼å¼çš„æ¢ä»¶é™£åˆ—å»ºç«‹ WHERE å­å¥
         /// </summary>
-        /// <param name="jsonCondition">JSON ®æ¦¡ªº±ø¥ó°}¦C</param>
-        /// <returns>WHERE ¤l¥y</returns>
+        /// <param name="jsonCondition">JSON æ ¼å¼çš„æ¢ä»¶é™£åˆ—</param>
+        /// <returns>WHERE å­å¥</returns>
         private string BuildWhereClauseFromJson(string jsonCondition)
         {
             try
             {
-                // ¸ÑªR JSON¡]®æ¦¡¡G{"mode":"builder","sql":"","rows":[{"logic":"","col":"SourceA","op":"=","val":"A1"}]}¡^
+                // è§£æ JSONï¼ˆæ ¼å¼ï¼š{"mode":"builder","sql":"","rows":[{"logic":"","col":"SourceA","op":"=","val":"A1"}]}ï¼‰
                 var filterConfig = System.Text.Json.JsonSerializer.Deserialize<FilterConfiguration>(
                     jsonCondition,
                     new System.Text.Json.JsonSerializerOptions
@@ -285,7 +251,7 @@ namespace Business.BusinessLogic
                     var clause = BuildSingleCondition(row);
                     if (!string.IsNullOrWhiteSpace(clause))
                     {
-                        // ²Ä¤@­Ó±ø¥ó¤£¥[ÅŞ¿è¹Bºâ¤l¡A«áÄò±ø¥ó®Ú¾Ú logic ¨M©w
+                        // ç¬¬ä¸€å€‹æ¢ä»¶ä¸åŠ é‚è¼¯é‹ç®—å­ï¼Œå¾ŒçºŒæ¢ä»¶æ ¹æ“š logic æ±ºå®š
                         if (i == 0)
                         {
                             whereClauses.Add(clause);
@@ -302,22 +268,22 @@ namespace Business.BusinessLogic
             }
             catch (Exception ex)
             {
-                // JSON ¸ÑªR¥¢±Ñ¡A°O¿ı¿ù»~¨Ã¦^¶ÇªÅ¦r¦ê
-                Console.WriteLine($"¸ÑªR¹LÂo±ø¥ó JSON ®Éµo¥Í¿ù»~: {ex.Message}");
+                // JSON è§£æå¤±æ•—ï¼Œè¨˜éŒ„éŒ¯èª¤ä¸¦å›å‚³ç©ºå­—ä¸²
+                Console.WriteLine($"è§£æéæ¿¾æ¢ä»¶ JSON æ™‚ç™¼ç”ŸéŒ¯èª¤: {ex.Message}");
                 return string.Empty;
             }
         }
 
         /// <summary>
-        /// «Ø¥ß³æ¤@±ø¥ó¤l¥y
+        /// å»ºç«‹å–®ä¸€æ¢ä»¶å­å¥
         /// </summary>
         private string BuildSingleCondition(FilterRow row)
         {
-            var field = $"[{row.Col}]";
-            var op = row.Op?.ToUpper();
-            var value = row.Val;
+            string field = _srcDialect.QuoteIdentifier(row.Col);
+            string op = row.Op?.ToUpper();
+            string value = row.Val;
 
-            // ³B²z¤£¦Pªº¹Bºâ¤l
+            // è™•ç†ä¸åŒçš„é‹ç®—å­
             switch (op)
             {
                 case "=":
@@ -327,7 +293,7 @@ namespace Business.BusinessLogic
                 case "<":
                 case "<=":
                 case "<>":
-                    // §PÂ_­ÈªºÃş«¬¡A¥[¤W¾A·íªº¤Ş¸¹
+                    // åˆ¤æ–·å€¼çš„é¡å‹ï¼ŒåŠ ä¸Šé©ç•¶çš„å¼•è™Ÿ
                     if (IsNumeric(value))
                     {
                         return $"{field} {row.Op} {value}";
@@ -350,7 +316,7 @@ namespace Business.BusinessLogic
                     return $"{field} LIKE '%{EscapeSqlString(value)}'";
 
                 case "IN":
-                    // value À³¸Ó¬O³r¸¹¤À¹jªº­È
+                    // value æ‡‰è©²æ˜¯é€—è™Ÿåˆ†éš”çš„å€¼
                     var values = value?.Split(',').Select(v => $"'{EscapeSqlString(v.Trim())}'");
                     return $"{field} IN ({string.Join(",", values ?? Array.Empty<string>())})";
 
@@ -365,7 +331,7 @@ namespace Business.BusinessLogic
                     return $"{field} IS NOT NULL";
 
                 case "BETWEEN":
-                    // value ®æ¦¡¡Gvalue1,value2
+                    // value æ ¼å¼ï¼švalue1,value2
                     var betweenValues = value?.Split(',');
                     if (betweenValues?.Length == 2)
                     {
@@ -379,7 +345,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// §PÂ_¦r¦ê¬O§_¬°¼Æ¦r
+        /// åˆ¤æ–·å­—ä¸²æ˜¯å¦ç‚ºæ•¸å­—
         /// </summary>
         private bool IsNumeric(string value)
         {
@@ -391,7 +357,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ¸õ²æ SQL ¦r¦ê¤¤ªº³æ¤Ş¸¹¡A¨¾¤î SQL Injection
+        /// è·³è„« SQL å­—ä¸²ä¸­çš„å–®å¼•è™Ÿï¼Œé˜²æ­¢ SQL Injection
         /// </summary>
         private string EscapeSqlString(string value)
         {
@@ -403,7 +369,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ¹LÂo±ø¥ó³]©w
+        /// éæ¿¾æ¢ä»¶è¨­å®š
         /// </summary>
         private class FilterConfiguration
         {
@@ -413,23 +379,23 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ¹LÂo±ø¥ó¦C
+        /// éæ¿¾æ¢ä»¶åˆ—
         /// </summary>
         private class FilterRow
         {
             public string Logic { get; set; }  // AND / OR
-            public string Col { get; set; }    // Äæ¦ì¦WºÙ
-            public string Op { get; set; }     // ¹Bºâ¤l
-            public string Val { get; set; }    // ­È
+            public string Col { get; set; }    // æ¬„ä½åç¨±
+            public string Op { get; set; }     // é‹ç®—å­
+            public string Val { get; set; }    // å€¼
         }
 
 
         /// <summary>
-        /// ³B²z³æµ§¸ê®Æ
+        /// è™•ç†å–®ç­†è³‡æ–™
         /// </summary>
         private void ProcessRow(DataRow sourceRow, DbConnection dstConnection, DbTransaction transaction)
         {
-            // ·Ç³Æ¥Øªº¸ê®Æ
+            // æº–å‚™ç›®çš„è³‡æ–™
             var targetData = new Dictionary<string, object>();
             var primaryKeyColumns = _columns.Where(c => c.IsPrimaryKey).ToList();
 
@@ -437,19 +403,19 @@ namespace Business.BusinessLogic
             {
                 var sourceValue = sourceRow[column.SrcColumnName];
 
-                // ³B²z NULL ­È
+                // è™•ç† NULL å€¼
                 if (sourceValue == DBNull.Value || sourceValue == null)
                 {
                     targetData[column.DstColumnName] = DBNull.Value;
                     continue;
                 }
 
-                // ¦pªG»İ­n¥[±K
+                // å¦‚æœéœ€è¦åŠ å¯†
                 if (column.IsEncrypt)
                 {
                     if (string.IsNullOrEmpty(_secretKey) || string.IsNullOrEmpty(_secretIV))
                     {
-                        throw new InvalidOperationException("¥[±Kª÷Æ_©ÎIV¥¼³]©w");
+                        throw new InvalidOperationException("åŠ å¯†é‡‘é‘°æˆ–IVæœªè¨­å®š");
                     }
                     var encryptedValue = SecurityUtility.Encrypt(sourceValue.ToString(), _secretKey, _secretIV);
                     targetData[column.DstColumnName] = encryptedValue;
@@ -460,7 +426,7 @@ namespace Business.BusinessLogic
                 }
             }
 
-            // §PÂ_¬O§_»İ­n UPDATE ©Î INSERT
+            // åˆ¤æ–·æ˜¯å¦éœ€è¦ UPDATE æˆ– INSERT
             if (primaryKeyColumns.Count > 0)
             {
                 var exists = CheckRecordExists(dstConnection, primaryKeyColumns, targetData, transaction);
@@ -475,13 +441,13 @@ namespace Business.BusinessLogic
             }
             else
             {
-                // ¨S¦³¥DÁä³]©w¡Aª½±µ INSERT
+                // æ²’æœ‰ä¸»éµè¨­å®šï¼Œç›´æ¥ INSERT
                 InsertRecord(dstConnection, targetData, transaction);
             }
         }
 
         /// <summary>
-        /// ÀË¬d°O¿ı¬O§_¦s¦b
+        /// æª¢æŸ¥è¨˜éŒ„æ˜¯å¦å­˜åœ¨
         /// </summary>
         private bool CheckRecordExists(
             DbConnection connection,
@@ -489,49 +455,46 @@ namespace Business.BusinessLogic
             Dictionary<string, object> targetData,
             DbTransaction transaction)
         {
-            var whereConditions = new List<string>();
-            var command = connection.CreateCommand();
+            List<string> whereConditions = new();
+            DbCommand command = connection.CreateCommand();
             command.Transaction = transaction;
 
             for (int i = 0; i < primaryKeyColumns.Count; i++)
             {
-                var pkColumn = primaryKeyColumns[i];
-                var paramName = $"@pk{i}";
-                whereConditions.Add($"[{pkColumn.DstColumnName}] = {paramName}");
+                ESDbTransferMappingColumnDM pkColumn = primaryKeyColumns[i];
+                string paramName = $"@pk{i}";
+                whereConditions.Add($"{_dstDialect.QuoteIdentifier(pkColumn.DstColumnName)} = {paramName}");
 
-                var param = command.CreateParameter();
+                DbParameter param = command.CreateParameter();
                 param.ParameterName = paramName;
                 param.Value = targetData[pkColumn.DstColumnName] ?? DBNull.Value;
                 command.Parameters.Add(param);
             }
 
-            command.CommandText = $"SELECT COUNT(*) FROM [{_mapping.DstTableName}] WHERE {string.Join(" AND ", whereConditions)}";
+            command.CommandText = $"SELECT COUNT(*) FROM {_dstDialect.QuoteIdentifier(_mapping.DstTableName)} WHERE {string.Join(" AND ", whereConditions)}";
 
-            var count = Convert.ToInt32(command.ExecuteScalar());
+            int count = Convert.ToInt32(command.ExecuteScalar());
             return count > 0;
         }
 
         /// <summary>
-        /// ·s¼W°O¿ı
+        /// æ–°å¢è¨˜éŒ„
         /// </summary>
         private void InsertRecord(DbConnection connection, Dictionary<string, object> targetData, DbTransaction transaction)
         {
-            var columnNames = targetData.Keys.Select(k => $"[{k}]");
-            var paramNames = targetData.Keys.Select((k, i) => $"@p{i}");
+            IEnumerable<string> columnNames = targetData.Keys.Select(k => _dstDialect.QuoteIdentifier(k));
+            IEnumerable<string> paramNames = targetData.Keys.Select((k, i) => $"@p{i}");
 
-            var insertSql = $@"
-                INSERT INTO [{_mapping.DstTableName}] 
-                ({string.Join(", ", columnNames)}) 
-                VALUES ({string.Join(", ", paramNames)})";
+            string insertSql = $"INSERT INTO {_dstDialect.QuoteIdentifier(_mapping.DstTableName)} ({string.Join(", ", columnNames)}) VALUES ({string.Join(", ", paramNames)})";
 
-            using var command = connection.CreateCommand();
+            using DbCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = insertSql;
 
             int paramIndex = 0;
-            foreach (var kvp in targetData)
+            foreach (KeyValuePair<string, object> kvp in targetData)
             {
-                var param = command.CreateParameter();
+                DbParameter param = command.CreateParameter();
                 param.ParameterName = $"@p{paramIndex}";
                 param.Value = kvp.Value ?? DBNull.Value;
                 command.Parameters.Add(param);
@@ -542,7 +505,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// §ó·s°O¿ı
+        /// æ›´æ–°è¨˜éŒ„
         /// </summary>
         private void UpdateRecord(
             DbConnection connection,
@@ -550,53 +513,51 @@ namespace Business.BusinessLogic
             List<ESDbTransferMappingColumnDM> primaryKeyColumns,
             DbTransaction transaction)
         {
-            var primaryKeyNames = primaryKeyColumns.Select(c => c.DstColumnName).ToList();
-            var updateColumns = targetData.Where(kvp => !primaryKeyNames.Contains(kvp.Key)).ToList();
+            List<string> primaryKeyNames = primaryKeyColumns.Select(c => c.DstColumnName).ToList();
+            List<KeyValuePair<string, object>> updateColumns = targetData.Where(kvp => !primaryKeyNames.Contains(kvp.Key)).ToList();
 
             if (updateColumns.Count == 0)
             {
-                // ¨S¦³»İ­n§ó·sªºÄæ¦ì(¥ş³¡³£¬O¥DÁä)
+                // æ²’æœ‰éœ€è¦æ›´æ–°çš„æ¬„ä½(å…¨éƒ¨éƒ½æ˜¯ä¸»éµ)
                 return;
             }
 
-            var setClause = new List<string>();
-            var whereClause = new List<string>();
-            var command = connection.CreateCommand();
+            List<string> setClause = new();
+            List<string> whereClause = new();
+            DbCommand command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            // «Ø¥ß SET ¤l¥y
+            // å»ºç«‹ SET å­å¥
             for (int i = 0; i < updateColumns.Count; i++)
             {
-                var kvp = updateColumns[i];
-                var paramName = $"@set{i}";
-                setClause.Add($"[{kvp.Key}] = {paramName}");
+                KeyValuePair<string, object> kvp = updateColumns[i];
+                string paramName = $"@set{i}";
+                setClause.Add($"{_dstDialect.QuoteIdentifier(kvp.Key)} = {paramName}");
 
-                var param = command.CreateParameter();
+                DbParameter param = command.CreateParameter();
                 param.ParameterName = paramName;
                 param.Value = kvp.Value ?? DBNull.Value;
                 command.Parameters.Add(param);
             }
 
-            // «Ø¥ß WHERE ¤l¥y
+            // å»ºç«‹ WHERE å­å¥
             for (int i = 0; i < primaryKeyColumns.Count; i++)
             {
-                var pkColumn = primaryKeyColumns[i];
-                var paramName = $"@where{i}";
-                whereClause.Add($"[{pkColumn.DstColumnName}] = {paramName}");
+                ESDbTransferMappingColumnDM pkColumn = primaryKeyColumns[i];
+                string paramName = $"@where{i}";
+                whereClause.Add($"{_dstDialect.QuoteIdentifier(pkColumn.DstColumnName)} = {paramName}");
 
-                var param = command.CreateParameter();
+                DbParameter param = command.CreateParameter();
                 param.ParameterName = paramName;
                 param.Value = targetData[pkColumn.DstColumnName] ?? DBNull.Value;
                 command.Parameters.Add(param);
             }
 
-            command.CommandText = $@"
-                UPDATE [{_mapping.DstTableName}] 
-                SET {string.Join(", ", setClause)} 
-                WHERE {string.Join(" AND ", whereClause)}";
+            command.CommandText = $"UPDATE {_dstDialect.QuoteIdentifier(_mapping.DstTableName)} SET {string.Join(", ", setClause)} WHERE {string.Join(" AND ", whereClause)}";
 
             command.ExecuteNonQuery();
         }
+
     }
 }
 

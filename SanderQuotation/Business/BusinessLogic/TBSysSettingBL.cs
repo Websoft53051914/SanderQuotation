@@ -142,7 +142,7 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 內部系統設定對應的 Type 值
         /// </summary>
-        private const string TypeInternal = "Internal";
+        private static readonly string TypeInternal = ((int)Enums.ParameterTypeEnum.Internal).ToString();
         /// <summary>
         /// 執行 ExtractKeyword 最後檢查時間
         /// </summary>

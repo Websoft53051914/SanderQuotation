@@ -191,4 +191,51 @@ namespace Business.BusinessLogic
             }
         }
     }
+
+    public partial class TBBomFileQuotationBL
+    {
+        /// <summary>
+        /// 儲存查料結果
+        /// </summary>
+        /// <param name="bomFileContentId">BomFileContent.Id</param>
+        /// <param name="no">找到的採購型號（查無則為 null）</param>
+        public void DoSavePartSearchResult(Guid bomFileContentId, string? no)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = bomFileContentId;
+            searchVO.IsLimit1 = true;
+
+            TBBomFileQuotationDM? existing = GetListByFilter(searchVO).FirstOrDefault();
+
+            if (existing != null)
+            {
+                TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+                if (entity != null)
+                {
+                    entity.No = no;
+                    entity.Status = (int)StatusEnum.Enabled;
+                    entity.UpdatedBy = account;
+                    entity.UpdatedAt = nowTime;
+                    GetDAO().Update(entity);
+                }
+            }
+            else
+            {
+                TBBomFileQuotationEntity entity = new();
+                entity.No = no;
+                entity.BomFileContentId = bomFileContentId;
+                entity.Status = (int)StatusEnum.Enabled;
+                entity.CreatedBy = account;
+                entity.UpdatedBy = account;
+                entity.CreatedAt = nowTime;
+                entity.UpdatedAt = nowTime;
+                GetDAO().Insert(entity);
+            }
+
+            _unitOfWork.Commit();
+        }
+    }
 }
