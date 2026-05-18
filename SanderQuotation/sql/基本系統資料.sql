@@ -44,3 +44,29 @@ VALUES(gen_random_uuid(), N'admin', N'管理員', NULL, '1', '2025-12-26 11:24:5
 INSERT INTO TB_SysRole
 (Id, RoleName, Status, Memo, LineSetting, CreatedBy, UpdatedBy, CreatedAt, UpdatedAt)
 VALUES(gen_random_uuid(), N'系統管理員', 1, N'系統管理員', 1, NULL, NULL, '2026-04-30 15:05:00.000', '2026-04-30 16:34:00.000');
+
+--系統設定預設值
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'ARROW', 'ARROW', 1, 'PreferredVendorList', '', '', now(), now());
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'FUTURE', 'FUTURE', 1, 'PreferredVendorList', '', '', now(), now());
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'TTI', 'TTI', 1, 'PreferredVendorList', '', '', now(), now());
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'DIGIKEY', 'DIGIKEY', 1, 'PreferredVendorList', '', '', now(), now());
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'MOUSER', 'MOUSER', 1, 'PreferredVendorList', '', '', now(), now());
+
+
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), 'DIODE', 'DIODE', 1, 'BrandComparisonCategoryList', '', '', now(), now());
+
+INSERT INTO public.tb_syssetting
+(id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
+VALUES(gen_random_uuid(), '1', '1', 1, 'AIDecisionProcessDisplaySwitch', '', '', now(), now());
