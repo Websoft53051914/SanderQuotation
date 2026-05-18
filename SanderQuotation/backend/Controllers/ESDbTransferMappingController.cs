@@ -11,6 +11,7 @@ using Core.Utility.Utility;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Npgsql;
 using SixLabors.ImageSharp.ColorSpaces;
 using System.Data;
@@ -314,7 +315,7 @@ namespace backend.Controllers
             }
         }
 
-        // ── 目標資料庫 Schema 查詢 ───────────────────────────────────────────────
+        // ── 目標資料庫 Schema 查詢
 
         /// <summary>
         /// 取得目的資料庫所有 TABLE 名稱（若指定 dbTransferGuid 則用該連線，否則用 MainConnection）
@@ -325,7 +326,7 @@ namespace backend.Controllers
         {
             try
             {
-                List<string> tables;
+                List<SelectListItem> tables;
                 if (!string.IsNullOrEmpty(dbTransferGuid))
                 {
                     var dm = GetTransferDm(dbTransferGuid);
@@ -363,7 +364,7 @@ namespace backend.Controllers
                 if (string.IsNullOrWhiteSpace(tableName))
                     return JsonValidFail(GetMsg(_config, "Please_Enter") + " " + GetMsg(_config, "ESDbTransferMapping_DstTable"));
 
-                List<string> columns;
+                List<SelectListItem> columns;
                 if (!string.IsNullOrEmpty(dbTransferGuid))
                 {
                     var dm = GetTransferDm(dbTransferGuid);
@@ -408,29 +409,97 @@ namespace backend.Controllers
             return new SqlConnection($"Data Source={dm.DbHost}{portPart};Initial Catalog={dm.DbName};User ID={dm.DbUser};Password={dm.DbPassword};TrustServerCertificate=true;Encrypt=true");
         }
 
-        private static List<string> QueryTables(IDbConnection conn)
+        private static List<SelectListItem> QueryTables(IDbConnection conn)
         {
-            var tables = new List<string>();
+            var tables = new List<SelectListItem>();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME";
+
+            bool isPostgres = conn is NpgsqlConnection;
+
+            if (isPostgres)
+            {
+                cmd.CommandText = @"
+                    SELECT t.table_name, COALESCE(obj_description(pc.oid, 'pg_class'), '') AS table_desc
+                    FROM information_schema.tables t
+                    LEFT JOIN pg_class pc ON pc.relname = t.table_name
+                    WHERE t.table_type = 'BASE TABLE'
+                      AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
+                    ORDER BY t.table_name";
+            }
+            else
+            {
+                cmd.CommandText = @"
+                    SELECT t.TABLE_NAME, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS table_desc
+                    FROM INFORMATION_SCHEMA.TABLES t
+                    LEFT JOIN sys.extended_properties ep
+                        ON ep.major_id = OBJECT_ID(t.TABLE_NAME)
+                        AND ep.minor_id = 0
+                        AND ep.name = 'MS_Description'
+                    WHERE t.TABLE_TYPE = 'BASE TABLE'
+                    ORDER BY t.TABLE_NAME";
+            }
+
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                tables.Add(reader.GetString(0));
+            {
+                var tableName = reader.GetString(0);
+                var desc = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                tables.Add(new SelectListItem
+                {
+                    Value = tableName,
+                    Text = string.IsNullOrWhiteSpace(desc) ? tableName : $"{tableName} ({desc})"
+                });
+            }
             return tables;
         }
 
-        private static List<string> QueryColumns(IDbConnection conn, string tableName)
+        private static List<SelectListItem> QueryColumns(IDbConnection conn, string tableName)
         {
-            var columns = new List<string>();
+            var columns = new List<SelectListItem>();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tbl ORDER BY ORDINAL_POSITION";
+
+            bool isPostgres = conn is NpgsqlConnection;
+
+            if (isPostgres)
+            {
+                cmd.CommandText = @"
+                    SELECT c.column_name, COALESCE(pd.description, '') AS col_desc
+                    FROM information_schema.columns c
+                    LEFT JOIN pg_class pc ON pc.relname = c.table_name
+                    LEFT JOIN pg_attribute pa ON pa.attrelid = pc.oid AND pa.attname = c.column_name
+                    LEFT JOIN pg_description pd ON pd.objoid = pc.oid AND pd.objsubid = pa.attnum
+                    WHERE c.table_name = @tbl
+                    ORDER BY c.ordinal_position";
+            }
+            else
+            {
+                cmd.CommandText = @"
+                    SELECT c.COLUMN_NAME, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS col_desc
+                    FROM INFORMATION_SCHEMA.COLUMNS c
+                    LEFT JOIN sys.extended_properties ep
+                        ON ep.major_id = OBJECT_ID(c.TABLE_NAME)
+                        AND ep.minor_id = c.ORDINAL_POSITION
+                        AND ep.name = 'MS_Description'
+                    WHERE c.TABLE_NAME = @tbl
+                    ORDER BY c.ORDINAL_POSITION";
+            }
+
             var p = cmd.CreateParameter();
             p.ParameterName = "@tbl";
             p.Value = tableName;
             cmd.Parameters.Add(p);
+
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                columns.Add(reader.GetString(0));
+            {
+                var colName = reader.GetString(0);
+                var desc = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                columns.Add(new SelectListItem
+                {
+                    Value = colName,
+                    Text = string.IsNullOrWhiteSpace(desc) ? colName : $"{colName} ({desc})"
+                });
+            }
             return columns;
         }
     }

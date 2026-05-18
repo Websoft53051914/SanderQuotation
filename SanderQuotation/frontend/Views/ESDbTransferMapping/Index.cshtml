@@ -429,7 +429,7 @@
                 hideLoader();
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
-                    res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
+                    res.Data.forEach(t => $tbl.append(`<option value="${t.Value}">${t.Text}</option>`));
                 } else {
                     Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
@@ -489,7 +489,7 @@
                     const cur = $(this).val();
                     destroyColSelect2($(this));
                     const opts = '<option value="">-- 請選擇 --</option>' +
-                        cols.map(c => `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}</option>`).join('');
+                    cols.map(c => `<option value="${c.Value}" ${c.Value === cur ? 'selected' : ''}>${c.Text}</option>`).join('');
                     $(this).html(opts);
                     initColSelect2($(this));
                     if (cur) $(this).val(cur).trigger('change');
@@ -519,7 +519,7 @@
                 hideLoader();
                 $tbl.empty().append('<option value="">-- 請選擇 --</option>');
                 if (res.Success) {
-                    res.Data.forEach(t => $tbl.append(`<option value="${t}">${t}</option>`));
+                    res.Data.forEach(t => $tbl.append(`<option value="${t.Value}">${t.Text}</option>`));
                 } else {
                     Swal.fire({ icon: 'warning', title: res.Message || '載入失敗', confirmButtonText: '確定' });
                 }
@@ -1125,7 +1125,7 @@
             const prev = selectedVal || $sel.val() || '';
             destroyColSelect2($sel);
             $sel.html('<option value="">-- 請選擇 --</option>');
-            cols.forEach(c => $sel.append(`<option value="${c}" ${c === prev ? 'selected' : ''}>${c}</option>`));
+            cols.forEach(c => $sel.append(`<option value="${c.Value}" ${c.Value === prev ? 'selected' : ''}>${c.Text}</option>`));
             initColSelect2($sel);
             if (prev) $sel.val(prev).trigger('change');
         }
@@ -1245,7 +1245,7 @@
         function getSrcColumnOptions() {
             const tbl = $('#SrcTableName').val();
             if (!tbl || !srcColumnCache[tbl]) return '';
-            return srcColumnCache[tbl].map(c => `<option value="${c}">${c}</option>`).join('');
+            return srcColumnCache[tbl].map(c => `<option value="${c.Value}">${c.Text}</option>`).join('');
         }
 
         // 收集篩選條件

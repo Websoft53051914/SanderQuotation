@@ -706,7 +706,7 @@
 
         function buildDbColumnOptions(dbColumns, selected) {
             return dbColumns.map(function (c) {
-                return `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`;
+                return `<option value="${c.Value}" ${c.Value === selected ? 'selected' : ''}>${c.Text}</option>`;
             }).join('');
         }
 
@@ -925,7 +925,7 @@ function loadDbTransferList(selectedValue, callback) {
                         var $sel = $('#tableName');
                         $sel.find('option:not(:first)').remove();
                         dbTableList.forEach(function (t) {
-                            $sel.append('<option value="' + t + '">' + t + '</option>');
+                            $sel.append('<option value="' + t.Value + '">' + t.Text + '</option>');
                         });
                         if (selectedValue) {
                             $sel.val(selectedValue).trigger('change');
@@ -1597,9 +1597,9 @@ function loadDbTransferList(selectedValue, callback) {
             var dbName = $('#DBName').val() || (sheets && sheets[activeSheetIndex] && sheets[activeSheetIndex].dbName) || '';
             var dbCols = dbColumnCache[(dbName + '::' + tableName)] || [];
             var colOptions = dbCols.map(function (c) {
-                return '<option value="' + c + '" ' + (c === column ? 'selected' : '') + '>' + c + '</option>';
+                return '<option value="' + c.Value + '" ' + (c.Value === column ? 'selected' : '') + '>' + c.Text + '</option>';
             }).join('');
-            if (column && dbCols.indexOf(column) < 0) {
+            if (column && !dbCols.find(function(c){ return c.Value === column; })) {
                 colOptions = '<option value="' + column + '" selected>' + column + '</option>' + colOptions;
             }
             var opOptions = FILTER_OPERATORS.map(function (o) {
