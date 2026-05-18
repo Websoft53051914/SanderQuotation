@@ -1,7 +1,10 @@
 using Business.DomainModel;
+using Const;
 using Npgsql;
+using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using static Const.Enums;
 
 namespace Business.Common
 {
@@ -33,13 +36,16 @@ namespace Business.Common
         /// </summary>
         public static IDbDialect CreateDialect(ESDbTransferDM dbConfig)
         {
-            switch (dbConfig?.DbType?.ToUpper())
+            ArgumentNullException.ThrowIfNull(dbConfig);
+
+            string dbType = dbConfig.DbType?.Trim().ToUpper() ?? string.Empty;
+            if (dbType == ((int)EsDbTransferDbTypeEnum.PostgreSQL).ToString())
             {
-                case "POSTGRESQL":
-                    return new PostgreSqlDialect(dbConfig);
-                case "MSSQL":
-                default:
-                    return new MssqlDialect(dbConfig);
+                return new PostgreSqlDialect(dbConfig);
+            }
+            else
+            {
+                return new MssqlDialect(dbConfig);
             }
         }
     }
