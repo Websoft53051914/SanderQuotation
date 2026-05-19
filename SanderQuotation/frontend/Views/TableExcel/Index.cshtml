@@ -61,10 +61,9 @@
                                 @* *** 顯示欄位 *@
                                 <th data-sort="action">Action</th>
                                 <th data-sort="No">項次</th>                                                                
-                                <th>檔案轉檔代碼</th>
-                                <th>匯入範本檔案名稱</th>
+                                <th class="sort" data-sort="TransferMappingCode">檔案轉檔代碼</th>
+                                <th class="sort" data-sort="ExampleFileName">匯入範本檔案名稱</th>
                                 <th>檔案類型</th>
-                                <th class="sort" data-sort="SrcNasFilePath">NAS 檔案路徑</th>
                                 <th class="sort" data-sort="Description">備註</th>
                                 <th>對應資料表</th>
                             </tr>
@@ -176,11 +175,6 @@
                                 <label class="form-label required">檔案轉檔代碼</label>
                                 <input type="text" class="form-control" id="transferMappingCode" maxlength="50" placeholder="請輸入" required/>
                                 <div class="invalid-feedback">請輸入檔案轉檔代碼</div>
-                            </div>
-                              <div class="col-md-4 mb-3">
-                                <label class="form-label required">NAS 檔案路徑</label>
-                                <input type="text" class="form-control" id="nasfilePath" placeholder="請輸入" maxlength="500" required />
-                                <div class="invalid-feedback">請輸入NAS 檔案路徑</div>
                             </div>
 
                             <div class="col-md-12 mb-3">
@@ -408,7 +402,7 @@
         var queryState = {
             page: 1,
             pageSize: 40,
-            sortField: "SrcNasFilePath",
+            sortField: "TransferMappingCode",
             sortDir: "asc",
             Keyword: ""
         };
@@ -1288,7 +1282,6 @@ function loadDbTransferList(selectedValue, callback) {
             var data = {
                 RowGuid: currentId,
                 ExampleFileName: $('#exampleFileName').val() || '',
-                SrcNasFilePath: $('#nasfilePath').val() || '',
                 Description: $('#description').val() || '',
                 UploadedFilePath: uploadedFilePath || '',
                 ExampleFileType: $('#exampleFileType').val() || '',
@@ -1420,7 +1413,6 @@ function loadDbTransferList(selectedValue, callback) {
             }
             $('#exampleFileName').val(editData.ExampleFileName || editData.exampleFileName || '');
             $('#exampleFileType').val((editData.ExampleFileType || editData.exampleFileType || '').replace(/^\./, ''));
-            $('#nasfilePath').val(editData.SrcNasFilePath || editData.srcNasFilePath || '');
             $('#description').val(editData.Description || editData.description || '');
 
             var existingSheets = editData.Sheets || editData.sheets || [];
@@ -1490,7 +1482,6 @@ function loadDbTransferList(selectedValue, callback) {
                 var exampleFileName = data.ExampleFileName || data.exampleFileName || '';
 
                 var exampleFileTypeText = data.ExampleFileTypeText || data.exampleFileTypeText || '';
-                var srcNasFilePath = data.SrcNasFilePath || data.srcNasFilePath || '';
                 var description = data.Description || data.description || '';
                 var mappingTables = data.MappingTables || data.mappingTables || '';
                 var status = data.Status || data.status || '';
@@ -1518,7 +1509,6 @@ function loadDbTransferList(selectedValue, callback) {
                         <td class="TransferMappingCode">${transferMappingCode}</td>
                         <td class="ExampleFileName">${exampleFileName}</td>
                         <td class="ExampleFileTypeText">${exampleFileTypeText}</td>
-                        <td class="SrcNasFilePath">${srcNasFilePath}</td>
                         <td class="Description">${description}</td>
                         <td class="MappingTables">${renderTableTextBadges(mappingTables)}</td>
                     </tr>

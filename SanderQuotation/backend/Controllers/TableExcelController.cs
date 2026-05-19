@@ -102,7 +102,6 @@ namespace backend.Controllers
                     TransferMappingCode = vm.TransferMappingCode,
                     ExampleFileName = vm.ExampleFileName,
                     ExampleFileType = ConvertFileTypeToInt(vm.ExampleFileType),
-                    SrcNasFilePath = vm.SrcNasFilePath,
                     Description = vm.Description,
                     FileName = originalFileName,
                     Columns = vm.Sheets
@@ -288,7 +287,6 @@ namespace backend.Controllers
                     Id         = vm.RowGuid,
                     ExampleFileName = vm.ExampleFileName,
                     ExampleFileType = ConvertFileTypeToInt(vm.ExampleFileType),
-                    SrcNasFilePath  = vm.SrcNasFilePath,
                     Description     = vm.Description,
                     Columns = vm.Sheets
                         .SelectMany(sheet =>
