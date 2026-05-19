@@ -6,6 +6,7 @@ using Core.Utility.Helper.DB;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
+using static Const.Enums;
 
 namespace Business.BusinessLogic
 {
@@ -109,5 +110,31 @@ namespace Business.BusinessLogic
         }
 
         #endregion -- TBBomFileDecisionLog --
+    }
+
+    public partial class TBBomFileDecisionLogBL
+    {
+        /// <summary>
+        /// 新增一筆決策歷程紀錄
+        /// </summary>
+        /// <param name="dm">決策歷程資料模型，Stage/Step/Message/BomFileContentId 須已填妥</param>
+        public void DoInsert(TBBomFileDecisionLogDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            dm.Status = (int)StatusEnum.Enabled;
+            dm.CreatedAt = nowTime;
+            dm.CreatedBy = account;
+            dm.UpdatedAt = nowTime;
+            dm.UpdatedBy = account;
+
+            TBBomFileDecisionLogEntity entity = _mapper.Map<TBBomFileDecisionLogEntity>(dm);
+            GetDAO().InsertAction(entity);
+            if (DoSaveChange)
+            {
+                _unitOfWork.Commit();
+            }
+        }
     }
 }

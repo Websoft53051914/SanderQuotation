@@ -507,8 +507,8 @@ namespace Const
             PriceSearch = 1,
             [Description("內部料品表 AI 解析")]
             ExtractKeyword = 2,
-            [Description("BOM 表採購型號決策")]
-            DesideSanderModuleItemNo = 3,
+            [Description("查料")]
+            PartSearch = 3,
         }
 
         public enum ParameterTypeEnum
@@ -538,5 +538,56 @@ namespace Const
             AIDecisionProcessDisplaySwitch = 3,
         }
 
+        /// <summary>
+        /// BOM 決策歷程-階段
+        /// </summary>
+        public enum BomFileDecisionLogStageEnum
+        {
+            /// <summary>
+            /// 查料
+            /// </summary>
+            [Description("查料")]
+            PartSearch = 1,
+            /// <summary>
+            /// 內部查價
+            /// </summary>
+            [Description("內部查價")]
+            InternalQuotation = 2,
+            /// <summary>
+            /// 外部查價
+            /// </summary>
+            [Description("外部查價")]
+            ExternalQuotation = 3,
+        }
+
+        /// <summary>
+        /// BOM 決策歷程-步驟
+        /// </summary>
+        public enum BomFileDecisionLogStepEnum
+        {
+            #region -- PartSearch --
+            /// <summary>
+            /// Step 1：以廠商型號（MPN）查詢
+            /// </summary>
+            [Description("Step 1：以廠商型號（MPN）查詢")]
+            PartSearchStep1 = 1,
+            /// <summary>
+            /// Step 2：以客戶料號（Component Part）查詢
+            /// </summary>
+            [Description("Step 2：以客戶料號（Component Part）查詢")]
+            PartSearchStep2 = 2,
+            /// <summary>
+            /// Step 3：以零件規格（Description）查詢
+            /// </summary>
+            [Description("Step 3：以零件規格（Description）查詢")]
+            PartSearchStep3 = 3,
+            #endregion
+            #region -- InternalQuotation --
+
+            #endregion
+            #region -- ExternalQuotation --
+
+            #endregion
+        }
     }
 }

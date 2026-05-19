@@ -1399,7 +1399,7 @@ namespace backend.Common
                         ExtractKeywordJob extractKeywordJob = scope.ServiceProvider.GetRequiredService<ExtractKeywordJob>();
                         await extractKeywordJob.ExecuteAsync(logDM);
                         break;
-                    case ScheduleCycleActionTypeEnum.DesideSanderModuleItemNo:
+                    case ScheduleCycleActionTypeEnum.PartSearch:
                         DesideSanderModuleItemNoJob desideSanderModuleItemNoJob = scope.ServiceProvider.GetRequiredService<DesideSanderModuleItemNoJob>();
                         await desideSanderModuleItemNoJob.ExecuteAsync(logDM);
                         break;
