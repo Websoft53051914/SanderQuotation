@@ -74,5 +74,10 @@ namespace Business.DomainModel
         /// BomFileContent.Id
         /// </summary>
         public Guid BomFileContentId { get; set; }
+
+        /// <summary>
+        /// 是否為建議採購型號
+        /// </summary>
+        public bool IsRecommendedNo { get; set; }
     }
 }

@@ -109,13 +109,13 @@ WHERE
         /// <param name="pNo">限定料號（可為 null）</param>
         public List<TBSanderModuleItemKeywordDTO> GetListMatchLongDesc(string pKeyword, string? pNo)
         {
+            StringBuilder condition = new();
             Dictionary<string, object> paras = [];
             paras.Add(nameof(pKeyword), pKeyword);
 
-            string noCondition = string.Empty;
             if (!string.IsNullOrEmpty(pNo))
             {
-                noCondition = $"AND k.\"no\" = @{nameof(pNo)} ";
+                condition.Append($"AND k.\"no\" = @{nameof(pNo)} ");
                 paras.Add(nameof(pNo), pNo);
             }
 
@@ -129,9 +129,9 @@ FROM tb_sandermoduleitemkeyword k
 WHERE 1=1
     AND (k.columnname = 'LongDesc' OR k.columnname = 'LongDesc2')
     AND similarity(k.keyword, @pKeyword) > 0.4
-{noCondition}
+{condition}
 ORDER BY similarity(k.keyword, @pKeyword) DESC, k.no
-LIMIT 5";
+LIMIT 20";
 
             return DbHelper.FindList<TBSanderModuleItemKeywordDTO>(sql, paras);
         }

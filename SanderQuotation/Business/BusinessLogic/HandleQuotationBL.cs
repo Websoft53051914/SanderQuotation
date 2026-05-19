@@ -84,15 +84,15 @@ namespace Business.BusinessLogic
         /// 批次儲存查料結果，並更新 EsFileTransferUpload.ProcessStatus = PartSearchDone，在同一 transaction 中完成
         /// </summary>
         /// <param name="uploadId">EsFileTransferUpload 主鍵</param>
-        /// <param name="results">查料結果清單：BomFileContentId 與對應採購型號</param>
-        public void DoSavePartSearchResult(Guid uploadId, List<(Guid BomFileContentId, string? No)> results)
+        /// <param name="results">查料結果清單：BomFileContentId、採購型號、是否為建議料號</param>
+        public void DoSavePartSearchResult(Guid uploadId, List<(Guid BomFileContentId, string? No, bool IsRecommendedNo)> results)
         {
             string account = SessionVO?.Account ?? string.Empty;
             DateTime nowTime = DateTime.Now;
             GetBLTBBomFileQuotation().DoSaveChange = false;
             GetBLEsFileTransferUpload().DoSaveChange = false;
 
-            foreach ((Guid contentId, string? no) in results)
+            foreach ((Guid contentId, string? no, bool isRecommendedNo) in results)
             {
                 SearchVO searchVO = new();
                 searchVO.BomFileContentIdEq = contentId;
@@ -105,6 +105,7 @@ namespace Business.BusinessLogic
                     if (entity != null)
                     {
                         entity.No = no;
+                        entity.IsRecommendedNo = isRecommendedNo;
                         entity.Status = (int)StatusEnum.Enabled;
                         entity.UpdatedBy = account;
                         entity.UpdatedAt = nowTime;
@@ -115,6 +116,7 @@ namespace Business.BusinessLogic
                 {
                     TBBomFileQuotationEntity entity = new();
                     entity.No = no;
+                    entity.IsRecommendedNo = isRecommendedNo;
                     entity.BomFileContentId = contentId;
                     entity.Status = (int)StatusEnum.Enabled;
                     entity.CreatedBy = account;
