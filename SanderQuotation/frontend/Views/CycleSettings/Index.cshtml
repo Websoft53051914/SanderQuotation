@@ -452,7 +452,7 @@
                 width: '100%',
                 dropdownParent: $('#showModal')
             });
-            ['#DBTransferSettings', '#OtherTaskSettings', '#FileTransferSettings'].forEach(function(id) {
+            ['#DBTransferSettings', '#OtherTaskSettings', '#FileTransferSettings', '#OtherTransferSettings'].forEach(function(id) {
                 $(id).select2({
                     placeholder: '½Ð¿ï¾Ü',
                     allowClear: true,
@@ -670,7 +670,7 @@
                 document.getElementById('md' + d).checked = false;
             }
             resetChoices('#DBTransferSettings');
-            resetChoices('#OtherTaskSettings');
+            resetChoices('#OtherTransferSettings');
             resetChoices('#FileTransferSettings');
         }
 
@@ -989,6 +989,9 @@
                 }
                 if (data.FileTransferSettings && data.FileTransferSettings.length) {
                     setChoicesValues('#FileTransferSettings', data.FileTransferSettings);
+                }
+                if (data.OtherTransferSettings && data.OtherTransferSettings.length) {
+                    setChoicesValues('#OtherTransferSettings', data.OtherTransferSettings);
                 }
 
                 buildCron();
