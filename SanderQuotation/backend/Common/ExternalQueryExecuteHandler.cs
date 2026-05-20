@@ -138,7 +138,7 @@ namespace backend.Common
 
                     decimal? actualUnitPrice = null;
                     var cartInsertResp = await client.PostAsJsonAsync(
-                        $"{apiUrl}cart/items/insert?apiKey={cartKey}" +
+                        $"{apiUrl}cart/items/insert?apiKey={cartKey}&countryCode=US" +
                         (sessionCartKey != "" ? $"&cartKey={Uri.EscapeDataString(sessionCartKey)}" : ""),
                         new CartItemInsertReqVO
                         {
@@ -277,7 +277,7 @@ namespace backend.Common
                         results.Add(new QueryActionResultRspVO.QueryResultRspVO
                         {
                             QuotationDate = DateTime.Now,
-                            UnitPriceTwd = unitPrice,
+                            UnitPriceOriginalCurrency = unitPrice,
                             Moq = moq,
                             SupplierName = "MOUSER"
                         });

@@ -13,7 +13,6 @@ namespace Const.ApiModels.QueryPrice
         public List<MouserRspErrorVO> Errors { get; set; } = new List<MouserRspErrorVO>();
 
         public List<CartItem> CartItems { get; set; } = new List<CartItem>();
-
         public class CartItem
         {
             public string MouserPartNumber { get; set; } = "";
