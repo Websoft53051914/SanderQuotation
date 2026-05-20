@@ -135,6 +135,69 @@ namespace Business.BusinessLogic
         }
     }
 
+    /// <summary>
+    /// 查價
+    /// </summary>
+    public partial class HandleQuotationBL
+    {
+        /// <summary>
+        /// 批次儲存查價結果，並更新 EsFileTransferUpload.ProcessStatus = PricingDone，在同一 transaction 中完成
+        /// </summary>
+        /// <param name="uploadId">EsFileTransferUpload 主鍵</param>
+        /// <param name="results">查價結果清單</param>
+        public void DoSavePriceSearchResult(Guid uploadId, List<BomFileContentDM> results)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+            GetBLTBBomFileQuotation().DoSaveChange = false;
+            GetBLEsFileTransferUpload().DoSaveChange = false;
+
+            foreach (BomFileContentDM dm in results)
+            {
+                SearchVO searchVO = new();
+                searchVO.BomFileContentIdEq = dm.Id;
+                searchVO.IsLimit1 = true;
+
+                TBBomFileQuotationDM? existing = GetBLTBBomFileQuotation().GetListByFilter(searchVO).FirstOrDefault();
+                if (existing == null)
+                    continue;
+
+                TBBomFileQuotationEntity? entity = GetBLTBBomFileQuotation().GetDAO().FindByPk(existing.Id);
+                if (entity == null)
+                    continue;
+
+                entity.InternalPurchaseOrderDate = dm.InternalPurchaseOrderDate;
+                entity.InternalUnitPriceOriginalCurrency = dm.InternalUnitPriceOriginalCurrency;
+                entity.InternalUnitPriceTwd = dm.InternalUnitPriceTwd;
+                entity.InternalQuantity = dm.InternalQuantity;
+                entity.InternalLowMinPrice = dm.InternalLowMinPrice;
+                entity.InternalLowMaxPrice = dm.InternalLowMaxPrice;
+                entity.InternalHighMinPrice = dm.InternalHighMinPrice;
+                entity.InternalHighMaxPrice = dm.InternalHighMaxPrice;
+                entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
+                entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
+                entity.ExternalQuotationDate = dm.ExternalQuotationDate;
+                entity.ExternalUnitPriceOriginalCurrency = dm.ExternalUnitPriceOriginalCurrency;
+                entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
+                entity.ExternalMoq = dm.ExternalMoq;
+                entity.ExternalSupplierName = dm.ExternalSupplierName;
+                entity.UpdatedBy = account;
+                entity.UpdatedAt = nowTime;
+
+                GetBLTBBomFileQuotation().GetDAO().Update(entity);
+            }
+
+            GetBLEsFileTransferUpload().GetDAO().UpdateProcessStatus(
+                uploadId,
+                (int)EsFileTransferUploadProcessStatusEnum.PricingDone);
+
+            _unitOfWork.Commit();
+
+            GetBLTBBomFileQuotation().DoSaveChange = true;
+            GetBLEsFileTransferUpload().DoSaveChange = true;
+        }
+    }
+
     public partial class HandleQuotationBL
     {
         private SanderModuleItemBL? _blSanderModuleItem = null;

@@ -68,7 +68,7 @@ namespace Business.DomainModel
         /// <summary>
         /// 外部供應商名稱
         /// </summary>
-        public int? ExternalSupplierName { get; set; }
+        public string? ExternalSupplierName { get; set; }
 
         /// <summary>
         /// BomFileContent.Id
@@ -79,5 +79,35 @@ namespace Business.DomainModel
         /// 是否為建議採購型號
         /// </summary>
         public bool IsRecommendedNo { get; set; }
+
+        /// <summary>
+        /// 內部查價 AI 分群低價群最低價
+        /// </summary>
+        public decimal? InternalLowMinPrice { get; set; }
+
+        /// <summary>
+        /// 內部查價 AI 分群低價群最高價
+        /// </summary>
+        public decimal? InternalLowMaxPrice { get; set; }
+
+        /// <summary>
+        /// 內部查價 AI 分群高價群最低價
+        /// </summary>
+        public decimal? InternalHighMinPrice { get; set; }
+
+        /// <summary>
+        /// 內部查價 AI 分群高價群最高價
+        /// </summary>
+        public decimal? InternalHighMaxPrice { get; set; }
+
+        /// <summary>
+        /// 是否套用 Variant 客戶承認料過濾
+        /// </summary>
+        public bool IsFilterByCustomerApprovedPart { get; set; }
+
+        /// <summary>
+        /// 內部查價所使用的客戶承認料清單（CSV 格式）
+        /// </summary>
+        public string? CustomerApprovedPartCsv { get; set; }
     }
 }

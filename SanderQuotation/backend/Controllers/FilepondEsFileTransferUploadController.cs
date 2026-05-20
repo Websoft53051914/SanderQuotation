@@ -1,3 +1,4 @@
+using backend.Common;
 using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
@@ -12,15 +13,18 @@ namespace backend.Controllers
     [Route("api/FilepondEsFileTransferUpload")]
     public partial class FilepondEsFileTransferUploadController : BaseProjectController
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly string _uploadDir = FileDirectoryConst.EsFileTransferUpload;
+        private readonly PathProvider _pathProvider;
+        private readonly string _dirUpload;
 
-        /// <summary>建構子</summary>
+        /// <summary>
+        /// constructor
+        /// </summary>
         public FilepondEsFileTransferUploadController(
             IConfiguration configuration,
-            IWebHostEnvironment webHostEnvironment) : base(configuration)
+            PathProvider pathProvider) : base(configuration)
         {
-            _webHostEnvironment = webHostEnvironment;
+            _pathProvider = pathProvider;
+            _dirUpload = _pathProvider.EsFileTransferUpload;
         }
 
         private EsFileTransferUploadBL? _blUpload = null;
@@ -35,7 +39,7 @@ namespace backend.Controllers
         // ── FilePond Process（一般上傳起始，回傳 tempGuid） ──────────────────────────
 
         /// <summary>FilePond Process — 接收分塊上傳起始，回傳暫存 GUID</summary>
-        [CustomAuthorization(FuncID.Home_View)]
+        [CustomAuthorization(FuncID.EsFileTransferUpload_View)]
         [HttpPost("Process")]
         [DisableRequestSizeLimit]
         public IActionResult Process(IFormFile file)
@@ -56,7 +60,7 @@ namespace backend.Controllers
         // ── FilePond Patch（分塊上傳） ──────────────────────────────────────────────
 
         /// <summary>FilePond Patch — 接收分塊資料並寫入暫存檔</summary>
-        [CustomAuthorization(FuncID.Home_View)]
+        [CustomAuthorization(FuncID.EsFileTransferUpload_View)]
         [HttpPatch("Patch")]
         [DisableRequestSizeLimit]
         public async Task<IActionResult> Patch(string id)
@@ -79,7 +83,7 @@ namespace backend.Controllers
         // ── FilePond Revert（取消上傳） ─────────────────────────────────────────────
 
         /// <summary>FilePond Revert — 刪除暫存檔並邏輯刪除 DB 資料</summary>
-        [CustomAuthorization(FuncID.Home_View)]
+        [CustomAuthorization(FuncID.EsFileTransferUpload_View)]
         [HttpDelete("Revert")]
         public async Task<IActionResult> Revert()
         {
@@ -93,7 +97,7 @@ namespace backend.Controllers
 
                 GetBlEsFileTransferUpload().DeleteByFilter(searchVO);
 
-                string dirPath = Path.Combine(_webHostEnvironment.ContentRootPath, _uploadDir);
+                string dirPath = _dirUpload;
                 string[] files = Directory.GetFiles(dirPath, uploadId + ".*");
                 foreach (string f in files)
                 {
@@ -116,7 +120,7 @@ namespace backend.Controllers
         /// </summary>
         private async Task ChunkUpload(Stream stream, string id, string fileName, int length)
         {
-            string dirPath = Path.Combine(_webHostEnvironment.ContentRootPath, _uploadDir);
+            string dirPath = _dirUpload;
 
             if (!Directory.Exists(dirPath))
             {

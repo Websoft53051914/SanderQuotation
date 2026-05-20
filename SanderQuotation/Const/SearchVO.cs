@@ -167,5 +167,25 @@
         /// EsFileTransferUpload 執行狀態
         /// </summary>
         public int? ProcessStatusEq { get; set; }
+
+        /// <summary>
+        /// 客戶代碼（用於 ReportItemCustomer 查詢）
+        /// </summary>
+        public string? CustomerCodeEq { get; set; }
+
+        /// <summary>
+        /// SanderModulePurchaseLine.Description2 清單（客戶承認料篩選）
+        /// </summary>
+        public List<string> Description2In { get; set; } = [];
+
+        /// <summary>
+        /// SanderModulePurchaseLine 本幣單價大於此值（用於過濾零元紀錄）
+        /// </summary>
+        public decimal? UnitCostLcyGt { get; set; }
+
+        /// <summary>
+        /// TBBomFileDecisionLog 決策階段
+        /// </summary>
+        public int? StageEq { get; set; }
     }
 }

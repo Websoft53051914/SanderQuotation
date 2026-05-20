@@ -13,9 +13,9 @@ namespace backend.EIPSource
     {
         /// <summary>
         /// 批次大小<para/>
-        /// 若設定為 100 筆，有機會因為單次處理資料過多而導致 API 請求失敗
+        /// 若設定為 100/50 筆，有機會因為單次處理資料過多而導致 API 請求失敗
         /// </summary>
-        private const int BatchSize = 50;
+        private const int BatchSize = 30;
         /// <summary>
         /// Log 中的 Controller 名稱，方便識別是哪個工作產生的 Log
         /// </summary>

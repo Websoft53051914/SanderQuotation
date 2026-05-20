@@ -20,22 +20,28 @@ namespace backend.Common
     {
         private IConfiguration _config;
 
-        private SynoNasHelper _nasHelper;
-
         private EsFileTransferMappingDM _mapping;
         private readonly Dictionary<string, ESDbTransferDM> _dbConfigCache = new();
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly PathProvider _pathProvider;
 
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="scopeFactory"></param>
+        /// <param name="webHostEnvironment"></param>
+        /// <param name="pathProvider"></param>
         public TransferJob(IConfiguration config
             , IServiceScopeFactory scopeFactory
-            , SynoNasHelper nasHelper
-            , IWebHostEnvironment webHostEnvironment)
+            , IWebHostEnvironment webHostEnvironment
+            , PathProvider pathProvider)
         {
             _config = config;
             _scopeFactory = scopeFactory;
-            _nasHelper = nasHelper;
             _webHostEnvironment = webHostEnvironment;
+            _pathProvider = pathProvider;
         }
         public async Task ExecuteTask(string scheduleCycleCode, string TriggerType)
         {
@@ -140,7 +146,7 @@ namespace backend.Common
         }
 
         /// <summary>
-        /// NAS 檔案轉入：根據轉入代碼取得設定，從 NAS 讀取並轉入。
+        /// 檔案轉入：根據轉入代碼取得設定，讀取 EsFileTransferUpload 待轉資料並執行轉入。
         /// </summary>
         /// <param name="transferCode">檔案轉入代碼</param>
         /// <returns>執行結果</returns>
@@ -155,281 +161,17 @@ namespace backend.Common
             _mapping = bl.GetByCode(transferCode)
                 ?? throw new InvalidOperationException($"找不到檔案轉入設定：{transferCode}");
 
-            //logDM = await RunNasTransfer();
             logDM = await RunLocalTransfer();
 
             return logDM;
         }
-
-        /// <summary>
-        /// 本地檔案轉入：根據轉入代碼取得設定，從本地上傳目錄讀取並轉入。
-        /// </summary>
-        /// <param name="transferCode">檔案轉入代碼</param>
-        /// <returns>執行結果</returns>
-        /// <exception cref="InvalidOperationException">找不到轉入設定時擲出</exception>
-        public Task<EsScheduleCycleLogDetailDM> LocalFileTransfer(string transferCode)
-        {
-            EsScheduleCycleLogDetailDM logDM = new();
-            logDM.FileTransferCode = transferCode;
-            logDM.DataCount = 0;
-
-            TableExcelBL bl = BLFactory.GetInstanceBackGround<TableExcelBL>();
-            _mapping = bl.GetByCode(transferCode)
-                ?? throw new InvalidOperationException($"找不到檔案轉入設定：{transferCode}");
-
-            return RunLocalTransfer();
-        }
     }
 
     /// <summary>
-    /// Nas檔案轉入資料庫
+    /// 檔案轉入資料庫
     /// </summary>
     public partial class TransferJob
     {
-        /// <summary>
-        /// 從 NAS 讀取符合設定副檔名的檔案，逐一執行轉入，成功後將檔案移至完成資料夾
-        /// </summary>
-        private async Task<EsScheduleCycleLogDetailDM> RunNasTransfer()
-        {
-            var logDM = new EsScheduleCycleLogDetailDM
-            {
-                FileTransferCode = _mapping.TransferMappingCode,
-                RunAt = DateTime.Now
-            };
-
-            try
-            {
-                var configError = ValidateNasConfig(out var nasUrl, out var nasAccount, out var nasPassword, out var srcPath, out var finishPath);
-                if (configError != null)
-                    return FailedResult(logDM, configError);
-
-                var (context, loginError) = await ConnectNasAsync(nasUrl, nasAccount, nasPassword);
-                if (loginError != null)
-                    return FailedResult(logDM, loginError);
-
-                var (matchedFiles, listError) = await FetchMatchedFilesAsync(context, srcPath);
-                if (listError != null)
-                    return FailedResult(logDM, listError);
-
-                if (matchedFiles.Count == 0)
-                {
-                    logDM.JobStatus = "Success";
-                    return logDM;
-                }
-
-                var successPaths = await ProcessFilesAsync(context, matchedFiles, logDM);
-
-                await MoveSuccessFilesAsync(context, successPaths, finishPath);
-
-                // 7. 刪除完成資料夾中的所有檔案（保留資料夾本身）
-                //await ClearNasFinishFolderAsync(context, finishPath);
-
-                logDM.JobStatus = ResolveJobStatus(logDM.DataCount, logDM.ErrorCount);
-            }
-            catch (Exception ex)
-            {
-                //LogError(ex);
-                logDM.JobStatus = "Failed";
-                logDM.ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                logDM.DurationMs = (int)(DateTime.Now - logDM.RunAt).TotalMilliseconds;
-            }
-
-            return logDM;
-        }
-
-        /// <summary>
-        /// 驗證 NAS 相關設定是否齊全，同時輸出各設定值。
-        /// 回傳 null 表示驗證通過；否則回傳錯誤訊息。
-        /// </summary>
-        private string ValidateNasConfig(
-            out string nasUrl,
-            out string nasAccount,
-            out string nasPassword,
-            out string srcPath,
-            out string finishPath)
-        {
-            nasUrl = _config.GetValue<string>("Nas:Url");
-            nasAccount = _config.GetValue<string>("Nas:Account");
-            nasPassword = _config.GetValue<string>("Nas:Password");
-            srcPath = _mapping.SrcNasFilePath?.TrimEnd('/');
-            finishPath = _config.GetValue<string>("Nas:TransferFinishPath");
-
-            if (string.IsNullOrWhiteSpace(nasUrl)) return "appsettings.json 缺少 Nas:Url 設定";
-            if (string.IsNullOrWhiteSpace(nasAccount)) return "appsettings.json 缺少 Nas:Account 設定";
-            if (string.IsNullOrWhiteSpace(srcPath)) return "EsFileTransferMappingDM.SrcNasFilePath 未設定";
-            if (string.IsNullOrWhiteSpace(finishPath)) return "appsettings.json 缺少 Nas:TransferFinishPath 設定";
-
-            return null;
-        }
-
-        /// <summary>
-        /// 登入 NAS 並建立連線 context。
-        /// 回傳 (context, null) 表示成功；(null, errorMessage) 表示失敗。
-        /// </summary>
-        private async Task<(SynoNasConnectionContext context, string error)> ConnectNasAsync(
-            string nasUrl, string nasAccount, string nasPassword)
-        {
-            var loginResp = await _nasHelper.LoginAsync(nasUrl, nasAccount, nasPassword);
-            if (!loginResp.Success)
-                return (null, $"NAS 登入失敗：{loginResp.Error}");
-
-            var context = new SynoNasConnectionContext
-            {
-                Url = nasUrl.TrimEnd('/'),
-                Sid = loginResp.Sid,
-                Account = nasAccount,
-                Password = nasPassword,
-            };
-
-            return (context, null);
-        }
-
-        /// <summary>
-        /// 列出 NAS 來源資料夾中符合副檔名的檔案。
-        /// 回傳 (files, null) 表示成功；(null, errorMessage) 表示失敗。
-        /// </summary>
-        private async Task<(List<FileItem> files, string error)> FetchMatchedFilesAsync(
-            SynoNasConnectionContext context, string srcPath)
-        {
-            var listResp = await _nasHelper.FileStation_List(context, new FileStationListRequest { FolderPath = srcPath });
-            if (!listResp.Success)
-                return (null, $"列出 NAS 目錄失敗：{listResp.Error}");
-
-            var allowedExt = GetAllowedExtension(_mapping.ExampleFileType);
-            var matched = listResp.Data?.files?
-                .Where(f => !f.isdir &&
-                            string.Equals(Path.GetExtension(f.name), allowedExt, StringComparison.OrdinalIgnoreCase))
-                .ToList() ?? new List<FileItem>();
-
-            return (matched, null);
-        }
-
-        /// <summary>
-        /// 逐一下載 NAS 檔案至本機暫存目錄並執行轉入，彙總結果至 logDM。
-        /// 回傳全部轉入成功的 NAS 檔案路徑清單。
-        /// </summary>
-        private async Task<List<string>> ProcessFilesAsync(
-            SynoNasConnectionContext context,
-            List<FileItem> files,
-            EsScheduleCycleLogDetailDM logDM)
-        {
-            var tempDir = Path.Combine(Path.GetTempPath(), "NasTransfer", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
-
-            var successPaths = new List<string>();
-
-            try
-            {
-                foreach (var file in files)
-                {
-                    var tempFilePath = Path.Combine(tempDir, file.name);
-                    try
-                    {
-                        // 下載 NAS 檔案到暫存目錄
-                        using var stream = await _nasHelper.FileStation_Download(context,
-                            new FileStationDownloadRequest { path = file.path });
-                        await using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
-                        {
-                            await stream.CopyToAsync(fs);
-                        }
-
-                        // 執行轉入並彙總結果
-                        var transferResult = Execute(tempFilePath);
-                        logDM.DataCount += transferResult.DataCount;
-                        logDM.ErrorCount += transferResult.ErrorCount;
-                        logDM.ErrorLogs.AddRange(transferResult.ErrorLogs);
-
-                        // 僅全成功（ErrorCount == 0）的檔案才移至完成資料夾
-                        if (transferResult.ErrorCount == 0)
-                            successPaths.Add(file.path);
-                    }
-                    catch (Exception ex)
-                    {
-                        //LogError(ex);
-                        logDM.ErrorCount++;
-                        logDM.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = ex.Message });
-                    }
-                    finally
-                    {
-                        try { if (System.IO.File.Exists(tempFilePath)) System.IO.File.Delete(tempFilePath); } catch { }
-                    }
-                }
-            }
-            finally
-            {
-                try { Directory.Delete(tempDir, recursive: true); } catch { }
-            }
-
-            return successPaths;
-        }
-
-        /// <summary>
-        /// 將轉入成功的 NAS 檔案逐一移動至完成資料夾。
-        /// 移動失敗不影響整體結果。
-        /// </summary>
-        private async Task MoveSuccessFilesAsync(
-            SynoNasConnectionContext context,
-            List<string> successPaths,
-            string finishPath)
-        {
-            foreach (var nasFilePath in successPaths)
-            {
-                try
-                {
-                    await MoveNasFileAsync(context, nasFilePath, finishPath);
-                }
-                catch (Exception ex)
-                {
-                    //LogError(ex);
-                    // 移動失敗不影響整體結果，繼續處理其他檔案
-                }
-            }
-        }
-
-        /// <summary>
-        /// 將單一 NAS 檔案移動至目標資料夾。
-        /// 若目標已存在同名檔案，先刪除再移動；移動後輪詢直到完成（最多等 60 秒）。
-        /// </summary>
-        private async Task MoveNasFileAsync(
-            SynoNasConnectionContext context,
-            string nasFilePath,
-            string finishPath)
-        {
-            var fileName = nasFilePath.Contains('/')
-                ? nasFilePath[(nasFilePath.LastIndexOf('/') + 1)..]
-                : nasFilePath;
-            var destFilePath = finishPath.TrimEnd('/') + "/" + fileName;
-
-            // 若目標資料夾已存在同名檔案，先刪除再移動
-            var checkResp = await _nasHelper.FileStation_List(context, new FileStationListRequest { FolderPath = finishPath });
-            if (checkResp.Success &&
-                checkResp.Data?.files?.Any(f => string.Equals(f.name, fileName, StringComparison.OrdinalIgnoreCase)) == true)
-            {
-                await _nasHelper.FileStation_Delete(context, new FileStationDeleteRequest
-                {
-                    path = new List<string> { destFilePath },
-                    recursive = false
-                });
-            }
-
-            var startData = await _nasHelper.CopyMove_StartAsync(
-                context,
-                new List<string> { nasFilePath },
-                finishPath,
-                removeSrc: true);
-
-            // 輪詢直到完成（最多等 60 秒）
-            for (int i = 0; i < 120; i++)
-            {
-                await Task.Delay(500);
-                var statusData = await _nasHelper.CopyMove_StatusAsync(context, startData.taskid);
-                if (statusData.finished) break;
-            }
-        }
-
         /// <summary>
         /// 依副檔名類型代碼回傳對應的副檔名。
         /// </summary>
@@ -457,37 +199,6 @@ namespace backend.Common
         }
 
         /// <summary>
-        /// 刪除 NAS 完成資料夾中的所有檔案與子資料夾，但保留資料夾本身
-        /// </summary>
-        private async Task ClearNasFinishFolderAsync(SynoNasConnectionContext context, string finishPath)
-        {
-            try
-            {
-                var finishListResp = await _nasHelper.FileStation_List(context, new FileStationListRequest { FolderPath = finishPath });
-                if (finishListResp.Success && finishListResp.Data?.files?.Count > 0)
-                {
-                    var pathsToDelete = finishListResp.Data.files
-                        .Select(f => f.path)
-                        .Where(p => !string.IsNullOrWhiteSpace(p))
-                        .ToList();
-                    if (pathsToDelete.Count > 0)
-                    {
-                        await _nasHelper.FileStation_Delete(context, new FileStationDeleteRequest
-                        {
-                            path = pathsToDelete,
-                            recursive = true
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //LogError(ex);
-                // 清除完成資料夾失敗不影響整體結果
-            }
-        }
-
-        /// <summary>
         /// 執行檔案轉入，回傳執行結果
         /// </summary>
         private EsScheduleCycleLogDetailDM Execute(string filePath = null)
@@ -507,7 +218,7 @@ namespace backend.Common
                 // 取得實體檔案路徑
                 filePath ??= BuildFilePath();
                 if (!System.IO.File.Exists(filePath))
-                    return ErrorResult(_mapping.TransferMappingCode, $"NAS 檔案不存在：{filePath}");
+                    return ErrorResult(_mapping.TransferMappingCode, $"檔案不存在：{filePath}");
 
                 // 依檔案類型分派解析
                 switch (_mapping.ExampleFileType)
@@ -611,6 +322,11 @@ namespace backend.Common
                         tableConnections[tg.Key] = (conn, dialect);
                     }
 
+                    // 查詢各目標資料表的欄位型別（每張表只查一次，供型別轉換使用）
+                    Dictionary<(string, string), Dictionary<string, string>> tableColumnTypes = new();
+                    foreach (KeyValuePair<(string, string), (DbConnection conn, IDbDialect dialect)> tc in tableConnections)
+                        tableColumnTypes[tc.Key] = tc.Value.dialect.GetColumnTypes(tc.Value.conn, tc.Key.Item1);
+
                     // 以 uploadId（副檔名前的檔名）查詢 EsFileTransferUpload 是否存在
                     string uploadId = Path.GetFileNameWithoutExtension(filePath);
                     Guid? resolvedUploadId = null;
@@ -668,7 +384,8 @@ namespace backend.Common
 
                             try
                             {
-                                UpsertRow(rowData, columns, tableGroup.Key.TargetTableName, connTuple.conn, connTuple.dialect, extraValues);
+                                tableColumnTypes.TryGetValue(tableGroup.Key, out Dictionary<string, string>? colTypes);
+                                UpsertRow(rowData, columns, tableGroup.Key.TargetTableName, connTuple.conn, connTuple.dialect, extraValues, colTypes);
                                 result.DataCount++;
                             }
                             catch (Exception ex)
@@ -1022,6 +739,7 @@ namespace backend.Common
         /// <summary>
         /// 使用已開啟的連線執行 Upsert（供 Sheet/CSV 迴圈共用連線呼叫）。
         /// extraValues 中的鍵值對會在欄位對應完成後直接寫入目標資料，可用於注入額外欄位（如 uploadid）。
+        /// columnTypes 為目標資料表欄位型別字典，用於將字串值轉換為對應的 .NET 型別。
         /// </summary>
         private void UpsertRow(
             Dictionary<string, string> rowData,
@@ -1029,12 +747,13 @@ namespace backend.Common
             string targetTableName,
             DbConnection conn,
             IDbDialect dialect,
-            Dictionary<string, object> extraValues = null)
+            Dictionary<string, object> extraValues = null,
+            Dictionary<string, string> columnTypes = null)
         {
             using DbTransaction transaction = conn.BeginTransaction();
             try
             {
-                Dictionary<string, object> targetData = BuildTargetData(rowData, columns);
+                Dictionary<string, object> targetData = BuildTargetData(rowData, columns, columnTypes);
 
                 // 注入呼叫端傳入的額外欄位（如 bomfilecontent.uploadid）
                 if (extraValues != null)
@@ -1067,17 +786,18 @@ namespace backend.Common
         }
 
         /// <summary>
-        /// 將 rowData 依欄位設定（DefaultValue、加密）轉換為目標欄位值字典
+        /// 將 rowData 依欄位設定（DefaultValue、加密、型別轉換）轉換為目標欄位值字典
         /// </summary>
         private Dictionary<string, object> BuildTargetData(
             Dictionary<string, string> rowData,
-            List<EsFileTransferMappingColumnDM> columns)
+            List<EsFileTransferMappingColumnDM> columns,
+            Dictionary<string, string> columnTypes = null)
         {
-            var targetData = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, object> targetData = new(StringComparer.OrdinalIgnoreCase);
             var secretKey = _config["SecretKey"];
             var secretIV = _config["SecretIV"];
 
-            foreach (var col in columns)
+            foreach (EsFileTransferMappingColumnDM col in columns)
             {
                 rowData.TryGetValue(col.SrcFileColumnName, out string rawValue);
 
@@ -1085,20 +805,85 @@ namespace backend.Common
                 if (string.IsNullOrEmpty(rawValue))
                     rawValue = col.DefaultValue;
 
-                object finalValue = string.IsNullOrEmpty(rawValue) ? DBNull.Value : rawValue;
-
-                // R07: IsEncrypt=true → 加密
-                if (col.IsEncrypt && finalValue != DBNull.Value)
+                object finalValue;
+                if (string.IsNullOrEmpty(rawValue))
                 {
+                    finalValue = DBNull.Value;
+                }
+                else if (col.IsEncrypt)
+                {
+                    // R07: IsEncrypt=true → 加密（加密結果為字串，不需型別轉換）
                     if (string.IsNullOrEmpty(secretKey) || string.IsNullOrEmpty(secretIV))
                         throw new InvalidOperationException("加密金鑰未設定");
                     finalValue = SecurityUtility.Encrypt(rawValue, secretKey, secretIV);
+                }
+                else
+                {
+                    // 依目標資料庫型別轉換字串值為對應 .NET 型別
+                    string? dbType = null;
+                    columnTypes?.TryGetValue(col.TargetTableColumnName, out dbType);
+                    finalValue = CoerceToDbType(rawValue, dbType);
                 }
 
                 targetData[col.TargetTableColumnName] = finalValue;
             }
 
             return targetData;
+        }
+
+        /// <summary>
+        /// 將字串值依目標資料庫欄位型別轉換為對應的 .NET 型別。
+        /// dbType 為 null 或無法辨識時，保留原始字串。
+        /// </summary>
+        private static object CoerceToDbType(string rawValue, string? dbType)
+        {
+            if (string.IsNullOrEmpty(dbType))
+                return rawValue;
+
+            string t = dbType.ToLower();
+
+            // 整數類型（MSSQL: int/bigint/smallint/tinyint；PostgreSQL: int4/int8/int2）
+            if (t is "int" or "integer" or "bigint" or "smallint" or "tinyint" or "int4" or "int8" or "int2")
+            {
+                if (long.TryParse(rawValue, out long lv)) return lv;
+                return DBNull.Value;
+            }
+
+            // 浮點/小數類型
+            if (t is "decimal" or "numeric" or "money" or "smallmoney" or "float" or "real"
+                    or "double precision" or "float8" or "float4" or "double")
+            {
+                if (decimal.TryParse(rawValue, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out decimal dv)) return dv;
+                return DBNull.Value;
+            }
+
+            // 布林類型（MSSQL: bit；PostgreSQL: bool/boolean）
+            if (t is "bit" or "bool" or "boolean")
+            {
+                if (rawValue == "1" || rawValue.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
+                if (rawValue == "0" || rawValue.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
+                return DBNull.Value;
+            }
+
+            // GUID 類型（MSSQL: uniqueidentifier；PostgreSQL: uuid）
+            if (t is "uniqueidentifier" or "uuid")
+            {
+                if (Guid.TryParse(rawValue, out Guid gv)) return gv;
+                return DBNull.Value;
+            }
+
+            // 日期時間類型
+            if (t is "datetime" or "datetime2" or "date" or "time" or "smalldatetime"
+                    or "timestamp" or "timestamp without time zone" or "timestamp with time zone"
+                    or "timestamptz" or "timetz")
+            {
+                if (DateTime.TryParse(rawValue, out DateTime dtv)) return dtv;
+                return DBNull.Value;
+            }
+
+            // 預設：字串
+            return rawValue;
         }
 
         private static bool CheckExists(
@@ -1230,7 +1015,7 @@ namespace backend.Common
     public partial class TransferJob
     {
         /// <summary>
-        /// 從本地上傳目錄讀取符合設定副檔名的檔案，逐一執行轉入，成功後將檔案移至完成資料夾。
+        /// 讀取 EsFileTransferUpload 中 ProcessStatus = Pending 且符合目前轉入規則的紀錄，逐一執行轉入。
         /// </summary>
         private Task<EsScheduleCycleLogDetailDM> RunLocalTransfer()
         {
@@ -1240,25 +1025,20 @@ namespace backend.Common
 
             try
             {
-                string uploadDir = BuildLocalUploadPath();
-                string completeDir = BuildLocalCompletePath();
-
-                if (!Directory.Exists(uploadDir))
-                    return Task.FromResult(FailedResult(logDM, $"本地上傳目錄不存在：{uploadDir}"));
-
-                string allowedExt = GetAllowedExtension(_mapping.ExampleFileType);
-                List<string> matchedFiles = Directory.GetFiles(uploadDir)
-                    .Where(f => string.Equals(Path.GetExtension(f), allowedExt, StringComparison.OrdinalIgnoreCase))
+                SearchVO searchVO = new();
+                searchVO.ProcessStatusEq = (int)EsFileTransferUploadProcessStatusEnum.Pending;
+                List<EsFileTransferUploadDM> uploads = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>()
+                    .GetListEnabled(searchVO)
+                    .Where(u => u.EsFileTransferMappingId == _mapping.Id)
                     .ToList();
 
-                if (matchedFiles.Count == 0)
+                if (uploads.Count == 0)
                 {
                     logDM.JobStatus = "Success";
                     return Task.FromResult(logDM);
                 }
 
-                List<string> successPaths = ProcessLocalFiles(matchedFiles, logDM);
-                MoveLocalSuccessFiles(successPaths, completeDir);
+                ProcessLocalFiles(uploads, logDM);
 
                 logDM.JobStatus = ResolveJobStatus(logDM.DataCount, logDM.ErrorCount);
             }
@@ -1276,98 +1056,33 @@ namespace backend.Common
         }
 
         /// <summary>
-        /// 逐一處理本地檔案並執行轉入，彙總結果至 logDM。
-        /// 回傳全部轉入成功的本地檔案完整路徑清單。
+        /// 逐一取得對應本地檔案並執行轉入，彙總結果至 logDM。
         /// </summary>
-        private List<string> ProcessLocalFiles(
-            List<string> files,
+        private void ProcessLocalFiles(
+            List<EsFileTransferUploadDM> uploads,
             EsScheduleCycleLogDetailDM logDM)
         {
-            List<string> successPaths = new();
+            string dirUpload = _pathProvider.EsFileTransferUpload;
 
-            foreach (string filePath in files)
+            foreach (EsFileTransferUploadDM upload in uploads)
             {
+                string filePath = Path.Combine(dirUpload, upload.UploadId.ToString() + Path.GetExtension(upload.FileName));
                 try
                 {
                     EsScheduleCycleLogDetailDM transferResult = Execute(filePath);
                     logDM.DataCount += transferResult.DataCount;
                     logDM.ErrorCount += transferResult.ErrorCount;
                     logDM.ErrorLogs.AddRange(transferResult.ErrorLogs);
-
-                    if (transferResult.ErrorCount == 0)
-                        successPaths.Add(filePath);
+                    if (transferResult.JobStatus == "Failed")
+                        BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>().DoUpdateProcessStatus(upload.Id, (int)EsFileTransferUploadProcessStatusEnum.TransferredError);
                 }
                 catch (Exception ex)
                 {
                     logDM.ErrorCount++;
                     logDM.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = ex.Message });
+                    BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>().DoUpdateProcessStatus(upload.Id, (int)EsFileTransferUploadProcessStatusEnum.TransferredError);
                 }
             }
-
-            return successPaths;
-        }
-
-        /// <summary>
-        /// 將轉入成功的本地檔案逐一移動至完成資料夾。
-        /// 移動失敗不影響整體結果。
-        /// </summary>
-        private static void MoveLocalSuccessFiles(
-            List<string> successPaths,
-            string completeDir)
-        {
-            if (!Directory.Exists(completeDir))
-                Directory.CreateDirectory(completeDir);
-
-            foreach (string srcPath in successPaths)
-            {
-                try
-                {
-                    MoveLocalFile(srcPath, completeDir);
-                }
-                catch
-                {
-                    // 移動失敗不影響整體結果，繼續處理其他檔案
-                }
-            }
-        }
-
-        /// <summary>
-        /// 將單一本地檔案移動至目標資料夾。
-        /// 若目標已存在同名檔案，先刪除再移動。
-        /// </summary>
-        private static void MoveLocalFile(
-            string srcFilePath,
-            string completeDir)
-        {
-            string fileName = Path.GetFileName(srcFilePath);
-            string destFilePath = Path.Combine(completeDir, fileName);
-
-            if (File.Exists(destFilePath))
-                File.Delete(destFilePath);
-
-            File.Move(srcFilePath, destFilePath);
-        }
-
-        /// <summary>
-        /// 建立本地上傳目錄的完整路徑（對應 FileDirectoryConst.EsFileTransferUpload）。
-        /// </summary>
-        private string BuildLocalUploadPath()
-        {
-            string relativePath = Const.FileDirectoryConst.EsFileTransferUpload
-                .TrimStart('/')
-                .Replace('/', Path.DirectorySeparatorChar);
-            return Path.Combine(_webHostEnvironment.ContentRootPath, relativePath);
-        }
-
-        /// <summary>
-        /// 建立本地轉入完成目錄的完整路徑（對應 FileDirectoryConst.EsFileTransferUploadComplete）。
-        /// </summary>
-        private string BuildLocalCompletePath()
-        {
-            string relativePath = Const.FileDirectoryConst.EsFileTransferUploadComplete
-                .TrimStart('/')
-                .Replace('/', Path.DirectorySeparatorChar);
-            return Path.Combine(_webHostEnvironment.ContentRootPath, relativePath);
         }
     }
 

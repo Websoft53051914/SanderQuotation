@@ -23,6 +23,15 @@ namespace Business.Common
         /// 回傳符合該資料庫語法的識別名稱引號格式
         /// </summary>
         string QuoteIdentifier(string name);
+
+        /// <summary>
+        /// 查詢指定資料表的欄位名稱與資料庫型別對照表（不區分大小寫）。
+        /// 用於在寫入前將字串值轉為對應的 .NET 型別，避免 ADO.NET 型別不符錯誤。
+        /// </summary>
+        /// <param name="conn">已開啟的資料庫連線</param>
+        /// <param name="tableName">目標資料表名稱</param>
+        /// <returns>欄位名稱 → 資料庫型別字串的字典</returns>
+        Dictionary<string, string> GetColumnTypes(DbConnection conn, string tableName);
     }
 
     /// <summary>
@@ -85,6 +94,24 @@ namespace Business.Common
         /// 回傳 MSSQL 識別名稱引號格式（方括號）
         /// </summary>
         public string QuoteIdentifier(string name) => $"[{name}]";
+
+        /// <summary>
+        /// 查詢 MSSQL INFORMATION_SCHEMA.COLUMNS 取得欄位型別對照表
+        /// </summary>
+        public Dictionary<string, string> GetColumnTypes(DbConnection conn, string tableName)
+        {
+            Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
+            using DbCommand cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tbl";
+            DbParameter param = cmd.CreateParameter();
+            param.ParameterName = "@tbl";
+            param.Value = tableName;
+            cmd.Parameters.Add(param);
+            using DbDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+                result[reader.GetString(0)] = reader.GetString(1);
+            return result;
+        }
     }
 
     /// <summary>
@@ -121,5 +148,22 @@ namespace Business.Common
         /// 回傳 PostgreSQL 識別名稱引號格式（雙引號）
         /// </summary>
         public string QuoteIdentifier(string name) => $"\"{name}\"";
+        /// <summary>
+        /// 查詢 PostgreSQL information_schema.columns 取得欄位型別對照表（使用 udt_name 取得具體型別）
+        /// </summary>
+        public Dictionary<string, string> GetColumnTypes(DbConnection conn, string tableName)
+        {
+            Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
+            using DbCommand cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = @tbl";
+            DbParameter param = cmd.CreateParameter();
+            param.ParameterName = "@tbl";
+            param.Value = tableName;
+            cmd.Parameters.Add(param);
+            using DbDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+                result[reader.GetString(0)] = reader.GetString(1);
+            return result;
+        }
     }
 }

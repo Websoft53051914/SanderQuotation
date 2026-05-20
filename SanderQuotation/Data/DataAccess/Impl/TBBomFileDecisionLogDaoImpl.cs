@@ -79,6 +79,11 @@ ORDER BY l.{nameof(TBBomFileDecisionLogEntity.Stage)}, l.{nameof(TBBomFileDecisi
                 condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
                 paras.Add(nameof(searchVO.BomFileContentIdEq), searchVO.BomFileContentIdEq);
             }
+            if (searchVO.StageEq.HasValue)
+            {
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Stage)} = @{nameof(searchVO.StageEq)} ");
+                paras.Add(nameof(searchVO.StageEq), searchVO.StageEq);
+            }
 
             ArgumentNullException.ThrowIfNull(condition);
 

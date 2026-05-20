@@ -96,6 +96,25 @@ namespace Business.BusinessLogic
             GetDAO().Insert(entity);
             dm.Id = entity.Id;
         }
+
+        /// <summary>
+        /// 更新 AI 關鍵字抽取結果：將 FlagNeedExtractKeyword 設為 0，並儲存抽取到的客戶承認料 CSV
+        /// </summary>
+        /// <param name="id">Variant 主鍵</param>
+        /// <param name="customerApprovedPartCsv">抽取到的客戶承認料 CSV 字串</param>
+        public void DoUpdateExtractResult(Guid id, string? customerApprovedPartCsv)
+        {
+            SanderModuleItemVariantEntity? entity = GetDAO().FindByPk(id);
+            if (entity == null)
+                return;
+
+            entity.FlagNeedExtractKeyword = 0;
+            entity.CustomerApprovedPartCsv = customerApprovedPartCsv;
+            GetDAO().Update(entity);
+
+            if (DoSaveChange)
+                _unitOfWork.Commit();
+        }
     }
 
     /**

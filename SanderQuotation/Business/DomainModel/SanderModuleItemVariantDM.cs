@@ -24,5 +24,15 @@ namespace Business.DomainModel
         /// 該客戶承認之供應商型號（次）
         /// </summary>
         public string? Description2 { get; set; }
+
+        /// <summary>
+        /// 是否需要執行 AI 關鍵字抽取（0 = 否，直接使用 CustomerApprovedPartCsv；非 0 = 是）
+        /// </summary>
+        public int FlagNeedExtractKeyword { get; set; }
+
+        /// <summary>
+        /// 客戶承認料（多筆以「,」隔開）
+        /// </summary>
+        public string? CustomerApprovedPartCsv { get; set; }
     }
 }

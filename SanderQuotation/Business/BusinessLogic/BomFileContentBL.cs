@@ -124,13 +124,22 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 依 UploadId 查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
+        /// 依條件查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
         /// </summary>
-        /// <param name="uploadId">EsFileTransferUpload.UploadId</param>
-        /// <returns>聯合查詢清單</returns>
-        public List<BomFileContentQuotationDTO> GetListWithQuotationByUploadId(Guid uploadId)
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>DM 清單</returns>
+        public List<BomFileContentDM> GetListWithQuotationByFilter(SearchVO searchVO)
         {
-            return GetDAO().GetListWithQuotationByUploadId(uploadId);
+            List<BomFileContentDTO> dtoList = GetDAO().GetListWithQuotationByFilter(searchVO);
+
+            List<BomFileContentDM> result = [];
+            foreach (BomFileContentDTO item in dtoList)
+            {
+                BomFileContentDM dm = _mapper.Map<BomFileContentDM>(item);
+                result.Add(dm);
+            }
+
+            return result;
         }
     }
 
