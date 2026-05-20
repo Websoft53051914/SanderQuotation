@@ -41,10 +41,10 @@ namespace ViewModel.QuotationResult
         public int? InternalQuantity { get; set; }
 
         /// <summary>內部幣別</summary>
-        public int? InternalCurrency { get; set; }
+        public string? InternalCurrency { get; set; }
 
         /// <summary>內部供應商名稱</summary>
-        public int? InternalSupplierName { get; set; }
+        public string? InternalSupplierName { get; set; }
 
         /// <summary>外部查價日期（格式化）</summary>
         public string? ExternalQuotationDate { get; set; }
@@ -59,10 +59,10 @@ namespace ViewModel.QuotationResult
         public int? ExternalMoq { get; set; }
 
         /// <summary>外部幣別</summary>
-        public int? ExternalCurrency { get; set; }
+        public string? ExternalCurrency { get; set; }
 
         /// <summary>外部供應商名稱</summary>
-        public int? ExternalSupplierName { get; set; }
+        public string? ExternalSupplierName { get; set; }
 
         /// <summary>是否為建議採購型號</summary>
         public bool IsRecommendedNo { get; set; }

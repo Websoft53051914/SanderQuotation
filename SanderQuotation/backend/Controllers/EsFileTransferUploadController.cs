@@ -273,7 +273,7 @@ namespace backend.Controllers
                         return JsonValidFail("匯入設定規則不可空白");
 
                     EsFileTransferUploadDM? dm = GetBlEsFileTransferUpload().GetOneInfoByUploadId(vm.UploadId.Value);
-                    if (dm == null)
+                    if (dm == null || dm.Status == (int)Enums.StatusEnum.Cancel)
                         return JsonValidFail($"檔案不存在(ID：{vm.UploadId})");
                     EsFileTransferMappingDM? dmEftm = GetBlTableExcel().GetOneWithBomFlag(vm.EsFileTransferMappingId.Value);
                     if (dmEftm == null)
@@ -286,12 +286,13 @@ namespace backend.Controllers
                         {
                             return JsonValidFail("報價數量必須大於 0");
                         }
-                        if (string.IsNullOrWhiteSpace(vm.CustomerCode))
-                            return JsonValidFail("客戶代碼不可空白");
+                        if (string.IsNullOrWhiteSpace(vm.CustomerCode) && string.IsNullOrWhiteSpace(vm.ManualCustomerName))
+                            return JsonValidFail("客戶代碼或客戶名稱不可空白");
                     }
 
                     dm.EsFileTransferMappingId = dmEftm.Id;
                     dm.CustomerCode = vm.CustomerCode;
+                    dm.ManualCustomerName = vm.ManualCustomerName?.Trim();
                     dm.QuotationQty = vm.QuotationQty;
 
                     GetBlEsFileTransferUpload().DoUpdateUpload(dm);

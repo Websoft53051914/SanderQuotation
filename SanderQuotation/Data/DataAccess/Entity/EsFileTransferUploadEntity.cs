@@ -42,5 +42,10 @@ namespace Data.DataAccess.Entity
         /// 執行狀態
         /// </summary>
         public int? ProcessStatus { set; get; }
+
+        /// <summary>
+        /// 手動輸入客戶名稱（CustomerCode 為空時使用）
+        /// </summary>
+        public string? ManualCustomerName { set; get; }
     }
 }

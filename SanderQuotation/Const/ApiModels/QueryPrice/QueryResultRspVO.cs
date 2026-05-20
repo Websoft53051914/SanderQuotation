@@ -33,7 +33,7 @@ namespace Const.ApiModels.QueryPrice
             /// <summary>
             /// 外部幣別
             /// </summary>
-            public int? ExternalCurrency { get; set; }
+            public string? ExternalCurrency { get; set; }
 
             /// <summary>
             /// 外部供應商名稱

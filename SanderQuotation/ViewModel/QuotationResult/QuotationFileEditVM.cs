@@ -34,26 +34,23 @@ namespace ViewModel.QuotationResult
     }
 
     /// <summary>
-    /// 重新查價 — 單筆料項請求 VM
+    /// 重新內部查價 — 請求 VM
     /// </summary>
-    public class QuotationReQuotationItemVM
+    public class QuotationReInternalQuotationRequestVM
     {
         /// <summary>bomfilecontent.Id</summary>
-        public Guid Id { get; set; }
+        public Guid BomFileContentId { get; set; }
 
-        /// <summary>選定的採購型號</summary>
+        /// <summary>前端調整後的採購型號</summary>
         public string? No { get; set; }
     }
 
     /// <summary>
-    /// 重新查價 — 請求 VM
+    /// 重新外部查價 — 請求 VM
     /// </summary>
-    public class QuotationReQuotationRequestVM
+    public class QuotationReExternalQuotationRequestVM
     {
-        /// <summary>EsFileTransferUpload.Id</summary>
-        public Guid UploadId { get; set; }
-
-        /// <summary>勾選的料項清單</summary>
-        public List<QuotationReQuotationItemVM> Items { get; set; } = new();
+        /// <summary>bomfilecontent.Id</summary>
+        public Guid BomFileContentId { get; set; }
     }
 }

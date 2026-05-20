@@ -1,5 +1,6 @@
 using AutoMapper;
 using backend.Common.Attribute;
+using backend.Models;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
@@ -18,12 +19,14 @@ namespace backend.Controllers
     public partial class QuotationResultController : BaseProjectController
     {
         private readonly IMapper _mapper;
+        private readonly QuotationHandler _quotationHandler;
 
         /// <summary>
         /// constructor
         /// </summary>
-        public QuotationResultController(IConfiguration configuration) : base(configuration)
+        public QuotationResultController(IConfiguration configuration, QuotationHandler quotationHandler) : base(configuration)
         {
+            _quotationHandler = quotationHandler;
             MapperConfiguration cfg = new(c =>
             {
                 c.AllowNullCollections = true;
@@ -58,6 +61,26 @@ namespace backend.Controllers
         {
             _blBomFileContent ??= GetBLInstance<BomFileContentBL>();
             return _blBomFileContent;
+        }
+
+        private HandleQuotationBL? _blHandleQuotation = null;
+        /// <summary>
+        /// HandleQuotationBL
+        /// </summary>
+        protected HandleQuotationBL GetBlHandleQuotation()
+        {
+            _blHandleQuotation ??= GetBLInstance<HandleQuotationBL>();
+            return _blHandleQuotation;
+        }
+
+        private TBBomFileQuotationBL? _blTBBomFileQuotation = null;
+        /// <summary>
+        /// TBBomFileQuotationBL
+        /// </summary>
+        protected TBBomFileQuotationBL GetBlTBBomFileQuotation()
+        {
+            _blTBBomFileQuotation ??= GetBLInstance<TBBomFileQuotationBL>();
+            return _blTBBomFileQuotation;
         }
 
 
@@ -179,15 +202,71 @@ namespace backend.Controllers
         #region -- 操作 --
 
         /// <summary>
-        /// 重新查價：接收勾選料項及採購型號，執行查價作業
+        /// 重新內部查價：以前端調整的採購型號執行內部查價
         /// </summary>
         [CustomAuthorization(FuncID.QuotationResult_Edit)]
-        [HttpPost("ReQuotation")]
-        public ActionResult ReQuotation([FromBody] QuotationReQuotationRequestVM request)
+        [HttpPost("ReInternalQuotation")]
+        public async Task<ActionResult> ReInternalQuotation([FromBody] QuotationReInternalQuotationRequestVM request)
         {
             try
             {
-                // TODO: 實作查價業務邏輯
+                // 更新採購型號，同時將 IsRecommendedNo 設為 false（使用者確認料號，非建議）
+                GetBlTBBomFileQuotation().DoUpdateNo(request.BomFileContentId, request.No, false);
+
+                // 載入料項 DM
+                SearchVO contentSearchVO = new();
+                contentSearchVO.IdEq = request.BomFileContentId;
+                contentSearchVO.IsLimit1 = true;
+                BomFileContentDM? content = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO).FirstOrDefault();
+                if (content == null)
+                    return JsonValidFail("資料不存在");
+
+                // 設為非建議料號，避免被內部查價跳過邏輯略過
+                content.IsRecommendedNo = false;
+
+                // 取得客戶代碼
+                EsFileTransferUploadDM? upload = GetBlEsFileTransferUpload().GetOneInfo(content.UploadId);
+                string? customerCode = upload?.CustomerCode;
+
+                await _quotationHandler.RunInternalAsync(content, customerCode);
+
+                GetBlHandleQuotation().DoSaveSingleInternalQuotationResult(content);
+
+                return JsonOK();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        /// <summary>
+        /// 重新外部查價：對指定料項重新執行 Nexar 外部查價
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_Edit)]
+        [HttpPost("ReExternalQuotation")]
+        public async Task<ActionResult> ReExternalQuotation([FromBody] QuotationReExternalQuotationRequestVM request)
+        {
+            try
+            {
+                // 載入料項 DM
+                SearchVO contentSearchVO = new();
+                contentSearchVO.IdEq = request.BomFileContentId;
+                contentSearchVO.IsLimit1 = true;
+                BomFileContentDM? content = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO).FirstOrDefault();
+                if (content == null)
+                    return JsonValidFail("資料不存在");
+
+                // 取得報價數量
+                EsFileTransferUploadDM? upload = GetBlEsFileTransferUpload().GetOneInfo(content.UploadId);
+                int quotationQty = upload?.QuotationQty ?? 1;
+
+                await _quotationHandler.AuthorizeExternalAsync();
+                await _quotationHandler.RunExternalAsync(content, quotationQty);
+
+                GetBlHandleQuotation().DoSaveSingleExternalQuotationResult(content);
+
                 return JsonOK();
             }
             catch (Exception ex)
