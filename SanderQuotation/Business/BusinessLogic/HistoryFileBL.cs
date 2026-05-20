@@ -3,7 +3,9 @@ using Business.Common;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Helper.DB;
+using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
+using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using System;
 using System.Collections.Generic;
@@ -31,6 +33,7 @@ namespace Business.BusinessLogic
             MapperConfiguration cfg = new(c =>
             {
                 c.CreateMap<HistoryFileDM, HistoryFileEntity>().ReverseMap();
+                c.CreateMap<HistoryFileDM, HistoryFileDTO>().ReverseMap();
                 c.AllowNullCollections = true;
             });
             _mapper = cfg.CreateMapper();
@@ -46,6 +49,13 @@ namespace Business.BusinessLogic
         {
             _historyFileDAO ??= _unitOfWork.Repository<IHistoryFileDAO>();
             return _historyFileDAO;
+        }
+
+        private IEmbeddedHistoryFileDAO? embeddedHistoryFileDAO = null;
+        private IEmbeddedHistoryFileDAO GetEmbeddedHistoryFileDAO()
+        {
+            embeddedHistoryFileDAO ??= _unitOfWork.Repository<IEmbeddedHistoryFileDAO>();
+            return embeddedHistoryFileDAO;
         }
 
 
@@ -115,8 +125,67 @@ namespace Business.BusinessLogic
                 var dm = dmListView.Find(x => x.Id == entity.Id);
                 entity.FileSummary = dm?.FileSummary;
                 GetDAO().Update(entity);
+
+                var embeddingEntity = GetEmbeddedHistoryFileDAO().FindByPropertys(new Dictionary<string, object>()
+                {
+                    {nameof(EmbeddedHistoryFileEntity.HistoryFileId), entity.Id },
+                    {nameof(EmbeddedHistoryFileEntity.Status), (int)StatusEnum.Enabled },
+                },new List<string>()
+                {
+                    nameof(EmbeddedHistoryFileEntity.Embedding)
+                });
+                if(embeddingEntity != null)
+                {
+                    embeddingEntity.UpdatedBy = UserInfo?.UserAccount ?? "";
+                    embeddingEntity.UpdatedAt = base.now;
+                    if(dm != null && dm.Embedding != null)
+                    {
+                        embeddingEntity.Embedding = dm.Embedding;
+                    }
+                    GetEmbeddedHistoryFileDAO().UpdateFile(embeddingEntity);
+                }
+                else
+                {
+                    EmbeddedHistoryFileEntity embeddedHistoryFileEntity = new EmbeddedHistoryFileEntity()
+                    {
+                        HistoryFileId = entity.Id,
+                        Embedding = dm != null && dm.Embedding != null ? dm.Embedding : null,
+                        CreatedAt = base.now,
+                        CreatedBy = UserInfo?.UserAccount ?? "",
+                        UpdatedAt = base.now,
+                        UpdatedBy = UserInfo?.UserAccount ?? "",
+                        Status = (int)StatusEnum.Enabled,
+                    };
+                    GetEmbeddedHistoryFileDAO().InsertFile(embeddedHistoryFileEntity);
+                }
             }
             _unitOfWork.Commit();
+        }
+
+        public HistoryFileDM? GetById(Guid id)
+        {
+            var entity = GetDAO().FindByPk(id);
+            if (entity == null) return null;
+            return _mapper.Map<HistoryFileDM>(entity);
+        }
+
+        public PageResult<HistoryFileDM> GetPageList(PageEntity pageEntity, SearchVO dm)
+        {
+
+            PageResult<HistoryFileDTO> dtos = GetDAO().FindPageList(pageEntity, dm);
+            var dmList = _mapper.Map<List<HistoryFileDM>>(dtos.Results);
+
+
+      
+            PageResult<HistoryFileDM> dms = new PageResult<HistoryFileDM>()
+            {
+                CurrentPage = dtos.CurrentPage,
+                DataCount = dtos.DataCount,
+                PageDataSize = dtos.PageDataSize,
+                Results = dmList
+            };
+
+            return dms;
         }
     }
 }

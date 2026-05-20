@@ -1,12 +1,17 @@
 ﻿using AutoMapper;
 using backend.AI;
+using backend.Common;
 using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
+using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Helper.Message;
+using Core.Utility.Utility;
+using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using ViewModel;
 using ViewModel.HistoryFile;
 using static Const.Enums;
 
@@ -144,6 +149,38 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// 下載檔案
+        /// </summary>
+        [CustomAuthorization(FuncID.HistoryFile_Create, FuncID.HistoryFile_Edit)]
+        [HttpGet("Download/{id}")]
+        public IActionResult Download(Guid id)
+        {
+            try
+            {
+                var dm = GetHistoryFileBL().GetById(id);
+                if (dm == null)
+                    return NotFound(GetMsg(_config, "System_Error"));
+
+                string pathFile = Path.Combine(_webHostEnvironment.ContentRootPath, _dir, dm.UploadId + Path.GetExtension(dm.FileName));
+                if (!System.IO.File.Exists(pathFile))
+                {
+                    LogError("檔案找不到");
+                    return NotFound("檔案找不到");
+                }
+                    
+
+                string mimeType = Method.GetMimeType(dm.FileName);
+                var fileBytes = System.IO.File.ReadAllBytes(pathFile);
+                return File(fileBytes, mimeType, dm.FileName);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex.ToString());
+                return BadRequest(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        /// <summary>
         /// 取消上傳
         /// </summary>
         /// <returns></returns>
@@ -224,6 +261,45 @@ namespace backend.Controllers
                 }
 
                 return JsonSuccess(msgSuccess);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+
+        [HttpGet("GetPageList")]
+        [CustomAuthorization(FuncID.ESDbTransfer_View)]
+        public IActionResult GetPageList([FromQuery] DataSourceRequest request, string Keyword)
+        {
+            try
+            {
+                PageEntity pageEntity = base.GetPageEntity(request);
+                IMapper mapper = CommonUtility.CreateMapper<HistoryFileGridVM, HistoryFileDM>();
+
+                SearchVO searchVO = new SearchVO
+                {
+                    KeywordLike = Keyword
+                };
+                var pageResult = GetHistoryFileBL().GetPageList(pageEntity, searchVO);
+
+                var list = mapper.Map<List<HistoryFileGridVM>>(pageResult.Results);
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var item = list[i];
+                    item.No = (request.pageIndex - 1) * request.pageSize + i + 1;
+                }
+
+                return JsonSuccess(new
+                {
+                    Data = list,
+                    Total = pageResult.DataCount,
+                    Page = pageResult.CurrentPage,
+                    PageSize = pageResult.PageDataSize
+                });
             }
             catch (Exception ex)
             {

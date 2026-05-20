@@ -73,8 +73,8 @@
                                 <th data-sort="action">Action</th>@* 功能名稱 *@
                                 <th data-sort="No">項次</th>
                                 <th class="sort" data-sort="FileName">檔案名稱</th>
-                                <th class="sort" data-sort="ContentSummary" style="width: 600px;">內容摘要</th>
-                                <th class="sort" data-sort="UpdateTime">更新時間</th>
+                                <th class="sort" data-sort="FileSummary" style="width: 600px;">內容摘要</th>
+                                <th class="sort" data-sort="UpdatedAt">更新時間</th>
                                 <th>更新人員</th>
                             </tr>
                         </thead>
@@ -286,9 +286,9 @@
                             </td>
                             <td class="No">${data.No}</td>
                             <td class="No">${data.FileName}</td>
-                            <td class="No" style="max-width:300px;"><div title="${data.ContentSummary}" style="display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-word; white-space:pre-wrap;">${data.ContentSummary}</div></td>
-                            <td class="No">${data.UpdateTime}</td>
-                            <td class="No">${data.UpdaterName}</td>
+                            <td class="No" style="max-width:300px;"><div title="${data.FileSummary}" style="display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-word; white-space:pre-wrap;">${data.FileSummary}</div></td>
+                            <td class="No">${data.UpdatedAtStr}</td>
+                            <td class="No">${data.UpdatedByName}</td>
                         </tr>
                     `);
                 });
@@ -384,8 +384,7 @@
             function SearchData() {
 
                 //*** 篩選條件
-                queryState.Keyword1 = $('#Keyword1').val();
-                queryState.Keyword2 = $('#Keyword2').val();
+                queryState.Keyword = $('#Keyword').val();
 
                 queryState.pageIndex= 1;
                 $('#globalSearchInput').val('').trigger('input');
@@ -561,6 +560,44 @@
                         hideLoader();
                         $('#btnSaveUpload').prop('disabled', false).html('<i class="ri-save-line me-1"></i>儲存');
                     }
+                });
+            });
+
+            // ⭐ 點擊下載按鈕
+            $(document).on('click', '.download-item-btn', function () {
+                const id = $(this).closest('tr').data('id');
+                showLoader();
+                fetch('@(Configuration["BackendURL"])/api/HistoryFile/Download/' + id, {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('下載失敗');
+                    const disposition = res.headers.get('Content-Disposition');
+                    let fileName = 'download';
+                    if (disposition) {
+                        const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^;"'\n]+)["']?/i);
+                        if (match) fileName = decodeURIComponent(match[1]);
+                    }
+                    return res.blob().then(function (blob) {
+                        return { blob, fileName };
+                    });
+                })
+                .then(function ({ blob, fileName }) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(function () {
+                    Swal.fire({ icon: 'error', title: '@config.GetMessage("System_Error").ToHtmlString()', confirmButtonText: '確定' });
+                })
+                .finally(function () {
+                    hideLoader();
                 });
             });
 

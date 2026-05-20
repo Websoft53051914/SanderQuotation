@@ -2,6 +2,7 @@
 using backend.Common;
 using backend.EIPSource;
 using backend.Models;
+using Dapper;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
@@ -13,7 +14,6 @@ using System.Text;
 IConfiguration Config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 
 // 指定 wwwroot 作為 WebRoot

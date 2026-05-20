@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace backend.AI
 {
@@ -14,15 +15,17 @@ namespace backend.AI
         public IWebHostEnvironment? WebHostEnvironment { get; set; }
         private readonly Kernel _kernel;
         private readonly GeminiFileApiClient _fileService;
+        private readonly ManualBatchEmbedding _manualBatchEmbedding;
         /// <summary>
         /// constructor
         /// </summary>
         /// <param name="kernel"></param>
         /// <param name="fileService"></param>
-        public HistoryFileHandler(Kernel kernel, GeminiFileApiClient fileService)
+        public HistoryFileHandler(Kernel kernel, GeminiFileApiClient fileService, ManualBatchEmbedding manualBatchEmbedding)
         {
             _kernel = kernel;
             _fileService = fileService;
+            _manualBatchEmbedding = manualBatchEmbedding;
         }
         /// <summary>
         /// AI 相關操作
@@ -32,7 +35,6 @@ namespace backend.AI
         /// <returns></returns>
         public async Task HandleOfAI(HistoryFileDM dm, MessageHelper messageHelper)
         {
-
 
             // 摘要資料產生
             // 只要傳入的 FileSummary 為空就會觸發
@@ -49,8 +51,19 @@ namespace backend.AI
                     return;
                 }
             }
-           
+            // 產生向量資料
+            try
+            {
+                await _manualBatchEmbedding.FillEmbed([dm]);
+            }
+            catch (Exception)
+            {
+                messageHelper.SetAlert($"【{dm.FileName}】無法產生向量資料");
+                return;
+            }
         }
+
+       
 
         /// <summary>
         /// 取得檔案路徑

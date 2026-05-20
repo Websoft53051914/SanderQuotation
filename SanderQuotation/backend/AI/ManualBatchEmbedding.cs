@@ -103,6 +103,72 @@ namespace backend.AI
                 }
             }
         }
+
+        public async Task FillEmbed(List<HistoryFileDM> data)
+        {
+            var chunks = data.Chunk(100);
+
+            foreach (var batch in chunks)
+            {
+                // 2. 建構符合 Gemini API 要求的 Request 物件
+                var requestPayload = new BatchEmbedRequest
+                {
+                    Requests = batch.Select(t => new EmbedRequestItem
+                    {
+                        Content = new Content { Parts = new[] { new Part { Text = $"[檔名：{t.FileName}] {t.FileSummary}" } } },
+                        Model = $"models/{ModelId}",
+                        TaskType = "RETRIEVAL_DOCUMENT"
+                    }).ToList()
+                };
+
+                // 3. 發送 HTTP 請求
+                using var httpClient = new HttpClient();
+
+                try
+                {
+                    // 加入 API Key 到 URL 參數
+                    var urlWithKey = $"{Endpoint}?key={ApiKey}";
+
+                    // 設定 JSON 選項 (轉成小駝峰 camelCase)
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = true
+                    };
+
+
+                    // PostAsJsonAsync 是 .NET 5+ 的擴充方法
+                    var response = await httpClient.PostAsJsonAsync(urlWithKey, requestPayload, jsonOptions);
+
+                    // 4. 處理回應
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // 讀取並解析 JSON
+                        var result = await response.Content.ReadFromJsonAsync<BatchEmbedResponse>(jsonOptions);
+
+                        if (result?.Embeddings != null)
+                        {
+                            for (var i = 0; i < batch.Count(); i++)
+                            {
+                                var vector = result.Embeddings[i].Values;
+                                // 將向量存回對應的 FAQ 實體
+                                batch.ElementAt(i).Embedding = vector;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 錯誤處理
+                        var errorBody = await response.Content.ReadAsStringAsync();
+                        throw new Exception($"API Error: {response.StatusCode}, Body: {errorBody}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw;
+                }
+            }
+        }
     }
 
     /// <summary>
