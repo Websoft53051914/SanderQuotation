@@ -137,7 +137,18 @@ namespace backend.Common
                             removePartIdxList.Add(i);
                         }
                     }
-                    removePartIdxList.ForEach(idx => parts.RemoveAt(idx));
+                    // 1. 將索引從大到小排序 (關鍵步驟！)
+                    var sortedIdx = removePartIdxList.OrderByDescending(i => i);
+
+                    // 2. 由後往前依序刪除
+                    foreach (int idx in sortedIdx)
+                    {
+                        // 安全防護：確保索引在合理範圍內
+                        if (idx >= 0 && idx < parts.Count)
+                        {
+                            parts.RemoveAt(idx);
+                        }
+                    }
                 }
 
 
@@ -329,6 +340,7 @@ namespace backend.Common
                 using var client = _httpClientFactory.CreateClient();
                 string clientId     = _config["DkClientId"]     ?? "";
                 string clientSecret = _config["DkClientSecret"] ?? "";
+                string customerId   = _config["DkCustomerId"]   ?? "";
                 string tokenApiUrl        = _config["ExternalQueryExecuteUrls:DkToken"] ?? "";
                 string queryApiUrl        = _config["ExternalQueryExecuteUrls:DkQuery"] ?? "";
 
@@ -348,7 +360,7 @@ namespace backend.Common
                     {
                         Stage   = BomFileDecisionLogStageEnum.DkQuotation.ToInt(),
                         Step    = BomFileDecisionLogStepEnum.DkQuotation1.ToInt(),
-                        Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n {BomFileDecisionLogStepEnum.DkQuotation1.GetDescription()} 失敗 \n 狀態碼:{(int)tokenResp.StatusCode}"
+                        Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n {BomFileDecisionLogStepEnum.DkQuotation1.GetDescription()} 失敗 \n 狀態碼:{(int)tokenResp.StatusCode} {tokenResp.ReasonPhrase}"
                     });
                     return new QueryActionResultRspVO { Result = null, DecisionLogs = decisionLogs };
                 }
@@ -382,7 +394,7 @@ namespace backend.Common
                     req.Headers.TryAddWithoutValidation("X-DIGIKEY-Locale-Site",     "US");
                     req.Headers.TryAddWithoutValidation("X-DIGIKEY-Locale-Currency", "USD");
                     req.Headers.TryAddWithoutValidation("X-DIGIKEY-Locale-Language", "en");
-                    req.Headers.TryAddWithoutValidation("X-DIGIKEY-Customer-Id",     "");
+                    req.Headers.TryAddWithoutValidation("X-DIGIKEY-Customer-Id", customerId);
                     return req;
                 }
 
@@ -417,6 +429,17 @@ namespace backend.Common
                 var prods = (searchResult?.ExactMatches?.Count > 0)
                     ? searchResult.ExactMatches
                     : searchResult?.Products ?? new();
+                if (!prods.Any())
+                {
+                    decisionLogs.Add(new QueryActionResultRspVO.DecisionLogVO
+                    {
+                        Stage = BomFileDecisionLogStageEnum.DkQuotation.ToInt(),
+                        Step = BomFileDecisionLogStepEnum.DkQuotation2.ToInt(),
+                        Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n {BomFileDecisionLogStepEnum.DkQuotation2.GetDescription()} 成功，無對應的料件"
+                    });
+                    return new QueryActionResultRspVO { Result = null, DecisionLogs = decisionLogs };
+                }
+
 
                 // 過濾有庫存（PHP array_filter），且庫存量必須大於需求量
                 prods = prods
@@ -429,7 +452,7 @@ namespace backend.Common
                     {
                         Stage   = BomFileDecisionLogStageEnum.DkQuotation.ToInt(),
                         Step    = BomFileDecisionLogStepEnum.DkQuotation2.ToInt(),
-                        Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n {BomFileDecisionLogStepEnum.DkQuotation2.GetDescription()} 成功，無符合條件或有庫存的料件"
+                        Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n {BomFileDecisionLogStepEnum.DkQuotation2.GetDescription()} 成功，無庫存的料件"
                     });
                     return new QueryActionResultRspVO { Result = null, DecisionLogs = decisionLogs };
                 }
@@ -456,7 +479,18 @@ namespace backend.Common
                             removePartIdxList.Add(i);
                         }
                     }
-                    removePartIdxList.ForEach(idx => prods.RemoveAt(idx));
+                    // 1. 將索引從大到小排序 (關鍵步驟！)
+                    var sortedIdx = removePartIdxList.OrderByDescending(i => i);
+
+                    // 2. 由後往前依序刪除
+                    foreach (int idx in sortedIdx)
+                    {
+                        // 安全防護：確保索引在合理範圍內
+                        if (idx >= 0 && idx < prods.Count)
+                        {
+                            prods.RemoveAt(idx);
+                        }
+                    }
                 }
                    
 
@@ -484,7 +518,7 @@ namespace backend.Common
                         {
                             Stage   = BomFileDecisionLogStageEnum.DkQuotation.ToInt(),
                             Step    = BomFileDecisionLogStepEnum.DkQuotation3.ToInt(),
-                            Message = $"DK# {dkn} {BomFileDecisionLogStepEnum.DkQuotation3.GetDescription()} 成功"
+                            Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n DK# {dkn} {BomFileDecisionLogStepEnum.DkQuotation3.GetDescription()} 成功"
                         });
                     }
                     else
@@ -494,7 +528,7 @@ namespace backend.Common
                         {
                             Stage   = BomFileDecisionLogStageEnum.DkQuotation.ToInt(),
                             Step    = BomFileDecisionLogStepEnum.DkQuotation3.ToInt(),
-                            Message = $"DK# {dkn} {BomFileDecisionLogStepEnum.DkQuotation3.GetDescription()} 失敗，使用搜尋結果 fallback。狀態碼:{(int)detailResp.StatusCode}"
+                            Message = $"輸入參數:{JsonConvert.SerializeObject(input)} \n DK# {dkn} {BomFileDecisionLogStepEnum.DkQuotation3.GetDescription()} 失敗，使用搜尋結果 fallback。狀態碼:{(int)detailResp.StatusCode} {detailResp.ReasonPhrase}"
                         });
                     }
                 }
@@ -533,7 +567,7 @@ namespace backend.Common
 
                 return new QueryActionResultRspVO
                 {
-                    Result       = results.MinBy(p => p.UnitPriceTwd ?? p.UnitPriceOriginalCurrency ?? 0),
+                    Result       = results.MinBy(p => p.UnitPriceOriginalCurrency ?? 0),
                     DecisionLogs = decisionLogs
                 };
             }
