@@ -560,7 +560,10 @@ namespace Const
             ExternalQuotation = 3,
 
             [Description("Mouser API查價")]
-            MouserQuotation = 4
+            MouserQuotation = 4,
+
+            [Description("DigiKey API查價")]
+            DkQuotation = 5
         }
 
         /// <summary>
@@ -608,6 +611,24 @@ namespace Const
             /// </summary>
             [Description("Step 3：清除購物車")]
             MouserQuotation3 = 102,
+            #endregion
+
+            #region -- DkQuotation --
+            /// <summary>
+            /// Step 1：取得 OAuth Token
+            /// </summary>
+            [Description("Step 1：取得 OAuth Token")]
+            DkQuotation1 = 200,
+            /// <summary>
+            /// Step 2：以關鍵字搜尋料號
+            /// </summary>
+            [Description("Step 2：以關鍵字搜尋料號")]
+            DkQuotation2 = 201,
+            /// <summary>
+            /// Step 3：取得產品詳細資訊（含 MyPricing 優惠價）
+            /// </summary>
+            [Description("Step 3：取得產品詳細資訊（含 MyPricing 優惠價）")]
+            DkQuotation3 = 202,
             #endregion
         }
     }

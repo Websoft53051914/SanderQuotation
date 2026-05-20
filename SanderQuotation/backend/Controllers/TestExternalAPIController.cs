@@ -27,5 +27,17 @@ namespace backend.Controllers
             var results = await _externalQueryExecuteHandler.QueryMouserAction(req);
             return Ok(results);
         }
+
+        /// <summary>
+        /// 測試 DigiKey 查詢（含 MyPricing 優惠價）
+        /// </summary>
+        /// <param name="req">料號與目標數量</param>
+        [HttpPost("QueryDk")]
+        [AllowAnonymous]
+        public async Task<IActionResult> QueryDk([FromBody] QueryMouserCartPriceReqVO req)
+        {
+            var results = await _externalQueryExecuteHandler.QueryDkAction(req);
+            return Ok(results);
+        }
     }
 }
