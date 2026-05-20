@@ -17,11 +17,11 @@ namespace Data.DataAccess.Dao
         List<BomFileContentDTO> GetListByFilter(SearchVO searchVO);
 
         /// <summary>
-        /// 依 UploadId 查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
+        /// 依條件查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
         /// </summary>
-        /// <param name="uploadId">EsFileTransferUpload.UploadId</param>
+        /// <param name="searchVO">查詢條件</param>
         /// <returns>聯合查詢清單</returns>
-        List<BomFileContentQuotationDTO> GetListWithQuotationByUploadId(Guid uploadId);
+        List<BomFileContentDTO> GetListWithQuotationByFilter(SearchVO searchVO);
 
         /// <summary>
         /// 依條件刪除資料

@@ -53,14 +53,25 @@ WHERE 1=1
         }
 
         /// <summary>
-        /// 依 UploadId 查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
+        /// 依條件查詢 BOM 料項及其查價結果（LEFT JOIN tbbomfilequotation）
         /// </summary>
-        /// <param name="uploadId">EsFileTransferUpload.UploadId</param>
+        /// <param name="searchVO">查詢條件</param>
         /// <returns>聯合查詢清單</returns>
-        public List<BomFileContentQuotationDTO> GetListWithQuotationByUploadId(Guid uploadId)
+        public List<BomFileContentDTO> GetListWithQuotationByFilter(SearchVO searchVO)
         {
+            StringBuilder condition = new();
             Dictionary<string, object> paras = [];
-            paras.Add(nameof(uploadId), uploadId);
+
+            if (searchVO.UploadIdEq.HasValue)
+            {
+                condition.Append($"AND bfc.{nameof(BomFileContentEntity.UploadId)} = @{nameof(searchVO.UploadIdEq)} ");
+                paras.Add(nameof(searchVO.UploadIdEq), searchVO.UploadIdEq);
+            }
+            if (searchVO.IdEq.HasValue)
+            {
+                condition.Append($"AND bfc.{nameof(BomFileContentEntity.Id)} = @{nameof(searchVO.IdEq)} ");
+                paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
+            }
 
             string sql = $@"
 SELECT bfc.*
@@ -72,6 +83,10 @@ SELECT bfc.*
 , bfq.InternalQuantity
 , bfq.InternalCurrency
 , bfq.InternalSupplierName
+, bfq.InternalLowMinPrice
+, bfq.InternalLowMaxPrice
+, bfq.InternalHighMinPrice
+, bfq.InternalHighMaxPrice
 , bfq.ExternalQuotationDate
 , bfq.ExternalUnitPriceOriginalCurrency
 , bfq.ExternalUnitPriceTwd
@@ -79,12 +94,15 @@ SELECT bfc.*
 , bfq.ExternalCurrency
 , bfq.ExternalSupplierName
 , bfq.IsRecommendedNo
+, bfq.IsFilterByCustomerApprovedPart
+, bfq.CustomerApprovedPartCsv
 FROM bomfilecontent bfc
 LEFT JOIN tb_bomfilequotation bfq ON bfq.BomFileContentId = bfc.Id
-WHERE bfc.UploadId = @{nameof(uploadId)}
+WHERE 1=1
+{condition}
 ORDER BY bfc.Id";
 
-            return DbHelper.FindList<BomFileContentQuotationDTO>(sql, paras);
+            return DbHelper.FindList<BomFileContentDTO>(sql, paras);
         }
 
         /// <summary>

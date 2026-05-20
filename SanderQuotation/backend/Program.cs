@@ -1,6 +1,7 @@
 ﻿using backend.AI;
 using backend.Common;
 using backend.EIPSource;
+using backend.Models;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
@@ -192,7 +193,12 @@ builder.Services.AddSingleton<ExtractKeywordHandler>();
 builder.Services.AddSingleton<ManualBatchEmbedding>();
 builder.Services.AddSingleton<ExtractKeywordJob>();
 builder.Services.AddSingleton<DesideSanderModuleItemNoJob>();
+builder.Services.AddSingleton<OrderPriceDecison>();
+builder.Services.AddSingleton<ExternalQuotationNexarHandler>();
+builder.Services.AddSingleton<QuotationHandler>();
+builder.Services.AddSingleton<PriceSearchJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();
+builder.Services.AddSingleton<PathProvider>();
 #if !DEBUG
 //builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 #endif

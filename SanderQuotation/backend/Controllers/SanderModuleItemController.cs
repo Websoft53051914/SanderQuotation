@@ -1,11 +1,8 @@
 using AutoMapper;
-using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Helper.Excel;
-using Data.DataAccess.DTO;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using ViewModel;
 

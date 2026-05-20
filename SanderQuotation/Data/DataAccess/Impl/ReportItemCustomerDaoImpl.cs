@@ -28,6 +28,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND r.{nameof(ReportItemCustomerEntity.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
+            if (!string.IsNullOrWhiteSpace(searchVO.CustomerCodeEq))
+            {
+                condition.Append($"AND r.{nameof(ReportItemCustomerEntity.CustomerCode)} = @{nameof(searchVO.CustomerCodeEq)} ");
+                paras.Add(nameof(searchVO.CustomerCodeEq), searchVO.CustomerCodeEq);
+            }
 
             string sql = $@"
 SELECT r.*

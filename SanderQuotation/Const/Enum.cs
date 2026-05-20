@@ -460,6 +460,12 @@ namespace Const
             /// </summary>
             [Description("已查價")]
             PricingDone = 5,
+
+            /// <summary>
+            /// 轉檔錯誤
+            /// </summary>
+            [Description("轉檔失敗")]
+            TransferredError = 99,
         }
 
         /// <summary>
@@ -586,10 +592,33 @@ namespace Const
             PartSearchStep3 = 3,
             #endregion
             #region -- InternalQuotation --
-
+            /// <summary>
+            /// 客戶承認料解析
+            /// </summary>
+            [Description("客戶承認料解析")]
+            InternalQuotationVariantFilter = 10,
+            /// <summary>
+            /// AI 分群決策
+            /// </summary>
+            [Description("AI 分群決策")]
+            InternalQuotationAIDecision = 11,
+            /// <summary>
+            /// 最終結果
+            /// </summary>
+            [Description("最終結果")]
+            InternalQuotationResult = 12,
             #endregion
             #region -- ExternalQuotation --
-
+            /// <summary>
+            /// Nexar 外部查詢
+            /// </summary>
+            [Description("Nexar 外部查詢")]
+            ExternalQuotationNexarQuery = 20,
+            /// <summary>
+            /// 最終結果
+            /// </summary>
+            [Description("最終結果")]
+            ExternalQuotationResult = 21,
             #endregion
 
             #region -- MouserQuotation --

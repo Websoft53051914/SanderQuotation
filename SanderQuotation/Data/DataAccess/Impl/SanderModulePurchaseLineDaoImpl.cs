@@ -37,6 +37,16 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND s.\"no\" = @{nameof(searchVO.SanderModuleItemNoEq)} ");
                 paras.Add(nameof(searchVO.SanderModuleItemNoEq), searchVO.SanderModuleItemNoEq);
             }
+            if (searchVO.Description2In.Count > 0)
+            {
+                condition.Append($"AND s.{nameof(SanderModulePurchaseLineEntity.Description2)} = ANY(@Description2In) ");
+                paras.Add("Description2In", searchVO.Description2In.ToArray());
+            }
+            if (searchVO.UnitCostLcyGt.HasValue)
+            {
+                condition.Append($"AND s.{nameof(SanderModulePurchaseLineEntity.UnitCostLcy)} > @UnitCostLcyGt ");
+                paras.Add("UnitCostLcyGt", searchVO.UnitCostLcyGt.Value);
+            }
 
             string sql = $@"
 SELECT s.*

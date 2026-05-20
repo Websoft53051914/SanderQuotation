@@ -47,7 +47,7 @@ namespace backend.EIPSource
 
                 // 取得需比對廠牌之料品類別清單（此次執行共用，避免每筆重複查詢）
                 TBSysSettingBL blTBSysSetting = BLFactory.GetInstanceBackGround<TBSysSettingBL>();
-                string brandComparisonType = ((int)ParameterTypeEnum.BrandComparisonCategoryList).ToString();
+                string brandComparisonType = ParameterTypeEnum.BrandComparisonCategoryList.ToString();
                 SearchVO brandComparisonSearchVO = new();
                 HashSet<string> brandComparisonCategorySet = blTBSysSetting
                     .GetListByType(brandComparisonSearchVO, brandComparisonType)
@@ -192,7 +192,7 @@ namespace backend.EIPSource
                         {
                             remark += $"[{dm.No}] 非需比對廠牌類別，完全命中，命中欄位：{dm.ColumnName}\n";
                             string step1FullHitRemark = remark + "查料結果：完全命中（MPN，非需比對廠牌類別）";
-                            InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1FullHitRemark);
+                            Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1FullHitRemark);
                             return (dm.No, false, step1FullHitRemark);
                         }
                         else if (string.IsNullOrWhiteSpace(manufacturer))
@@ -214,7 +214,7 @@ namespace backend.EIPSource
                             {
                                 remark += $"[{dm.No}] 需比對廠牌類別，廠牌一致，完全命中\n";
                                 string step1FullHitMfrRemark = remark + "查料結果：完全命中（MPN，需比對廠牌類別，廠牌一致）";
-                                InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1FullHitMfrRemark);
+                                Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1FullHitMfrRemark);
                                 return (dm.No, false, step1FullHitMfrRemark);
                             }
                             else
@@ -233,7 +233,7 @@ namespace backend.EIPSource
                     {
                         remark += $"所有候選皆非完全命中，建議料號：{step1FallbackNo}\n";
                         string step1SuggestRemark = remark + step1FallbackResult;
-                        InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1SuggestRemark);
+                        Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, step1SuggestRemark);
                         return (step1FallbackNo, true, step1SuggestRemark);
                     }
 
@@ -249,7 +249,7 @@ namespace backend.EIPSource
                 remark += "MPN 欄位為空白，無法以 MPN 查詢\n";
             }
 
-            InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, remark);
+            Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep1, remark);
 
             // Step2：以客戶料號（Component Part）查詢
             remark += "Step2：以客戶料號（Component Part）查詢\n";
@@ -278,7 +278,7 @@ namespace backend.EIPSource
 
                         remark += $"[{dm.No}] 完全命中，命中欄位：{dm.ColumnName}\n";
                         string step2Remark = remark + "查料結果：完全命中（Component Part）";
-                        InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep2, step2Remark);
+                        Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep2, step2Remark);
                         return (dm.No, false, step2Remark);
                     }
 
@@ -294,7 +294,7 @@ namespace backend.EIPSource
                 remark += "Component Part 欄位為空白，無法以 Component Part 查詢\n";
             }
 
-            InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep2, remark);
+            Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep2, remark);
 
             // Step3：以零件規格（Description）查詢
             remark += $"查詢值：{description}\n";
@@ -320,7 +320,7 @@ namespace backend.EIPSource
                         TBSanderModuleItemKeywordDM dmBest = dmListMatch.First();
                         remark += $"以 Description 查詢有 {dmListMatch.Count} 筆結果，建議料號：{dmBest.No}，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
                         string step3Remark = remark + "查料結果：建議料號（Description）";
-                        InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep3, step3Remark);
+                        Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep3, step3Remark);
                         return (dmBest.No, true, step3Remark);
                     }
                     else
@@ -339,31 +339,8 @@ namespace backend.EIPSource
             }
 
             string notFoundRemark = remark + "查料結果：查無料號";
-            InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep3, notFoundRemark);
+            Method.InsertDecisionLog(blTBBomFileDecisionLog, content.Id, BomFileDecisionLogStageEnum.PartSearch, BomFileDecisionLogStepEnum.PartSearchStep3, notFoundRemark);
             return (null, false, notFoundRemark);
-        }
-
-        /// <summary>
-        /// 寫入一筆查料決策歷程紀錄至資料庫
-        /// </summary>
-        /// <param name="blTBBomFileDecisionLog">決策歷程 BL 實例</param>
-        /// <param name="bomFileContentId">BOM 料項 Id</param>
-        /// <param name="stage">決策階段</param>
-        /// <param name="step">決策步驟</param>
-        /// <param name="message">決策訊息</param>
-        private void InsertDecisionLog(
-            TBBomFileDecisionLogBL blTBBomFileDecisionLog,
-            Guid bomFileContentId,
-            BomFileDecisionLogStageEnum stage,
-            BomFileDecisionLogStepEnum step,
-            string message)
-        {
-            TBBomFileDecisionLogDM logDM = new();
-            logDM.BomFileContentId = bomFileContentId;
-            logDM.Stage = (int)stage;
-            logDM.Step = (int)step;
-            logDM.Message = message;
-            blTBBomFileDecisionLog.DoInsert(logDM);
         }
     }
 }

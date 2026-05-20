@@ -24,9 +24,22 @@ BEGIN
 	   OR OLD.longdesc IS DISTINCT FROM NEW.longdesc
 	   OR OLD.longdesc2 IS DISTINCT FROM NEW.longdesc2 
 	THEN 
-	  NEW.flagneedextractkeyword = '1'::bit; 
+	  NEW.flagneedextractkeyword = true; 
 	END IF;
 	RETURN NEW; 
+END; 
+$$ LANGUAGE plpgsql;
+-- 檢查 sandermoduleitemvariant 規格內容是否有更新
+CREATE OR REPLACE FUNCTION trg_sandermoduleitemvariant_check_update() RETURNS TRIGGER AS 
+$$ 
+BEGIN
+-- 檢查 sandermoduleitemvariant 規格內容是否有更新
+    IF OLD.description IS DISTINCT FROM NEW.description
+       OR OLD.description2 IS DISTINCT FROM NEW.description2 
+    THEN 
+      NEW.flagneedextractkeyword = 1; 
+    END IF;
+    RETURN NEW; 
 END; 
 $$ LANGUAGE plpgsql;
 

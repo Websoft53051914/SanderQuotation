@@ -4,7 +4,6 @@ using Business.DomainModel;
 using CommonClass.Model;
 using Core.Utility.Extensions;
 using Core.Utility.Utility;
-using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.StaticFiles;
 using System.Data;
@@ -898,6 +897,31 @@ namespace backend.Common
             }
 
             return "application/octet-stream";
+        }
+
+        /// <summary>
+        /// 寫入一筆決策歷程紀錄至資料庫
+        /// </summary>
+        /// <param name="blLog">決策歷程 BL 實例；傳入 null 時略過寫入</param>
+        /// <param name="bomFileContentId">BOM 料項 Id</param>
+        /// <param name="stage">決策階段</param>
+        /// <param name="step">決策步驟</param>
+        /// <param name="message">決策訊息</param>
+        public static void InsertDecisionLog(
+            TBBomFileDecisionLogBL? blLog,
+            Guid bomFileContentId,
+            BomFileDecisionLogStageEnum stage,
+            BomFileDecisionLogStepEnum step,
+            string message)
+        {
+            if (blLog == null)
+                return;
+            TBBomFileDecisionLogDM logDM = new();
+            logDM.BomFileContentId = bomFileContentId;
+            logDM.Stage = (int)stage;
+            logDM.Step = (int)step;
+            logDM.Message = message;
+            blLog.DoInsert(logDM);
         }
 
     }

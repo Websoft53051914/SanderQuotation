@@ -156,10 +156,26 @@ namespace Business.BusinessLogic
         /// <param name="dm">DM 物件</param>
         public void DoCreate(SanderModuleItemDM dm)
         {
-            SanderModuleItemEntity entity = _mapper.Map<SanderModuleItemEntity>(dm);
+            ArgumentNullException.ThrowIfNull(dm.No);
+            SanderModuleItemDM? dmOld = GetOneInfoByNo(dm.No);
 
-            GetDAO().Insert(entity);
-            dm.Id = entity.Id;
+            if(dmOld == null)
+            {
+                SanderModuleItemEntity entity = _mapper.Map<SanderModuleItemEntity>(dm);
+
+                GetDAO().Insert(entity);
+                dm.Id = entity.Id;
+            }
+            else
+            {
+                SanderModuleItemEntity entity = GetDAO().FindByPk(dmOld.Id);
+                entity.Description = dm.Description;
+                entity.Description2 = dm.Description2;
+                entity.LongDesc = dm.LongDesc;
+                entity.LongDesc2 = dm.LongDesc2;
+                GetDAO().Update(entity);
+                _unitOfWork.Commit();
+            }           
         }
 
         /// <summary>

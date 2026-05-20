@@ -5,7 +5,6 @@ using Business.DomainModel;
 using Const;
 using Core.Utility.Extensions;
 using Core.Utility.Helper.DB.Entity;
-using Data.DataAccess.DTO;
 using Microsoft.AspNetCore.Mvc;
 using ViewModel.QuotationResult;
 using static Const.Enums;
@@ -28,7 +27,7 @@ namespace backend.Controllers
             MapperConfiguration cfg = new(c =>
             {
                 c.AllowNullCollections = true;
-                c.CreateMap<BomFileContentQuotationDTO, QuotationItemVM>()
+                c.CreateMap<BomFileContentDM, QuotationItemVM>()
                     .ForMember(dest => dest.InternalPurchaseOrderDate,
                         opt => opt.MapFrom(src => src.InternalPurchaseOrderDate.HasValue
                             ? src.InternalPurchaseOrderDate.Value.ToString("yyyy/MM/dd")
@@ -159,9 +158,11 @@ namespace backend.Controllers
                 vm.CreatedAtText = dm.CreatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
                 vm.UpdatedAtText = dm.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
                 vm.Items = new();
-                foreach (BomFileContentQuotationDTO dto in GetBlBomFileContent().GetListWithQuotationByUploadId(dm.UploadId))
+                SearchVO contentSearchVO = new();
+                contentSearchVO.UploadIdEq = dm.UploadId;
+                foreach (BomFileContentDM contentDm in GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO))
                 {
-                    vm.Items.Add(_mapper.Map<QuotationItemVM>(dto));
+                    vm.Items.Add(_mapper.Map<QuotationItemVM>(contentDm));
                 }
 
                 return JsonSuccess(vm);
