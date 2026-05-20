@@ -143,7 +143,7 @@
 </div>
 <!--end row-->
 
-<div class="modal fade zoomIn" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+<div class="modal fade zoomIn" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-primary-subtle">
@@ -156,7 +156,7 @@
                 <!-- FilePond 上傳區 -->
                 <div class="mb-2">
                     <label class="form-label fw-semibold">選取檔案（可多選）</label>
-                    <input type="file" id="uploadFileInput" multiple />
+                    <input type="file" id="uploadFileInput" multiple accept="application/pdf" />
                 </div>
             </div>
             <div class="modal-footer">
@@ -171,7 +171,7 @@
 
 
 
-    <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
+<div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true" ">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0">
                 <div class="modal-header p-3 bg-info-subtle">
@@ -210,7 +210,7 @@
                 pageIndex: 1,
                 pageSize: 10,
                 sortField: "FileName", //*** 頁面預設排序欄位，必須是TABLE內欄位
-                sortDir: "asc",
+                sortOrder: "asc",
 
                 //*** 篩選條件
                 Keyword1: "",
@@ -220,69 +220,36 @@
                 EndDate: "",
             };
 
-            const data = [
-                {
-                    'No':1,
-                    'Id':1,
-                    'FileName':'2310.07081v2.pdf',
-                    'ContentSummary':`這篇論文探討如何提升機器翻譯在處理成語與習語時的準確性。由於成語具有非組合性，其含義無法從單字推導，導致傳統模型常因字面翻譯而產生錯誤。
-
-- 建立包含法語、芬蘭語及日語約 4,000 個成語句子的新數據集。
-- 提出策略性調高成語句子的訓練損失權重，並結合 kNN-MT 檢索增強模型。
-- 透過合成實驗發現模型正確翻譯成語的頻率臨界點，並驗證上下文線索的影響。
-
-實驗數據顯示，這些方法能將預訓練模型的成語翻譯準確度絕對提升達 13%，且在改善成語翻譯的同時，不會損害非成語句子的翻譯品質。
-
-關鍵字：機器翻譯、成語翻譯、檢索增強、損失加權、kNN-MT、自然語言處理`,
-                    'UpdateTime':'2026/05/07 10:00:00',
-                    'UpdaterName':'管理員'
-                },
-                {
-                    'No':2,
-                    'Id':2,
-                    'FileName':'1706.03762v7.pdf',
-                    'ContentSummary':`這份文件介紹了名為 Transformer 的新神經網路架構，主要應用於序列轉換任務，如機器翻譯。該研究由 Google 團隊提出，旨在解決傳統模型在處理長序列時的效率與平行化問題。
-
-- 捨棄傳統的循環神經網路（RNN）與卷積神經網路（CNN），完全基於自注意力機制（Self-Attention）來捕捉輸入與輸出之間的全局依賴關係。
-- 提出多頭注意力（Multi-Head Attention）技術，允許模型同時關注來自不同表示子空間的信息。
-- 顯著提升訓練效率與平行化能力，使模型能在較短時間內達到頂尖性能。
-
-關鍵數據包含在 WMT 2014 英德翻譯任務中取得 28.4 BLEU 分數，英法翻譯則達到 41.8 BLEU，均創下當時的新紀錄，且訓練成本僅為現有模型的一小部分。
-
-關鍵字：Transformer、自注意力機制、機器翻譯、深度學習、序列建模、多頭注意力。`,
-                    'UpdateTime':'2026/05/07 09:00:00',
-                    'UpdaterName':'管理員'
-                },
-            ]
-
             // ⭐ 主載入函式（分頁 / 搜尋 / 排序 都走這裡）
             function loadDatas() {
-                // showLoader();
-                // $.ajax({
-                //     url: '@(Configuration["BackendURL"])/api/ESDbTransfer/GetPageList',
-                //     type: 'GET',
-                //     data: queryState,
-                //     success: function (res) {
-                //     hideLoader();
-                //     if (!res.Success) {
-                //         Swal.fire({
-                //             icon: (res.Errors.AlertLevel || '').toLowerCase(),
-                //             title: res.Errors.ReturnCode,
-                //             text: res.Errors.ReturnMsg,
-                //             confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
-                //         });
-                //         return;
-                //     };
-                //         renderTable(res.Data.Data);
-                //         renderPagination(res.Data.Total);
-                //         document.getElementById("remove-actions").style.display = 'none';
-                //     },
-                //     error: function () {
-                //         alert('Failed to load data.');
-                //     }
-                // });
-                renderTable(data);
-                renderPagination(data.length);
+                showLoader();
+                $.ajax({
+                    url: '@(Configuration["BackendURL"])/api/HistoryFile/GetPageList',
+                    type: 'GET',
+                    data: queryState,
+                    success: function (res) {
+                    hideLoader();
+                    if (!res.Success) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: res.Message,
+                            confirmButtonText: '確定',
+                        });
+                        return;
+                    };
+                        renderTable(res.Data.Data);
+                        renderPagination(res.Data.Total);
+                        document.getElementById("remove-actions").style.display = 'none';
+                    },
+                    error: function () {
+                        hideLoader();
+                        Swal.fire({
+                            icon: 'error',
+                            title: '@config.GetMessage("System_Error").ToHtmlString()',
+                            confirmButtonText: '確定',
+                        });
+                    }
+                });
             }
 
             // ⭐ 表格渲染
@@ -430,10 +397,10 @@
                 const field = $(this).data('sort');
 
                 if (queryState.sortField === field) {
-                    queryState.sortDir = queryState.sortDir === 'asc' ? 'desc' : 'asc';
+                    queryState.sortOrder = queryState.sortOrder === 'asc' ? 'desc' : 'asc';
                 } else {
                     queryState.sortField = field;
-                    queryState.sortDir = 'asc';
+                    queryState.sortOrder = 'asc';
                 }
 
                 loadDatas();
@@ -476,14 +443,21 @@
 
             // ⭐ 上傳 Modal 邏輯（FilePond）
             let pond = null;
+            const _backendUrl = '@(Configuration["BackendURL"])';
 
             function initFilePond() {
                 if (pond) return; // 已初始化就不重複
-                FilePond.registerPlugin(FilePondPluginImagePreview);
+                FilePond.registerPlugin(FilePondPluginImagePreview, FilePondPluginFileValidateType);
                 pond = FilePond.create(document.getElementById('uploadFileInput'), {
                     allowMultiple: true,
                     maxFiles: 50,
-                            labelIdle: '上傳檔案',
+                    acceptedFileTypes: ['application/pdf'],
+                    labelFileTypeNotAllowed: '只允許上傳 PDF 檔案',
+                    fileValidateTypeLabelExpectedTypes: '請選擇 PDF 檔案',
+                    chunkUploads: true,
+                    chunkForce: true,
+                    chunkSize: 5000000, // 5MB 每塊
+                    labelIdle: '上傳檔案',
                     labelFileProcessing: '上傳中...',
                     labelFileProcessingComplete: '上傳完成',
                     labelFileProcessingAborted: '已取消',
@@ -498,17 +472,55 @@
                     labelButtonUndoItemProcessing: '復原',
                     labelButtonRetryItemProcessing: '重試',
                     labelButtonProcessItem: '上傳',
-                    // 停用自動上傳（按儲存才送出）
-                    server: null,
-                    instantUpload: false,
+                    instantUpload: true,
+                    server: {
+                        // 1. 初始化：取得 server 端的 transfer ID
+                        process: {
+                            url: _backendUrl + '/api/HistoryFile/Process',
+                            method: 'POST',
+                            onload: (response) => {
+                                console.log(response)
+                                return response.responseText
+                            },
+                            onerror: (response) =>  {
+                                console.log(response)
+                                return response
+                            },
+                            withCredentials:true
+                        },
+                        // 2. 分塊上傳：帶入 Upload-Name / Upload-Offset / Upload-Length header
+                        patch: {
+                            url: _backendUrl + '/api/HistoryFile/Patch?id=',
+                            method: 'PATCH',
+                            headers: this.headers,
+                            onload: (response) => response,
+                            onerror: (response) => response,
+                             withCredentials:true
+                        },
+                        // 3. 取消上傳：將 upload ID 送往後端刪除暫存
+                        revert: {
+                            url: _backendUrl + '/api/HistoryFile/Revert',
+                            method: 'DELETE',
+                            onload: (response) => response,
+                             withCredentials:true
+                        },
+                    },
                     onaddfile: updateSaveBtn,
                     onremovefile: updateSaveBtn,
+                    onprocessfile: updateSaveBtn,
+                    // 單一檔案上傳失敗
+                    onprocessfileerror: function (error, file) {
+                        updateSaveBtn();
+                        Swal.fire({ icon: 'error', title: '上傳失敗：' + file.filename, confirmButtonText: '確認' });
+                    },
                 });
             }
 
             function updateSaveBtn() {
-                const count = pond ? pond.getFiles().length : 0;
-                $('#btnSaveUpload').prop('disabled', count === 0);
+                const files = pond ? pond.getFiles() : [];
+                const count = files.length;
+                const allDone = count > 0 && files.every(f => f.status === 5 /* PROCESSING_COMPLETE */);
+                $('#btnSaveUpload').prop('disabled', !allDone);
             }
 
             // Modal 開啟時初始化 FilePond 並清空
@@ -518,19 +530,38 @@
                 updateSaveBtn();
             });
 
-            // 儲存按鈕 — 取得所有 File 物件後送出
+            // 儲存按鈕 — 收集已上傳的 uploadId，呼叫 Upload API
             $('#btnSaveUpload').on('click', function () {
-                const files = pond.getFiles().map(f => f.file);
-                if (files.length === 0) {
-                    Swal.fire({ icon: 'warning', title: '請先選取檔案', confirmButtonText: '確認' });
+                const uploadIdList = pond.getFiles()
+                    .filter(f => f.status === 5 && f.serverId)
+                    .map(f => f.serverId);
+
+                if (uploadIdList.length === 0) {
+                    Swal.fire({ icon: 'warning', title: '沒有可儲存的檔案', confirmButtonText: '確認' });
                     return;
                 }
-                // TODO: 送出 FormData 至後端 API
-                // const formData = new FormData();
-                // files.forEach(f => formData.append('files', f));
-                // $.ajax({ url: '...', type: 'POST', data: formData, processData: false, contentType: false, ... });
-                console.log('準備上傳', files.map(f => f.name));
-                $('#uploadModal').modal('hide');
+                showLoader();
+                $('#btnSaveUpload').prop('disabled', true).html('<i class="ri-loader-4-line me-1"></i>儲存中...');
+
+                $.ajax({
+                    url: '@(Configuration["BackendURL"])/api/HistoryFile/Upload',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ NewFileUploadIdList: uploadIdList }),
+                    success: function (res) {
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadModal')).hide();
+                        const icon = res.Success ? 'success' : 'warning';
+                        Swal.fire({ icon: icon, title: res.Success?res.Data:res.Message, confirmButtonText: '確認' })
+                            .then(() => loadDatas());
+                    },
+                    error: function () {
+                        Swal.fire({ icon: 'error', title: '@config.GetMessage("System_Error").ToHtmlString()', confirmButtonText: '確認' });
+                    },
+                    complete: function () {
+                        hideLoader();
+                        $('#btnSaveUpload').prop('disabled', false).html('<i class="ri-save-line me-1"></i>儲存');
+                    }
+                });
             });
 
             // ⭐ 點擊編輯按鈕
@@ -576,6 +607,7 @@
             });
 
     </script>
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
-    <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+    <script src="@Url.Content("~/assets/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.js")"></script>
+    <script src="@Url.Content("~/assets/libs/filepond-plugin-file-validate-type/filepond-plugin-file-validate-type.min.js")"></script>
+    <script src="@Url.Content("~/assets/libs/filepond/filepond.min.js")"></script>
 }

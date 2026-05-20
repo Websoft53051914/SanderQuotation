@@ -6,6 +6,7 @@ using Core.Utility.Extensions;
 using Core.Utility.Utility;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.StaticFiles;
 using System.Data;
 using System.Net;
 using System.Net.Mail;
@@ -879,6 +880,24 @@ namespace backend.Common
             {
 
             }
+        }
+
+        /// <summary>
+        /// 取得檔案的 Mime Type，若無法判斷則回傳 application/octet-stream
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static string GetMimeType(string fileName)
+        {
+            FileExtensionContentTypeProvider provider = new();
+
+            if (provider.TryGetContentType(fileName, out string? contentType)
+                && !string.IsNullOrEmpty(contentType))
+            {
+                return contentType;
+            }
+
+            return "application/octet-stream";
         }
 
     }

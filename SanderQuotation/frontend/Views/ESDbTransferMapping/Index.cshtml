@@ -776,10 +776,9 @@
                     hideLoader();
                     if (!res.Success) {
                         Swal.fire({
-                            icon: (res.Errors?.AlertLevel || 'warning').toLowerCase(),
-                            title: res.Errors?.ReturnCode,
-                            text: res.Errors?.ReturnMsg,
-                            confirmButtonText: '確認',
+                            icon: 'error',
+                            title:res.Message,
+                            confirmButtonText: '確定',
                         });
                         return;
                     }
@@ -787,7 +786,11 @@
                     renderPagination(res.Data.Total);
                     document.getElementById('remove-actions').style.display = 'none';
                 },
-                error: function () { hideLoader(); alert('Failed to load data.'); }
+                error: function () { hideLoader();Swal.fire({
+                            icon: 'error',
+                            title:'@config.GetMessage("System_Error").ToHtmlString()',
+                            confirmButtonText: '確定',
+                        }); }
             });
         }
 

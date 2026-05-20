@@ -177,26 +177,32 @@
     // 資料載入
     // ========================================
     function loadDatas() {
+        showLoader();
         $.ajax({
             url: pageUrls.GetPageList,
             type: 'GET',
             data: queryState,
             success: function (res) {
+                hideLoader();
                 if (res.Success) {
                     renderTable(res.Data.Data);
                     renderPagination(res.Data.Total);
                     document.getElementById("remove-actions").style.display = 'none';
                 } else {
                     Swal.fire({
-                        icon: (res?.Errors?.AlertLevel ?? "error").toLowerCase(),
-                        title: res?.Errors?.ReturnCode ?? pageConfig.messages.systemError,
-                        text: res?.Errors?.ReturnMsg ?? "",
+                        icon: 'error',
+                        title: pageConfig.messages.systemError,
                         confirmButtonText: pageConfig.messages.confirm,
                     });
                 }
             },
             error: function () {
-                alert('Failed to load data.');
+                hideLoader();
+                Swal.fire({
+                            icon: 'error',
+                            title:'@config.GetMessage("System_Error").ToHtmlString()',
+                            confirmButtonText: '確定',
+                        });
             }
         });
     }

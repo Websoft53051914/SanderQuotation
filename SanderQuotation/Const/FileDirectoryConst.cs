@@ -10,5 +10,11 @@
         /// 轉入檔案上傳完成
         /// </summary>
         public const string EsFileTransferUploadComplete = "/Upload/EsFileTransferUploadComplete";
+
+
+        /// <summary>
+        /// 歷史資料
+        /// </summary>
+        public const string HistoryFile = "FileHistory";
     }
 }

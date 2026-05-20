@@ -558,6 +558,9 @@ namespace Const
             /// </summary>
             [Description("外部查價")]
             ExternalQuotation = 3,
+
+            [Description("Mouser API查價")]
+            MouserQuotation = 4
         }
 
         /// <summary>
@@ -587,6 +590,24 @@ namespace Const
             #endregion
             #region -- ExternalQuotation --
 
+            #endregion
+
+            #region -- MouserQuotation --
+            /// <summary>
+            /// Step 1：以廠商型號（MPN）查詢
+            /// </summary>
+            [Description("Step 1：以廠商型號（MPN）查詢")]
+            MouserQuotation1 = 100,
+            /// <summary>
+            /// Step 2：取實際下單價
+            /// </summary>
+            [Description("Step 2：取實際下單價")]
+            MouserQuotation2 = 101,
+            /// <summary>
+            /// Step 3：清除購物車
+            /// </summary>
+            [Description("Step 3：清除購物車")]
+            MouserQuotation3 = 102,
             #endregion
         }
     }

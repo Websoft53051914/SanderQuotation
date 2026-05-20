@@ -83,6 +83,7 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<ExternalQueryExecuteHandler>();
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
@@ -212,7 +213,18 @@ builder.Services.AddKernel()
                     apiKey: geminiApiKey,
                     httpClient: geminiHttpClient
                 );
+
 #endregion
+// 改用工廠方式註冊（選擇一種 Lifetime 即可，不要重複註冊）
+builder.Services.AddSingleton<GeminiFileApiClient>(sp =>
+{
+    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient();
+    return new GeminiFileApiClient(httpClient, geminiApiKey);
+});
+// Kernel 依照你原本的註冊方式
+
+builder.Services.AddScoped<HistoryFileHandler>();
 
 builder.Services.AddSingleton<ManualBatchEmbedding>();
 
