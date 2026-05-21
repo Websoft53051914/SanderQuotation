@@ -3,7 +3,9 @@ using backend.Models;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
-using static Const.Enums;namespace backend.EIPSource
+using static Const.Enums;
+
+namespace backend.EIPSource
 {
     /// <summary>
     /// 查價排程工作
@@ -76,13 +78,23 @@ using static Const.Enums;namespace backend.EIPSource
                 BomFileContentBL blBomFileContent = BLFactory.GetInstanceBackGround<BomFileContentBL>();
                 HandleQuotationBL blHandleQuotation = BLFactory.GetInstanceBackGround<HandleQuotationBL>();
 
-                List<BomFileContentDM> contents = blBomFileContent.GetListByUploadId(upload.UploadId);
+                SearchVO contentSearchVO = new();
+                contentSearchVO.UploadIdEq = upload.UploadId;
+                List<BomFileContentDM> contents = blBomFileContent.GetListWithQuotationByFilter(contentSearchVO);
                 List<BomFileContentDM> results = new();
 
-                foreach (BomFileContentDM content in contents)
+                for (int i = 0; i < contents.Count; i++)
                 {
+                    BomFileContentDM content = contents[i];
+
                     try
                     {
+                        _quotationHandler.RunExternal = false;
+                        if (i == 0 || i == 1)
+                        {
+                            _quotationHandler.RunExternal = true;
+                        }
+
                         BomFileContentDM result = await _quotationHandler.RunAsync(content, upload);
                         results.Add(result);
                         if (logDM != null)

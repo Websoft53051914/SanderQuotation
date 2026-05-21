@@ -136,5 +136,18 @@ namespace Business.BusinessLogic
                 _unitOfWork.Commit();
             }
         }
+
+        /// <summary>
+        /// 依 BomFileContentId 與 Stage 刪除決策歷程 (邏輯刪除)
+        /// </summary>
+        /// <param name="bomFileContentId">BOM 料項識別碼</param>
+        /// <param name="stage">決策階段</param>
+        public void DeleteByBomFileContentIdAndStage(Guid bomFileContentId, int stage)
+        {
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = bomFileContentId;
+            searchVO.StageEq = stage;
+            DeleteByFilter(searchVO);
+        }
     }
 }

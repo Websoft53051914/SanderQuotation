@@ -84,18 +84,19 @@ namespace Business.BusinessLogic
         /// 批次儲存查料結果，並更新 EsFileTransferUpload.ProcessStatus = PartSearchDone，在同一 transaction 中完成
         /// </summary>
         /// <param name="uploadId">EsFileTransferUpload 主鍵</param>
-        /// <param name="results">查料結果清單：BomFileContentId、採購型號、是否為建議料號</param>
-        public void DoSavePartSearchResult(Guid uploadId, List<(Guid BomFileContentId, string? No, bool IsRecommendedNo)> results)
+        /// <param name="results">查料結果清單（BomFileContentDM）：No、IsRecommendedNo 與 PendingDecisionLogs 須已填入</param>
+        public void DoSavePartSearchResult(Guid uploadId, List<BomFileContentDM> results)
         {
             string account = SessionVO?.Account ?? string.Empty;
             DateTime nowTime = DateTime.Now;
             GetBLTBBomFileQuotation().DoSaveChange = false;
             GetBLEsFileTransferUpload().DoSaveChange = false;
+            GetBLTBBomFileDecisionLog().DoSaveChange = false;
 
-            foreach ((Guid contentId, string? no, bool isRecommendedNo) in results)
+            foreach (BomFileContentDM dm in results)
             {
                 SearchVO searchVO = new();
-                searchVO.BomFileContentIdEq = contentId;
+                searchVO.BomFileContentIdEq = dm.Id;
                 searchVO.IsLimit1 = true;
 
                 TBBomFileQuotationDM? existing = GetBLTBBomFileQuotation().GetListByFilter(searchVO).FirstOrDefault();
@@ -104,8 +105,8 @@ namespace Business.BusinessLogic
                     TBBomFileQuotationEntity? entity = GetBLTBBomFileQuotation().GetDAO().FindByPk(existing.Id);
                     if (entity != null)
                     {
-                        entity.No = no;
-                        entity.IsRecommendedNo = isRecommendedNo;
+                        entity.No = dm.No;
+                        entity.IsRecommendedNo = dm.IsRecommendedNo;
                         entity.Status = (int)StatusEnum.Enabled;
                         entity.UpdatedBy = account;
                         entity.UpdatedAt = nowTime;
@@ -115,15 +116,26 @@ namespace Business.BusinessLogic
                 else
                 {
                     TBBomFileQuotationEntity entity = new();
-                    entity.No = no;
-                    entity.IsRecommendedNo = isRecommendedNo;
-                    entity.BomFileContentId = contentId;
+                    entity.No = dm.No;
+                    entity.IsRecommendedNo = dm.IsRecommendedNo;
+                    entity.BomFileContentId = dm.Id;
                     entity.Status = (int)StatusEnum.Enabled;
                     entity.CreatedBy = account;
                     entity.UpdatedBy = account;
                     entity.CreatedAt = nowTime;
                     entity.UpdatedAt = nowTime;
                     GetBLTBBomFileQuotation().GetDAO().Insert(entity);
+                }
+
+                // 寫入暫存決策歷程
+                foreach (PendingDecisionLogVO log in dm.PendingDecisionLogs)
+                {
+                    TBBomFileDecisionLogDM logDM = new();
+                    logDM.BomFileContentId = dm.Id;
+                    logDM.Stage = log.Stage;
+                    logDM.Step = log.Step;
+                    logDM.Message = log.Message;
+                    GetBLTBBomFileDecisionLog().DoInsert(logDM);
                 }
             }
 
@@ -132,6 +144,7 @@ namespace Business.BusinessLogic
             _unitOfWork.Commit();
             GetBLTBBomFileQuotation().DoSaveChange = true;
             GetBLEsFileTransferUpload().DoSaveChange = true;
+            GetBLTBBomFileDecisionLog().DoSaveChange = true;
         }
     }
 
@@ -151,6 +164,7 @@ namespace Business.BusinessLogic
             DateTime nowTime = DateTime.Now;
             GetBLTBBomFileQuotation().DoSaveChange = false;
             GetBLEsFileTransferUpload().DoSaveChange = false;
+            GetBLTBBomFileDecisionLog().DoSaveChange = false;
 
             foreach (BomFileContentDM dm in results)
             {
@@ -174,6 +188,8 @@ namespace Business.BusinessLogic
                 entity.InternalLowMaxPrice = dm.InternalLowMaxPrice;
                 entity.InternalHighMinPrice = dm.InternalHighMinPrice;
                 entity.InternalHighMaxPrice = dm.InternalHighMaxPrice;
+                entity.InternalSupplierName = dm.InternalSupplierName;
+                entity.InternalCurrency = dm.InternalCurrency;
                 entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
                 entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
                 entity.ExternalQuotationDate = dm.ExternalQuotationDate;
@@ -181,13 +197,25 @@ namespace Business.BusinessLogic
                 entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
                 entity.ExternalMoq = dm.ExternalMoq;
                 entity.ExternalSupplierName = dm.ExternalSupplierName;
+                entity.ExternalCurrency = dm.ExternalCurrency;
                 entity.UpdatedBy = account;
                 entity.UpdatedAt = nowTime;
 
                 GetBLTBBomFileQuotation().GetDAO().Update(entity);
+
+                // 寫入暫存決策歷程
+                foreach (PendingDecisionLogVO log in dm.PendingDecisionLogs)
+                {
+                    TBBomFileDecisionLogDM logDM = new();
+                    logDM.BomFileContentId = dm.Id;
+                    logDM.Stage = log.Stage;
+                    logDM.Step = log.Step;
+                    logDM.Message = log.Message;
+                    GetBLTBBomFileDecisionLog().DoInsert(logDM);
+                }
             }
 
-            GetBLEsFileTransferUpload().GetDAO().UpdateProcessStatus(
+            GetBLEsFileTransferUpload().DoUpdateProcessStatus(
                 uploadId,
                 (int)EsFileTransferUploadProcessStatusEnum.PricingDone);
 
@@ -195,6 +223,7 @@ namespace Business.BusinessLogic
 
             GetBLTBBomFileQuotation().DoSaveChange = true;
             GetBLEsFileTransferUpload().DoSaveChange = true;
+            GetBLTBBomFileDecisionLog().DoSaveChange = true;
         }
     }
 
@@ -243,6 +272,125 @@ namespace Business.BusinessLogic
             _blEsFileTransferUpload._Configuration = _Configuration;
 
             return _blEsFileTransferUpload;
+        }
+
+        private TBBomFileDecisionLogBL? _blTBBomFileDecisionLog = null;
+        protected TBBomFileDecisionLogBL GetBLTBBomFileDecisionLog()
+        {
+            _blTBBomFileDecisionLog ??= new TBBomFileDecisionLogBL(_unitOfWork, SessionVO ?? new());
+            _blTBBomFileDecisionLog._Configuration = _Configuration;
+
+            return _blTBBomFileDecisionLog;
+        }
+    }
+
+    /// <summary>
+    /// 單筆重新查價
+    /// </summary>
+    public partial class HandleQuotationBL
+    {
+        /// <summary>
+        /// 儲存單筆內部查價結果（更新 TBBomFileQuotation 內部欄位並寫入決策歷程）
+        /// </summary>
+        /// <param name="dm">已執行內部查價的 BomFileContentDM，PendingDecisionLogs 須已填入</param>
+        public void DoSaveSingleInternalQuotationResult(BomFileContentDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            GetBLTBBomFileQuotation().DoSaveChange = false;
+            GetBLTBBomFileDecisionLog().DoSaveChange = false;
+
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = dm.Id;
+            searchVO.IsLimit1 = true;
+
+            TBBomFileQuotationDM? existing = GetBLTBBomFileQuotation().GetListByFilter(searchVO).FirstOrDefault();
+            if (existing != null)
+            {
+                TBBomFileQuotationEntity? entity = GetBLTBBomFileQuotation().GetDAO().FindByPk(existing.Id);
+                if (entity != null)
+                {
+                    entity.InternalPurchaseOrderDate = dm.InternalPurchaseOrderDate;
+                    entity.InternalUnitPriceOriginalCurrency = dm.InternalUnitPriceOriginalCurrency;
+                    entity.InternalUnitPriceTwd = dm.InternalUnitPriceTwd;
+                    entity.InternalQuantity = dm.InternalQuantity;
+                    entity.InternalLowMinPrice = dm.InternalLowMinPrice;
+                    entity.InternalLowMaxPrice = dm.InternalLowMaxPrice;
+                    entity.InternalHighMinPrice = dm.InternalHighMinPrice;
+                    entity.InternalHighMaxPrice = dm.InternalHighMaxPrice;
+                    entity.InternalSupplierName = dm.InternalSupplierName;
+                    entity.InternalCurrency = dm.InternalCurrency;
+                    entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
+                    entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
+                    entity.UpdatedBy = account;
+                    entity.UpdatedAt = nowTime;
+                    GetBLTBBomFileQuotation().GetDAO().Update(entity);
+                }
+            }
+
+            foreach (PendingDecisionLogVO log in dm.PendingDecisionLogs)
+            {
+                TBBomFileDecisionLogDM logDM = new();
+                logDM.BomFileContentId = dm.Id;
+                logDM.Stage = log.Stage;
+                logDM.Step = log.Step;
+                logDM.Message = log.Message;
+                GetBLTBBomFileDecisionLog().DoInsert(logDM);
+            }
+
+            _unitOfWork.Commit();
+            GetBLTBBomFileQuotation().DoSaveChange = true;
+            GetBLTBBomFileDecisionLog().DoSaveChange = true;
+        }
+
+        /// <summary>
+        /// 儲存單筆外部查價結果（更新 TBBomFileQuotation 外部欄位並寫入決策歷程）
+        /// </summary>
+        /// <param name="dm">已執行外部查價的 BomFileContentDM，PendingDecisionLogs 須已填入</param>
+        public void DoSaveSingleExternalQuotationResult(BomFileContentDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            GetBLTBBomFileQuotation().DoSaveChange = false;
+            GetBLTBBomFileDecisionLog().DoSaveChange = false;
+
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = dm.Id;
+            searchVO.IsLimit1 = true;
+
+            TBBomFileQuotationDM? existing = GetBLTBBomFileQuotation().GetListByFilter(searchVO).FirstOrDefault();
+            if (existing != null)
+            {
+                TBBomFileQuotationEntity? entity = GetBLTBBomFileQuotation().GetDAO().FindByPk(existing.Id);
+                if (entity != null)
+                {
+                    entity.ExternalQuotationDate = dm.ExternalQuotationDate;
+                    entity.ExternalUnitPriceOriginalCurrency = dm.ExternalUnitPriceOriginalCurrency;
+                    entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
+                    entity.ExternalMoq = dm.ExternalMoq;
+                    entity.ExternalSupplierName = dm.ExternalSupplierName;
+                    entity.ExternalCurrency = dm.ExternalCurrency;
+                    entity.UpdatedBy = account;
+                    entity.UpdatedAt = nowTime;
+                    GetBLTBBomFileQuotation().GetDAO().Update(entity);
+                }
+            }
+
+            foreach (PendingDecisionLogVO log in dm.PendingDecisionLogs)
+            {
+                TBBomFileDecisionLogDM logDM = new();
+                logDM.BomFileContentId = dm.Id;
+                logDM.Stage = log.Stage;
+                logDM.Step = log.Step;
+                logDM.Message = log.Message;
+                GetBLTBBomFileDecisionLog().DoInsert(logDM);
+            }
+
+            _unitOfWork.Commit();
+            GetBLTBBomFileQuotation().DoSaveChange = true;
+            GetBLTBBomFileDecisionLog().DoSaveChange = true;
         }
     }
 }

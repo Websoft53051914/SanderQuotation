@@ -40,12 +40,12 @@ namespace Data.DataAccess.DTO
         /// <summary>
         /// 內部幣別
         /// </summary>
-        public int? InternalCurrency { get; set; }
+        public string? InternalCurrency { get; set; }
 
         /// <summary>
         /// 內部供應商名稱
         /// </summary>
-        public int? InternalSupplierName { get; set; }
+        public string? InternalSupplierName { get; set; }
 
         /// <summary>
         /// 內部查價 AI 分群低價群最低價
@@ -90,7 +90,7 @@ namespace Data.DataAccess.DTO
         /// <summary>
         /// 外部幣別
         /// </summary>
-        public int? ExternalCurrency { get; set; }
+        public string? ExternalCurrency { get; set; }
 
         /// <summary>
         /// 外部供應商名稱

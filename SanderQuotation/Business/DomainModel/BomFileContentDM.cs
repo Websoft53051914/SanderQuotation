@@ -78,12 +78,12 @@ namespace Business.DomainModel
         /// <summary>
         /// 內部幣別
         /// </summary>
-        public int? InternalCurrency { get; set; }
+        public string? InternalCurrency { get; set; }
 
         /// <summary>
         /// 內部供應商名稱
         /// </summary>
-        public int? InternalSupplierName { get; set; }
+        public string? InternalSupplierName { get; set; }
 
         /// <summary>
         /// 內部查價 AI 分群低價群最低價
@@ -128,7 +128,7 @@ namespace Business.DomainModel
         /// <summary>
         /// 外部幣別
         /// </summary>
-        public int? ExternalCurrency { get; set; }
+        public string? ExternalCurrency { get; set; }
 
         /// <summary>
         /// 外部供應商名稱
@@ -149,5 +149,49 @@ namespace Business.DomainModel
         /// 內部查價所使用的客戶承認料清單（CSV 格式）
         /// </summary>
         public string? CustomerApprovedPartCsv { get; set; }
+    }
+
+    public partial class BomFileContentDM
+    {
+        /// <summary>
+        /// 待寫入的決策歷程暫存清單（由查料/查價過程累積，在儲存時一同寫入 DB）
+        /// </summary>
+        public List<PendingDecisionLogVO> PendingDecisionLogs { get; set; } = new();
+
+        /// <summary>
+        /// 新增一筆待寫入的決策歷程至暫存清單
+        /// </summary>
+        /// <param name="stage">決策階段（int 值）</param>
+        /// <param name="step">決策步驟（int 值）</param>
+        /// <param name="message">決策訊息</param>
+        public void AddDecisionLog(int stage, int step, string message)
+        {
+            PendingDecisionLogVO log = new();
+            log.Stage = stage;
+            log.Step = step;
+            log.Message = message;
+            PendingDecisionLogs.Add(log);
+        }
+    }
+
+    /// <summary>
+    /// 待寫入 TBBomFileDecisionLog 的暫存決策歷程
+    /// </summary>
+    public class PendingDecisionLogVO
+    {
+        /// <summary>
+        /// 決策階段（對應 BomFileDecisionLogStageEnum 的 int 值）
+        /// </summary>
+        public int Stage { get; set; }
+
+        /// <summary>
+        /// 決策步驟（對應 BomFileDecisionLogStepEnum 的 int 值）
+        /// </summary>
+        public int Step { get; set; }
+
+        /// <summary>
+        /// 決策訊息
+        /// </summary>
+        public string Message { get; set; } = string.Empty;
     }
 }

@@ -195,6 +195,36 @@ namespace Business.BusinessLogic
     public partial class TBBomFileQuotationBL
     {
         /// <summary>
+        /// 更新 TBBomFileQuotation 的採購型號與是否為建議料號
+        /// </summary>
+        /// <param name="bomFileContentId">BomFileContent.Id</param>
+        /// <param name="no">採購型號</param>
+        /// <param name="isRecommendedNo">是否為建議料號</param>
+        public void DoUpdateNo(Guid bomFileContentId, string? no, bool isRecommendedNo)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = bomFileContentId;
+            searchVO.IsLimit1 = true;
+
+            TBBomFileQuotationDM? existing = GetListByFilter(searchVO).FirstOrDefault();
+            if (existing == null)
+                return;
+
+            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+            if (entity == null)
+                return;
+
+            entity.No = no;
+            entity.IsRecommendedNo = isRecommendedNo;
+            entity.UpdatedBy = account;
+            entity.UpdatedAt = DateTime.Now;
+            GetDAO().Update(entity);
+            _unitOfWork.Commit();
+        }
+
+        /// <summary>
         /// 儲存查料結果
         /// </summary>
         /// <param name="bomFileContentId">BomFileContent.Id</param>

@@ -171,6 +171,11 @@
         public int? ProcessStatusEq { get; set; }
 
         /// <summary>
+        /// EsFileTransferUpload 對應的轉入規則 ID
+        /// </summary>
+        public Guid? EsFileTransferMappingIdEq { get; set; }
+
+        /// <summary>
         /// 客戶代碼（用於 ReportItemCustomer 查詢）
         /// </summary>
         public string? CustomerCodeEq { get; set; }

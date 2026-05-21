@@ -64,12 +64,12 @@ WHERE 1=1
 
             if (searchVO.UploadIdEq.HasValue)
             {
-                condition.Append($"AND bfc.{nameof(BomFileContentEntity.UploadId)} = @{nameof(searchVO.UploadIdEq)} ");
+                condition.Append($"AND bfc.{nameof(BomFileContentDTO.UploadId)} = @{nameof(searchVO.UploadIdEq)} ");
                 paras.Add(nameof(searchVO.UploadIdEq), searchVO.UploadIdEq);
             }
             if (searchVO.IdEq.HasValue)
             {
-                condition.Append($"AND bfc.{nameof(BomFileContentEntity.Id)} = @{nameof(searchVO.IdEq)} ");
+                condition.Append($"AND bfc.{nameof(BomFileContentDTO.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
 
@@ -100,7 +100,7 @@ FROM bomfilecontent bfc
 LEFT JOIN tb_bomfilequotation bfq ON bfq.BomFileContentId = bfc.Id
 WHERE 1=1
 {condition}
-ORDER BY bfc.Id";
+ORDER BY bfc.CreatedAt";
 
             return DbHelper.FindList<BomFileContentDTO>(sql, paras);
         }

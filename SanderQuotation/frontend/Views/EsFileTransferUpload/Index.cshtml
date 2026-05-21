@@ -164,7 +164,7 @@
                                     <th style="width:50px;"></th>
                                     <th style="min-width:200px;">檔案名稱</th>
                                     <th style="min-width:200px;" class="required">匯入設定規則</th>
-                                    <th style="width:200px;" class="required">客戶代碼</th>
+                                    <th style="width:240px;" class="required">客戶（代碼或手動輸入名稱）</th>
                                     <th style="width:100px;">報價數量</th>
                                 </tr>
                             </thead>
@@ -176,7 +176,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                <button type="button" class="btn btn-primary" id="btnSaveUpload" disabled>
+                <button type="button" class="btn btn-primary" id="btnSaveUpload">
                     <i class="ri-save-line me-1"></i>儲存
                 </button>
             </div>
@@ -219,6 +219,7 @@
             TransferMappingCode: '@nameof(EsFileTransferUploadVM.TransferMappingCode)',
             CustomerCode: '@nameof(EsFileTransferUploadVM.CustomerCode)',
             CustomerName: '@nameof(EsFileTransferUploadVM.CustomerName)',
+            ManualCustomerName: '@nameof(EsFileTransferUploadVM.ManualCustomerName)',
             QuotationQty: '@nameof(EsFileTransferUploadVM.QuotationQty)',
             ProcessStatus: '@nameof(EsFileTransferUploadVM.ProcessStatus)',
             ProcessStatusText: '@nameof(EsFileTransferUploadVM.ProcessStatusText)',
@@ -427,7 +428,7 @@
                     <td class="fw-semibold">${escapeHtml(r[EftuM.FileName])}</td>
                     <td>${escapeHtml(r[EftuM.TransferMappingCode] || '')}</td>
                     <td class="text-center">${r[EftuM.QuotationQty] || 0}</td>
-                    <td>${escapeHtml(r[EftuM.CustomerName] || '')}</td>
+                    <td>${escapeHtml(r[EftuM.CustomerName] || r[EftuM.ManualCustomerName] || '')}</td>
                     <td class="text-center"><span class="${sc.cls}">${escapeHtml(sc.text)}</span></td>
                     <td class="text-muted">${escapeHtml(r[EftuM.CreatedAtText])}</td>
                     <td class="text-muted">${escapeHtml(r[EftuM.UpdatedAtText])}</td>
@@ -457,17 +458,14 @@
                 refreshBtnSaveUpload();
             });
 
-            // FilePond processfilestart：上傳中，禁用儲存
-            pond.on('processfilestart', function () {
-                $('#btnSaveUpload').prop('disabled', true);
-            });
+            // FilePond processfilestart：上傳中（保留事件但不禁用按鈕）
+            pond.on('processfilestart', function () { });
 
             // 打開 Modal 時清空
             dom.uploadModal.on('show.bs.modal', function () {
                 pond.removeFiles({ revert: false });
                 $('#uploadConfigBody').empty();
                 $('#uploadConfigSection').hide();
-                $('#btnSaveUpload').prop('disabled', true);
             });
 
             // 儲存按鈕
@@ -525,18 +523,8 @@
             $('#uploadConfigSection').toggle(hasRows);
         }
 
-        /** 是否可儲存（所有列必填欄位皆有值） */
-        function refreshBtnSaveUpload() {
-            var allReady = true;
-            $('#uploadConfigBody tr').each(function () {
-                var rule = $(this).find('.up-import-rule').val();
-                var isBom = $(this).attr('data-is-bom-rule') === 'true';
-                if (!rule) { allReady = false; return false; }
-                if (isBom && !$(this).find('.up-customer-code').val()) { allReady = false; return false; }
-            });
-            var hasRows = $('#uploadConfigBody tr').length > 0;
-            $('#btnSaveUpload').prop('disabled', !(hasRows && allReady));
-        }
+        /** 驗證狀態（改為點擊時以 SweetAlert 顯示，此函式保留供呼叫但不再控制 disabled） */
+        function refreshBtnSaveUpload() { }
 
         /** 建立上傳設定表格單列 */
         function buildUploadConfigRow(uploadId, fileName) {
@@ -545,19 +533,38 @@
                         <td><button type="button" class="btn btn-sm btn-soft-danger btn-remove-row"><i class="ri-delete-bin-line"></i></button></td>
                         <td class="small fw-semibold">${escapeHtml(fileName)}</td>
                         <td><select class="form-select up-import-rule" required></select></td>
-                        <td><div class="cell-bom-extra"><select class="form-select up-customer-code" required></select></div></td>
+                        <td>
+                            <div class="cell-bom-extra">
+                                <select class="form-select up-customer-code mb-1"></select>
+                                <div class="text-center text-muted small py-1">或</div>
+                                <input type="text" class="form-control up-manual-customer-name" placeholder="手動輸入客戶名稱" />
+                            </div>
+                        </td>
                         <td><div class="cell-bom-extra"><input type="number" class="form-control up-quotation-qty websoft-positive-int" min="1" value="1" /></div></td>
                     </tr>`;
         }
 
-        /** 建立客戶個代碼 select2（顯示名稱，値為 CustomerCode） */
+        /** 建立客戶代碼 select2（顯示名稱，値為 CustomerCode）；選擇後清除手動輸入 */
         function initCustomerSelect2($sel) {
             var data = [{ id: '', text: '請選擇' }].concat(
                 optionData.Customers.map(function (c) { return { id: c.Value, text: c.Text }; })
             );
             $sel.select2({ width: '100%', data: data, dropdownParent: dom.uploadModal });
-            $sel.on('change', function () { refreshBtnSaveUpload(); });
+            $sel.on('change', function () {
+                if ($(this).val()) {
+                    $(this).closest('tr').find('.up-manual-customer-name').val('');
+                }
+                refreshBtnSaveUpload();
+            });
         }
+
+        /** 手動輸入客戶名稱時清除客戶代碼 select2 */
+        $(document).on('input', '.up-manual-customer-name', function () {
+            if ($(this).val()) {
+                var $sel = $(this).closest('tr').find('.up-customer-code');
+                if ($sel.val()) { $sel.val(null).trigger('change'); }
+            }
+        });
 
         /** 建立匯入規則 select2（顯示 Text，值為 Value） */
         function initMappingSelect2($sel) {
@@ -592,33 +599,42 @@
         /** 收集 payload 給 SaveUpload */
         function buildSaveUploadPayload() {
             var payload = [];
-            var valid = true;
+            var errors = [];
 
             $('#uploadConfigBody tr').each(function () {
                 var uploadId = $(this).data('upload-id') || '';
-                var fileName = $(this).find('td:first').text().trim();
+                var fileName = $(this).find('td:nth-child(2)').text().trim();
                 var rule = $(this).find('.up-import-rule').val() || '';
                 var isBom = $(this).attr('data-is-bom-rule') === 'true';
                 var customer = isBom ? ($(this).find('.up-customer-code').val() || '') : '';
+                var manualCustomerName = isBom ? ($(this).find('.up-manual-customer-name').val()?.trim() || '') : '';
                 var qty = isBom ? (parseInt($(this).find('.up-quotation-qty').val()) || 1) : 0;
 
-                if (!rule || (isBom && !customer)) { valid = false; return false; }
+                if (!rule) {
+                    errors.push('「' + escapeHtml(fileName) + '」請選擇匯入設定規則');
+                    return;
+                }
+                if (isBom && !customer && !manualCustomerName) {
+                    errors.push('「' + escapeHtml(fileName) + '」請選擇客戶代碼或手動輸入客戶名稱');
+                    return;
+                }
 
                 var item = {};
                 item[EftuM.UploadId] = uploadId;
                 item[EftuM.FileName] = fileName;
                 item[EftuM.EsFileTransferMappingId] = rule;
                 item[EftuM.CustomerCode] = customer;
+                item[EftuM.ManualCustomerName] = manualCustomerName;
                 item[EftuM.QuotationQty] = qty;
                 payload.push(item);
             });
 
-            if (!valid) {
-                Swal.fire({ icon: 'warning', title: '請填寫所有必填欄位', confirmButtonText: '確定' });
+            if (!payload.length && !errors.length) {
+                Swal.fire({ icon: 'warning', title: '請先上傳檔案', confirmButtonText: '確定' });
                 return null;
             }
-            if (!payload.length) {
-                Swal.fire({ icon: 'warning', title: '請先上傳檔案', confirmButtonText: '確定' });
+            if (errors.length) {
+                Swal.fire({ icon: 'warning', title: '請填寫所有必填欄位', html: errors.map(function (e) { return '<div>' + e + '</div>'; }).join(''), confirmButtonText: '確定' });
                 return null;
             }
             return payload;

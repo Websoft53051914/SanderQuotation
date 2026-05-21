@@ -43,11 +43,16 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.ProcessStatus)} = @{nameof(searchVO.ProcessStatusEq)} ");
                 paras.Add(nameof(searchVO.ProcessStatusEq), searchVO.ProcessStatusEq);
             }
+            if (searchVO.EsFileTransferMappingIdEq.HasValue)
+            {
+                condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.EsFileTransferMappingId)} = @{nameof(searchVO.EsFileTransferMappingIdEq)} ");
+                paras.Add(nameof(searchVO.EsFileTransferMappingIdEq), searchVO.EsFileTransferMappingIdEq);
+            }
 
             string sql = $@"
 SELECT u.*, eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)}
 FROM EsFileTransferUpload u
-LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.{nameof(EsFileTransferUploadEntity.EsFileTransferMappingId)}
+LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
 WHERE 1=1
 {condition}
 {sqlLimit}";

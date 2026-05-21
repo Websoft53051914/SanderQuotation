@@ -1027,9 +1027,9 @@ namespace backend.Common
             {
                 SearchVO searchVO = new();
                 searchVO.ProcessStatusEq = (int)EsFileTransferUploadProcessStatusEnum.Pending;
+                searchVO.EsFileTransferMappingIdEq = _mapping.Id;
                 List<EsFileTransferUploadDM> uploads = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>()
                     .GetListEnabled(searchVO)
-                    .Where(u => u.EsFileTransferMappingId == _mapping.Id)
                     .ToList();
 
                 if (uploads.Count == 0)
@@ -1117,6 +1117,10 @@ namespace backend.Common
                     case ScheduleCycleActionTypeEnum.PartSearch:
                         DesideSanderModuleItemNoJob desideSanderModuleItemNoJob = scope.ServiceProvider.GetRequiredService<DesideSanderModuleItemNoJob>();
                         await desideSanderModuleItemNoJob.ExecuteAsync(logDM);
+                        break;
+                    case ScheduleCycleActionTypeEnum.PriceSearch:
+                        PriceSearchJob priceSearchJob = scope.ServiceProvider.GetRequiredService<PriceSearchJob>();
+                        await priceSearchJob.ExecuteAsync(logDM);
                         break;
                     default:
                         logDM.JobStatus = "Failed";

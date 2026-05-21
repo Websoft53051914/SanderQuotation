@@ -121,8 +121,11 @@
                     <a href="@Url.Action("Index", "QuotationResult")" class="btn btn-secondary">
                         <i class="ri-arrow-left-line"></i>返回
                     </a>
-                    <button type="button" class="btn btn-success" id="btnReQuotation">
-                        <i class="ri-refresh-line"></i>重新查價
+                    <button type="button" class="btn btn-success" id="btnReInternalQuotation">
+                        <i class="ri-refresh-line"></i>內部重新查價
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnReExternalQuotation">
+                        <i class="ri-refresh-line"></i>外部重新查價
                     </button>
                     <button type="button" class="btn btn-success">
                         <i class="ri-search-line"></i>Digikey查價
@@ -150,7 +153,8 @@
 
         var pageUrls = {
             GetById: '@(Configuration["BackendURL"])/api/QuotationResult/GetById',
-            ReQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReQuotation',
+            ReInternalQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReInternalQuotation',
+            ReExternalQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReExternalQuotation',
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
@@ -339,39 +343,79 @@
             syncCheckAllState();
         });
 
-        // ── 重新查價 ───────────────────────────────────────────────────
-        $('#btnReQuotation').on('click', function () {
-            var checkedItems = [];
+        // ── 取得勾選的料項 ─────────────────────────────────────────────
+        function getCheckedItems() {
+            var items = [];
             $('.item-check:checked').each(function () {
                 var itemId = $(this).val();
                 var no = $('.procurement-model-input[data-id="' + itemId + '"]').val() || '';
-                checkedItems.push({ Id: itemId, No: no });
+                items.push({ BomFileContentId: itemId, No: no });
             });
+            return items;
+        }
 
+        // ── 內部重新查價 ───────────────────────────────────────────────────
+        $('#btnReInternalQuotation').on('click', function () {
+            var checkedItems = getCheckedItems();
             if (!checkedItems.length) {
                 Swal.fire({ icon: 'warning', title: '請先勾選料項', confirmButtonText: '確定' });
                 return;
             }
 
-            var payload = { UploadId: currentFileId, Items: checkedItems };
+            showLoader();
+
+            var tasks = checkedItems.map(function (item) {
+                return $.ajax({
+                    url: pageUrls.ReInternalQuotation,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ BomFileContentId: item.BomFileContentId, No: item.No })
+                }).then(function (res) {
+                    if (!res.Success) return Promise.reject(res.Message);
+                });
+            });
+
+            Promise.all(tasks)
+                .then(function () {
+                    Swal.fire({ icon: 'success', title: '內部查價完成', timer: 1200, showConfirmButton: false })
+                        .then(function () { loadDetail(); });
+                })
+                .catch(function (msg) {
+                    Swal.fire({ icon: 'error', title: '查價失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
+                })
+                .finally(function () { hideLoader(); });
+        });
+
+        // ── 外部重新查價 ───────────────────────────────────────────────────
+        $('#btnReExternalQuotation').on('click', function () {
+            var checkedItems = getCheckedItems();
+            if (!checkedItems.length) {
+                Swal.fire({ icon: 'warning', title: '請先勾選料項', confirmButtonText: '確定' });
+                return;
+            }
 
             showLoader();
-            $.ajax({
-                url: pageUrls.ReQuotation,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(payload),
-                success: function (res) {
-                    if (!res.Success) {
-                        Swal.fire({ icon: 'error', title: '查價失敗', text: res.Message, confirmButtonText: '確定' });
-                        return;
-                    }
-                    Swal.fire({ icon: 'success', title: '重新查價完成', timer: 1200, showConfirmButton: false })
-                        .then(function () { loadDetail(); });
-                },
-                error: function () { showSysError(); },
-                complete: function () { hideLoader(); },
+
+            var tasks = checkedItems.map(function (item) {
+                return $.ajax({
+                    url: pageUrls.ReExternalQuotation,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ BomFileContentId: item.BomFileContentId })
+                }).then(function (res) {
+                    if (!res.Success) return Promise.reject(res.Message);
+                });
             });
+
+            Promise.all(tasks)
+                .then(function () {
+                    Swal.fire({ icon: 'success', title: '外部查價完成', timer: 1200, showConfirmButton: false })
+                        .then(function () { loadDetail(); });
+                })
+                .catch(function (msg) {
+                    Swal.fire({ icon: 'error', title: '查價失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
+                })
+                .finally(function () { hideLoader(); });
         });
     </script>
 }

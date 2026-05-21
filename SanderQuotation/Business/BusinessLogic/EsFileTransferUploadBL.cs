@@ -111,6 +111,19 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 依條件刪除資料 (邏輯刪除)
+        /// </summary>
+        /// <param name="searchVO">查詢條件</param>
+        public void DeleteByFilter(SearchVO searchVO)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            GetDAO().DeleteByFilter(searchVO, account);
+            _unitOfWork.Commit();
+        }
+
+        #endregion -- EsFileTransferUpload --
+
+        /// <summary>
         /// 依上傳 ID 取得單筆資料
         /// </summary>
         /// <param name="uploadId">上傳 ID</param>
@@ -124,19 +137,6 @@ namespace Business.BusinessLogic
             List<EsFileTransferUploadDM> list = GetListByFilter(searchVO);
 
             return list.FirstOrDefault();
-        }
-
-        #endregion -- EsFileTransferUpload --
-
-        /// <summary>
-        /// 依條件刪除資料 (邏輯刪除)
-        /// </summary>
-        /// <param name="searchVO">查詢條件</param>
-        public void DeleteByFilter(SearchVO searchVO)
-        {
-            string account = SessionVO?.Account ?? string.Empty;
-            GetDAO().DeleteByFilter(searchVO, account);
-            _unitOfWork.Commit();
         }
     }
 
@@ -177,7 +177,7 @@ namespace Business.BusinessLogic
             DateTime nowTime = DateTime.Now;
 
             EsFileTransferUploadEntity entity = _mapper.Map<EsFileTransferUploadEntity>(dm);
-            entity.Status = (int)Enums.AccountStatusEnum.Enabled;
+            entity.Status = (int)Enums.AccountStatusEnum.Disabled;
             entity.CreatedBy = account;
             entity.UpdatedBy = account;
             entity.CreatedAt = nowTime;
@@ -204,8 +204,10 @@ namespace Business.BusinessLogic
                 entity.EsFileTransferMappingId = dm.EsFileTransferMappingId;
                 entity.QuotationQty = dm.QuotationQty;
                 entity.CustomerCode = dm.CustomerCode;
+                entity.ManualCustomerName = dm.ManualCustomerName;
                 entity.ProdNo = dm.ProdNo;
                 entity.ProcessStatus = (int)EsFileTransferUploadProcessStatusEnum.Pending;
+                entity.Status = (int)Enums.StatusEnum.Enabled;
 
                 GetDAO().Update(entity);
                 _unitOfWork.Commit();
