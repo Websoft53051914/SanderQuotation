@@ -94,6 +94,7 @@ namespace Data.Register
                 .RegisterType<ITBSysSettingDAO, TBSysSettingDaoImpl>()
                 .RegisterType<ITBSanderModuleItemKeywordDAO, TBSanderModuleItemKeywordDaoImpl>()
                 .RegisterType<ITBBomFileDecisionLogDAO, TBBomFileDecisionLogDaoImpl>()
+                .RegisterType<ITBBomFileQuotationOtherDAO, TBBomFileQuotationOtherDaoImpl>()
 
                 // SOP 資料庫專用 DAO
                 .RegisterType<ISopWorkRuleDAO, SopWorkRuleDAOImpl>()

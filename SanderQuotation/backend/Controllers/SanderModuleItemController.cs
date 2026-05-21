@@ -169,7 +169,7 @@ namespace backend.Controllers
                 reader.SetWorkBook(pathTmpl);
                 reader.SetSheet(reader.GetWorkBook().GetSheetAt(0));
                 List<ReportItemCustomerDM> dmList = [];
-                int startRowIndex = 2;
+                int startRowIndex = 1;
                 for (int i = startRowIndex; i <= reader.GetSheet().LastRowNum; i++)
                 {
                     ReportItemCustomerDM dm = new();
@@ -205,7 +205,7 @@ namespace backend.Controllers
                 reader.SetWorkBook(pathTmpl);
                 reader.SetSheet(reader.GetWorkBook().GetSheetAt(0));
                 List<SanderModulePurchaseLineDM> dmList = [];
-                int startRowIndex = 2;
+                int startRowIndex = 1;
                 for (int i = startRowIndex; i <= reader.GetSheet().LastRowNum; i++)
                 {
                     SanderModulePurchaseLineDM dm = new();
@@ -225,7 +225,7 @@ namespace backend.Controllers
                     reader.NextCell();
                     dm.UnitCostLcy = (decimal?)reader.GetDoubleValue();
                     reader.NextCell();
-                    dm.Quantity = reader.GetIntValue();
+                    dm.Quantity = (int?)reader.GetDoubleValue();
                     reader.NextCell();
                     dm.CurrencyCode = reader.GetStringValue()?.Trim();
                     reader.NextCell();

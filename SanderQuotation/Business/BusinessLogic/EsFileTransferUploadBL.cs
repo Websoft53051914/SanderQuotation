@@ -85,6 +85,18 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 取得啟用的資料清單
+        /// </summary>
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>DM 清單</returns>
+        public List<EsFileTransferUploadDM> GetListEnabled(SearchVO searchVO)
+        {
+            searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
+
+            return GetListByFilter(searchVO);
+        }
+
+        /// <summary>
         /// 取得單筆資料
         /// </summary>
         /// <param name="id">資料代號</param>
@@ -96,18 +108,6 @@ namespace Business.BusinessLogic
             searchVO.IsLimit1 = true;
 
             return GetListByFilter(searchVO).FirstOrDefault();
-        }
-
-        /// <summary>
-        /// 取得啟用的資料清單
-        /// </summary>
-        /// <param name="searchVO">查詢條件</param>
-        /// <returns>DM 清單</returns>
-        public List<EsFileTransferUploadDM> GetListEnabled(SearchVO searchVO)
-        {
-            searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
-
-            return GetListByFilter(searchVO);
         }
 
         /// <summary>

@@ -1,9 +1,11 @@
 using AutoMapper;
+using backend.Common;
 using backend.Common.Attribute;
 using backend.Models;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
+using Const.ApiModels.QueryPrice;
 using Core.Utility.Extensions;
 using Core.Utility.Helper.DB.Entity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,13 +22,18 @@ namespace backend.Controllers
     {
         private readonly IMapper _mapper;
         private readonly QuotationHandler _quotationHandler;
+        private readonly ExternalQueryExecuteHandler _externalQueryExecuteHandler;
 
         /// <summary>
         /// constructor
         /// </summary>
-        public QuotationResultController(IConfiguration configuration, QuotationHandler quotationHandler) : base(configuration)
+        public QuotationResultController(
+            IConfiguration configuration,
+            QuotationHandler quotationHandler,
+            ExternalQueryExecuteHandler externalQueryExecuteHandler) : base(configuration)
         {
             _quotationHandler = quotationHandler;
+            _externalQueryExecuteHandler = externalQueryExecuteHandler;
             MapperConfiguration cfg = new(c =>
             {
                 c.AllowNullCollections = true;
@@ -39,50 +46,12 @@ namespace backend.Controllers
                         opt => opt.MapFrom(src => src.ExternalQuotationDate.HasValue
                             ? src.ExternalQuotationDate.Value.ToString("yyyy/MM/dd")
                             : null));
+                c.CreateMap<QueryActionResultRspVO.QueryResultRspVO, TBBomFileQuotationOtherDM>()
+                    .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.ExternalCurrency));
+                c.CreateMap<QueryActionResultRspVO.DecisionLogVO, TBBomFileDecisionLogDM>();
             });
             _mapper = cfg.CreateMapper();
         }
-
-        private EsFileTransferUploadBL? _blEsFileTransferUpload = null;
-        /// <summary>
-        /// EsFileTransferUploadBL
-        /// </summary>
-        protected EsFileTransferUploadBL GetBlEsFileTransferUpload()
-        {
-            _blEsFileTransferUpload ??= GetBLInstance<EsFileTransferUploadBL>();
-            return _blEsFileTransferUpload;
-        }
-
-        private BomFileContentBL? _blBomFileContent = null;
-        /// <summary>
-        /// BomFileContentBL
-        /// </summary>
-        protected BomFileContentBL GetBlBomFileContent()
-        {
-            _blBomFileContent ??= GetBLInstance<BomFileContentBL>();
-            return _blBomFileContent;
-        }
-
-        private HandleQuotationBL? _blHandleQuotation = null;
-        /// <summary>
-        /// HandleQuotationBL
-        /// </summary>
-        protected HandleQuotationBL GetBlHandleQuotation()
-        {
-            _blHandleQuotation ??= GetBLInstance<HandleQuotationBL>();
-            return _blHandleQuotation;
-        }
-
-        private TBBomFileQuotationBL? _blTBBomFileQuotation = null;
-        /// <summary>
-        /// TBBomFileQuotationBL
-        /// </summary>
-        protected TBBomFileQuotationBL GetBlTBBomFileQuotation()
-        {
-            _blTBBomFileQuotation ??= GetBLInstance<TBBomFileQuotationBL>();
-            return _blTBBomFileQuotation;
-        }
-
 
         /// <summary>
         /// 將 ProcessStatus 代碼轉換為對應的中文描述文字
@@ -181,11 +150,65 @@ namespace backend.Controllers
                 vm.CreatedAtText = dm.CreatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
                 vm.UpdatedAtText = dm.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? string.Empty;
                 vm.Items = new();
+
                 SearchVO contentSearchVO = new();
                 contentSearchVO.UploadIdEq = dm.UploadId;
-                foreach (BomFileContentDM contentDm in GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO))
+                List<BomFileContentDM> contentList = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO);
+
+                // 批次取得現貨優惠價結果（Mouser / DigiKey）
+                List<Guid> contentIds = contentList
+                    .Where(c => c.Id != Guid.Empty)
+                    .Select(c => c.Id)
+                    .ToList();
+
+                Dictionary<Guid, TBBomFileQuotationOtherDM?> mouserMap = new();
+                Dictionary<Guid, TBBomFileQuotationOtherDM?> dkMap = new();
+
+                if (contentIds.Count > 0)
                 {
-                    vm.Items.Add(_mapper.Map<QuotationItemVM>(contentDm));
+                    SearchVO otherSearchVO = new();
+                    otherSearchVO.BomFileContentIdIn = contentIds;
+                    List<TBBomFileQuotationOtherDM> otherList = GetBlTBBomFileQuotationOther().GetListByFilter(otherSearchVO);
+
+                    foreach (TBBomFileQuotationOtherDM other in otherList)
+                    {
+                        if (other.SourceType == (int)BomFileQuotationOtherSourceTypeEnum.Mouser)
+                            mouserMap[other.BomFileContentId] = other;
+                        else if (other.SourceType == (int)BomFileQuotationOtherSourceTypeEnum.DigiKey)
+                            dkMap[other.BomFileContentId] = other;
+                    }
+                }
+
+                foreach (BomFileContentDM contentDm in contentList)
+                {
+                    QuotationItemVM itemVm = _mapper.Map<QuotationItemVM>(contentDm);
+
+                    if (contentDm.MatchCategory.HasValue)
+                        itemVm.MatchCategoryText = ((MatchCategoryEnum)contentDm.MatchCategory.Value).GetDescription();
+                    if (contentDm.ExternalScenario.HasValue)
+                        itemVm.ExternalScenarioText = ((ExternalScenarioEnum)contentDm.ExternalScenario.Value).GetDescription();
+
+                    if (mouserMap.TryGetValue(contentDm.Id, out TBBomFileQuotationOtherDM? mouserDm) && mouserDm != null)
+                    {
+                        itemVm.MouserQuotationDate = mouserDm.QuotationDate?.ToString("yyyy/MM/dd");
+                        itemVm.MouserUnitPriceOriginalCurrency = mouserDm.UnitPriceOriginalCurrency;
+                        itemVm.MouserUnitPriceTwd = mouserDm.UnitPriceTwd;
+                        itemVm.MouserMoq = mouserDm.Moq;
+                        itemVm.MouserCurrency = mouserDm.Currency;
+                        itemVm.MouserSupplierName = mouserDm.SupplierName;
+                    }
+
+                    if (dkMap.TryGetValue(contentDm.Id, out TBBomFileQuotationOtherDM? dkDm) && dkDm != null)
+                    {
+                        itemVm.DkQuotationDate = dkDm.QuotationDate?.ToString("yyyy/MM/dd");
+                        itemVm.DkUnitPriceOriginalCurrency = dkDm.UnitPriceOriginalCurrency;
+                        itemVm.DkUnitPriceTwd = dkDm.UnitPriceTwd;
+                        itemVm.DkMoq = dkDm.Moq;
+                        itemVm.DkCurrency = dkDm.Currency;
+                        itemVm.DkSupplierName = dkDm.SupplierName;
+                    }
+
+                    vm.Items.Add(itemVm);
                 }
 
                 return JsonSuccess(vm);
@@ -268,6 +291,164 @@ namespace backend.Controllers
                 GetBlHandleQuotation().DoSaveSingleExternalQuotationResult(content);
 
                 return JsonOK();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        /// <summary>
+        /// 查詢現貨優惠價：同時呼叫 Mouser 與 DigiKey API 取得現貨價，儲存至 TBBomFileQuotationOther
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_Edit)]
+        [HttpPost("CheckInStockPrice")]
+        public async Task<ActionResult> CheckInStockPrice([FromBody] QuotationCheckInStockPriceRequestVM request)
+        {
+            try
+            {
+                // 載入料項 DM
+                SearchVO contentSearchVO = new();
+                contentSearchVO.IdEq = request.BomFileContentId;
+                contentSearchVO.IsLimit1 = true;
+                BomFileContentDM? content = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO).FirstOrDefault();
+                if (content == null)
+                    return JsonValidFail("資料不存在");
+
+                // 取得報價數量
+                EsFileTransferUploadDM? upload = GetBlEsFileTransferUpload().GetOneInfo(content.UploadId);
+                int quotationQty = upload?.QuotationQty ?? 1;
+
+                ExternalQueryExecuteHandler.QueryMouserCartPriceReqVO apiReq = new();
+                apiReq.PartNumber = content.ManufacturerPartNumber ?? string.Empty;
+                apiReq.Quantity = quotationQty;
+
+                // 並行呼叫 Mouser 與 DigiKey
+                Task<Const.ApiModels.QueryPrice.QueryActionResultRspVO> mouserTask =
+                    _externalQueryExecuteHandler.QueryMouserAction(apiReq);
+                Task<Const.ApiModels.QueryPrice.QueryActionResultRspVO> dkTask =
+                    _externalQueryExecuteHandler.QueryDkAction(apiReq);
+
+                await Task.WhenAll(mouserTask, dkTask);
+
+                TBBomFileQuotationOtherDM? mouserDm = mouserTask.Result.Result != null
+                    ? _mapper.Map<TBBomFileQuotationOtherDM>(mouserTask.Result.Result)
+                    : null;
+                TBBomFileQuotationOtherDM? dkDm = dkTask.Result.Result != null
+                    ? _mapper.Map<TBBomFileQuotationOtherDM>(dkTask.Result.Result)
+                    : null;
+
+                List<TBBomFileDecisionLogDM> decisionLogs = new();
+                decisionLogs.AddRange(_mapper.Map<List<TBBomFileDecisionLogDM>>(mouserTask.Result.DecisionLogs));
+                decisionLogs.AddRange(_mapper.Map<List<TBBomFileDecisionLogDM>>(dkTask.Result.DecisionLogs));
+
+                GetBlHandleQuotation().DoSaveSingleInStockPriceResult(
+                    request.BomFileContentId,
+                    mouserDm,
+                    dkDm,
+                    decisionLogs);
+
+                return JsonOK();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        #endregion
+    }
+
+    public partial class QuotationResultController
+    {
+        #region -- 決策歷程 --
+
+        /// <summary>
+        /// 取得指定料項的決策歷程清單
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_View)]
+        [HttpGet("GetDecisionLogs")]
+        public ActionResult GetDecisionLogs(Guid bomFileContentId)
+        {
+            try
+            {
+                SearchVO searchVO = new();
+                searchVO.BomFileContentIdEq = bomFileContentId;
+                List<TBBomFileDecisionLogDM> logs = GetBlTBBomFileDecisionLog().GetListEnabled(searchVO)
+                    .OrderBy(x => x.Stage)
+                    .ThenBy(x => x.Step)
+                    .ToList();
+
+                var result = logs.Select(x => new
+                {
+                    Stage = x.Stage,
+                    StageText = x.Stage.HasValue
+                        ? ((BomFileDecisionLogStageEnum)x.Stage.Value).GetDescription()
+                        : string.Empty,
+                    Step = x.Step,
+                    StepText = x.Step.HasValue
+                        ? ((BomFileDecisionLogStepEnum)x.Step.Value).GetDescription()
+                        : string.Empty,
+                    Message = x.Message ?? string.Empty
+                }).ToList();
+
+                return JsonSuccess(result);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        /// <summary>
+        /// 取得指定料項的價格分群資料（歷史採購紀錄 + AI 分群範圍）
+        /// </summary>
+        [CustomAuthorization(FuncID.QuotationResult_View)]
+        [HttpGet("GetPriceClusterData")]
+        public ActionResult GetPriceClusterData(Guid bomFileContentId)
+        {
+            try
+            {
+                TBBomFileQuotationDM? quotation = GetBlTBBomFileQuotation().GetOneByBomFileContentId(bomFileContentId);
+                if (quotation == null)
+                    return JsonSuccess(new { ClusterRanges = (object?)null, Records = Array.Empty<object>() });
+
+                List<SanderModulePurchaseLineDM> purchases = new();
+                if (!string.IsNullOrWhiteSpace(quotation.No))
+                {
+                    SearchVO historySearchVO = new();
+                    historySearchVO.SanderModuleItemNoEq = quotation.No;
+                    historySearchVO.UnitCostLcyGt = 0;
+                    if(!string.IsNullOrEmpty(quotation.CustomerApprovedPartCsv))
+                    {
+                        historySearchVO.Description2In = quotation.CustomerApprovedPartCsv.Split(',').ToList();
+                    }
+                    purchases = GetBlSanderModulePurchaseLine().GetListByFilter(historySearchVO);
+                }
+
+                var clusterRanges = new
+                {
+                    LowMinPrice = quotation.InternalLowMinPrice,
+                    LowMaxPrice = quotation.InternalLowMaxPrice,
+                    HighMinPrice = quotation.InternalHighMinPrice,
+                    HighMaxPrice = quotation.InternalHighMaxPrice
+                };
+
+                var records = purchases.Select(x => new
+                {
+                    DocumentDate = x.DocumentDate?.ToString("yyyy/MM/dd"),
+                    Description2 = x.Description2 ?? string.Empty,
+                    BuyFromVendorName = x.BuyFromVendorName ?? string.Empty,
+                    UnitCost = x.UnitCost,
+                    UnitCostLcy = x.UnitCostLcy,
+                    Quantity = x.Quantity,
+                    CurrencyCode = x.CurrencyCode ?? string.Empty
+                }).ToList();
+
+                return JsonSuccess(new { ClusterRanges = clusterRanges, Records = records });
             }
             catch (Exception ex)
             {

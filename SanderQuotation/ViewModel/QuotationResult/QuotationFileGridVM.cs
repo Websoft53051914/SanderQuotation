@@ -26,6 +26,11 @@ namespace ViewModel.QuotationResult
         [Sort]
         public string? CustomerName { get; set; }
 
+        /// <summary>
+        /// 手動輸入客戶名稱（CustomerCode 為空時使用）
+        /// </summary>
+        public string? ManualCustomerName { get; set; }
+
         /// <summary>產品料號</summary>
         [Sort]
         public string? ProdNo { get; set; }

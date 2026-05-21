@@ -9,7 +9,12 @@
 
     var ui = new
     {
-        PartialSmip = new SanderModuleItemPickerVCM ()
+        PartialSmip = new SanderModuleItemPickerVCM(),
+        PartialMdl = new ModalDecisionLogVCM
+        {
+            UrlGetDecisionLogs = $"{Configuration["BackendURL"]}/api/QuotationResult/GetDecisionLogs",
+            UrlGetPriceClusterData = $"{Configuration["BackendURL"]}/api/QuotationResult/GetPriceClusterData"
+        }
     };
 }
 
@@ -63,13 +68,13 @@
                         <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
                     </h6>
                     <button type="button" class="btn btn-warning" id="btnToggleRecommended"
-                            title="切換建議採購型號的勾選狀態">
+                            title="切換建議料號的勾選狀態">
                         <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
                     </button>
                 </div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="text-muted small mb-2">
-                        <i class="ri-checkbox-blank-circle-fill me-1"></i>採購型號欄位黃底標示表示系統建議採購型號
+                        <i class="ri-checkbox-blank-circle-fill me-1"></i>內部料號欄位黃底標示表示建議料號
                     </div>
                     <span class="badge bg-info-subtle text-info" id="itemCountBadge">— 筆料項</span>
                 </div>
@@ -84,15 +89,24 @@
                                         <input class="form-check-input" type="checkbox" id="checkAllItems">
                                     </div>
                                 </th>
+                                <th rowspan="2" style="width:40px;" class="text-center align-middle"></th>
                                 <th rowspan="2" style="width:40px;" class="text-center align-middle">項次</th>
+                                <th rowspan="2" style="min-width:100px;" class="align-middle">元件料號</th>
+                                <th rowspan="2" style="min-width:100px;" class="align-middle">顯示料號</th>
                                 <th rowspan="2" style="min-width:160px;" class="align-middle">元件描述</th>
                                 <th rowspan="2" style="min-width:120px;" class="align-middle">製造商</th>
                                 <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
                                 <th rowspan="2" style="width:70px;" class="text-center align-middle">數量</th>
                                 <th rowspan="2" style="min-width:180px;"
-                                    class="text-center align-middle bg-warning-subtle text-warning">採購型號</th>
-                                <th colspan="6" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
-                                <th colspan="6" class="text-center bg-success-subtle text-success">外部查價</th>
+                                    class="text-center align-middle bg-warning-subtle text-warning">內部料號</th>
+                                <th rowspan="2" style="min-width:80px;"
+                                    class="text-center align-middle">比對分類</th>
+                                <th rowspan="2" style="min-width:80px;"
+                                    class="text-center align-middle">命中欄位</th>
+                                <th colspan="7" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
+                                <th colspan="8" class="text-center bg-success-subtle text-success">外部查價</th>
+                                <th colspan="2" class="text-center bg-warning-subtle text-warning">Mouser</th>
+                                <th colspan="2" class="text-center bg-info-subtle text-info">DigiKey</th>
                             </tr>
                             <tr>
                                 <!-- 內部採購紀錄 sub-headers -->
@@ -101,7 +115,8 @@
                                 <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(台幣)</th>
                                 <th class="bg-primary-subtle text-primary" style="width:70px;">數量</th>
                                 <th class="bg-primary-subtle text-primary" style="width:65px;">幣別</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width:120px;">供應商名稱</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
+                                <th class="bg-primary-subtle text-primary" style="min-width:120px;">採購型號</th>
                                 <!-- 外部查價 sub-headers -->
                                 <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
                                 <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
@@ -109,6 +124,14 @@
                                 <th class="bg-success-subtle text-success" style="width:70px;">MOQ</th>
                                 <th class="bg-success-subtle text-success" style="width:65px;">幣別</th>
                                 <th class="bg-success-subtle text-success" style="min-width:120px;">供應商名稱</th>
+                                <th class="bg-success-subtle text-success" style="width:70px;">庫存量</th>
+                                <th class="bg-success-subtle text-success" style="width:100px;">情境</th>
+                                <!-- Mouser sub-headers -->
+                                <th class="bg-warning-subtle text-warning" style="min-width:100px;">查價日期</th>
+                                <th class="bg-warning-subtle text-warning" style="min-width:90px;">優惠價(原幣)</th>
+                                <!-- DigiKey sub-headers -->
+                                <th class="bg-info-subtle text-info" style="min-width:100px;">查價日期</th>
+                                <th class="bg-info-subtle text-info" style="min-width:90px;">優惠價(原幣)</th>
                             </tr>
                         </thead>
                         <tbody id="item-table-body">
@@ -127,11 +150,8 @@
                     <button type="button" class="btn btn-success" id="btnReExternalQuotation">
                         <i class="ri-refresh-line"></i>外部重新查價
                     </button>
-                    <button type="button" class="btn btn-success">
-                        <i class="ri-search-line"></i>Digikey查價
-                    </button>
-                    <button type="button" class="btn btn-success">
-                        <i class="ri-search-line"></i>Mouser查價
+                    <button type="button" class="btn btn-success" id="btnCheckInStockPrice">
+                        <i class="ri-search-line"></i>查詢現貨優惠價
                     </button>
                 </div>
 
@@ -142,6 +162,7 @@
 </div>
 
 @await Html.PartialAsync("_SanderModuleItemPicker", ui.PartialSmip)
+@await Html.PartialAsync("_ModalDecisionLog", ui.PartialMdl)
 
 @section scripts {
     <script>
@@ -155,6 +176,9 @@
             GetById: '@(Configuration["BackendURL"])/api/QuotationResult/GetById',
             ReInternalQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReInternalQuotation',
             ReExternalQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReExternalQuotation',
+            CheckInStockPrice: '@(Configuration["BackendURL"])/api/QuotationResult/CheckInStockPrice',
+            GetDecisionLogs: '@(Configuration["BackendURL"])/api/QuotationResult/GetDecisionLogs',
+            GetPriceClusterData: '@(Configuration["BackendURL"])/api/QuotationResult/GetPriceClusterData',
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
@@ -173,6 +197,7 @@
         var FI = {
             Id: '@nameof(QuotationItemVM.Id)',
             ComponentPart: '@nameof(QuotationItemVM.ComponentPart)',
+            DisplayPart: '@nameof(QuotationItemVM.DisplayPart)',
             Description: '@nameof(QuotationItemVM.Description)',
             Qty: '@nameof(QuotationItemVM.Qty)',
             Manufacturer: '@nameof(QuotationItemVM.Manufacturer)',
@@ -184,16 +209,27 @@
             InternalQuantity: '@nameof(QuotationItemVM.InternalQuantity)',
             InternalCurrency: '@nameof(QuotationItemVM.InternalCurrency)',
             InternalSupplierName: '@nameof(QuotationItemVM.InternalSupplierName)',
+            InternalSupplierCode: '@nameof(QuotationItemVM.InternalSupplierCode)',
+            InternalItemDescription2: '@nameof(QuotationItemVM.InternalItemDescription2)',
             ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
             ExternalUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.ExternalUnitPriceOriginalCurrency)',
             ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
             ExternalMoq: '@nameof(QuotationItemVM.ExternalMoq)',
             ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
             ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
+            ExternalStock: '@nameof(QuotationItemVM.ExternalStock)',
+            ExternalScenario: '@nameof(QuotationItemVM.ExternalScenario)',
+            ExternalScenarioText: '@nameof(QuotationItemVM.ExternalScenarioText)',
+            MatchCategoryText: '@nameof(QuotationItemVM.MatchCategoryText)',
+            MatchField: '@nameof(QuotationItemVM.MatchField)',
+            MouserQuotationDate: '@nameof(QuotationItemVM.MouserQuotationDate)',
+            MouserUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.MouserUnitPriceOriginalCurrency)',
+            DkQuotationDate: '@nameof(QuotationItemVM.DkQuotationDate)',
+            DkUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.DkUnitPriceOriginalCurrency)',
             IsRecommendedNo: '@nameof(QuotationItemVM.IsRecommendedNo)'
         };
 
-        // 目前載入的料項清單（用於儲存採購型號）
+        // 目前載入的料項清單（用於儲存內部料號）
         var currentItems = [];
 
         // ── 工具函式 ──────────────────────────────────────────────────────────
@@ -221,7 +257,20 @@
             return '<span class="badge bg-light text-dark border">' + escapeHtml(val) + '</span>';
         }
 
-        // ── 採購型號選取器 ─────────────────────────────────────────────────────
+        function fmtScenarioText(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return '<span class="badge bg-secondary">' + escapeHtml(val) + '</span>';
+        }
+
+        function fmtMatchCategory(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            if (val === '完全命中') return '<span class="badge bg-success">' + escapeHtml(val) + '</span>';
+            if (val === '建議料號') return '<span class="badge bg-warning text-dark">' + escapeHtml(val) + '</span>';
+            if (val === '未命中') return '<span class="badge bg-secondary">' + escapeHtml(val) + '</span>';
+            return '<span class="badge bg-light text-dark">' + escapeHtml(val) + '</span>';
+        }
+
+        // ── 內部料號選取器 ─────────────────────────────────────────────────────
         function openItemPicker(itemId) {
             SanderModuleItemPicker['@(ui.PartialSmip.ViewId)'].open(function (no) {
                 $('.procurement-model-input[data-id="' + itemId + '"]').val(no);
@@ -264,7 +313,7 @@
             $('#itemCountBadge').text(items.length + ' 筆料項');
 
             if (!items.length) {
-                $body.append('<tr><td colspan="19" class="text-center text-muted py-4">無料項資料</td></tr>');
+                $body.append('<tr><td colspan="31" class="text-center text-muted py-4">無料項資料</td></tr>');
                 return;
             }
 
@@ -290,7 +339,15 @@
                             data-recommended="${isRecommended}"${checked}>
                     </div>
                 </td>
+                <td class="text-center p-1">
+                    <button type="button" class="btn btn-sm btn-outline-info btn-view-decision-log"
+                            data-id="${itemId}" title="查看決策歷程">
+                        <i class="ri-history-line"></i>
+                    </button>
+                </td>
                 <td class="text-center text-muted">${escapeHtml(no)}</td>
+                <td><span title="${escapeHtml(r[FI.ComponentPart])}">${escapeHtml(r[FI.ComponentPart] || '')}</span></td>
+                <td><span title="${escapeHtml(r[FI.DisplayPart])}">${escapeHtml(r[FI.DisplayPart] || '')}</span></td>
                 <td><span title="${escapeHtml(r[FI.Description])}">${escapeHtml(r[FI.Description])}</span></td>
                 <td class="text-muted">${escapeHtml(r[FI.Manufacturer] || '')}</td>
                 <td><code class="fs-6">${escapeHtml(r[FI.ManufacturerPartNumber] || '')}</code></td>
@@ -304,18 +361,27 @@
                         </button>
                     </div>
                 </td>
+                <td class="text-center">${fmtMatchCategory(r[FI.MatchCategoryText])}</td>
+                <td>${escapeHtml(r[FI.MatchField] || '')}</td>
                 <td>${fmtDate(r[FI.InternalPurchaseOrderDate])}</td>
                 <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceOriginalCurrency])}</td>
                 <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceTwd])}</td>
                 <td class="text-center">${fmtNum(r[FI.InternalQuantity])}</td>
                 <td class="text-center">${fmtCurrency(r[FI.InternalCurrency])}</td>
-                <td>${escapeHtml(r[FI.InternalSupplierName] != null ? String(r[FI.InternalSupplierName]) : '')}</td>
+                <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
+                <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
                 <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
                 <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>
                 <td class="text-center">${fmtNum(r[FI.ExternalMoq])}</td>
                 <td class="text-center">${fmtCurrency(r[FI.ExternalCurrency])}</td>
                 <td>${escapeHtml(r[FI.ExternalSupplierName] != null ? String(r[FI.ExternalSupplierName]) : '')}</td>
+                <td class="text-center">${fmtNum(r[FI.ExternalStock])}</td>
+                <td class="text-center">${fmtScenarioText(r[FI.ExternalScenarioText])}</td>
+                <td>${fmtDate(r[FI.MouserQuotationDate])}</td>
+                <td class="text-end">${fmtPrice(r[FI.MouserUnitPriceOriginalCurrency])}</td>
+                <td>${fmtDate(r[FI.DkQuotationDate])}</td>
+                <td class="text-end">${fmtPrice(r[FI.DkUnitPriceOriginalCurrency])}</td>
             </tr>`;
         }
 
@@ -335,7 +401,7 @@
             syncCheckAllState();
         });
 
-        // ── 切換建議採購型號的勾選狀態 ────────────────────────────────────────
+        // ── 切換建議內部料號的勾選狀態 ────────────────────────────────────────
         $('#btnToggleRecommended').on('click', function () {
             var $rec = $('.item-check[data-recommended="true"]');
             var allChecked = $rec.length > 0 && $rec.filter(':checked').length === $rec.length;
@@ -414,6 +480,43 @@
                 })
                 .catch(function (msg) {
                     Swal.fire({ icon: 'error', title: '查價失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
+                })
+                .finally(function () { hideLoader(); });
+        });
+        // ── 查看決策歷程 ───────────────────────────────────────────────────
+        $(document).on('click', '.btn-view-decision-log', function () {
+            var itemId = $(this).data('id');
+            ModalDecisionLog['@(ui.PartialMdl.ViewId)'].open(itemId);
+        });
+
+        // ── 查詢現貨優惠價 ───────────────────────────────────────────────
+        $('#btnCheckInStockPrice').on('click', function () {
+            var checkedItems = getCheckedItems();
+            if (!checkedItems.length) {
+                Swal.fire({ icon: 'warning', title: '請先勾選料項', confirmButtonText: '確定' });
+                return;
+            }
+
+            showLoader();
+
+            var tasks = checkedItems.map(function (item) {
+                return $.ajax({
+                    url: pageUrls.CheckInStockPrice,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ BomFileContentId: item.BomFileContentId })
+                }).then(function (res) {
+                    if (!res.Success) return Promise.reject(res.Message);
+                });
+            });
+
+            Promise.all(tasks)
+                .then(function () {
+                    Swal.fire({ icon: 'success', title: '現貨優惠價查詢完成', timer: 1200, showConfirmButton: false })
+                        .then(function () { loadDetail(); });
+                })
+                .catch(function (msg) {
+                    Swal.fire({ icon: 'error', title: '查詢失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
                 })
                 .finally(function () { hideLoader(); });
         });

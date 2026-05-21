@@ -96,6 +96,12 @@ SELECT bfc.*
 , bfq.IsRecommendedNo
 , bfq.IsFilterByCustomerApprovedPart
 , bfq.CustomerApprovedPartCsv
+, bfq.MatchCategory
+, bfq.MatchField
+, bfq.InternalSupplierCode
+, bfq.InternalItemDescription2
+, bfq.ExternalStock
+, bfq.ExternalScenario
 FROM bomfilecontent bfc
 LEFT JOIN tb_bomfilequotation bfq ON bfq.BomFileContentId = bfc.Id
 WHERE 1=1

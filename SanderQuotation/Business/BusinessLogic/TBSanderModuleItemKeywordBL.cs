@@ -155,13 +155,7 @@ namespace Business.BusinessLogic
             // 新增關鍵字
             foreach (TBSanderModuleItemKeywordDM dm in dmList)
             {
-                dm.Status = (int)StatusEnum.Enabled;
-                dm.CreatedAt = nowTime;
-                dm.CreatedBy = account;
-                dm.UpdatedAt = nowTime;
-                dm.UpdatedBy = account;
-                TBSanderModuleItemKeywordEntity entity = _mapper.Map<TBSanderModuleItemKeywordEntity>(dm);
-                GetDAO().InsertAction(entity);
+                DoInsert(dm);
             }
 
             // 更新 FlagNeedExtractKeyword
@@ -171,17 +165,6 @@ namespace Business.BusinessLogic
             }
 
             _unitOfWork.Commit();
-        }
-    }
-
-    public partial class TBSanderModuleItemKeywordBL
-    {
-        private SanderModuleItemBL? _blSanderModuleItem = null;
-        protected SanderModuleItemBL GetBLSanderModuleItem()
-        {
-            _blSanderModuleItem ??= new SanderModuleItemBL(_unitOfWork, SessionVO ?? new());
-
-            return _blSanderModuleItem;
         }
     }
 
@@ -224,6 +207,17 @@ namespace Business.BusinessLogic
             }
 
             return result;
+        }
+    }
+
+    public partial class TBSanderModuleItemKeywordBL
+    {
+        private SanderModuleItemBL? _blSanderModuleItem = null;
+        protected SanderModuleItemBL GetBLSanderModuleItem()
+        {
+            _blSanderModuleItem ??= new SanderModuleItemBL(_unitOfWork, SessionVO ?? new());
+
+            return _blSanderModuleItem;
         }
     }
 

@@ -156,6 +156,11 @@
         public Guid? BomFileContentIdEq { get; set; }
 
         /// <summary>
+        /// BomFileContent.Id 多值 IN 查詢
+        /// </summary>
+        public List<Guid> BomFileContentIdIn { get; set; } = [];
+
+        /// <summary>
         /// TBSanderModuleItemKeyword 欄位名稱
         /// </summary>
         public string? SanderModuleItemKeywordColumnNameEq { get; set; }
@@ -194,5 +199,10 @@
         /// TBBomFileDecisionLog 決策階段
         /// </summary>
         public int? StageEq { get; set; }
+
+        /// <summary>
+        /// TBBomFileDecisionLog 決策階段
+        /// </summary>
+        public List<int> StageIn { get; set; } = [];
     }
 }

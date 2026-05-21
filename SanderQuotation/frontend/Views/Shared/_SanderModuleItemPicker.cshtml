@@ -4,7 +4,7 @@
 @*
     ════════════════════════════════════════════════════════════════════════════
     _SanderModuleItemPicker.cshtml
-    採購型號選取器 Partial View（Modal 元件）── 支援同頁多實例
+    內部料號選取器 Partial View（Modal 元件）── 支援同頁多實例
     ── 使用方式 ──────────────────────────────────────────────────────────────
     ① 在父頁面主體（@section scripts 前）加入：
          @{
@@ -26,13 +26,13 @@
         : $"{Configuration["BackendURL"]}/api/SanderModuleItem/GetPageList";
 }
 
-<!-- Modal: 採購型號選取（@modalId）-->
+<!-- Modal: 內部料號選取（@modalId）-->
 <div class="modal fade" id="@modalId" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
                 <h5 class="modal-title">
-                    <i class="ri-search-line me-2"></i>選取採購型號
+                    <i class="ri-search-line me-2"></i>選取內部料號
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

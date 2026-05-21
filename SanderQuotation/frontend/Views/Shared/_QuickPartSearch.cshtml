@@ -51,7 +51,7 @@
                     </div>
                 </form>
                 <div class="text-muted small mb-2">
-                    採購型號欄位黃底標示表示系統建議採購型號
+                    內部料號欄位黃底標示表示建議料號
                 </div>
 
                 <!-- 結果表格 -->
@@ -62,7 +62,7 @@
                             <tr>
                                 <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
                                 <th rowspan="2" style="min-width:160px;"
-                                    class="align-middle bg-warning-subtle text-warning">採購型號</th>
+                                    class="align-middle bg-warning-subtle text-warning">內部料號</th>
                                 <th colspan="6" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
                                 <th colspan="6" class="text-center bg-success-subtle text-success">外部查價</th>
                             </tr>
@@ -228,7 +228,7 @@
             $('#qsSearchForm').removeClass('was-validated');
         });
 
-        // ── 採購型號選取器 ──────────────────────────────────────────────────
+        // ── 內部料號選取器 ──────────────────────────────────────────────────
         var _qsCurrentPickerId = null;
         $(document).on('click', '#quickPartSearchModal .qs-pick-btn', function () {
             _qsCurrentPickerId = $(this).data('id');
@@ -237,7 +237,7 @@
             });
         });
 
-        // ── 重新查價（儲存所有可見料項的採購型號） ──────────────────────────
+        // ── 重新查價（儲存所有可見料項的內部料號） ──────────────────────────
         $('#btnQsReQuote').on('click', function () {
             var rows = [];
             $('#qs-result-body tr[data-id]').each(function () {

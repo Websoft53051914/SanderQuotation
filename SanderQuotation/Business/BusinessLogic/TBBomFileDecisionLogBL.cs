@@ -82,6 +82,18 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 取得啟用的資料清單
+        /// </summary>
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>DM 清單</returns>
+        public List<TBBomFileDecisionLogDM> GetListEnabled(SearchVO searchVO)
+        {
+            searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
+
+            return GetListByFilter(searchVO);
+        }
+
+        /// <summary>
         /// 取得單筆資料
         /// </summary>
         /// <param name="id">資料代號</param>
@@ -104,9 +116,7 @@ namespace Business.BusinessLogic
             string account = SessionVO?.Account ?? string.Empty;
             GetDAO().DeleteByFilter(searchVO, account);
             if (DoSaveChange)
-            {
                 _unitOfWork.Commit();
-            }
         }
 
         /// <summary>
@@ -141,9 +151,7 @@ namespace Business.BusinessLogic
             TBBomFileDecisionLogEntity entity = _mapper.Map<TBBomFileDecisionLogEntity>(dm);
             GetDAO().InsertAction(entity);
             if (DoSaveChange)
-            {
                 _unitOfWork.Commit();
-            }
         }
 
         /// <summary>
@@ -157,6 +165,29 @@ namespace Business.BusinessLogic
             searchVO.BomFileContentIdEq = bomFileContentId;
             searchVO.StageEq = stage;
             DeleteByFilter(searchVO);
+        }
+
+        /// <summary>
+        /// 批次寫入 BomFileContentDM 中的暂存決策歷程
+        /// </summary>
+        /// <param name="bomFileContentId">BOM 料項識別碼</param>
+        /// <param name="logs">暂存決策歷程清單</param>
+        public void DoInsertPendingLogs(Guid bomFileContentId, IEnumerable<TBBomFileDecisionLogDM> logs)
+        {
+            List<TBBomFileDecisionLogDM> logList = logs.ToList();
+            string account = SessionVO?.Account ?? string.Empty;
+
+            // 先刪除各階段的舊歷程
+            foreach (int stage in logList.Where(l => l.Stage.HasValue).Select(l => l.Stage!.Value).Distinct())
+            {
+                DeleteByBomFileContentIdAndStage(bomFileContentId, stage);
+            }
+
+            foreach (TBBomFileDecisionLogDM log in logList)
+            {
+                log.BomFileContentId = bomFileContentId;
+                DoInsert(log);
+            }
         }
     }
 }

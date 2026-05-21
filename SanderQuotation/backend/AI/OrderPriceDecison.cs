@@ -31,14 +31,6 @@ namespace backend.AI
      - 偏低區間為低價群
      - 偏高為高價群
 
-【低價群定義】
-- 價格較低且分布集中
-- 排除明顯高價（急單 / 異常值）
-
-【高價群定義】
-- 價格較高，通常代表急單價或異常高價
-- 不在低價群範圍內的所有資料
-
 【例外情況】
 若符合以下任一條件，視為無法判定：
 - 所有價格非常接近（無法分群）
@@ -189,6 +181,8 @@ namespace backend.AI
             result.Quantity = latest.Quantity;
             result.Currency = latest.CurrencyCode;
             result.SupplierName = latest.BuyFromVendorName;
+            result.SupplierCode = latest.BuyFromVendorNo;
+            result.Description2 = latest.Description2;
 
             return result;
         }

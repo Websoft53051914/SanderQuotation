@@ -660,5 +660,63 @@ namespace Const
             DkQuotation3 = 202,
             #endregion
         }
+
+        /// <summary>
+        /// 查料比對結果分類
+        /// </summary>
+        public enum MatchCategoryEnum
+        {
+            /// <summary>
+            /// 完全命中
+            /// </summary>
+            [Description("完全命中")]
+            Hit = 1,
+
+            /// <summary>
+            /// 建議料號
+            /// </summary>
+            [Description("建議料號")]
+            Recommended = 2,
+
+            /// <summary>
+            /// 未命中
+            /// </summary>
+            [Description("未命中")]
+            Miss = 3,
+        }
+
+        /// <summary>
+        /// 外部查價情境
+        /// </summary>
+        public enum ExternalScenarioEnum
+        {
+            /// <summary>
+            /// 情境 A：從優先供應商名單取得報價
+            /// </summary>
+            [Description("情境 A（優先名單）")]
+            PreferredVendor = 1,
+
+            /// <summary>
+            /// 情境 B：優先名單無結果，從後備清單取得報價
+            /// </summary>
+            [Description("情境 B（後備）")]
+            Fallback = 2,
+        }
+
+        /// <summary>
+        /// BOM 外部查價來源
+        /// </summary>
+        public enum BomFileQuotationOtherSourceTypeEnum
+        {
+            /// <summary>
+            /// Mouser
+            /// </summary>
+            Mouser = 1,
+
+            /// <summary>
+            /// DigiKey
+            /// </summary>
+            DigiKey = 2,
+        }
     }
 }

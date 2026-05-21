@@ -137,6 +137,7 @@ namespace backend.Models
                                 vo.Currency = targetPrice.Currency;
                                 vo.MOQ = targetPrice.Quantity;
                                 vo.UnitPriceTWD = targetPrice.ConvertedPrice;
+                                vo.Stock = offer.InventoryLevel.HasValue ? (int)offer.InventoryLevel.Value : default(int?);
 
                                 return vo;
                             })
@@ -165,6 +166,7 @@ namespace backend.Models
 
                     result.SearchMatchCount = sellerList.Count;
                     result.SearchMatchPreferredCount = preferredSellerList.Count;
+                    result.IsPreferred = preferredSellerList.Count > 0;
                 }
             }
 

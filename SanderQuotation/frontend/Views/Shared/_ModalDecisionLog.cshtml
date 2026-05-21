@@ -1,0 +1,332 @@
+@model ViewModel.QuotationResult.ModalDecisionLogVCM
+@{
+    var modalId = !string.IsNullOrEmpty(Model?.ViewId) ? Model.ViewId : "defaultModalDecisionLog";
+}
+
+<!-- ── 決策歷程 Modal ─────────────────────────────────────────────── -->
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@(modalId)Label" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="@(modalId)Label">
+                    <i class="ri-history-line me-1"></i>決策歷程
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- ── Tabs ── -->
+                <ul class="nav nav-tabs" id="@(modalId)-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="@(modalId)-tab-logs-btn"
+                                data-bs-toggle="tab" data-bs-target="#@(modalId)-tab-logs"
+                                type="button" role="tab">
+                            <i class="ri-list-check me-1"></i>決策歷程
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="@(modalId)-tab-cluster-btn"
+                                data-bs-toggle="tab" data-bs-target="#@(modalId)-tab-cluster"
+                                type="button" role="tab">
+                            <i class="ri-bar-chart-grouped-line me-1"></i>價格分群結果
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-3" id="@(modalId)-tabs-content">
+
+                    <!-- ── Tab 1: 決策歷程 ── -->
+                    <div class="tab-pane fade show active" id="@(modalId)-tab-logs" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:130px;">階段</th>
+                                        <th style="min-width:220px;">步驟</th>
+                                        <th>訊息</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="@(modalId)-logs-body">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">—</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ── Tab 2: 價格分群結果 ── -->
+                    <div class="tab-pane fade" id="@(modalId)-tab-cluster" role="tabpanel">
+                        <div id="@(modalId)-cluster-ranges" class="mb-3 d-none">
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-success-subtle text-success border border-success fs-6 px-3 py-2"
+                                      id="@(modalId)-range-low">低價群：— ~ —</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger fs-6 px-3 py-2"
+                                      id="@(modalId)-range-high">高價群：— ~ —</span>
+                            </div>
+                        </div>
+                        <div id="@(modalId)-no-cluster" class="alert alert-info d-none">
+                            <i class="ri-information-line me-1"></i>尚未執行內部查價，無分群範圍資料。
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:105px;">採購日期</th>
+                                        <th style="min-width:140px;">型號(D2)</th>
+                                        <th style="min-width:140px;">供應商</th>
+                                        <th class="text-end" style="width:100px;">單價(原幣)</th>
+                                        <th class="text-end" style="width:100px;">單價(台幣)</th>
+                                        <th class="text-center" style="width:70px;">數量</th>
+                                        <th class="text-center" style="width:65px;">幣別</th>
+                                        <th class="text-center" style="width:80px;">價格群組</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="@(modalId)-cluster-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">—</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- ── 分頁 ── -->
+                        <nav id="@(modalId)-cluster-pagination" class="mt-2 d-none" aria-label="分頁">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted small" id="@(modalId)-cluster-page-info"></span>
+                                <ul class="pagination pagination-sm mb-0" id="@(modalId)-cluster-pager"></ul>
+                            </div>
+                        </nav>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modalId = '@modalId';
+        var urls = {
+            GetDecisionLogs: '@(Model?.UrlGetDecisionLogs ?? "")',
+            GetPriceClusterData: '@(Model?.UrlGetPriceClusterData ?? "")'
+        };
+
+        var currentBomFileContentId = null;
+        var clusterLoaded = false;
+        var clusterRecordsAll = [];
+        var clusterRangesData = null;
+        var clusterPage = 1;
+        var clusterPageSize = 20;
+
+        // ── 公開 API ──────────────────────────────────────────────────
+        window.ModalDecisionLog = window.ModalDecisionLog || {};
+        window.ModalDecisionLog[modalId] = {
+            open: function (bomFileContentId) {
+                currentBomFileContentId = bomFileContentId;
+                clusterLoaded = false;
+                clusterRecordsAll = [];
+                clusterRangesData = null;
+                clusterPage = 1;
+
+                // 切回第一個 Tab
+                var $firstTab = $('#' + modalId + '-tab-logs-btn');
+                bootstrap.Tab.getOrCreateInstance($firstTab[0]).show();
+
+                loadDecisionLogs(bomFileContentId);
+                $('#' + modalId).modal('show');
+            }
+        };
+
+        // ── 載入決策歷程 ──────────────────────────────────────────────
+        function loadDecisionLogs(bomFileContentId) {
+            var $body = $('#' + modalId + '-logs-body');
+            $body.html('<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>');
+
+            $.ajax({
+                url: urls.GetDecisionLogs,
+                type: 'GET',
+                data: { bomFileContentId: bomFileContentId },
+                success: function (res) {
+                    if (!res.Success || !res.Data || !res.Data.length) {
+                        $body.html('<tr><td colspan="3" class="text-center text-muted py-4">無決策歷程紀錄</td></tr>');
+                        return;
+                    }
+                    var rows = res.Data.map(function (row) {
+                        return `<tr>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary">${escapeHtml(row.StageText)}</span></td>
+                        <td class="text-muted small">${escapeHtml(row.StepText)}</td>
+                        <td style="white-space:pre-wrap;">${escapeHtml(row.Message)}</td>
+                    </tr>`;
+                    });
+                    $body.html(rows.join(''));
+                },
+                error: function () {
+                    $body.html('<tr><td colspan="3" class="text-center text-danger py-4">載入失敗</td></tr>');
+                }
+            });
+        }
+
+        // ── 載入價格分群資料 ──────────────────────────────────────────
+        function loadPriceClusterData(bomFileContentId) {
+            if (clusterLoaded) return;
+
+            var $body = $('#' + modalId + '-cluster-body');
+            var $rangesEl = $('#' + modalId + '-cluster-ranges');
+            var $noCluster = $('#' + modalId + '-no-cluster');
+            var $pagination = $('#' + modalId + '-cluster-pagination');
+
+            $body.html('<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>');
+            $rangesEl.addClass('d-none');
+            $noCluster.addClass('d-none');
+            $pagination.addClass('d-none');
+
+            $.ajax({
+                url: urls.GetPriceClusterData,
+                type: 'GET',
+                data: { bomFileContentId: bomFileContentId },
+                success: function (res) {
+                    if (!res.Success || !res.Data) {
+                        $body.html('<tr><td colspan="8" class="text-center text-muted py-4">無資料</td></tr>');
+                        return;
+                    }
+
+                    clusterRangesData = res.Data.ClusterRanges;
+                    var hasCluster = clusterRangesData &&
+                        (clusterRangesData.LowMinPrice != null || clusterRangesData.LowMaxPrice != null ||
+                            clusterRangesData.HighMinPrice != null || clusterRangesData.HighMaxPrice != null);
+
+                    if (hasCluster) {
+                        $('#' + modalId + '-range-low').text('低價群：' + fmtClusterPrice(clusterRangesData.LowMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.LowMaxPrice));
+                        $('#' + modalId + '-range-high').text('高價群：' + fmtClusterPrice(clusterRangesData.HighMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.HighMaxPrice));
+                        $rangesEl.removeClass('d-none');
+                    } else {
+                        $noCluster.removeClass('d-none');
+                    }
+
+                    clusterRecordsAll = res.Data.Records || [];
+                    clusterPage = 1;
+                    renderClusterPage();
+                    clusterLoaded = true;
+                },
+                error: function () {
+                    $body.html('<tr><td colspan="8" class="text-center text-danger py-4">載入失敗</td></tr>');
+                }
+            });
+        }
+
+        // ── 渲染當前分頁的分群資料 ────────────────────────────────────
+        function renderClusterPage() {
+            var $body = $('#' + modalId + '-cluster-body');
+            var $pagination = $('#' + modalId + '-cluster-pagination');
+            var $pageInfo = $('#' + modalId + '-cluster-page-info');
+            var $pager = $('#' + modalId + '-cluster-pager');
+
+            var total = clusterRecordsAll.length;
+
+            if (!total) {
+                $body.html('<tr><td colspan="8" class="text-center text-muted py-4">無歷史採購紀錄</td></tr>');
+                $pagination.addClass('d-none');
+                return;
+            }
+
+            var totalPages = Math.ceil(total / clusterPageSize);
+            var start = (clusterPage - 1) * clusterPageSize;
+            var pageRecords = clusterRecordsAll.slice(start, start + clusterPageSize);
+
+            var rows = pageRecords.map(function (r) {
+                var badge = buildClusterBadge(r.UnitCostLcy, clusterRangesData);
+                return `<tr>
+                <td class="text-muted small">${escapeHtml(r.DocumentDate || '—')}</td>
+                <td><code class="fs-6">${escapeHtml(r.Description2 || '—')}</code></td>
+                <td>${escapeHtml(r.BuyFromVendorName || '—')}</td>
+                <td class="text-end font-monospace">${fmtPriceVal(r.UnitCost)}</td>
+                <td class="text-end font-monospace">${fmtPriceVal(r.UnitCostLcy)}</td>
+                <td class="text-center">${r.Quantity != null ? Number(r.Quantity).toLocaleString() : '—'}</td>
+                <td class="text-center"><span class="badge bg-light text-dark border">${escapeHtml(r.CurrencyCode || '—')}</span></td>
+                <td class="text-center">${badge}</td>
+            </tr>`;
+            });
+            $body.html(rows.join(''));
+
+            // 分頁資訊
+            $pageInfo.text(`第 ${start + 1}～${Math.min(start + clusterPageSize, total)} 筆，共 ${total} 筆`);
+
+            // 分頁按鈕
+            var pagerHtml = '';
+            pagerHtml += `<li class="page-item${clusterPage === 1 ? ' disabled' : ''}">
+            <a class="page-link mdl-cluster-page" href="#" data-page="${clusterPage - 1}">‹</a></li>`;
+            var pageStart = Math.max(1, clusterPage - 2);
+            var pageEnd = Math.min(totalPages, clusterPage + 2);
+            if (pageStart > 1) pagerHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+            for (var p = pageStart; p <= pageEnd; p++) {
+                pagerHtml += `<li class="page-item${p === clusterPage ? ' active' : ''}">
+                <a class="page-link mdl-cluster-page" href="#" data-page="${p}">${p}</a></li>`;
+            }
+            if (pageEnd < totalPages) pagerHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+            pagerHtml += `<li class="page-item${clusterPage === totalPages ? ' disabled' : ''}">
+            <a class="page-link mdl-cluster-page" href="#" data-page="${clusterPage + 1}">›</a></li>`;
+            $pager.html(pagerHtml);
+            $pagination.toggleClass('d-none', totalPages <= 1);
+        }
+
+        // ── 分頁按鈕事件（事件委派，scoped to modal） ─────────────────
+        $('#' + modalId).on('click', '.mdl-cluster-page', function (e) {
+            e.preventDefault();
+            var p = parseInt($(this).data('page'), 10);
+            var totalPages = Math.ceil(clusterRecordsAll.length / clusterPageSize);
+            if (p < 1 || p > totalPages) return;
+            clusterPage = p;
+            renderClusterPage();
+        });
+
+        // ── Tab 切換時 lazy load 分群資料 ────────────────────────────
+        $(document).on('shown.bs.tab', '#' + modalId + '-tab-cluster-btn', function () {
+            if (currentBomFileContentId) {
+                loadPriceClusterData(currentBomFileContentId);
+            }
+        });
+
+        // ── 關閉時重置 ────────────────────────────────────────────────
+        $('#' + modalId).on('hidden.bs.modal', function () {
+            currentBomFileContentId = null;
+            clusterLoaded = false;
+            clusterRecordsAll = [];
+            clusterRangesData = null;
+        });
+
+        // ── 輔助函式 ──────────────────────────────────────────────────
+        function buildClusterBadge(unitCostLcy, cr) {
+            if (!cr || unitCostLcy == null) return '<span class="text-muted">—</span>';
+            var v = parseFloat(unitCostLcy);
+            if (cr.LowMinPrice != null && cr.LowMaxPrice != null && v >= parseFloat(cr.LowMinPrice) && v <= parseFloat(cr.LowMaxPrice))
+                return '<span class="badge bg-success">低價群</span>';
+            if (cr.HighMinPrice != null && cr.HighMaxPrice != null && v >= parseFloat(cr.HighMinPrice) && v <= parseFloat(cr.HighMaxPrice))
+                return '<span class="badge bg-danger">高價群</span>';
+            return '<span class="badge bg-secondary">其他</span>';
+        }
+
+        function fmtClusterPrice(val) {
+            if (val == null) return '—';
+            return parseFloat(val).toFixed(2);
+        }
+
+        function fmtPriceVal(val) {
+            if (val == null || val === '') return '<span class="text-muted">—</span>';
+            return parseFloat(val).toFixed(4);
+        }
+
+        function fmtClusterPrice(val) {
+            if (val == null) return '—';
+            return parseFloat(val).toFixed(2);
+        }
+
+        function fmtPriceVal(val) {
+            if (val == null || val === '') return '<span class="text-muted">—</span>';
+            return parseFloat(val).toFixed(4);
+        }
+    }());
+</script>

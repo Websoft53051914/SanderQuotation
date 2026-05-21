@@ -53,4 +53,13 @@ namespace ViewModel.QuotationResult
         /// <summary>bomfilecontent.Id</summary>
         public Guid BomFileContentId { get; set; }
     }
+
+    /// <summary>
+    /// 查詢現貨優惠價 — 請求 VM
+    /// </summary>
+    public class QuotationCheckInStockPriceRequestVM
+    {
+        /// <summary>bomfilecontent.Id</summary>
+        public Guid BomFileContentId { get; set; }
+    }
 }

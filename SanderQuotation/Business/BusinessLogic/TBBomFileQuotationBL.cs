@@ -83,6 +83,18 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 取得啟用的資料清單
+        /// </summary>
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>DM 清單</returns>
+        public List<TBBomFileQuotationDM> GetListEnabled(SearchVO searchVO)
+        {
+            searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
+
+            return GetListByFilter(searchVO);
+        }
+
+        /// <summary>
         /// 取得單筆資料
         /// </summary>
         /// <param name="id">資料代號</param>
@@ -108,87 +120,19 @@ namespace Business.BusinessLogic
         }
 
         #endregion -- TBBomFileQuotation --
-    }
-
-    public partial class TBBomFileQuotationBL
-    {
-        /// <summary>
-        /// 分頁查詢清單
-        /// </summary>
-        /// <param name="pageEntity">分頁資訊</param>
-        /// <param name="searchVO">查詢條件</param>
-        /// <returns>分頁 DM 清單</returns>
-        public PageResult<TBBomFileQuotationDM> GetPageList(PageEntity pageEntity, SearchVO searchVO)
-        {
-            searchVO.StatusEq = (int)StatusEnum.Enabled;
-
-            PageResult<TBBomFileQuotationDTO> pageResult = GetDAO().GetPageList(pageEntity, searchVO);
-
-            List<TBBomFileQuotationDM> results = [];
-            foreach (TBBomFileQuotationDTO item in pageResult.Results)
-            {
-                TBBomFileQuotationDM dm = _mapper.Map<TBBomFileQuotationDM>(item);
-                results.Add(dm);
-            }
-
-            return new PageResult<TBBomFileQuotationDM>
-            {
-                CurrentPage = pageResult.CurrentPage,
-                DataCount = pageResult.DataCount,
-                PageDataSize = pageResult.PageDataSize,
-                Results = results,
-            };
-        }
 
         /// <summary>
-        /// 新增資料
+        /// 取得單筆資料
         /// </summary>
-        /// <param name="dm">DM 物件</param>
-        public void DoCreate(TBBomFileQuotationDM dm)
+        /// <param name="id">資料代號</param>
+        /// <returns>DM 物件，找不到則回傳 null</returns>
+        public TBBomFileQuotationDM? GetOneByBomFileContentId(Guid pBomFileContentId)
         {
-            string account = SessionVO?.Account ?? string.Empty;
-            DateTime nowTime = DateTime.Now;
+            SearchVO searchVO = new();
+            searchVO.BomFileContentIdEq = pBomFileContentId;
+            searchVO.IsLimit1 = true;
 
-            TBBomFileQuotationEntity entity = _mapper.Map<TBBomFileQuotationEntity>(dm);
-            entity.Status = (int)StatusEnum.Enabled;
-            entity.CreatedBy = account;
-            entity.UpdatedBy = account;
-            entity.CreatedAt = nowTime;
-            entity.UpdatedAt = nowTime;
-
-            GetDAO().Insert(entity);
-            dm.Id = entity.Id;
-        }
-
-        /// <summary>
-        /// 更新資料
-        /// </summary>
-        /// <param name="dm">DM 物件</param>
-        public void DoUpdate(TBBomFileQuotationDM dm)
-        {
-            string account = SessionVO?.Account ?? string.Empty;
-
-            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(dm.Id);
-            if (entity != null)
-            {
-                entity.No = dm.No;
-                entity.InternalPurchaseOrderDate = dm.InternalPurchaseOrderDate;
-                entity.InternalUnitPriceOriginalCurrency = dm.InternalUnitPriceOriginalCurrency;
-                entity.InternalUnitPriceTwd = dm.InternalUnitPriceTwd;
-                entity.InternalQuantity = dm.InternalQuantity;
-                entity.InternalCurrency = dm.InternalCurrency;
-                entity.InternalSupplierName = dm.InternalSupplierName;
-                entity.ExternalQuotationDate = dm.ExternalQuotationDate;
-                entity.ExternalUnitPriceOriginalCurrency = dm.ExternalUnitPriceOriginalCurrency;
-                entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
-                entity.ExternalMoq = dm.ExternalMoq;
-                entity.ExternalCurrency = dm.ExternalCurrency;
-                entity.ExternalSupplierName = dm.ExternalSupplierName;
-                entity.UpdatedBy = account;
-                entity.UpdatedAt = DateTime.Now;
-
-                GetDAO().Update(entity);
-            }
+            return GetListEnabled(searchVO).FirstOrDefault();
         }
     }
 
@@ -204,15 +148,11 @@ namespace Business.BusinessLogic
         {
             string account = SessionVO?.Account ?? string.Empty;
 
-            SearchVO searchVO = new();
-            searchVO.BomFileContentIdEq = bomFileContentId;
-            searchVO.IsLimit1 = true;
-
-            TBBomFileQuotationDM? existing = GetListByFilter(searchVO).FirstOrDefault();
-            if (existing == null)
+            TBBomFileQuotationDM? dm = GetOneByBomFileContentId(bomFileContentId);
+            if (dm == null)
                 return;
 
-            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(dm.Id);
             if (entity == null)
                 return;
 
@@ -221,31 +161,30 @@ namespace Business.BusinessLogic
             entity.UpdatedBy = account;
             entity.UpdatedAt = DateTime.Now;
             GetDAO().Update(entity);
-            _unitOfWork.Commit();
+            if (DoSaveChange)
+                _unitOfWork.Commit();
         }
 
         /// <summary>
-        /// 儲存查料結果
+        /// 依 BomFileContentDM 的查料結果，新增或更新 TBBomFileQuotation 之查料欄位
+        /// （No、IsRecommendedNo、MatchCategory、MatchField）
         /// </summary>
-        /// <param name="bomFileContentId">BomFileContent.Id</param>
-        /// <param name="no">找到的採購型號（查無則為 null）</param>
-        public void DoSavePartSearchResult(Guid bomFileContentId, string? no)
+        /// <param name="dm">BOM 料項 DM，dm.Id 為 BomFileContentId</param>
+        public void DoUpsertPartSearchItem(BomFileContentDM dm)
         {
             string account = SessionVO?.Account ?? string.Empty;
             DateTime nowTime = DateTime.Now;
 
-            SearchVO searchVO = new();
-            searchVO.BomFileContentIdEq = bomFileContentId;
-            searchVO.IsLimit1 = true;
-
-            TBBomFileQuotationDM? existing = GetListByFilter(searchVO).FirstOrDefault();
-
+            TBBomFileQuotationDM? existing = GetOneByBomFileContentId(dm.Id);
             if (existing != null)
             {
                 TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
                 if (entity != null)
                 {
-                    entity.No = no;
+                    entity.No = dm.No;
+                    entity.IsRecommendedNo = dm.IsRecommendedNo;
+                    entity.MatchCategory = dm.MatchCategory;
+                    entity.MatchField = dm.MatchField;
                     entity.Status = (int)StatusEnum.Enabled;
                     entity.UpdatedBy = account;
                     entity.UpdatedAt = nowTime;
@@ -255,8 +194,11 @@ namespace Business.BusinessLogic
             else
             {
                 TBBomFileQuotationEntity entity = new();
-                entity.No = no;
-                entity.BomFileContentId = bomFileContentId;
+                entity.No = dm.No;
+                entity.IsRecommendedNo = dm.IsRecommendedNo;
+                entity.MatchCategory = dm.MatchCategory;
+                entity.MatchField = dm.MatchField;
+                entity.BomFileContentId = dm.Id;
                 entity.Status = (int)StatusEnum.Enabled;
                 entity.CreatedBy = account;
                 entity.UpdatedBy = account;
@@ -265,7 +207,80 @@ namespace Business.BusinessLogic
                 GetDAO().Insert(entity);
             }
 
-            _unitOfWork.Commit();
+            if (DoSaveChange)
+                _unitOfWork.Commit();
+        }
+
+        /// <summary>
+        /// 依 BomFileContentDM 更新 TBBomFileQuotation 內部查價欄位
+        /// </summary>
+        /// <param name="dm">BOM 料項 DM，dm.Id 為 BomFileContentId</param>
+        public void DoUpdateInternalPriceItem(BomFileContentDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            TBBomFileQuotationDM? existing = GetOneByBomFileContentId(dm.Id);
+            if (existing == null)
+                return;
+
+            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+            if (entity == null)
+                return;
+
+            entity.InternalPurchaseOrderDate = dm.InternalPurchaseOrderDate;
+            entity.InternalUnitPriceOriginalCurrency = dm.InternalUnitPriceOriginalCurrency;
+            entity.InternalUnitPriceTwd = dm.InternalUnitPriceTwd;
+            entity.InternalQuantity = dm.InternalQuantity;
+            entity.InternalLowMinPrice = dm.InternalLowMinPrice;
+            entity.InternalLowMaxPrice = dm.InternalLowMaxPrice;
+            entity.InternalHighMinPrice = dm.InternalHighMinPrice;
+            entity.InternalHighMaxPrice = dm.InternalHighMaxPrice;
+            entity.InternalSupplierName = dm.InternalSupplierName;
+            entity.InternalCurrency = dm.InternalCurrency;
+            entity.InternalSupplierCode = dm.InternalSupplierCode;
+            entity.InternalItemDescription2 = dm.InternalItemDescription2;
+            entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
+            entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
+            entity.UpdatedBy = account;
+            entity.UpdatedAt = nowTime;
+            GetDAO().Update(entity);
+
+            if (DoSaveChange)
+                _unitOfWork.Commit();
+        }
+
+        /// <summary>
+        /// 依 BomFileContentDM 更新 TBBomFileQuotation 外部查價欄位
+        /// </summary>
+        /// <param name="dm">BOM 料項 DM，dm.Id 為 BomFileContentId</param>
+        public void DoUpdateExternalPriceItem(BomFileContentDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            TBBomFileQuotationDM? existing = GetOneByBomFileContentId(dm.Id);
+            if (existing == null)
+                return;
+
+            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+            if (entity == null)
+                return;
+
+            entity.ExternalQuotationDate = dm.ExternalQuotationDate;
+            entity.ExternalUnitPriceOriginalCurrency = dm.ExternalUnitPriceOriginalCurrency;
+            entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
+            entity.ExternalMoq = dm.ExternalMoq;
+            entity.ExternalSupplierName = dm.ExternalSupplierName;
+            entity.ExternalCurrency = dm.ExternalCurrency;
+            entity.ExternalStock = dm.ExternalStock;
+            entity.ExternalScenario = dm.ExternalScenario;
+            entity.UpdatedBy = account;
+            entity.UpdatedAt = nowTime;
+            GetDAO().Update(entity);
+
+            if (DoSaveChange)
+                _unitOfWork.Commit();
         }
     }
 }

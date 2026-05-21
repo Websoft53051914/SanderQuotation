@@ -109,5 +109,35 @@ namespace Business.DomainModel
         /// 內部查價所使用的客戶承認料清單（CSV 格式）
         /// </summary>
         public string? CustomerApprovedPartCsv { get; set; }
+
+        /// <summary>
+        /// 比對結果分類（對應 MatchCategoryEnum：1=完全命中 2=建議料號 3=未命中）
+        /// </summary>
+        public int? MatchCategory { get; set; }
+
+        /// <summary>
+        /// 比對命中欄位（MPN / Component Part / 規格）
+        /// </summary>
+        public string? MatchField { get; set; }
+
+        /// <summary>
+        /// 內部供應商代碼
+        /// </summary>
+        public string? InternalSupplierCode { get; set; }
+
+        /// <summary>
+        /// 採購型號 Description_2
+        /// </summary>
+        public string? InternalItemDescription2 { get; set; }
+
+        /// <summary>
+        /// 外部查價庫存量
+        /// </summary>
+        public int? ExternalStock { get; set; }
+
+        /// <summary>
+        /// 外部查價情境（對應 ExternalScenarioEnum：1=情境A優先名單 2=情境B後備）
+        /// </summary>
+        public int? ExternalScenario { get; set; }
     }
 }

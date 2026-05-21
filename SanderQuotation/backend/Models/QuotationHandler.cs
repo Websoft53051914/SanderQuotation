@@ -40,11 +40,6 @@ namespace backend.Models
         public bool RunExternal { get; set; } = true;
 
         /// <summary>
-        /// 是否寫入/刪除 TBBomFileDecisionLog 歷程紀錄（預設為 true）
-        /// </summary>
-        public bool WriteDecisionLog { get; set; } = true;
-
-        /// <summary>
         /// 建構子
         /// </summary>
         /// <param name="scopeFactory">DI Scope 工廠</param>
@@ -116,6 +111,8 @@ namespace backend.Models
             content.InternalQuantity = null;
             content.InternalCurrency = null;
             content.InternalSupplierName = null;
+            content.InternalSupplierCode = null;
+            content.InternalItemDescription2 = null;
             content.InternalLowMinPrice = null;
             content.InternalLowMaxPrice = null;
             content.InternalHighMinPrice = null;
@@ -123,24 +120,16 @@ namespace backend.Models
             content.IsFilterByCustomerApprovedPart = false;
             content.CustomerApprovedPartCsv = null;
 
-            if (WriteDecisionLog)
-            {
-                TBBomFileDecisionLogBL blLogForDelete = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>();
-                blLogForDelete.DeleteByBomFileContentIdAndStage(content.Id, (int)BomFileDecisionLogStageEnum.InternalQuotation);
-            }
-
             string? itemNo = content.No;
 
             if (string.IsNullOrWhiteSpace(itemNo))
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, "查無採購型號（No），略過內部查價");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, "查無採購型號（No），略過內部查價");
                 return;
             }
             else if (content.IsRecommendedNo)
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, "採購型號為建議料號，略過內部查價");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, "採購型號為建議料號，略過內部查價");
                 return;
             }
 
@@ -158,7 +147,7 @@ namespace backend.Models
 
             InternalPurchaseRecordVO internalResult = await _orderPriceDecison.Search(history);
 
-            if (WriteDecisionLog && !string.IsNullOrWhiteSpace(internalResult.Remark))
+            if (!string.IsNullOrWhiteSpace(internalResult.Remark))
                 content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationAIDecision, internalResult.Remark.Trim());
 
             string resultMsg;
@@ -167,8 +156,7 @@ namespace backend.Models
             else
                 resultMsg = "查無可用歷史採購紀錄";
 
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, resultMsg);
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult, resultMsg);
 
             content.InternalPurchaseOrderDate = internalResult.PurchaseOrderDate;
             content.InternalUnitPriceOriginalCurrency = internalResult.UnitPriceOriginalCurrency;
@@ -176,6 +164,8 @@ namespace backend.Models
             content.InternalQuantity = internalResult.Quantity;
             content.InternalCurrency = internalResult.Currency;
             content.InternalSupplierName = internalResult.SupplierName;
+            content.InternalSupplierCode = internalResult.SupplierCode;
+            content.InternalItemDescription2 = internalResult.Description2;
             content.InternalLowMinPrice = internalResult.InternalLowMinPrice;
             content.InternalLowMaxPrice = internalResult.InternalLowMaxPrice;
             content.InternalHighMinPrice = internalResult.InternalHighMinPrice;
@@ -202,25 +192,19 @@ namespace backend.Models
             content.ExternalMoq = null;
             content.ExternalCurrency = null;
             content.ExternalSupplierName = null;
-
-            if (WriteDecisionLog)
-            {
-                TBBomFileDecisionLogBL blLogForDelete = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>();
-                blLogForDelete.DeleteByBomFileContentIdAndStage(content.Id, (int)BomFileDecisionLogStageEnum.ExternalQuotation);
-            }
+            content.ExternalStock = null;
+            content.ExternalScenario = null;
 
             string? mpn = content.ManufacturerPartNumber;
 
             if (string.IsNullOrWhiteSpace(mpn))
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationResult, "查無廠商型號（MPN），略過外部查價");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationResult, "查無廠商型號（MPN），略過外部查價");
                 return;
             }
 
             int qty = (content.Qty ?? 0) * quotationQty;
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationNexarQuery, $"MPN：{mpn}，查詢數量：{qty}");
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationNexarQuery, $"MPN：{mpn}，查詢數量：{qty}");
 
             List<string> preferredVendorList = GetPreferredVendorList();
 
@@ -240,14 +224,17 @@ namespace backend.Models
                 content.ExternalMoq = externalResult.MOQ;
                 content.ExternalCurrency = externalResult.Currency;
                 content.ExternalSupplierName = externalResult.SupplierName;
+                content.ExternalStock = externalResult.Stock;
+                content.ExternalScenario = externalResult.IsPreferred
+                    ? (int)ExternalScenarioEnum.PreferredVendor
+                    : (int)ExternalScenarioEnum.Fallback;
             }
             else
             {
                 resultMsg = "查無外部報價";
             }
 
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationResult, resultMsg);
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationResult, resultMsg);
         }
 
         /// <summary>
@@ -290,8 +277,7 @@ namespace backend.Models
         {
             if (string.IsNullOrWhiteSpace(customerCode))
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter, "無客戶代碼，不套用客戶承認料過濾");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter, "無客戶代碼，不套用客戶承認料過濾");
                 return null;
             }
 
@@ -308,8 +294,7 @@ namespace backend.Models
 
             if (variantCodes.Count == 0)
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter, $"客戶代碼 {customerCode} 查無 Variant 設定，不套用過濾");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter, $"客戶代碼 {customerCode} 查無 Variant 設定，不套用過濾");
                 return null;
             }
 
@@ -362,16 +347,14 @@ namespace backend.Models
 
             if (approvedParts.Count > 0)
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter,
-                        $"套用客戶承認料過濾，客戶代碼：{customerCode}，Variant：{string.Join(", ", variantCodes)}，承認料清單（{approvedParts.Count} 筆）：{string.Join(", ", approvedParts)}");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter,
+                    $"套用客戶承認料過濾，客戶代碼：{customerCode}，Variant：{string.Join(", ", variantCodes)}，承認料清單（{approvedParts.Count} 筆）：{string.Join(", ", approvedParts)}");
                 return approvedParts;
             }
             else
             {
-                if (WriteDecisionLog)
-                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter,
-                        $"客戶代碼 {customerCode} 解析到 Variant 但承認料清單為空，不套用過濾");
+                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationVariantFilter,
+                    $"客戶代碼 {customerCode} 解析到 Variant 但承認料清單為空，不套用過濾");
                 return null;
             }
         }
@@ -410,14 +393,11 @@ namespace backend.Models
         /// <param name="brandComparisonCategorySet">需比對廠牌之料品類別集合</param>
         public async Task RunPartSearchAsync(BomFileContentDM content, HashSet<string> brandComparisonCategorySet)
         {
-            if (WriteDecisionLog)
-            {
-                TBBomFileDecisionLogBL blLogForDelete = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>();
-                blLogForDelete.DeleteByBomFileContentIdAndStage(content.Id, (int)BomFileDecisionLogStageEnum.PartSearch);
-            }
-
             TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
             SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
+
+            content.MatchCategory = null;
+            content.MatchField = null;
 
             // 正規化輸入欄位
             string manufacturer = SandermoduleItemNormalizer.Normalize(content.Manufacturer ?? string.Empty);
@@ -459,11 +439,10 @@ namespace backend.Models
                         if (!needsBrandComparison)
                         {
                             step1Info += $"[{dm.No}] 非需比對廠牌類別，完全命中，命中欄位：{dm.ColumnName}\n";
-                            if (WriteDecisionLog)
-                                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，非需比對廠牌類別）");
+                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，非需比對廠牌類別）");
                             content.No = dm.No;
-                            content.IsRecommendedNo = false;
-                            return;
+                            content.IsRecommendedNo = false; content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                            content.MatchField = "MPN"; return;
                         }
                         else if (string.IsNullOrWhiteSpace(manufacturer))
                         {
@@ -483,10 +462,11 @@ namespace backend.Models
                             if (dmListMatchMfr.Count > 0)
                             {
                                 step1Info += $"[{dm.No}] 需比對廠牌類別，廠牌一致，完全命中\n";
-                                if (WriteDecisionLog)
-                                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，需比對廠牌類別，廠牌一致）");
+                                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，需比對廠牌類別，廠牌一致）");
                                 content.No = dm.No;
                                 content.IsRecommendedNo = false;
+                                content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                                content.MatchField = "MPN";
                                 return;
                             }
                             else
@@ -504,10 +484,11 @@ namespace backend.Models
                     if (step1FallbackNo != null)
                     {
                         step1Info += $"所有候選皆非完全命中，建議料號：{step1FallbackNo}\n";
-                        if (WriteDecisionLog)
-                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + step1FallbackResult);
+                        content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + step1FallbackResult);
                         content.No = step1FallbackNo;
                         content.IsRecommendedNo = true;
+                        content.MatchCategory = (int)MatchCategoryEnum.Recommended;
+                        content.MatchField = "MPN";
                         return;
                     }
 
@@ -523,8 +504,7 @@ namespace backend.Models
                 step1Info += "MPN 欄位為空白，無法以 MPN 查詢\n";
             }
 
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info);
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info);
 
             // Step2：以客戶料號（Component Part）查詢
             string step2Info = $"查詢值：{componentPart}\n";
@@ -550,10 +530,11 @@ namespace backend.Models
                             continue;
 
                         step2Info += $"[{dm.No}] 完全命中，命中欄位：{dm.ColumnName}\n";
-                        if (WriteDecisionLog)
-                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info + "查料結果：完全命中（Component Part）");
+                        content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info + "查料結果：完全命中（Component Part）");
                         content.No = dm.No;
                         content.IsRecommendedNo = false;
+                        content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                        content.MatchField = "Component Part";
                         return;
                     }
 
@@ -569,8 +550,7 @@ namespace backend.Models
                 step2Info += "Component Part 欄位為空白，無法以 Component Part 查詢\n";
             }
 
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info);
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info);
 
             // Step3：以零件規格（Description）查詢
             string step3Info = $"查詢值：{description}\n";
@@ -595,10 +575,11 @@ namespace backend.Models
                     {
                         TBSanderModuleItemKeywordDM dmBest = dmListMatch.First();
                         step3Info += $"以 Description 查詢有 {dmListMatch.Count} 筆結果，建議料號：{dmBest.No}，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
-                        if (WriteDecisionLog)
-                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：建議料號（Description）");
+                        content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：建議料號（Description）");
                         content.No = dmBest.No;
                         content.IsRecommendedNo = true;
+                        content.MatchCategory = (int)MatchCategoryEnum.Recommended;
+                        content.MatchField = "Description";
                         return;
                     }
                     else
@@ -616,8 +597,9 @@ namespace backend.Models
                 step3Info += "Description 欄位為空白，無法以 Description 查詢\n";
             }
 
-            if (WriteDecisionLog)
-                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：查無料號");
+            content.MatchCategory = (int)MatchCategoryEnum.Miss;
+            content.MatchField = null;
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：查無料號");
         }
     }
 
@@ -711,6 +693,16 @@ namespace backend.Models
         /// 是否套用 Variant 客戶承認料過濾
         /// </summary>
         public bool IsFilterByCustomerApprovedPart { get; set; }
+
+        /// <summary>
+        /// 供應商代碼（BuyFromVendorNo）
+        /// </summary>
+        public string? SupplierCode { get; set; }
+
+        /// <summary>
+        /// 採購型號 Description_2
+        /// </summary>
+        public string? Description2 { get; set; }
     }
 
     /// <summary>
@@ -757,5 +749,15 @@ namespace backend.Models
         /// 搜尋結果數量（優先供應商）
         /// </summary>
         public int SearchMatchPreferredCount { get; set; } = 0;
+
+        /// <summary>
+        /// 庫存量
+        /// </summary>
+        public int? Stock { get; set; }
+
+        /// <summary>
+        /// 是否為優先供應商報價
+        /// </summary>
+        public bool IsPreferred { get; set; }
     }
 }

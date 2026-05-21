@@ -149,6 +149,36 @@ namespace Business.DomainModel
         /// 內部查價所使用的客戶承認料清單（CSV 格式）
         /// </summary>
         public string? CustomerApprovedPartCsv { get; set; }
+
+        /// <summary>
+        /// 比對結果分類（對應 MatchCategoryEnum：1=完全命中 2=建議料號 3=未命中）
+        /// </summary>
+        public int? MatchCategory { get; set; }
+
+        /// <summary>
+        /// 比對命中欄位（MPN / Component Part / 規格）
+        /// </summary>
+        public string? MatchField { get; set; }
+
+        /// <summary>
+        /// 內部供應商代碼
+        /// </summary>
+        public string? InternalSupplierCode { get; set; }
+
+        /// <summary>
+        /// 採購型號 Description_2
+        /// </summary>
+        public string? InternalItemDescription2 { get; set; }
+
+        /// <summary>
+        /// 外部查價庫存量
+        /// </summary>
+        public int? ExternalStock { get; set; }
+
+        /// <summary>
+        /// 外部查價情境（對應 ExternalScenarioEnum：1=情境A優先名單 2=情境B後備）
+        /// </summary>
+        public int? ExternalScenario { get; set; }
     }
 
     public partial class BomFileContentDM
@@ -156,7 +186,7 @@ namespace Business.DomainModel
         /// <summary>
         /// 待寫入的決策歷程暫存清單（由查料/查價過程累積，在儲存時一同寫入 DB）
         /// </summary>
-        public List<PendingDecisionLogVO> PendingDecisionLogs { get; set; } = new();
+        public List<TBBomFileDecisionLogDM> PendingDecisionLogs { get; set; } = new();
 
         /// <summary>
         /// 新增一筆待寫入的決策歷程至暫存清單
@@ -166,32 +196,11 @@ namespace Business.DomainModel
         /// <param name="message">決策訊息</param>
         public void AddDecisionLog(int stage, int step, string message)
         {
-            PendingDecisionLogVO log = new();
+            TBBomFileDecisionLogDM log = new();
             log.Stage = stage;
             log.Step = step;
             log.Message = message;
             PendingDecisionLogs.Add(log);
         }
-    }
-
-    /// <summary>
-    /// 待寫入 TBBomFileDecisionLog 的暫存決策歷程
-    /// </summary>
-    public class PendingDecisionLogVO
-    {
-        /// <summary>
-        /// 決策階段（對應 BomFileDecisionLogStageEnum 的 int 值）
-        /// </summary>
-        public int Stage { get; set; }
-
-        /// <summary>
-        /// 決策步驟（對應 BomFileDecisionLogStepEnum 的 int 值）
-        /// </summary>
-        public int Step { get; set; }
-
-        /// <summary>
-        /// 決策訊息
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
     }
 }

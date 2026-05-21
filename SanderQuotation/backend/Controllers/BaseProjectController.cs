@@ -310,5 +310,65 @@ namespace backend.Controllers
 
             return _blSanderModulePurchaseLine;
         }
+
+        private EsFileTransferUploadBL? _blEsFileTransferUpload = null;
+        /// <summary>
+        /// EsFileTransferUploadBL
+        /// </summary>
+        protected EsFileTransferUploadBL GetBlEsFileTransferUpload()
+        {
+            _blEsFileTransferUpload ??= GetBLInstance<EsFileTransferUploadBL>();
+            return _blEsFileTransferUpload;
+        }
+
+        private BomFileContentBL? _blBomFileContent = null;
+        /// <summary>
+        /// BomFileContentBL
+        /// </summary>
+        protected BomFileContentBL GetBlBomFileContent()
+        {
+            _blBomFileContent ??= GetBLInstance<BomFileContentBL>();
+            return _blBomFileContent;
+        }
+
+        private HandleQuotationBL? _blHandleQuotation = null;
+        /// <summary>
+        /// HandleQuotationBL
+        /// </summary>
+        protected HandleQuotationBL GetBlHandleQuotation()
+        {
+            _blHandleQuotation ??= GetBLInstance<HandleQuotationBL>();
+            return _blHandleQuotation;
+        }
+
+        private TBBomFileQuotationBL? _blTBBomFileQuotation = null;
+        /// <summary>
+        /// TBBomFileQuotationBL
+        /// </summary>
+        protected TBBomFileQuotationBL GetBlTBBomFileQuotation()
+        {
+            _blTBBomFileQuotation ??= GetBLInstance<TBBomFileQuotationBL>();
+            return _blTBBomFileQuotation;
+        }
+
+        private TBBomFileDecisionLogBL? _blTBBomFileDecisionLog = null;
+        /// <summary>
+        /// TBBomFileDecisionLogBL
+        /// </summary>
+        protected TBBomFileDecisionLogBL GetBlTBBomFileDecisionLog()
+        {
+            _blTBBomFileDecisionLog ??= GetBLInstance<TBBomFileDecisionLogBL>();
+            return _blTBBomFileDecisionLog;
+        }
+
+        private TBBomFileQuotationOtherBL? _blTBBomFileQuotationOther = null;
+        /// <summary>
+        /// TBBomFileQuotationOtherBL
+        /// </summary>
+        protected TBBomFileQuotationOtherBL GetBlTBBomFileQuotationOther()
+        {
+            _blTBBomFileQuotationOther ??= GetBLInstance<TBBomFileQuotationOtherBL>();
+            return _blTBBomFileQuotationOther;
+        }
     }
 }
