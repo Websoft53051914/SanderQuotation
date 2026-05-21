@@ -1,4 +1,5 @@
-﻿using Core.Utility.Helper.DB;
+﻿using Const;
+using Core.Utility.Helper.DB;
 using Data.DataAccess.Dao;
 using Data.DataAccess.Entity;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Const.Enums;
 
 namespace Data.DataAccess.Impl
 {
@@ -44,6 +46,23 @@ WHERE historyfileid = @historyfileid;
                 { "updatedby", entity.UpdatedBy },
                 { "updatedat", entity.UpdatedAt },
                 { "historyfileid", entity.HistoryFileId }
+            });
+        }
+
+        public void DeleteFile(List<Guid> historyFileIds,string account)
+        {
+            string sql = $@"
+UPDATE public.embeddedhistoryfile
+SET status = { (int)StatusEnum.Cancel },
+    updatedby = @updatedby,
+    updatedat = @updatedat
+WHERE historyfileid = ANY(@historyFileIds);
+";
+            DbHelper.Execute(sql, new Dictionary<string, object>()
+            {
+                { "historyFileIds", historyFileIds },
+                {"updatedat", DateTime.Now },
+                {"updatedby", account }
             });
         }
     }

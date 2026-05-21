@@ -12,5 +12,9 @@ namespace ViewModel.HistoryFile
         /// 新上傳檔案
         /// </summary>
         public List<string> NewFileUploadIdList { get; set; } = [];
+
+        public Guid Id { get; set; }
+
+        public string FileSummary { get; set; } = string.Empty;
     }
 }

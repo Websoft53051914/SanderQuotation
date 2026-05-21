@@ -4,10 +4,9 @@
 @{
     ViewBag.Title = "歷史資料上傳";
 }
-
 @section styles {
-    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet" />
-    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css" rel="stylesheet" />
+    <link href="@Url.Content("~/assets/css/filepond.css")" rel="stylesheet" />
+    <link href="@Url.Content("~/assets/css/filepond-plugin-image-preview.css")" rel="stylesheet" />
     <style>
         .filepond--root { font-family: inherit; }
         .filepond--panel-root { background-color: #f3f6f9; border: 2px dashed #ced4da; border-radius: 0.375rem; }
@@ -601,29 +600,47 @@
                 });
             });
 
+            var currentEditId = null;
+
             // ⭐ 點擊編輯按鈕
-            $(document).on('click', '.edit-item-btn', function () {
-                const tr = $(this).closest('tr');
-                const id = tr.data('id');
-                const rowData = data.find(d => d.Id == id);
-                if (!rowData) return;
-                $('#edit_FileName').val(rowData.FileName);
-                $('#edit_ContentSummary').val(rowData.ContentSummary);
-                $('#editForm').data('id', id);
+            $(document).on('click', '.edit-item-btn', function (e) {
+                e.preventDefault();
+                const $tr = $(this).closest('tr');
+                currentEditId = $tr.data('id');
+                if (!currentEditId) return;
+
+                const $tds = $tr.find('td');
+                const fileName = $tds.eq(2).text().trim();
+                const fileSummary = $tds.eq(3).find('div').attr('title') || $tds.eq(3).text().trim();
+
+                $('#edit_FileName').val(fileName);
+                $('#edit_ContentSummary').val(fileSummary);
+
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('showModal')).show();
             });
 
             // ⭐ 編輯表單送出
             $('#editForm').on('submit', function (e) {
                 e.preventDefault();
-                const id = $(this).data('id');
-                const contentSummary = $('#edit_ContentSummary').val();
-                const idx = data.findIndex(d => d.Id == id);
-                if (idx !== -1) {
-                    data[idx].ContentSummary = contentSummary;
-                }
-                $('#showModal').modal('hide');
-                loadDatas();
+                if (!currentEditId) return;
+                showLoader();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@(Configuration["BackendURL"])/api/HistoryFile/Edit',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Id: currentEditId, FileSummary: $('#edit_ContentSummary').val() }),
+                    success: function (res) {
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('showModal')).hide();
+                        const icon = res.Success ? 'success' : 'warning';
+                        Swal.fire({ icon: icon, title: res.Success ? res.Data : res.Message, confirmButtonText: '確定' })
+                            .then(() => loadDatas());
+                    },
+                    error: function () {
+                        Swal.fire({ icon: 'error', title: '@config.GetMessage("System_Error").ToHtmlString()', confirmButtonText: '確定' });
+                    },
+                    complete: function () { hideLoader(); }
+                });
             });
 
             // ⭐ 初始化

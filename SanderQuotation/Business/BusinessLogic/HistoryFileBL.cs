@@ -110,13 +110,19 @@ namespace Business.BusinessLogic
             return _mapper.Map<List<HistoryFileDM>>(entities);
         }
 
+        public HistoryFileDM GetInfo(Guid id)
+        {
+            var entity = GetDAO().FindByPk(id);
+            return _mapper.Map<HistoryFileDM>(entity);
+        }
+
         /// <summary>
         /// 批次執行綁定
         /// </summary>
         /// <param name="dmView"></param>
         public void DoBindBatch(List<HistoryFileDM> dmListView)
         {
-            var entityList = GetDAO().GetListByFilter(new SearchVO() { IdIn = dmListView.Select(x => x.Id).ToList(),StatusEq = (int)StatusEnum.Disabled });
+            var entityList = GetDAO().GetListByFilter(new SearchVO() { IdIn = dmListView.Select(x => x.Id).ToList()});
             foreach (HistoryFileEntity entity in entityList)
             {
                 entity.UpdatedBy = UserInfo?.UserAccount ?? "";
@@ -186,6 +192,22 @@ namespace Business.BusinessLogic
             };
 
             return dms;
+        }
+
+
+
+        public void Delete(List<Guid> guids)
+        {
+            var entityList = GetDAO().GetListByFilter(new SearchVO() { IdIn = guids});
+            foreach (HistoryFileEntity entity in entityList)
+            {
+                entity.UpdatedBy = UserInfo?.UserAccount ?? "";
+                entity.UpdatedAt = base.now;
+                entity.Status = (int)StatusEnum.Cancel;
+                GetDAO().Update(entity);
+            }
+            GetEmbeddedHistoryFileDAO().DeleteFile(guids,UserInfo?.UserAccount ?? "");
+            _unitOfWork.Commit();
         }
     }
 }

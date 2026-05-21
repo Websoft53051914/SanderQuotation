@@ -10,6 +10,7 @@ using Core.Utility.Helper.Message;
 using Core.Utility.Utility;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
+using NPOI.SS.Formula.Functions;
 using System.Text;
 using ViewModel;
 using ViewModel.HistoryFile;
@@ -300,6 +301,40 @@ namespace backend.Controllers
                     Page = pageResult.CurrentPage,
                     PageSize = pageResult.PageDataSize
                 });
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+
+        /// <summary>
+        /// 編輯
+        /// </summary>
+        [CustomAuthorization(FuncID.HistoryFile_Edit)]
+        [HttpPost("Edit")]
+        public async Task<IActionResult> Edit([FromBody] HistoryFileEditVM vm)
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                HistoryFileDM dm = GetHistoryFileBL().GetInfo(vm.Id);
+                MessageHelper messageHelper = new MessageHelper();
+                dm.UpdatedAt = now;
+                dm.FileSummary = vm.FileSummary;
+                await _historyFileHandler.HandleOfAI(dm, messageHelper);
+                if (messageHelper.IsError())
+                {
+                    return JsonValidFail(messageHelper.GetAlert());
+                }
+
+                GetHistoryFileBL().DoBindBatch(new List<HistoryFileDM>()
+                {
+                    dm
+                });
+                return JsonSuccess("編輯成功");
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
-﻿using Data.DataAccess.Entity;
+﻿using Const;
+using Data.DataAccess.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,7 @@ namespace Data.DataAccess.Dao
     {
         void InsertFile(EmbeddedHistoryFileEntity entity);
         void UpdateFile(EmbeddedHistoryFileEntity entity);
+
+        void DeleteFile(List<Guid> historyFileIds, string account);
     }
 }

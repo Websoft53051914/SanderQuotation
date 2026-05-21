@@ -106,6 +106,8 @@
         /// 類別
         /// </summary>
         public List<string> TypeStrIn { get; set; } = [];
+
+        public List<Guid> HistoryFileIdIn { get; set; } = [];
     }
 
     public partial class SearchVO
