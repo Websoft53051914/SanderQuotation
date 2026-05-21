@@ -51,7 +51,7 @@ namespace backend.AI
             }
             catch (Exception ex)
             {
-                throw new Exception($"上傳檔案失敗: {ex.Message}", ex);
+                throw new Exception($"Gemini端上傳檔案失敗: {ex.Message}", ex);
             }
         }
 

@@ -225,7 +225,7 @@ builder.Services.AddKernel()
 builder.Services.AddSingleton<GeminiFileApiClient>(sp =>
 {
     var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient();
+    var httpClient = httpClientFactory.CreateClient("GeminiHttpClient"); // 使用 10 分鐘 timeout 的 named client
     return new GeminiFileApiClient(httpClient, geminiApiKey);
 });
 // Kernel 依照你原本的註冊方式

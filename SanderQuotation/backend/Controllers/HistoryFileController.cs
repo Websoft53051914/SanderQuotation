@@ -239,9 +239,10 @@ namespace backend.Controllers
                     searchVO.StatusEq = (int)StatusEnum.Disabled;
                     List<HistoryFileDM> dmList = GetHistoryFileBL().GetListByFilter(searchVO);
                     MessageHelper messageHelperSub = new MessageHelper();
+                    messageHelperSub.Clear();
                     foreach (HistoryFileDM dm in dmList)
                     {
-                        messageHelperSub.Clear();
+
 
                         dm.UpdatedAt = now;
                         await _historyFileHandler.HandleOfAI(dm, messageHelperSub);
@@ -251,14 +252,18 @@ namespace backend.Controllers
                             messageHelper.SetAlert(messageHelperSub.GetAlert());
                         }
                     }
-
-                    GetHistoryFileBL().DoBindBatch(dmList);
+                    if(!messageHelper.IsError())
+                    {
+                        GetHistoryFileBL().DoBindBatch(dmList);
+                    }
                 }
 
                 string msgSuccess = "執行成功";
                 if (messageHelper.IsError())
                 {
+                    msgSuccess = "執行失敗";
                     msgSuccess = msgSuccess + "\n" + messageHelper.GetAlert();
+                    return JsonValidFail(msgSuccess);
                 }
 
                 return JsonSuccess(msgSuccess);
@@ -309,6 +314,39 @@ namespace backend.Controllers
             }
         }
 
+
+        /// <summary>
+        /// 刪除
+        /// </summary>
+        [CustomAuthorization(FuncID.HistoryFile_Delete)]
+        [HttpPost("Delete")]
+        public IActionResult Delete([FromBody] List<Guid> rowGuids)
+        {
+            try
+            {
+                // 先取得每筆資料的檔案資訊，再刪除實體檔案
+                var dmList = GetHistoryFileBL().GetListByFilter(new SearchVO { IdIn = rowGuids });
+                foreach (var dm in dmList)
+                {
+                    if (!string.IsNullOrWhiteSpace(dm.UploadId) && !string.IsNullOrWhiteSpace(dm.FileName))
+                    {
+                        string pathFile = Path.Combine(_webHostEnvironment.ContentRootPath, _dir, dm.UploadId + Path.GetExtension(dm.FileName));
+                        if (System.IO.File.Exists(pathFile))
+                        {
+                            System.IO.File.Delete(pathFile);
+                        }
+                    }
+                }
+
+                GetHistoryFileBL().Delete(rowGuids);
+                return JsonSuccess("刪除成功");
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
 
         /// <summary>
         /// 編輯

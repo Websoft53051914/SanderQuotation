@@ -115,17 +115,15 @@
                                 <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
                                     <h4>
-                                        您即將刪除一筆資料
+                                        您確定要刪除此項目嗎？
                                     </h4>
-                                    <p class="text-muted fs-14 mb-4">
-                                        刪除您的資料將會把所有資訊從我們的資料庫中移除。
-                                    </p>
+
                                     <div class="hstack gap-2 justify-content-center remove">
                                         <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
                                             關閉
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">是的，刪除它!</button>
+                                        <button class="btn btn-danger" id="delete-record">是的，刪除它！</button>
                                     </div>
                                 </div>
                             </div>
@@ -477,11 +475,9 @@
                             url: _backendUrl + '/api/HistoryFile/Process',
                             method: 'POST',
                             onload: (response) => {
-                                console.log(response)
                                 return response.responseText
                             },
                             onerror: (response) =>  {
-                                console.log(response)
                                 return response
                             },
                             withCredentials:true
@@ -597,6 +593,114 @@
                 })
                 .finally(function () {
                     hideLoader();
+                });
+            });
+
+            var currentDeleteId = null;
+
+            // ⭐ 多筆刪除
+            function deleteMultiple() {
+                var ids_array = [];
+                var items = document.querySelectorAll('.form-check [value=option1]');
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].checked == true) {
+                        var trNode = items[i].parentNode.parentNode.parentNode;
+                        var tdDataId = trNode.querySelector("th [data-id]");
+                        var id = tdDataId.getAttribute("data-id");
+                        ids_array.push(id);
+                    }
+                }
+                if (typeof ids_array !== 'undefined' && ids_array.length > 0) {
+                    Swal.fire({
+                        title: "@(config.GetMessage("Are_you_sure").ToHtmlString())",
+                        text: "@(config.GetMessage("You_wont_be_able_to_revert_this").ToHtmlString())",
+                        icon: "warning",
+                        showCancelButton: true,
+                        customClass: {
+                            confirmButton: "btn btn-primary w-xs me-2 mt-2",
+                            cancelButton: "btn btn-danger w-xs mt-2"
+                        },
+                        confirmButtonText: "@(config.GetMessage("Yes_delete_it").ToHtmlString())",
+                        cancelButtonText: "@(config.GetMessage("Cancel").ToHtmlString())",
+                        buttonsStyling: false,
+                        showCloseButton: true
+                    }).then(function (result) {
+                        if (result.value) {
+                            showLoader();
+                            $.ajax({
+                                type: 'POST',
+                                url: '@(Configuration["BackendURL"])/api/HistoryFile/Delete',
+                                contentType: 'application/json',
+                                data: JSON.stringify(ids_array),
+                                success: function (response) {
+                                    if (!response.Success) {
+                                        Swal.fire({
+                                            icon: 'warning',
+                                            title: response.Message,
+                                            confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                                        });
+                                        return;
+                                    }
+                                    loadDatas();
+                                    Swal.fire({
+                                        title: '@(config.GetMessage("Deleted").ToHtmlString())',
+                                        text: '@(config.GetMessage("Your_data_has_been_deleted").ToHtmlString())',
+                                        icon: 'success',
+                                        customClass: {
+                                            confirmButton: "btn btn-info w-xs mt-2",
+                                        },
+                                        buttonsStyling: false
+                                    });
+                                },
+                                error: function () {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: '@(config.GetMessage("System_Error").ToHtmlString())',
+                                        confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())',
+                                    });
+                                }
+                            }).always(function () {
+                                hideLoader();
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Please select at least one checkbox',
+                        confirmButtonClass: 'btn btn-info',
+                        buttonsStyling: false,
+                        showCloseButton: true
+                    });
+                }
+            }
+
+            // ⭐ 單筆刪除按鈕
+            $(document).on('click', '.remove-item-btn', function (e) {
+                e.preventDefault();
+                currentDeleteId = $(this).closest('tr').data('id');
+            });
+
+            // ⭐ 確認單筆刪除
+            $('#delete-record').on('click', function () {
+                if (!currentDeleteId) return;
+                showLoader();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@(Configuration["BackendURL"])/api/HistoryFile/Delete',
+                    contentType: 'application/json',
+                    data: JSON.stringify([currentDeleteId]),
+                    success: function (res) {
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteOrder')).hide();
+                        const icon = res.Success ? 'success' : 'warning';
+                        Swal.fire({ icon: icon, title: res.Success ? '@(config.GetMessage("Deleted").ToHtmlString())' : res.Message, confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())' })
+                            .then(() => loadDatas());
+                    },
+                    error: function () {
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteOrder')).hide();
+                        Swal.fire({ icon: 'error', title: '@(config.GetMessage("System_Error").ToHtmlString())', confirmButtonText: '@(config.GetMessage("Confirm").ToHtmlString())' });
+                    },
+                    complete: function () { hideLoader(); }
                 });
             });
 

@@ -140,29 +140,29 @@ namespace Business.BusinessLogic
                 {
                     nameof(EmbeddedHistoryFileEntity.Embedding)
                 });
-                if(embeddingEntity != null)
+                if (dm?.Embedding != null)
                 {
-                    embeddingEntity.UpdatedBy = UserInfo?.UserAccount ?? "";
-                    embeddingEntity.UpdatedAt = base.now;
-                    if(dm != null && dm.Embedding != null)
+                    if(embeddingEntity != null)
                     {
+                        embeddingEntity.UpdatedBy = UserInfo?.UserAccount ?? "";
+                        embeddingEntity.UpdatedAt = base.now;
                         embeddingEntity.Embedding = dm.Embedding;
+                        GetEmbeddedHistoryFileDAO().UpdateFile(embeddingEntity);
                     }
-                    GetEmbeddedHistoryFileDAO().UpdateFile(embeddingEntity);
-                }
-                else
-                {
-                    EmbeddedHistoryFileEntity embeddedHistoryFileEntity = new EmbeddedHistoryFileEntity()
+                    else
                     {
-                        HistoryFileId = entity.Id,
-                        Embedding = dm != null && dm.Embedding != null ? dm.Embedding : null,
-                        CreatedAt = base.now,
-                        CreatedBy = UserInfo?.UserAccount ?? "",
-                        UpdatedAt = base.now,
-                        UpdatedBy = UserInfo?.UserAccount ?? "",
-                        Status = (int)StatusEnum.Enabled,
-                    };
-                    GetEmbeddedHistoryFileDAO().InsertFile(embeddedHistoryFileEntity);
+                        EmbeddedHistoryFileEntity embeddedHistoryFileEntity = new EmbeddedHistoryFileEntity()
+                        {
+                            HistoryFileId = entity.Id,
+                            Embedding = dm.Embedding,
+                            CreatedAt = base.now,
+                            CreatedBy = UserInfo?.UserAccount ?? "",
+                            UpdatedAt = base.now,
+                            UpdatedBy = UserInfo?.UserAccount ?? "",
+                            Status = (int)StatusEnum.Enabled,
+                        };
+                        GetEmbeddedHistoryFileDAO().InsertFile(embeddedHistoryFileEntity);
+                    }
                 }
             }
             _unitOfWork.Commit();

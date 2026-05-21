@@ -43,9 +43,9 @@ namespace backend.AI
                     FileUploadInfo fileUploadInfo = BuildFileUploadInfo(dm);
                     dm.FileSummary = await GetFileSummaryAsync(fileUploadInfo);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    messageHelper.SetAlert($"【{dm.FileName}】無法產生摘要");
+                    messageHelper.SetAlert($"【{dm.FileName}】無法產生摘要({ex.Message})");
                     return;
                 }
             }
@@ -106,7 +106,7 @@ namespace backend.AI
 你是一個專業的文件分析助理，擅長閱讀各類文件並整理重點摘要。
 請使用繁體中文回答。
 ");
-
+            string uri = "";
             try
             {
                 var settings = new GeminiPromptExecutionSettings
@@ -123,7 +123,7 @@ namespace backend.AI
 
                 #region 上傳檔案到 Gemini File API
 
-                var uri = await _fileService.UploadFileAsync(fileInfo.fileStream, fileInfo.fileMimeType, fileInfo.fileName);
+                uri = await _fileService.UploadFileAsync(fileInfo.fileStream, fileInfo.fileMimeType, fileInfo.fileName);
 
                 msg.Add(new ImageContent(new Uri(uri))
                 {
@@ -187,6 +187,12 @@ namespace backend.AI
             }
             finally
             {
+                // Step 3: 不論成功或失敗，刪除已上傳的 Gemini 檔案以釋放配額
+                if (!string.IsNullOrEmpty(uri))
+                {
+                    try { await _fileService.DeleteFileAsync(uri); }
+                    catch { /* 刪除失敗不影響主流程 */ }
+                }
                 fileInfo.fileStream?.Dispose();
             }
         }
