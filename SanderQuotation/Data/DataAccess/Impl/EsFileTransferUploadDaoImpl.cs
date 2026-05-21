@@ -223,5 +223,18 @@ WHERE
 
             DbHelper.Execute(sql, paras);
         }
+
+        /// <summary>
+        /// 查詢 Status &lt;&gt; activeStatus 且 UpdatedAt &lt; updatedBefore 的記錄
+        /// </summary>
+        public List<EsFileTransferUploadEntity> GetOldNonActiveList(int activeStatus, DateTime updatedBefore)
+        {
+            string sql = "SELECT * FROM EsFileTransferUpload WHERE Status <> @ActiveStatus AND UpdatedAt < @UpdatedBefore";
+            return DbHelper.FindList<EsFileTransferUploadEntity>(sql, new Dictionary<string, object>
+            {
+                { "ActiveStatus", activeStatus },
+                { "UpdatedBefore", updatedBefore }
+            });
+        }
     }
 }

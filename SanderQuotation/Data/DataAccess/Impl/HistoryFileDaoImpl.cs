@@ -38,6 +38,16 @@ namespace Data.DataAccess.Impl
             return DbHelper.FindList<HistoryFileEntity>(sql, param);
         }
 
+        public List<HistoryFileEntity> GetOldNonActiveList(int activeStatus, DateTime updatedBefore)
+        {
+            string sql = "SELECT * FROM HistoryFile WHERE Status <> @ActiveStatus AND UpdatedAt < @UpdatedBefore";
+            return DbHelper.FindList<HistoryFileEntity>(sql, new Dictionary<string, object>
+            {
+                { "ActiveStatus", activeStatus },
+                { "UpdatedBefore", updatedBefore }
+            });
+        }
+
         public PageResult<HistoryFileDTO> FindPageList(PageEntity pageEntity, SearchVO searchVO)
         {
             string whereSQL = $" AND m.{nameof(HistoryFileEntity.Status)} = @Status";

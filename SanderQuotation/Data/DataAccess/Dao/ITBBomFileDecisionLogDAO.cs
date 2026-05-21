@@ -23,5 +23,11 @@ namespace Data.DataAccess.Dao
         /// <param name="searchVO">查詢條件</param>
         /// <param name="account">執行帳號</param>
         void DeleteByFilter(SearchVO searchVO, string account);
+
+        /// <summary>
+        /// 物理刪除指定 Status 的資料
+        /// </summary>
+        /// <param name="status">狀態值</param>
+        void PhysicalDeleteByStatus(int status);
     }
 }

@@ -109,6 +109,15 @@ namespace Business.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// 物理刪除指定 Status 的資料
+        /// </summary>
+        /// <param name="status">狀態值</param>
+        public void PhysicalDeleteByStatus(int status)
+        {
+            GetDAO().PhysicalDeleteByStatus(status);
+        }
+
         #endregion -- TBBomFileDecisionLog --
     }
 

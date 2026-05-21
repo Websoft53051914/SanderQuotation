@@ -33,5 +33,10 @@ namespace Data.DataAccess.Dao
         /// <param name="uploadId">檔案儲存代號</param>
         /// <param name="processStatus">目標處理狀態</param>
         void UpdateProcessStatus(Guid uploadId, int processStatus);
+
+        /// <summary>
+        /// 查詢 Status &lt;&gt; activeStatus 且 UpdatedAt &lt; updatedBefore 的記錄
+        /// </summary>
+        List<EsFileTransferUploadEntity> GetOldNonActiveList(int activeStatus, DateTime updatedBefore);
     }
 }

@@ -14,5 +14,8 @@ namespace Data.DataAccess.Dao
         void UpdateFile(EmbeddedHistoryFileEntity entity);
 
         void DeleteFile(List<Guid> historyFileIds, string account);
+
+
+        void PhysicalDeleteFile(List<Guid> historyFileIds);
     }
 }

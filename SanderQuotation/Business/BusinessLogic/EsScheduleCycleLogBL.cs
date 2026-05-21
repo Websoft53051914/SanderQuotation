@@ -97,12 +97,16 @@ namespace Business.BusinessLogic
                     var detailEntity = _mapper.Map<EsScheduleCycleLogDetailEntity>(detail);
                     detailEntity.Id = detailId;
                     detailEntity.ScheduleCycleLogId = entity.Id;
+                    detailEntity.CreatedAt = base.now;
+                    detailEntity.UpdatedAt = base.now;
                     GetDetailDAO().InsertAction(detailEntity);
 
                     foreach (var errlog in detail.ErrorLogs)
                     {
                         var errlogEntity = _mapper.Map<EsTransferErrorLogEntity>(errlog);
                         errlogEntity.ScheduleCycleLogDetailId = detailEntity.Id;
+                        errlogEntity.CreatedAt = base.now;
+                        errlogEntity.UpdatedAt = base.now;
                         GetErrorLogDAO().InsertAction(errlogEntity);
                     }
                 }
@@ -110,6 +114,22 @@ namespace Business.BusinessLogic
                 _unitOfWork.Commit();
                 scope.Complete();
             }
+        }
+
+        /// <summary>
+        /// 刪除 N 天前的排程執行紀錄 (esScheduleCycleLog)
+        /// </summary>
+        public void DeleteOldLog(int days)
+        {
+            GetDAO().DeleteOldLog(days);
+        }
+
+        /// <summary>
+        /// 刪除 N 天前的排程執行明細紀錄 (esScheduleCycleLogDetail)
+        /// </summary>
+        public void DeleteOldLogDetail(int days)
+        {
+            GetDetailDAO().DeleteOldLog(days);
         }
     }
 }

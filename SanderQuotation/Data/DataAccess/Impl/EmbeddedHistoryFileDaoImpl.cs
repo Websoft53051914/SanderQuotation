@@ -65,5 +65,17 @@ WHERE historyfileid = ANY(@historyFileIds);
                 {"updatedby", account }
             });
         }
+
+        public void PhysicalDeleteFile(List<Guid> historyFileIds)
+        {
+            string sql = $@"
+DELETE FROM public.embeddedhistoryfile
+WHERE historyfileid = ANY(@historyFileIds);
+";
+            DbHelper.Execute(sql, new Dictionary<string, object>()
+            {
+                { "historyFileIds", historyFileIds }
+            });
+        }
     }
 }

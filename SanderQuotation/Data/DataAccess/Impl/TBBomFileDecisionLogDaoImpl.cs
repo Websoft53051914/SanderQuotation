@@ -103,5 +103,22 @@ WHERE
 
             DbHelper.Execute(sql, paras);
         }
+
+        /// <summary>
+        /// 物理刪除指定 Status 的資料
+        /// </summary>
+        /// <param name="status">狀態值</param>
+        public void PhysicalDeleteByStatus(int status)
+        {
+            Dictionary<string, object> paras = [];
+            paras.Add("status", status);
+
+            string sql = @"
+DELETE FROM tb_bomfiledecisionlog
+WHERE status = @status";
+
+            DbHelper.Execute(sql, paras);
+            DbHelper.Commit();
+        }
     }
 }

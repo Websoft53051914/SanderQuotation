@@ -100,5 +100,11 @@ namespace Business.BusinessLogic
                 return Guid.Empty;
             }
         }
+
+        public void DeleteOldLog(int days)
+        {
+            ITB_ControlLogDAO dao = _unitOfWork.Repository<ITB_ControlLogDAO>();
+            dao.DeleteOldLog(days);
+        }
     }
 }

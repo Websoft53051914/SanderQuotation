@@ -5,5 +5,6 @@ namespace Data.DataAccess.Dao
 {
     public interface IEsScheduleCycleLogDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<EsScheduleCycleLogEntity>
     {
+        void DeleteOldLog(int days);
     }
 }

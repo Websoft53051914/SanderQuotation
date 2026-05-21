@@ -114,6 +114,38 @@ namespace Business.BusinessLogic
         /// 依條件刪除資料 (邏輯刪除)
         /// </summary>
         /// <param name="searchVO">查詢條件</param>
+        /// <summary>
+        /// 刪除 status &lt;&gt; 1 且超過指定天數未更新的 EsFileTransferUpload 記錄及其實體檔案
+        /// </summary>
+        /// <param name="days">保留天數</param>
+        /// <param name="fileDirectory">實體檔案所在目錄</param>
+        public void DeleteOldNonActiveFiles(int days, string fileDirectory)
+        {
+            DateTime cutoff = DateTime.Now.AddDays(-days);
+            var entityList = GetDAO().GetOldNonActiveList((int)StatusEnum.Enabled, cutoff);
+            if (entityList.Count == 0) return;
+
+            // 刪除實體檔案
+            foreach (var entity in entityList)
+            {
+                try
+                {
+                    string ext = Path.GetExtension(entity.FileName);
+                    string filePath = Path.Combine(fileDirectory, entity.UploadId + ext);
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
+                }
+                catch { }
+            }
+
+            // 刪除資料庫記錄
+            var ids = entityList.Select(x => x.Id).ToList();
+            foreach (var id in ids)
+                GetDAO().Delete(id);
+
+            _unitOfWork.Commit();
+        }
+
         public void DeleteByFilter(SearchVO searchVO)
         {
             string account = SessionVO?.Account ?? string.Empty;

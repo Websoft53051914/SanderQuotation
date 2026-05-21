@@ -15,5 +15,7 @@ namespace Data.DataAccess.Dao
         List<HistoryFileEntity> GetListByFilter(SearchVO searchVO);
 
         PageResult<HistoryFileDTO> FindPageList(PageEntity pageEntity, SearchVO searchVO);
+
+        List<HistoryFileEntity> GetOldNonActiveList(int activeStatus, DateTime updatedBefore);
     }
 }
