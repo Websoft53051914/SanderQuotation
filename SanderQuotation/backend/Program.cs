@@ -1,4 +1,5 @@
 ﻿using backend.AI;
+using backend.AI.Plugins;
 using backend.Common;
 using backend.EIPSource;
 using backend.Models;
@@ -6,8 +7,11 @@ using Dapper;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Resilience;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
+using Polly;
+using Polly.Retry;
 using System.Reflection;
 using System.Text;
 
@@ -234,6 +238,34 @@ builder.Services.AddSingleton<GeminiFileApiClient>(sp =>
 builder.Services.AddScoped<HistoryFileHandler>();
 
 builder.Services.AddSingleton<ManualBatchEmbedding>();
+
+// AI Plugins & Chat Handler
+builder.Services.AddScoped<SqlExecutorPlugin>();
+builder.Services.AddScoped<HistoryFileQueryPlugin>();
+builder.Services.AddScoped<AIChatHandler>();
+
+// Polly Resilience Pipeline：AI 呼叫自動重試 + Timeout
+builder.Services.AddResiliencePipeline("ai-retry", builder =>
+{
+    builder
+        .AddRetry(new RetryStrategyOptions()
+        {
+            MaxRetryAttempts = 3,
+            Delay = TimeSpan.FromSeconds(2),
+            BackoffType = DelayBackoffType.Exponential,
+            UseJitter = true,
+            ShouldHandle = new PredicateBuilder().Handle<Exception>(ex =>
+            {
+                // 如果錯誤訊息包含 "429"，超過請求限制
+                if (ex.Message.Contains("429"))
+                {
+                    return false;
+                }
+                return true;
+            }),
+        })
+        .AddTimeout(TimeSpan.FromMinutes(5));
+});
 
 var app = builder.Build();
 

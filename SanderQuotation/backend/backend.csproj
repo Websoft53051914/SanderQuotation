@@ -10,10 +10,12 @@
   <ItemGroup>
     <Compile Remove="Uploads\**" />
     <Content Remove="Uploads\**" />
+    <PackageReference Include="Microsoft.Extensions.Resilience" Version="10.6.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.73.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.73.0-alpha" />
     <EmbeddedResource Remove="Uploads\**" />
     <None Remove="Uploads\**" />
+    <PackageReference Include="Npgsql" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>

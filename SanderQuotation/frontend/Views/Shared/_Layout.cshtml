@@ -659,42 +659,86 @@
         <div class="ai-chat-header">
             <div class="header-left">
                 <div class="header-icon"><i class="ri-flashlight-fill"></i></div>
-                    <span>AI 對話中心</span>
+                <span>AI 對話中心</span>
             </div>
             <button class="ai-chat-close" id="aiChatClose" title="關閉">✕</button>
         </div>
         <div id="aiChatMessages">
             <div class="ai-msg bot">
-                <div class="bubble">您好！我是 AI 智慧助理，請問有什麼可以幫您？</div>
+                <div class="bubble">您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?<br>例如：「昨天有幾筆上傳的檔案？」</div>
                 <div class="msg-time" id="aiInitTime"></div>
             </div>
         </div>
         <div class="ai-chat-footer">
-            <input type="text" id="aiChatInput" placeholder="輸入訊息…" autocomplete="off" />
+            <input type="text" id="aiChatInput" placeholder="輸入問題" autocomplete="off" />
             <button class="footer-btn btn-send" id="aiChatSend" title="送出"><i class="ri-send-plane-fill"></i></button>
         </div>
     </div>
 
+    <style>
+        /* SQL 展開區塊 */
+        .ai-sql-block { margin-top: 5px; max-width: 82%; }
+        .ai-sql-toggle {
+            font-size: 11px; color: rgba(255,255,255,.5);
+            cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+            background: none; border: none; padding: 2px 0; user-select: none;
+        }
+        .ai-sql-toggle:hover { color: rgba(255,255,255,.8); }
+        .ai-sql-code {
+            display: none; background: rgba(0,0,0,.38); border-radius: 8px;
+            padding: 10px 12px; font-size: 12px; color: #a8d8a8;
+            font-family: 'Consolas', monospace; white-space: pre-wrap;
+            word-break: break-all; margin-top: 4px; line-height: 1.5;
+        }
+        .ai-sql-code.show { display: block; }
+        /* 傳送中停用輸入 */
+        .ai-sending #aiChatInput,
+        .ai-sending #aiChatSend { opacity: .5; pointer-events: none; }
+        @@keyframes ai-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+        .ai-spin { display:inline-block; animation: ai-spin 1s linear infinite; }
+    </style>
+
     <script>
     (function () {
-        var $toggle  = $('#aiChatToggle');
-        var $panel   = $('#aiChatPanel');
-        var $close   = $('#aiChatClose');
-        var $input   = $('#aiChatInput');
-        var $send    = $('#aiChatSend');
-        var $msgs    = $('#aiChatMessages');
+        var $toggle = $('#aiChatToggle');
+        var $panel  = $('#aiChatPanel');
+        var $close  = $('#aiChatClose');
+        var $input  = $('#aiChatInput');
+        var $send   = $('#aiChatSend');
+        var $msgs   = $('#aiChatMessages');
 
-                function openPanel()  { $panel.addClass('open'); $toggle.addClass('hidden'); $input.focus();  // 初始化時間
-                $('#aiInitTime').text(formatTime(new Date()));}
-        function closePanel() { $panel.removeClass('open'); $toggle.removeClass('hidden'); }
+        // 多輪對話 Session ID（每次開啟面板都會重置為新對話）
+        var _sessionId = null;
 
-        $toggle.on('click', function () {
-            $panel.hasClass('open') ? closePanel() : openPanel();
-        });
+        // Backend API base URL
+        var _apiBase = '@(Configuration["BackendURL"])';
+
+        // ── 開關面板 ──
+        function openPanel() {
+            // 每次開啟都是新一輪對話：清除舊 Session 與訊息
+            if (_sessionId) {
+                $.ajax({
+                    url: _apiBase + '/api/AIChat/Session/' + _sessionId,
+                    type: 'DELETE',
+                    xhrFields: { withCredentials: true }
+                });
+            }
+            _sessionId = null;
+            $msgs.empty();
+                    appendBotMsg('您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?\n例如：「昨天有幾筆上傳的檔案？」', null, null);
+            $('#aiInitTime').text(formatTime(new Date()));
+            $panel.addClass('open');
+            $toggle.addClass('hidden');
+            $input.focus();
+        }
+        function closePanel() {
+            $panel.removeClass('open');
+            $toggle.removeClass('hidden');
+        }
+        $toggle.on('click', function () { $panel.hasClass('open') ? closePanel() : openPanel(); });
         $close.on('click', closePanel);
 
-       
-
+        // ── 時間格式 ──
         function formatTime(d) {
             var h = d.getHours(), m = d.getMinutes();
             var ampm = h >= 12 ? '下午' : '上午';
@@ -702,39 +746,105 @@
             return ampm + ' ' + h + ':' + (m < 10 ? '0' : '') + m;
         }
 
-        function appendMsg(text, role) {
-            var time = formatTime(new Date());
-            var $m = $('<div class="ai-msg ' + role + '">' +
-                '<div class="bubble">' + $('<div>').text(text).html() + '</div>' +
-                '<div class="msg-time">' + time + '</div>' +
+        // ── 加入使用者訊息 ──
+        function appendUserMsg(text) {
+            var $m = $('<div class="ai-msg user">' +
+                '<div class="bubble">' + $('<span>').text(text).html() + '</div>' +
+                '<div class="msg-time">' + formatTime(new Date()) + '</div>' +
                 '</div>');
             $msgs.append($m);
-            $msgs.scrollTop($msgs[0].scrollHeight);
+            scrollBottom();
         }
 
+        // ── 加入 AI 訊息（含可展開 SQL）──
+        function appendBotMsg(text, sql, rowCount) {
+            var safeText = $('<span>').text(text).html().replace(/\n/g, '<br>');
+
+            var rowBadge = '';
+            if (rowCount !== null && rowCount !== undefined) {
+                rowBadge = '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">' +
+                    '<i class="ri-database-2-line"></i> 共 ' + rowCount + ' 筆</div>';
+            }
+
+            var sqlBlock = '';
+            if (sql) {
+                var sqlId = 'sql_' + Date.now();
+                sqlBlock = '<div class="ai-sql-block">' +
+                    '<button class="ai-sql-toggle" data-target="' + sqlId + '">' +
+                        '<i class="ri-code-s-slash-line"></i> 查看執行 SQL' +
+                    '</button>' +
+                    '<div class="ai-sql-code" id="' + sqlId + '">' +
+                        $('<span>').text(sql).html() +
+                    '</div>' +
+                '</div>';
+            }
+
+            var $m = $('<div class="ai-msg bot">' +
+                '<div class="bubble">' + safeText + '</div>' +
+                rowBadge + sqlBlock +
+                '<div class="msg-time">' + formatTime(new Date()) + '</div>' +
+                '</div>');
+            $msgs.append($m);
+            scrollBottom();
+        }
+
+        // ── SQL 展開/收合（事件委派）──
+        $msgs.on('click', '.ai-sql-toggle', function () {
+            var $code  = $('#' + $(this).data('target'));
+            var isOpen = $code.hasClass('show');
+            $code.toggleClass('show', !isOpen);
+            $(this).html(isOpen
+                ? '<i class="ri-code-s-slash-line"></i> 查看執行 SQL'
+                : '<i class="ri-code-s-slash-line"></i> 收合 SQL');
+        });
+
+        function scrollBottom() { $msgs.scrollTop($msgs[0].scrollHeight); }
+
+        // ── 送出訊息 ──
         function sendMessage() {
             var text = $input.val().trim();
             if (!text) return;
-            appendMsg(text, 'user');
+
+            appendUserMsg(text);
             $input.val('');
 
-            // 顯示思考中
-            var $thinking = $('<div class="ai-msg bot"><div class="bubble" id="aiThinking">思考中…</div></div>');
+            // 停用輸入 + 顯示思考泡泡
+            $panel.addClass('ai-sending');
+            var $thinking = $('<div class="ai-msg bot" id="aiThinkingRow">' +
+                '<div class="bubble" style="color:rgba(255,255,255,.55);font-style:italic;">' +
+                    '<i class="ri-loader-4-line ai-spin" style="margin-right:5px;"></i>思考中…' +
+                '</div></div>');
             $msgs.append($thinking);
-            $msgs.scrollTop($msgs[0].scrollHeight);
+            scrollBottom();
 
             $.ajax({
-                url: '/api/AiChat/Chat',
+                url: _apiBase + '/api/AIChat/Chat',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ message: text }),
+                xhrFields: { withCredentials: true },
+                data: JSON.stringify({
+                    SessionId:   _sessionId,   // 第一輪 null，後續帶 sessionId
+                    UserMessage: text
+                }),
                 success: function (resp) {
-                    $('#aiThinking').closest('.ai-msg').remove();
-                    appendMsg((resp && resp.reply) ? resp.reply : '（無回應）', 'bot');
+                    $('#aiThinkingRow').remove();
+                    $panel.removeClass('ai-sending');
+
+                    if (resp && resp.Success) {
+                        _sessionId = resp.SessionId;   // 保存 sessionId 供下輪追問
+                        appendBotMsg(resp.Answer, resp.GeneratedSql, resp.RowCount);
+                    } else {
+                        appendBotMsg((resp && resp.Answer) ? resp.Answer : '發生未知錯誤，請稍後再試。', null, null);
+                    }
                 },
-                error: function () {
-                    $('#aiThinking').closest('.ai-msg').remove();
-                    appendMsg('連線失敗，請稍後再試。', 'bot');
+                error: function (xhr) {
+                    $('#aiThinkingRow').remove();
+                    $panel.removeClass('ai-sending');
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        appendBotMsg('⚠️ 您沒有使用此功能的權限。', null, null);
+                    } else {
+                        appendBotMsg('連線失敗（HTTP ' + xhr.status + '），請稍後再試。', null, null);
+                    }
                 }
             });
         }
@@ -743,6 +853,7 @@
         $input.on('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
+
     })();
     </script>
 </body>

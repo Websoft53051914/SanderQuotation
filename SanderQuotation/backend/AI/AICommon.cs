@@ -9,6 +9,10 @@ namespace backend.AI
 {
     public class AICommon
     {
+        public static string GetChatHistoryCacheKey(string sessionId)
+        {
+            return sessionId;
+        }
         public static void LogError(Exception ex, object para, [CallerMemberName] string method = "")
         {
             LogBL logBL = BLFactory.GetInstanceBackGround<LogBL>();
