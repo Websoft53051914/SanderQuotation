@@ -64,7 +64,7 @@ namespace backend.AI.Plugins
 # 查詢規則（極重要）
 1. 查詢 historyfile 時，必須加上 `status = {(int)StatusEnum.Enabled}`。
 2. 查詢 embeddedhistoryfile 時，必須加上 `status = {(int)StatusEnum.Enabled}`。
-3. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss}。相對時間用 PostgreSQL 函數計算，例如 CURRENT_DATE - INTERVAL '1 day'。
+3. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss}。
 4. 只能生成 SELECT，絕對禁止 INSERT / UPDATE / DELETE / DROP 等。
 5. 若問題需要語意相似度搜尋，SQL 中請使用 {VectorPlaceholder} 作為向量佔位符，系統會自動替換成實際向量值，限定相似度一定要大於0.7。
 
