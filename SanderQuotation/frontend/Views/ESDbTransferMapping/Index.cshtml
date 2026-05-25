@@ -138,145 +138,144 @@
 
 <!-- Create/Edit Modal -->
 <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
                 <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
                 <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
-            <form class="needs-validation" novalidate="" method="post" id="submitForm">
-                <div class="modal-body">
-
-                    <!-- TransferMappingCode -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-lg-4">
-                            <label for="TransferMappingCode" class="form-label required">資料表轉檔代碼</label>
-                            <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
-                                   placeholder="資料表轉檔代碼" maxlength="100"/>
-                            <div class="invalid-feedback">請輸入資料表轉檔代碼</div>
-                        </div>
+            <div class="modal-body">
+                <form class="needs-validation" novalidate="" method="post" id="submitForm">
+                     <!-- TransferMappingCode -->
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-4">
+                        <label for="TransferMappingCode" class="form-label required">資料表轉檔代碼</label>
+                        <input type="text" id="TransferMappingCode" name="TransferMappingCode" class="form-control" required
+                               placeholder="資料表轉檔代碼" maxlength="100" />
+                        <div class="invalid-feedback">請輸入資料表轉檔代碼</div>
                     </div>
+                </div>
 
-                    <!-- Source / Target Column Mapping Area -->
-                    <div class="row g-3 mb-3">
-                        <!-- Source DB -->
-                        <div class="col-lg-4">
-                            <label class="form-label required">來源資料庫</label>
-                            <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
-                                <option value="">-- 請選擇 --</option>
-                            </select>
-                            <div class="invalid-feedback">請選擇來源資料庫</div>
-                        </div>
-                        <!-- Source TABLE -->
-                        <div class="col-lg-4">
-                            <label class="form-label required">來源資料表</label>
-                            <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled required>
-                            </select>
-                            <div class="invalid-feedback">請選擇來源資料表</div>
-                        </div>
+                <!-- Source / Target Column Mapping Area -->
+                <div class="row g-3 mb-3">
+                    <!-- Source DB -->
+                    <div class="col-lg-4">
+                        <label class="form-label required">來源資料庫</label>
+                        <select id="SrcDbTransferCode" name="SrcDbTransferCode" class="form-select" required>
+                            <option value="">-- 請選擇 --</option>
+                        </select>
+                        <div class="invalid-feedback">請選擇來源資料庫</div>
                     </div>
-
-                    <div class="row g-3 mb-3">
-                        <!-- Destination DB -->
-                        <div class="col-lg-4">
-                            <label class="form-label required">目標資料庫</label>
-                            <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
-                                <option value="">-- 請選擇 --</option>
-                            </select>
-                            <div class="invalid-feedback">請選擇目標資料庫</div>
-                        </div>
-                        <!-- Target TABLE -->
-                        <div class="col-lg-4">
-                            <label class="form-label required">目標資料表</label>
-                            <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled required>
-                            </select>
-                            <div class="invalid-feedback">請選擇目標資料表</div>
-                        </div>
+                    <!-- Source TABLE -->
+                    <div class="col-lg-4">
+                        <label class="form-label required">來源資料表</label>
+                        <select id="SrcTableName" name="SrcTableName" class="form-select" searchEnabled required>
+                        </select>
+                        <div class="invalid-feedback">請選擇來源資料表</div>
                     </div>
+                </div>
 
-                    <!-- Column Mapping Area -->
-                    <div class="card border">
-                        <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">欄位對應設定</span>
-                            <button type="button" class="btn btn-sm btn-primary" id="btnAddMappingRow">
-                                <i class="ri-add-line"></i> 新增對應
+                <div class="row g-3 mb-3">
+                    <!-- Destination DB -->
+                    <div class="col-lg-4">
+                        <label class="form-label required">目標資料庫</label>
+                        <select id="DstDbTransferCode" name="DstDbTransferCode" class="form-select" required>
+                            <option value="">-- 請選擇 --</option>
+                        </select>
+                        <div class="invalid-feedback">請選擇目標資料庫</div>
+                    </div>
+                    <!-- Target TABLE -->
+                    <div class="col-lg-4">
+                        <label class="form-label required">目標資料表</label>
+                        <select id="DstTableName" name="DstTableName" class="form-select" searchEnabled required>
+                        </select>
+                        <div class="invalid-feedback">請選擇目標資料表</div>
+                    </div>
+                </div>
+
+                <!-- Column Mapping Area -->
+                <div class="card border">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-semibold">欄位對應設定</span>
+                        <button type="button" class="btn btn-sm btn-primary" id="btnAddMappingRow">
+                            <i class="ri-add-line"></i> 新增對應
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-bordered mb-0" id="mappingTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:32%">來源欄位</th>
+                                    <th style="width:32%">目標欄位</th>
+                                    <th style="width:12%" class="text-center">是否加密</th>
+                                    <th style="width:12%" class="text-center">是否為主鍵</th>
+                                    <th style="width:12%">動作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mappingRows">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Filter Condition Area -->
+                <div class="card border mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-semibold">篩選條件設定</span>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
+                                <label class="form-check-label" for="filterModeBuilder">條件設定</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
+                                <label class="form-check-label" for="filterModeManual">手寫 SQL</label>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
+                                <i class="ri-add-line"></i> 新增條件
                             </button>
                         </div>
-                        <div class="card-body p-0">
-                            <table class="table table-sm table-bordered mb-0" id="mappingTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:32%">來源欄位</th>
-                                        <th style="width:32%">目標欄位</th>
-                                        <th style="width:12%" class="text-center">是否加密</th>
-                                        <th style="width:12%" class="text-center">是否為主鍵</th>
-                                        <th style="width:12%">動作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="mappingRows">
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
-
-                    <!-- Filter Condition Area -->
-                    <div class="card border mt-3">
-                        <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-semibold">篩選條件設定</span>
-                            <div class="d-flex gap-2 align-items-center">
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeBuilder" value="builder" checked>
-                                    <label class="form-check-label" for="filterModeBuilder">條件設定</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="filterMode" id="filterModeManual" value="manual">
-                                    <label class="form-check-label" for="filterModeManual">手寫 SQL</label>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-primary" id="btnAddFilterRow">
-                                    <i class="ri-add-line"></i> 新增條件
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body p-2" id="filterBuilderArea">
-                            <table class="table table-sm table-bordered mb-0" id="filterTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width:10%">AND/OR</th>
-                                        <th style="width:30%">來源欄位</th>
-                                        <th style="width:20%">篩選</th>
-                                        <th style="width:30%">內容</th>
-                                        <th style="width:10%">動作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="filterRows"></tbody>
-                            </table>
-                            <div id="filterEmpty" class="text-muted small p-2" style="display:none;">尚未設定任何篩選條件</div>
-                        </div>
-                        <div class="card-body p-2" id="filterManualArea" style="display:none;">
-                            <textarea id="FilterConditionManual" class="form-control font-monospace"
-                                      rows="3" placeholder="請勿包含 WHERE 關鍵字，直接輸入條件式"></textarea>
-                            <div class="form-text">請勿包含 WHERE 關鍵字，直接輸入條件式</div>
-                        </div>
+                    <div class="card-body p-2" id="filterBuilderArea">
+                        <table class="table table-sm table-bordered mb-0" id="filterTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:10%">AND/OR</th>
+                                    <th style="width:30%">來源欄位</th>
+                                    <th style="width:20%">篩選</th>
+                                    <th style="width:30%">內容</th>
+                                    <th style="width:10%">動作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filterRows"></tbody>
+                        </table>
+                        <div id="filterEmpty" class="text-muted small p-2" style="display:none;">尚未設定任何篩選條件</div>
                     </div>
-
-                    <!-- Description -->
-                    <div class="row g-3 mt-1">
-                        <div class="col-lg-12">
-                            <label for="Description" class="form-label">描述</label>
-                            <textarea name="Description" id="Description" class="form-control"
-                                      placeholder="描述" rows="2"></textarea>
-                        </div>
-                    </div>
-
-                </div>
-                <div class="modal-footer">
-                    <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                        <button type="submit" class="btn btn-success" id="btnSaveAll">確認</button>
+                    <div class="card-body p-2" id="filterManualArea" style="display:none;">
+                        <textarea id="FilterConditionManual" class="form-control font-monospace"
+                                  rows="3" placeholder="請勿包含 WHERE 關鍵字，直接輸入條件式"></textarea>
+                        <div class="form-text">請勿包含 WHERE 關鍵字，直接輸入條件式</div>
                     </div>
                 </div>
-            </form>
+
+                <!-- Description -->
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-12">
+                        <label for="Description" class="form-label">描述</label>
+                        <textarea name="Description" id="Description" class="form-control"
+                                  placeholder="描述" rows="2"></textarea>
+                    </div>
+                </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="submit" class="btn btn-success" id="btnSaveAll" form="submitForm">確認</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
