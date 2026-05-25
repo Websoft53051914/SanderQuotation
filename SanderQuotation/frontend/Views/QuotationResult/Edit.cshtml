@@ -13,7 +13,7 @@
         PartialMdl = new ModalDecisionLogVCM
         {
             UrlGetDecisionLogs = $"{Configuration["BackendURL"]}/api/QuotationResult/GetDecisionLogs",
-            UrlGetPriceClusterData = $"{Configuration["BackendURL"]}/api/QuotationResult/GetPriceClusterData"
+            UrlGetPriceClusterPageList = $"{Configuration["BackendURL"]}/api/QuotationResult/GetPriceClusterPageList"
         }
     };
 }
@@ -89,7 +89,7 @@
                                         <input class="form-check-input" type="checkbox" id="checkAllItems">
                                     </div>
                                 </th>
-                                <th rowspan="2" style="width:40px;" class="text-center align-middle"></th>
+                                <th rowspan="2" style="width:40px;" class="text-center align-middle decision-log-col"></th>
                                 <th rowspan="2" style="width:40px;" class="text-center align-middle">項次</th>
                                 <th rowspan="2" style="min-width:100px;" class="align-middle">元件料號</th>
                                 <th rowspan="2" style="min-width:100px;" class="align-middle">顯示料號</th>
@@ -103,7 +103,7 @@
                                     class="text-center align-middle">比對分類</th>
                                 <th rowspan="2" style="min-width:80px;"
                                     class="text-center align-middle">命中欄位</th>
-                                <th colspan="7" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
+                                <th colspan="8" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
                                 <th colspan="8" class="text-center bg-success-subtle text-success">外部查價</th>
                                 <th colspan="2" class="text-center bg-warning-subtle text-warning">Mouser</th>
                                 <th colspan="2" class="text-center bg-info-subtle text-info">DigiKey</th>
@@ -117,6 +117,7 @@
                                 <th class="bg-primary-subtle text-primary" style="width:65px;">幣別</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:120px;">採購型號</th>
+                                <th class="bg-primary-subtle text-primary" style="width:80px;">套用Variant過濾</th>
                                 <!-- 外部查價 sub-headers -->
                                 <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
                                 <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
@@ -164,6 +165,12 @@
 @await Html.PartialAsync("_SanderModuleItemPicker", ui.PartialSmip)
 @await Html.PartialAsync("_ModalDecisionLog", ui.PartialMdl)
 
+<style>
+    #itemTable.hide-decision-log .decision-log-col {
+        display: none;
+    }
+</style>
+
 @section scripts {
     <script>
         $(document).ready(function () {
@@ -178,7 +185,7 @@
             ReExternalQuotation: '@(Configuration["BackendURL"])/api/QuotationResult/ReExternalQuotation',
             CheckInStockPrice: '@(Configuration["BackendURL"])/api/QuotationResult/CheckInStockPrice',
             GetDecisionLogs: '@(Configuration["BackendURL"])/api/QuotationResult/GetDecisionLogs',
-            GetPriceClusterData: '@(Configuration["BackendURL"])/api/QuotationResult/GetPriceClusterData',
+            GetPriceClusterPageList: '@(Configuration["BackendURL"])/api/QuotationResult/GetPriceClusterPageList',
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
@@ -191,7 +198,8 @@
             QuotationQty: '@nameof(QuotationFileEditVM.QuotationQty)',
             CreatedAtText: '@nameof(QuotationFileEditVM.CreatedAtText)',
             UpdatedAtText: '@nameof(QuotationFileEditVM.UpdatedAtText)',
-            Items: '@nameof(QuotationFileEditVM.Items)'
+            Items: '@nameof(QuotationFileEditVM.Items)',
+            IsAIDecisionProcessDisplay: '@nameof(QuotationFileEditVM.IsAIDecisionProcessDisplay)'
         };
 
         var FI = {
@@ -226,7 +234,8 @@
             MouserUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.MouserUnitPriceOriginalCurrency)',
             DkQuotationDate: '@nameof(QuotationItemVM.DkQuotationDate)',
             DkUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.DkUnitPriceOriginalCurrency)',
-            IsRecommendedNo: '@nameof(QuotationItemVM.IsRecommendedNo)'
+            IsRecommendedNo: '@nameof(QuotationItemVM.IsRecommendedNo)',
+            IsFilterByCustomerApprovedPartText: '@nameof(QuotationItemVM.IsFilterByCustomerApprovedPartText)'
         };
 
         // 目前載入的料項清單（用於儲存內部料號）
@@ -239,7 +248,7 @@
 
         function fmtPrice(val) {
             if (val === null || val === undefined || val === '') return '<span class="text-muted">—</span>';
-            return '<span class="font-monospace">' + parseFloat(val).toFixed(4) + '</span>';
+            return '<span class="font-monospace">' + parseFloat(val) + '</span>';
         }
 
         function fmtNum(val) {
@@ -262,12 +271,27 @@
             return '<span class="badge bg-secondary">' + escapeHtml(val) + '</span>';
         }
 
+        function fmtYesNo(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return val === '是'
+                ? '<span class="badge bg-success">是</span>'
+                : '<span class="badge bg-secondary">否</span>';
+        }
+
         function fmtMatchCategory(val) {
             if (!val) return '<span class="text-muted">—</span>';
             if (val === '完全命中') return '<span class="badge bg-success">' + escapeHtml(val) + '</span>';
             if (val === '建議料號') return '<span class="badge bg-warning text-dark">' + escapeHtml(val) + '</span>';
             if (val === '未命中') return '<span class="badge bg-secondary">' + escapeHtml(val) + '</span>';
             return '<span class="badge bg-light text-dark">' + escapeHtml(val) + '</span>';
+        }
+
+        function applyDecisionLogVisibility(show) {
+            if (show) {
+                $('#itemTable').removeClass('hide-decision-log');
+            } else {
+                $('#itemTable').addClass('hide-decision-log');
+            }
         }
 
         // ── 內部料號選取器 ─────────────────────────────────────────────────────
@@ -289,6 +313,7 @@
                     if (!res.Success || !res.Data) { showSysError(); return; }
                     fillHeader(res.Data);
                     renderItems(res.Data[FH.Items] || []);
+                    applyDecisionLogVisibility(res.Data[FH.IsAIDecisionProcessDisplay] !== false);
                 },
                 error: function () { showSysError(); },
                 complete: function () { hideLoader(); }
@@ -313,7 +338,7 @@
             $('#itemCountBadge').text(items.length + ' 筆料項');
 
             if (!items.length) {
-                $body.append('<tr><td colspan="31" class="text-center text-muted py-4">無料項資料</td></tr>');
+                $body.append('<tr><td colspan="32" class="text-center text-muted py-4">無料項資料</td></tr>');
                 return;
             }
 
@@ -339,7 +364,7 @@
                             data-recommended="${isRecommended}"${checked}>
                     </div>
                 </td>
-                <td class="text-center p-1">
+                <td class="text-center p-1 decision-log-col">
                     <button type="button" class="btn btn-sm btn-outline-info btn-view-decision-log"
                             data-id="${itemId}" title="查看決策歷程">
                         <i class="ri-history-line"></i>
@@ -370,6 +395,7 @@
                 <td class="text-center">${fmtCurrency(r[FI.InternalCurrency])}</td>
                 <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
                 <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
+                <td class="text-center">${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
                 <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
                 <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>

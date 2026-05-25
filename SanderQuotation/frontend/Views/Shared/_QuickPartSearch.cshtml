@@ -1,11 +1,14 @@
-@using ViewModel.QuotationResult
+﻿@using ViewModel.QuotationResult
 @using ViewModel
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    var mapData = new
-    {
-        ItemPicker = new SanderModuleItemPickerVCM(),
-    };
+    var qs_Mdl = new ModalDecisionLogVCM();
+    qs_Mdl.ViewId = "qsModalDecisionLog";
+    qs_Mdl.UrlGetDecisionLogs = $"{Configuration["BackendURL"]}/api/QuotationResult/GetDecisionLogs";
+    qs_Mdl.UrlGetPriceClusterPageList = $"{Configuration["BackendURL"]}/api/QuotationResult/GetPriceClusterPageList";
+
+    var qs_Smip = new SanderModuleItemPickerVCM();
+    qs_Smip.ViewId = "qsItemPickerModal";
 }
 
 <!-- ═══ Modal：料號快查 ═══ -->
@@ -20,261 +23,483 @@
             </div>
             <div class="modal-body">
 
-                <!-- 搜尋條件 -->
-                <form id="qsSearchForm" class="needs-validation" novalidate>
-                    <div class="row g-2 align-items-end mb-3">
-                        <div class="col-lg-3 col-md-4">
-                            <label class="col-form-label pt-0 required">製造商料號</label>
-                            <input type="text" id="qs_ManufacturerPartNo" class="form-control" placeholder="輸入製造商料號" required />
+                <!-- ① 查料條件 -->
+                <form id="qsPartMatchForm" novalidate>
+                    <div class="row g-2 align-items-end mb-2">
+                        <div class="col-lg-3 col-md-6">
+                            <label class="col-form-label pt-0">製造商料號</label>
+                            <input type="text" id="qs_ManufacturerPartNo" class="form-control" placeholder="製造商料號" />
                         </div>
-                        <div class="col-lg-3 col-md-4">
-                            <label class="col-form-label pt-0 required">客戶別</label>
-                            <select id="qs_CustomerType" class="form-select" required>
-                                <option value="MM">MM</option>
-                                <option value="D3">D3</option>
-                                <option value="STL">STL</option>
-                                <option value="CTB">CTB</option>
-                                <option value="WT">WT</option>
-                                <option value="AED">AED</option>
-                                <option value="EDS">EDS</option>
-                            </select>
+                        <div class="col-lg-2 col-md-6">
+                            <label class="col-form-label pt-0">製造商</label>
+                            <input type="text" id="qs_Manufacturer" class="form-control" placeholder="製造商" />
                         </div>
-                        <div class="col-lg-3 col-md-4">
-                            <label class="col-form-label pt-0 required">實際查價量</label>
-                            <input type="number" id="qs_PurchaseQty" class="form-control" min="1" placeholder="採購數量" required />
+                        <div class="col-lg-2 col-md-6">
+                            <label class="col-form-label pt-0">元件料號</label>
+                            <input type="text" id="qs_ComponentPart" class="form-control" placeholder="元件料號" />
                         </div>
-                        <div class="col-lg-2 col-md-3">
-                            <button type="submit" class="btn btn-primary" id="btnQuickSearch">
-                                <i class="ri-equalizer-fill me-1 align-bottom"></i>篩選
+                        <div class="col-lg-3 col-md-6">
+                            <label class="col-form-label pt-0">元件描述</label>
+                            <input type="text" id="qs_Description" class="form-control" placeholder="元件描述" />
+                        </div>
+                        <div class="col-lg-2 col-md-4">
+                            <button type="submit" class="btn btn-success" id="btnQsPartMatch">
+                                <i class="ri-search-line align-bottom me-1"></i>查料
                             </button>
                         </div>
                     </div>
+                    <div id="qs-part-match-error" class="text-danger small d-none">
+                        <i class="ri-error-warning-line me-1"></i>請至少填寫製造商料號、製造商、元件料號、元件描述其中一項
+                    </div>
                 </form>
-                <div class="text-muted small mb-2">
-                    內部料號欄位黃底標示表示建議料號
+
+                <!-- ② 查料結果列表 -->
+                <div id="qs-match-result-area" class="d-none mb-3">
+                    <hr class="my-2" />
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle mb-0" style="min-width:400px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="min-width:90px;">比對分類</th>
+                                    <th style="min-width:150px;">命中欄位</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qs-match-body">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-3">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <!-- 結果表格 -->
-                <div class="table-responsive" style="max-height:480px; overflow-y:auto;">
-                    <table class="table table-bordered table-sm align-middle mb-0" id="qsTable"
-                           style="min-width:1200px;">
-                        <thead class="table-light sticky-top" style="top:0;z-index:10;">
-                            <tr>
-                                <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
-                                <th rowspan="2" style="min-width:160px;"
-                                    class="align-middle bg-warning-subtle text-warning">內部料號</th>
-                                <th colspan="6" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>
-                                <th colspan="6" class="text-center bg-success-subtle text-success">外部查價</th>
-                            </tr>
-                            <tr>
-                                <th class="bg-primary-subtle text-primary" style="min-width:100px;">採購日期</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(原幣)</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(台幣)</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width: 70px;">數量</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width: 65px;">幣別</th>
-                                <th class="bg-primary-subtle text-primary" style="min-width:120px;">供應商名稱</th>
-                                <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
-                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
-                                <th class="bg-success-subtle text-success" style="min-width:90px;">單價(台幣)</th>
-                                <th class="bg-success-subtle text-success" style="min-width: 70px;">MOQ</th>
-                                <th class="bg-success-subtle text-success" style="min-width: 65px;">幣別</th>
-                                <th class="bg-success-subtle text-success" style="min-width:120px;">供應商名稱</th>
-                            </tr>
-                        </thead>
-                        <tbody id="qs-result-body"></tbody>
-                    </table>
-                    <div class="qs-noresult" style="display:none;">
-                        <div class="text-center py-4">
-                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
-                                       colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">查無資料</h5>
+                <!-- ③ 內部料號 / 客戶名稱 / 查價數量 -->
+                <div id="qs-pricing-inputs" class="mb-3">
+                    <hr class="my-2" />
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-3 col-md-6">
+                            <label class="col-form-label pt-0">內部料號</label>
+                            <div class="input-group">
+                                <input type="text" id="qs_No" class="form-control font-monospace" placeholder="—"
+                                       readonly />
+                                <button class="btn btn-outline-secondary" type="button" id="btnQsPickNo" title="選取料號">
+                                    <i class="ri-search-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label class="col-form-label pt-0">客戶名稱</label>
+                            <select id="qs_CustomerCode" class="form-select" style="width:100%;"></select>
+                        </div>
+                        <div class="col-lg-2 col-md-4">
+                            <label class="col-form-label pt-0 required">查價數量</label>
+                            <input type="number" id="qs_PurchaseQty" class="form-control" min="1" value="1" />
                         </div>
                     </div>
+                </div>
+
+                <!-- ④ 查價選項 + 按鈕 -->
+                <div id="qs-pricing-options" class="mb-3">
+                    <hr class="my-2" />
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="qs_chk_internal" />
+                            <label class="form-check-label" for="qs_chk_internal">內部查價</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="qs_chk_external" />
+                            <label class="form-check-label" for="qs_chk_external">外部查價</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="qs_chk_instock" />
+                            <label class="form-check-label" for="qs_chk_instock">現貨查價（Mouser / DigiKey）</label>
+                        </div>
+                        <button type="button" class="btn btn-success" id="btnQsPricing">
+                            <i class="ri-price-tag-3-line align-bottom me-1"></i>查價
+                        </button>
+                    </div>
+                    <div id="qs-pricing-error" class="text-danger small d-none mt-1">
+                        <i class="ri-error-warning-line me-1"></i><span id="qs-pricing-error-msg"></span>
+                    </div>
+                </div>
+
+                <!-- ⑤ 查價結果列表 -->
+                <div id="qs-pricing-result-area" class="d-none">
+                    <hr class="my-2" />
+                    <div class="table-responsive" style="max-height:380px; overflow-y:auto;">
+                        <table class="table table-bordered table-sm align-middle mb-0" id="qsPricingTable"
+                               style="min-width:900px;">
+                            <thead class="table-light sticky-top" style="top:0;z-index:10;" id="qsPricingThead">
+                            </thead>
+                            <tbody id="qs-pricing-body">
+                                <tr>
+                                    <td class="text-center text-muted py-4">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ⑥ 查看歷程記錄 -->
+                <div id="qs-log-area" class="d-none mt-3">
+                    <hr class="my-2" />
+
                 </div>
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                <button type="button" class="btn btn-success" id="btnQsReQuote">
-                    <i class="ri-refresh-line me-1"></i>重新查價
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-success" id="btnQsViewLog">
+                        <i class="ri-history-line me-1"></i>查看歷程記錄
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-@await Html.PartialAsync("_SanderModuleItemPicker", mapData.ItemPicker)
+@await Html.PartialAsync("_ModalDecisionLog", qs_Mdl)
+@await Html.PartialAsync("_SanderModuleItemPicker", qs_Smip)
 
 <script>
     (function () {
-        var qsApiUrl = '@(Configuration["BackendURL"])/api/QuotationResult/QuickSearch';
-        var qsSaveUrl = '@(Configuration["BackendURL"])/api/QuotationResult/SaveQuickItem';
+        var apiBase = '@(Configuration["BackendURL"])/api/QuotationResult';
+        var qsMdlId = '@qs_Mdl.ViewId';
+        var qsSmipId = '@qs_Smip.ViewId';
 
         var F = {
-            Id: '@nameof(QuotationItemVM.Id)',
-            @*ManufacturerPartNo1: '@nameof(QuotationItemVM.ManufacturerPartNo1)',
-            ProcurementModel: '@nameof(QuotationItemVM.ProcurementModel)',
-            IsRecommended: '@nameof(QuotationItemVM.IsRecommended)',
-            InternalProcurementDate: '@nameof(QuotationItemVM.InternalProcurementDate)',
-            InternalUnitPriceOrig: '@nameof(QuotationItemVM.InternalUnitPriceOrig)',
+            No: '@nameof(QuotationItemVM.No)',
+            MatchCategoryText: '@nameof(QuotationItemVM.MatchCategoryText)',
+            MatchField: '@nameof(QuotationItemVM.MatchField)',
+            IsFilterByCustomerApprovedPartText: '@nameof(QuotationItemVM.IsFilterByCustomerApprovedPartText)',
+            InternalPurchaseOrderDate: '@nameof(QuotationItemVM.InternalPurchaseOrderDate)',
+            InternalUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.InternalUnitPriceOriginalCurrency)',
             InternalUnitPriceTwd: '@nameof(QuotationItemVM.InternalUnitPriceTwd)',
-            InternalQty: '@nameof(QuotationItemVM.InternalQty)',
+            InternalQuantity: '@nameof(QuotationItemVM.InternalQuantity)',
             InternalCurrency: '@nameof(QuotationItemVM.InternalCurrency)',
             InternalSupplierName: '@nameof(QuotationItemVM.InternalSupplierName)',
+            InternalSupplierCode: '@nameof(QuotationItemVM.InternalSupplierCode)',
+            InternalItemDescription2: '@nameof(QuotationItemVM.InternalItemDescription2)',
             ExternalQuotationDate: '@nameof(QuotationItemVM.ExternalQuotationDate)',
-            ExternalUnitPriceOrig: '@nameof(QuotationItemVM.ExternalUnitPriceOrig)',
+            ExternalUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.ExternalUnitPriceOriginalCurrency)',
             ExternalUnitPriceTwd: '@nameof(QuotationItemVM.ExternalUnitPriceTwd)',
-            ExternalMOQ: '@nameof(QuotationItemVM.ExternalMOQ)',*@
+            ExternalMoq: '@nameof(QuotationItemVM.ExternalMoq)',
             ExternalCurrency: '@nameof(QuotationItemVM.ExternalCurrency)',
             ExternalSupplierName: '@nameof(QuotationItemVM.ExternalSupplierName)',
+            ExternalStock: '@nameof(QuotationItemVM.ExternalStock)',
+            ExternalScenarioText: '@nameof(QuotationItemVM.ExternalScenarioText)',
+            MouserQuotationDate: '@nameof(QuotationItemVM.MouserQuotationDate)',
+            MouserUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.MouserUnitPriceOriginalCurrency)',
+            DkQuotationDate: '@nameof(QuotationItemVM.DkQuotationDate)',
+            DkUnitPriceOriginalCurrency: '@nameof(QuotationItemVM.DkUnitPriceOriginalCurrency)',
         };
 
-        function esc(v) {
-            return $('<div>').text(v ?? '').html();
-        }
+        // 暫存資料
+        var qsMatchResult = null;     // 查料結果 { No, MatchCategoryText, MatchField, DecisionLogs }
+        var qsPricingResult = null;   // 查價結果 { Internal, External, InStock, ClusterMeta, DecisionLogs }
+        var allDecisionLogs = [];     // 查料 + 查價 決策歷程合併
+        var customersLoaded = false;  // 客戶清單是否已載入
 
+        // ── 格式化工具 ───────────────────────────────────────────────────
+        function esc(v) { return $('<div>').text(v ?? '').html(); }
         function fmtPrice(val) {
-            if (val === null || val === undefined || val === '') return '<span class="text-muted">\u2014</span>';
-            return '<span class="font-monospace">' + parseFloat(val).toFixed(4) + '</span>';
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">—</span>';
+            return '<span class="font-monospace">' + parseFloat(val) + '</span>';
         }
-
         function fmtNum(val) {
-            if (val === null || val === undefined || val === '') return '<span class="text-muted">\u2014</span>';
+            if (val === null || val === undefined || val === '') return '<span class="text-muted">—</span>';
             return Number(val).toLocaleString();
         }
-
-        function fmtDate(val) {
-            if (!val) return '<span class="text-muted">\u2014</span>';
-            return esc(val);
-        }
-
+        function fmtDate(val) { return val ? esc(val) : '<span class="text-muted">—</span>'; }
         function fmtCurrency(val) {
-            if (!val) return '<span class="text-muted">\u2014</span>';
+            if (!val) return '<span class="text-muted">—</span>';
             return '<span class="badge bg-light text-dark border">' + esc(val) + '</span>';
         }
-
-        function buildRow(r) {
-            var isRec = r[F.IsRecommended] === true;
-            var itemId = r[F.Id];
-            return '<tr data-id="' + itemId + '" data-rec="' + isRec + '">'
-                + '<td><code class="fs-6">' + esc(r[F.ManufacturerPartNo1]) + '</code></td>'
-                + '<td class="p-1' + (isRec ? ' bg-warning-subtle' : '') + '">'
-                + '<div class="input-group">'
-                + '<input type="text" class="form-control font-monospace qs-model-input"'
-                + ' data-id="' + itemId + '" value="' + esc(r[F.ProcurementModel] || '') + '" placeholder="—" />'
-                + '<button class="btn btn-outline-secondary qs-pick-btn" type="button" data-id="' + itemId + '">'
-                + '<i class="ri-search-line"></i>'
-                + '</button>'
-                + '</div>'
-                + '</td>'
-                + '<td>' + fmtDate(r[F.InternalProcurementDate]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[F.InternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[F.InternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center">' + fmtNum(r[F.InternalQty]) + '</td>'
-                + '<td class="text-center">' + fmtCurrency(r[F.InternalCurrency]) + '</td>'
-                + '<td>' + esc(r[F.InternalSupplierName] || '') + '</td>'
-                + '<td>' + fmtDate(r[F.ExternalQuotationDate]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[F.ExternalUnitPriceOrig]) + '</td>'
-                + '<td class="text-end">' + fmtPrice(r[F.ExternalUnitPriceTwd]) + '</td>'
-                + '<td class="text-center">' + fmtNum(r[F.ExternalMOQ]) + '</td>'
-                + '<td class="text-center">' + fmtCurrency(r[F.ExternalCurrency]) + '</td>'
-                + '<td>' + esc(r[F.ExternalSupplierName] || '') + '</td>'
-                + '</tr>';
+        function fmtScenario(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return '<span class="badge bg-secondary">' + esc(val) + '</span>';
+        }
+        function fmtMatchCategory(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            if (val === '完全命中') return '<span class="badge bg-success">' + esc(val) + '</span>';
+            if (val === '建議料號') return '<span class="badge bg-warning text-dark">' + esc(val) + '</span>';
+            if (val === '未命中') return '<span class="badge bg-secondary">' + esc(val) + '</span>';
+            return '<span class="badge bg-light text-dark">' + esc(val) + '</span>';
+        }
+        function fmtYesNo(val) {
+            if (!val) return '<span class="text-muted">—</span>';
+            return val === '是' ? '<span class="badge bg-success">是</span>' : '<span class="badge bg-secondary">否</span>';
         }
 
-        function doSearch() {
-            var $form = $('#qsSearchForm');
-            if (!$form[0].checkValidity()) {
-                $form.addClass('was-validated');
+        // ── ① 查料 ──────────────────────────────────────────────────────
+        $('#qsPartMatchForm').on('submit', function (e) {
+            e.preventDefault();
+            var mpn = $('#qs_ManufacturerPartNo').val().trim();
+            var mfr = $('#qs_Manufacturer').val().trim();
+            var cpn = $('#qs_ComponentPart').val().trim();
+            var desc = $('#qs_Description').val().trim();
+            if (!mpn && !mfr && !cpn && !desc) {
+                $('#qs-part-match-error').removeClass('d-none');
                 return;
             }
+            $('#qs-part-match-error').addClass('d-none');
+            doPartMatch(mpn, mfr, cpn, desc);
+        });
 
-            var params = {
-                manufacturerPartNo: $('#qs_ManufacturerPartNo').val().trim(),
-                customerType: $('#qs_CustomerType').val(),
-                purchaseQty: parseInt($('#qs_PurchaseQty').val()) || 0,
-            };
-
+        function doPartMatch(mpn, mfr, cpn, desc) {
+            allDecisionLogs = [];
             showLoader();
             $.ajax({
-                url: qsApiUrl,
+                url: apiBase + '/QuickPartMatch',
                 type: 'GET',
-                data: params,
+                data: {
+                    manufacturerPartNumber: mpn || undefined,
+                    manufacturer: mfr || undefined,
+                    componentPart: cpn || undefined,
+                    description: desc || undefined
+                },
                 success: function (res) {
-                    var $tbody = $('#qs-result-body');
-                    $tbody.empty();
-                    if (!res.Success || !res.Data || !res.Data.length) {
-                        $('.qs-noresult').show();
+                    if (!res.Success || !res.Data) {
+                        Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
                         return;
                     }
-                    $('.qs-noresult').hide();
-                    res.Data.forEach(function (r) { $tbody.append(buildRow(r)); });
+                    qsMatchResult = res.Data;
+                    qsPricingResult = null;
+                    allDecisionLogs = (res.Data.DecisionLogs || []).slice();
+
+                    // 回填內部料號
+                    $('#qs_No').val(res.Data.No || '');
+
+                    // 顯示查料結果列表
+                    var matchHtml = `<tr>
+                        <td class="text-center">${fmtMatchCategory(res.Data.MatchCategoryText)}</td>
+                        <td>${esc(res.Data.MatchField || '')}</td>
+                    </tr>`;
+                    $('#qs-match-body').html(matchHtml);
+                    $('#qs-match-result-area').removeClass('d-none');
+
+                    // 隱藏查價結果與歷程按鈕（重新查料後清除）
+                    $('#qs-pricing-result-area').addClass('d-none');
+                    $('#qs-log-area').addClass('d-none');
                 },
                 error: function () {
                     Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
                 },
-                complete: function () { hideLoader(); },
+                complete: function () { hideLoader(); }
             });
         }
 
-        $('#qsSearchForm').on('submit', function (e) {
-            e.preventDefault();
-            doSearch();
-        });
+        // ── ② 查價 ──────────────────────────────────────────────────────
+        $('#btnQsPricing').on('click', function () {
+            allDecisionLogs = [];
+            var runInternal = $('#qs_chk_internal').is(':checked');
+            var runExternal = $('#qs_chk_external').is(':checked');
+            var runInStock = $('#qs_chk_instock').is(':checked');
 
-        document.getElementById('quickPartSearchModal').addEventListener('show.bs.modal', function () {
-            $('#qs-result-body').empty();
-            $('.qs-noresult').hide();
-            $('#qsSearchForm').removeClass('was-validated');
-        });
-
-        // ── 內部料號選取器 ──────────────────────────────────────────────────
-        var _qsCurrentPickerId = null;
-        $(document).on('click', '#quickPartSearchModal .qs-pick-btn', function () {
-            _qsCurrentPickerId = $(this).data('id');
-            SanderModuleItemPicker['@mapData.ItemPicker.ViewId'].open(function (no) {
-                $('.qs-model-input[data-id="' + _qsCurrentPickerId + '"]').val(no);
-            });
-        });
-
-        // ── 重新查價（儲存所有可見料項的內部料號） ──────────────────────────
-        $('#btnQsReQuote').on('click', function () {
-            var rows = [];
-            $('#qs-result-body tr[data-id]').each(function () {
-                var $tr = $(this);
-                var id = parseInt($tr.data('id'));
-                if (!id) return;
-                rows.push({
-                    Id: id,
-                    ProcurementModel: $tr.find('.qs-model-input').val(),
-                    IsRecommended: String($tr.data('rec')) === 'true'
-                });
-            });
-            if (!rows.length) {
-                Swal.fire({ icon: 'warning', title: '無資料', text: '尚無查詢結果可儲存。', confirmButtonText: '確定' });
+            if (!runInternal && !runExternal && !runInStock) {
+                showPricingError('請至少勾選一項查價類型');
                 return;
             }
+            var no = $('#qs_No').val().trim();
+            var customerCode = $('#qs_CustomerCode').val() || undefined;
+            var mpn = $('#qs_ManufacturerPartNo').val().trim();
+            var qty = parseInt($('#qs_PurchaseQty').val()) || 1;
+
+            if (runInternal && !no) {
+                showPricingError('勾選「內部查價」時，內部料號為必填');
+                return;
+            }
+            if ((runExternal || runInStock) && !mpn) {
+                showPricingError('勾選「外部查價」或「現貨查價」時，製造商料號為必填');
+                return;
+            }
+            if ((runExternal || runInStock) && qty < 1) {
+                showPricingError('查價數量必須大於 0');
+                return;
+            }
+            $('#qs-pricing-error').addClass('d-none');
+
             showLoader();
-            var defs = rows.map(function (item) {
-                return $.ajax({
-                    url: qsSaveUrl,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(item)
-                });
-            });
-            $.when.apply($, defs).then(function () {
-                hideLoader();
-                Swal.fire({ icon: 'success', title: '重新查價成功', confirmButtonText: '確定' });
-            }).fail(function () {
-                hideLoader();
-                Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
+            $.ajax({
+                url: apiBase + '/QuickPricing',
+                type: 'GET',
+                data: {
+                    manufacturerPartNumber: mpn || undefined,
+                    no: no || undefined,
+                    customerCode: customerCode,
+                    purchaseQty: qty,
+                    runInternal: runInternal,
+                    runExternal: runExternal,
+                    runInStock: runInStock
+                },
+                success: function (res) {
+                    if (!res.Success || !res.Data) {
+                        Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
+                        return;
+                    }
+                    qsPricingResult = res.Data;
+                    allDecisionLogs = (qsMatchResult ? qsMatchResult.DecisionLogs || [] : [])
+                        .concat(res.Data.DecisionLogs || []);
+
+                    renderPricingTable(res.Data, runInternal, runExternal, runInStock);
+                    $('#qs-match-result-area').addClass('d-none');
+                    $('#qs-pricing-result-area').removeClass('d-none');
+                    $('#qs-log-area').removeClass('d-none');
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: '系統錯誤', confirmButtonText: '確定' });
+                },
+                complete: function () { hideLoader(); }
             });
         });
 
+        function showPricingError(msg) {
+            $('#qs-pricing-error-msg').text(msg);
+            $('#qs-pricing-error').removeClass('d-none');
+        }
 
-        $('#qs_CustomerType').select2({
-            dropdownParent: $('#quickPartSearchModal')
-        })
+        // ── 渲染查價結果表格 ─────────────────────────────────────────────
+        function renderPricingTable(data, hasInt, hasExt, hasInStock) {
+            var $thead = $('#qsPricingThead');
+            var $tbody = $('#qs-pricing-body');
+
+            // ── Thead ──
+            var row1 = '', row2 = '';
+            if (hasInt) {
+                row1 += '<th colspan="8" class="text-center bg-primary-subtle text-primary">內部採購紀錄</th>';
+                row2 += `
+                    <th class="bg-primary-subtle text-primary" style="min-width:100px;">採購日期</th>
+                    <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(原幣)</th>
+                    <th class="bg-primary-subtle text-primary" style="min-width:90px;">單價(台幣)</th>
+                    <th class="bg-primary-subtle text-primary" style="width:65px;">數量</th>
+                    <th class="bg-primary-subtle text-primary" style="width:60px;">幣別</th>
+                    <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
+                    <th class="bg-primary-subtle text-primary" style="min-width:110px;">採購型號 D2</th>
+                    <th class="bg-primary-subtle text-primary" style="width:80px;">套用Variant過濾</th>`;
+            }
+            if (hasExt) {
+                row1 += '<th colspan="8" class="text-center bg-success-subtle text-success">外部查價</th>';
+                row2 += `
+                    <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
+                    <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
+                    <th class="bg-success-subtle text-success" style="min-width:90px;">單價(台幣)</th>
+                    <th class="bg-success-subtle text-success" style="width:65px;">MOQ</th>
+                    <th class="bg-success-subtle text-success" style="width:60px;">幣別</th>
+                    <th class="bg-success-subtle text-success" style="min-width:120px;">供應商名稱</th>
+                    <th class="bg-success-subtle text-success" style="width:65px;">庫存量</th>
+                    <th class="bg-success-subtle text-success" style="width:90px;">情境</th>`;
+            }
+            if (hasInStock) {
+                row1 += '<th colspan="2" class="text-center bg-warning-subtle text-warning">Mouser</th>';
+                row1 += '<th colspan="2" class="text-center bg-info-subtle text-info">DigiKey</th>';
+                row2 += `
+                    <th class="bg-warning-subtle text-warning" style="min-width:100px;">查價日期</th>
+                    <th class="bg-warning-subtle text-warning" style="min-width:90px;">優惠價(原幣)</th>
+                    <th class="bg-info-subtle text-info" style="min-width:100px;">查價日期</th>
+                    <th class="bg-info-subtle text-info" style="min-width:90px;">優惠價(原幣)</th>`;
+            }
+            $thead.html('<tr>' + row1 + '</tr><tr>' + row2 + '</tr>');
+
+            // ── Tbody ──
+            var cells = '';
+            if (hasInt) {
+                var ir = data.Internal || {};
+                var supplier = esc((ir.InternalSupplierName || '') + (ir.InternalSupplierCode ? ' (' + ir.InternalSupplierCode + ')' : ''));
+                cells += `
+                    <td>${fmtDate(ir.InternalPurchaseOrderDate)}</td>
+                    <td class="text-end">${fmtPrice(ir.InternalUnitPriceOriginalCurrency)}</td>
+                    <td class="text-end">${fmtPrice(ir.InternalUnitPriceTwd)}</td>
+                    <td class="text-center">${fmtNum(ir.InternalQuantity)}</td>
+                    <td class="text-center">${fmtCurrency(ir.InternalCurrency)}</td>
+                    <td>${supplier}</td>
+                    <td>${esc(ir.InternalItemDescription2 != null ? String(ir.InternalItemDescription2) : '')}</td>
+                    <td class="text-center">${fmtYesNo(ir.IsFilterByCustomerApprovedPartText)}</td>`;
+            }
+            if (hasExt) {
+                var er = data.External || {};
+                cells += `
+                    <td>${fmtDate(er.ExternalQuotationDate)}</td>
+                    <td class="text-end">${fmtPrice(er.ExternalUnitPriceOriginalCurrency)}</td>
+                    <td class="text-end">${fmtPrice(er.ExternalUnitPriceTwd)}</td>
+                    <td class="text-center">${fmtNum(er.ExternalMoq)}</td>
+                    <td class="text-center">${fmtCurrency(er.ExternalCurrency)}</td>
+                    <td>${esc(er.ExternalSupplierName || '')}</td>
+                    <td class="text-center">${fmtNum(er.ExternalStock)}</td>
+                    <td class="text-center">${fmtScenario(er.ExternalScenarioText)}</td>`;
+            }
+            if (hasInStock) {
+                var sr = data.InStock || {};
+                cells += `
+                    <td>${fmtDate(sr.MouserQuotationDate)}</td>
+                    <td class="text-end">${fmtPrice(sr.MouserUnitPriceOriginalCurrency)}</td>
+                    <td>${fmtDate(sr.DkQuotationDate)}</td>
+                    <td class="text-end">${fmtPrice(sr.DkUnitPriceOriginalCurrency)}</td>`;
+            }
+            $tbody.html('<tr>' + cells + '</tr>');
+        }
+
+        // ── ③ 查看歷程記錄 ───────────────────────────────────────────────
+        $('#btnQsViewLog').on('click', function () {
+            if (typeof ModalDecisionLog === 'undefined' || !ModalDecisionLog[qsMdlId]) return;
+            var clusterMeta = qsPricingResult ? qsPricingResult.ClusterMeta || null : null;
+            ModalDecisionLog[qsMdlId].openWithData(allDecisionLogs, clusterMeta);
+        });
+
+        // ── 客戶名稱 select2 ───────────────────────────────────────────
+        function initCustomerSelect2(customers) {
+            var data = [{ id: '', text: '請選擇' }].concat(
+                customers.map(function (c) { return { id: c.Value, text: c.Text }; })
+            );
+            $('#qs_CustomerCode').select2({
+                width: '100%',
+                data: data,
+                placeholder: '客戶名稱',
+                allowClear: true,
+                dropdownParent: $('#quickPartSearchModal')
+            });
+        }
+
+        function loadCustomers() {
+            if (customersLoaded) return;
+            $.ajax({
+                url: apiBase + '/GetCustomerList',
+                type: 'GET',
+                success: function (res) {
+                    if (!res.Success) return;
+                    customersLoaded = true;
+                    initCustomerSelect2(res.Data || []);
+                }
+            });
+        }
+
+        // ── 內部料號選取器 ───────────────────────────────────────────────
+        $('#btnQsPickNo').on('click', function () {
+            if (typeof SanderModuleItemPicker === 'undefined' || !SanderModuleItemPicker[qsSmipId]) return;
+            SanderModuleItemPicker[qsSmipId].open(function (no) {
+                $('#qs_No').val(no);
+            });
+        });
+
+        // ── Modal 開啟時重置 ─────────────────────────────────────────────
+        document.getElementById('quickPartSearchModal').addEventListener('show.bs.modal', function () {
+            loadCustomers();
+            $('#qs_ManufacturerPartNo, #qs_Manufacturer, #qs_ComponentPart, #qs_Description').val('');
+            $('#qs_No').val('');
+            if ($('#qs_CustomerCode').hasClass('select2-hidden-accessible')) {
+                $('#qs_CustomerCode').val(null).trigger('change');
+            }
+            $('#qs_PurchaseQty').val('1');
+            $('#qs_chk_internal, #qs_chk_external, #qs_chk_instock').prop('checked', false);
+            $('#qs-part-match-error, #qs-pricing-error').addClass('d-none');
+            $('#qs-match-result-area, #qs-pricing-result-area, #qs-log-area').addClass('d-none');
+            $('#qs-match-body').html('<tr><td colspan="2" class="text-center text-muted py-3">—</td></tr>');
+            $('#qs-pricing-body').html('<tr><td class="text-center text-muted py-4">—</td></tr>');
+            $('#qsPricingThead').html('');
+            qsMatchResult = null;
+            qsPricingResult = null;
+            allDecisionLogs = [];
+        });
     }());
 </script>

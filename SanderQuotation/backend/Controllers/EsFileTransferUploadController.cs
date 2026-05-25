@@ -224,7 +224,7 @@ namespace backend.Controllers
         #region -- 刪除 --
 
         /// <summary>
-        /// 依 Id 刪除一筆轉入檔案紀錄（邏輯刪除）
+        /// 依 Id 刪除一筆轉入檔案紀錄（邏輯刪除）及所有關聯資料
         /// </summary>
         [CustomAuthorization(FuncID.EsFileTransferUpload_Delete)]
         [HttpPost("Delete")]
@@ -236,9 +236,7 @@ namespace backend.Controllers
                 if (idList.Count == 0)
                     return JsonValidFail("請至少選擇一筆資料進行刪除。");
 
-                SearchVO sv = new();
-                sv.IdIn = idList;
-                GetBlEsFileTransferUpload().DeleteByFilter(sv);
+                GetBlEsFileTransferUpload().DoDelete(idList);
 
                 return JsonOK("刪除成功");
             }

@@ -5,8 +5,12 @@
  * https://support.nexar.com/support/solutions/articles/101000494582-nexar-playground-graphql-query-examples
  * * Nexar API 官方文件
  */
+using backend.Common;
+using Business.BusinessLogic;
+using Business.DomainModel;
 using Const;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -22,6 +26,10 @@ namespace backend.Models
         /// Cache Key：Nexar Access Token
         /// </summary>
         protected const string CacheKeyOfAccessToken = "NEXAR_ACCESS_TOKEN";
+        /// <summary>
+        /// Log 中的 Controller 名稱，方便識別是哪個工作產生的 Log
+        /// </summary>
+        private const string LogControllerName = nameof(ExternalQuotationNexarHandler);
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMemoryCache _cache;
@@ -61,7 +69,7 @@ namespace backend.Models
 
             if (_cache.TryGetValue(CacheKeyOfAccessToken, out result))
             {
-                if (result != null)
+                if (result != null && !string.IsNullOrEmpty(result.AccessToken))
                 {
                     _dataAccessToken = result;
                     return;
@@ -115,37 +123,59 @@ namespace backend.Models
                     PartDetail? dataPartDetail = data.SupSearchMpn.Results.First().Part;
                     ArgumentNullException.ThrowIfNull(dataPartDetail);
 
-                    List<ExternalQuotationRecordVO> sellerList = dataPartDetail.Sellers?
-                        .SelectMany(seller => seller.Offers?
-                            .Where(offer =>
-                                offer.Moq.HasValue
-                                && offer.Moq.Value <= bomQty
-                                && offer.InventoryLevel.HasValue
-                                && offer.InventoryLevel.Value >= bomQty)
-                            .Select(offer =>
+                    // 儲存所有原始 PriceBreak 至 TBBomFileQuotationExternalHistory（供應商篩選前）
+                    TBBomFileQuotationExternalHistoryBL blTBBomFileQuotationExternalHistory = BLFactory.GetInstanceBackGround<TBBomFileQuotationExternalHistoryBL>();
+                    DateTime nowTime = DateTime.Now;
+                    List<TBBomFileQuotationExternalHistoryDM> historyDmList = [];
+                    foreach (Seller seller in dataPartDetail.Sellers ?? [])
+                    {
+                        foreach (Offer offer in seller.Offers ?? [])
+                        {
+                            if (!offer.Moq.HasValue || !offer.InventoryLevel.HasValue)
                             {
-                                PriceBreak? targetPrice = offer.Prices?
-                                    .Where(p => p.Quantity.HasValue && p.Quantity.Value <= bomQty)
-                                    .OrderByDescending(p => p.Quantity ?? 0)
-                                    .FirstOrDefault();
+                                continue;
+                            }
 
-                                if (targetPrice == null) return null;
+                            foreach (PriceBreak priceBreak in offer.Prices ?? [])
+                            {
+                                if (!priceBreak.Quantity.HasValue)
+                                {
+                                    continue;
+                                }
 
-                                ExternalQuotationRecordVO vo = new();
-                                vo.SupplierName = seller.Company?.Name;
-                                vo.UnitPriceOriginalCurrency = targetPrice.Price;
-                                vo.Currency = targetPrice.Currency;
-                                vo.MOQ = targetPrice.Quantity;
-                                vo.UnitPriceTWD = targetPrice.ConvertedPrice;
-                                vo.Stock = offer.InventoryLevel.HasValue ? (int)offer.InventoryLevel.Value : default(int?);
+                                TBBomFileQuotationExternalHistoryDM dmHistory = new();
+                                dmHistory.ManufacturerPartNumber = bomVO.ManufacturerPartNumber;
+                                dmHistory.QuotationDate = nowTime;
+                                dmHistory.SupplierName = seller.Company?.Name;
+                                dmHistory.Stock = offer.InventoryLevel.HasValue ? (int)offer.InventoryLevel.Value : default(int?);
+                                dmHistory.Moq = priceBreak.Quantity;
+                                dmHistory.UnitPriceOriginalCurrency = priceBreak.Price;
+                                dmHistory.UnitPriceTwd = priceBreak.ConvertedPrice;
+                                dmHistory.Currency = priceBreak.Currency;
+                                historyDmList.Add(dmHistory);
+                            }
+                        }
+                    }
+                    if (historyDmList.Count > 0)
+                        blTBBomFileQuotationExternalHistory.BatchInsert(historyDmList);
 
-                                return vo;
-                            })
-                            .Where(vo => vo != null)
-                            ?? new List<ExternalQuotationRecordVO?>())
-                        .Cast<ExternalQuotationRecordVO>()
+                    List<ExternalQuotationRecordVO> sellerList = historyDmList
+                        .Where(h => (h.Moq ?? 0) <= bomQty && (h.Stock ?? 0) >= bomQty)
+                        .GroupBy(h => h.SupplierName ?? string.Empty)
+                        .Select(g =>
+                        {
+                            TBBomFileQuotationExternalHistoryDM best = g.OrderByDescending(h => h.Moq ?? 0).First();
+                            ExternalQuotationRecordVO vo = new();
+                            vo.SupplierName = best.SupplierName;
+                            vo.UnitPriceOriginalCurrency = best.UnitPriceOriginalCurrency;
+                            vo.Currency = best.Currency;
+                            vo.MOQ = best.Moq;
+                            vo.UnitPriceTWD = best.UnitPriceTwd;
+                            vo.Stock = best.Stock;
+                            return vo;
+                        })
                         .OrderBy(x => x.UnitPriceTWD ?? decimal.MaxValue)
-                        .ToList() ?? [];
+                        .ToList();
 
                     List<ExternalQuotationRecordVO> preferredSellerList = sellerList
                         .Where(seller => configPreferredVendorList.Contains(seller.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase))
@@ -167,6 +197,10 @@ namespace backend.Models
                     result.SearchMatchCount = sellerList.Count;
                     result.SearchMatchPreferredCount = preferredSellerList.Count;
                     result.IsPreferred = preferredSellerList.Count > 0;
+                }
+                else if(ret.Data.Error?.Count > 0)
+                {
+                    result.ErrorMessage = string.Join("\n", ret.Data.Error.Select(e => e.Message));
                 }
             }
 
@@ -216,6 +250,7 @@ namespace backend.Models
             }
             catch (Exception ex)
             {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
                 return ApiTaskResult<GetAccessTokenAsyncResM>.Error(ex);
             }
         }
@@ -284,6 +319,7 @@ query($mpn: String!) {
             }
             catch (Exception ex)
             {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
                 return ApiTaskResult<NexarPartResult>.Error(ex);
             }
         }
@@ -315,8 +351,26 @@ query($mpn: String!) {
         /// <summary>
         /// 查詢結果資料
         /// </summary>
-        [JsonPropertyName("data")]
+        [JsonProperty("data")]
         public NexarData? Data { get; set; }
+
+        /// <summary>
+        /// 錯誤資料
+        /// </summary>
+        [JsonProperty("errors")]
+        public List<NexarError> Error { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Nexar 錯誤
+    /// </summary>
+    public class NexarError
+    {
+        /// <summary>
+        /// 錯誤訊息
+        /// </summary>
+        [JsonProperty("message")]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -327,7 +381,7 @@ query($mpn: String!) {
         /// <summary>
         /// MPN 搜尋結果
         /// </summary>
-        [JsonPropertyName("supSearchMpn")]
+        [JsonProperty("supSearchMpn")]
         public SupSearchMpn? SupSearchMpn { get; set; }
     }
 
@@ -339,7 +393,7 @@ query($mpn: String!) {
         /// <summary>
         /// 搜尋結果項目清單
         /// </summary>
-        [JsonPropertyName("results")]
+        [JsonProperty("results")]
         public List<PartSearchResult>? Results { get; set; }
     }
 
@@ -351,7 +405,7 @@ query($mpn: String!) {
         /// <summary>
         /// 料號元件詳細資訊
         /// </summary>
-        [JsonPropertyName("part")]
+        [JsonProperty("part")]
         public PartDetail? Part { get; set; }
     }
 
@@ -363,13 +417,13 @@ query($mpn: String!) {
         /// <summary>
         /// 廠商型號
         /// </summary>
-        [JsonPropertyName("mpn")]
+        [JsonProperty("mpn")]
         public string? Mpn { get; set; }
 
         /// <summary>
         /// 供應商清單
         /// </summary>
-        [JsonPropertyName("sellers")]
+        [JsonProperty("sellers")]
         public List<Seller>? Sellers { get; set; }
     }
 
@@ -381,13 +435,13 @@ query($mpn: String!) {
         /// <summary>
         /// 供應商公司資訊
         /// </summary>
-        [JsonPropertyName("company")]
+        [JsonProperty("company")]
         public Company? Company { get; set; }
 
         /// <summary>
         /// 供應商報價清單
         /// </summary>
-        [JsonPropertyName("offers")]
+        [JsonProperty("offers")]
         public List<Offer>? Offers { get; set; }
     }
 
@@ -399,7 +453,7 @@ query($mpn: String!) {
         /// <summary>
         /// 公司名稱
         /// </summary>
-        [JsonPropertyName("name")]
+        [JsonProperty("name")]
         public string? Name { get; set; }
     }
 
@@ -411,19 +465,19 @@ query($mpn: String!) {
         /// <summary>
         /// 最小訂購量（MOQ）
         /// </summary>
-        [JsonPropertyName("moq")]
+        [JsonProperty("moq")]
         public int? Moq { get; set; }
 
         /// <summary>
         /// 即時庫存量
         /// </summary>
-        [JsonPropertyName("inventoryLevel")]
+        [JsonProperty("inventoryLevel")]
         public decimal? InventoryLevel { get; set; }
 
         /// <summary>
         /// 價格階梯清單
         /// </summary>
-        [JsonPropertyName("prices")]
+        [JsonProperty("prices")]
         public List<PriceBreak>? Prices { get; set; }
     }
 
@@ -435,31 +489,31 @@ query($mpn: String!) {
         /// <summary>
         /// 起始數量
         /// </summary>
-        [JsonPropertyName("quantity")]
+        [JsonProperty("quantity")]
         public int? Quantity { get; set; }
 
         /// <summary>
         /// 單價（原幣）
         /// </summary>
-        [JsonPropertyName("price")]
+        [JsonProperty("price")]
         public decimal? Price { get; set; }
 
         /// <summary>
         /// 幣別（例如 USD）
         /// </summary>
-        [JsonPropertyName("currency")]
+        [JsonProperty("currency")]
         public string? Currency { get; set; }
 
         /// <summary>
         /// 轉換後單價（台幣）
         /// </summary>
-        [JsonPropertyName("convertedPrice")]
+        [JsonProperty("convertedPrice")]
         public decimal? ConvertedPrice { get; set; }
 
         /// <summary>
         /// 轉換後幣別（例如 TWD）
         /// </summary>
-        [JsonPropertyName("convertedCurrency")]
+        [JsonProperty("convertedCurrency")]
         public string? ConvertedCurrency { get; set; }
     }
 }

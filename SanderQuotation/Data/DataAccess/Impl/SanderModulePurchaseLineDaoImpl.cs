@@ -64,7 +64,7 @@ WHERE 1=1
         /// <param name="pageEntity">分頁資訊</param>
         /// <param name="searchVO">查詢條件</param>
         /// <returns>分頁清單資料</returns>
-        public PageResult<SanderModulePurchaseLineDTO> GetPageList(PageEntity pageEntity, SearchVO searchVO)
+        public PageResult<SanderModulePurchaseLineDTO> GetPageListPriceCluster(PageEntity pageEntity, SearchVO searchVO)
         {
             StringBuilder condition = new();
             Dictionary<string, object> paras = [];
@@ -74,11 +74,21 @@ WHERE 1=1
                 condition.Append($"AND s.\"no\" = @{nameof(searchVO.SanderModuleItemNoEq)} ");
                 paras.Add(nameof(searchVO.SanderModuleItemNoEq), searchVO.SanderModuleItemNoEq);
             }
+            if (searchVO.Description2In.Count > 0)
+            {
+                condition.Append($"AND s.{nameof(SanderModulePurchaseLineDTO.Description2)} = ANY(@Description2In) ");
+                paras.Add("Description2In", searchVO.Description2In.ToArray());
+            }
+            if (searchVO.UnitCostLcyGt.HasValue)
+            {
+                condition.Append($"AND s.{nameof(SanderModulePurchaseLineDTO.UnitCostLcy)} > @UnitCostLcyGt ");
+                paras.Add("UnitCostLcyGt", searchVO.UnitCostLcyGt.Value);
+            }
             if (!string.IsNullOrWhiteSpace(searchVO.KeywordLike))
             {
-                condition.Append($@" AND (s.{nameof(SanderModulePurchaseLineEntity.BuyFromVendorNo)} ILIKE @{nameof(searchVO.KeywordLike)}
-OR s.{nameof(SanderModulePurchaseLineEntity.BuyFromVendorName)} ILIKE @{nameof(searchVO.KeywordLike)}
-OR s.{nameof(SanderModulePurchaseLineEntity.Description2)} ILIKE @{nameof(searchVO.KeywordLike)}
+                condition.Append($@" AND (s.{nameof(SanderModulePurchaseLineDTO.BuyFromVendorNo)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR s.{nameof(SanderModulePurchaseLineDTO.BuyFromVendorName)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR s.{nameof(SanderModulePurchaseLineDTO.Description2)} ILIKE @{nameof(searchVO.KeywordLike)}
 ) ");
                 paras.Add(nameof(searchVO.KeywordLike), $"%{searchVO.KeywordLike}%");
             }
@@ -87,7 +97,8 @@ OR s.{nameof(SanderModulePurchaseLineEntity.Description2)} ILIKE @{nameof(search
 SELECT s.*
 FROM sandermodulepurchaseline s
 WHERE 1=1
-{condition}";
+{condition}
+";
 
             string countSQL = $@"
 SELECT COUNT(0) AS RowNum
@@ -98,7 +109,7 @@ WHERE 1=1";
 
             return DbHelper.FindPageList<SanderModulePurchaseLineDTO>(sql, countSQL, pageEntity.CurrentPage, pageEntity.PageDataSize, paras,
                 string.IsNullOrWhiteSpace(pageEntity.Sort)
-                    ? $"{nameof(SanderModulePurchaseLineEntity.DocumentDate)} DESC"
+                    ? $"{nameof(SanderModulePurchaseLineEntity.UnitCostLcy)}"
                     : $"{pageEntity.Sort} {pageEntity.Asc}");
         }
 

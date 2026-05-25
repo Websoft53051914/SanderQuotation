@@ -17,6 +17,7 @@ namespace Data.DataAccess.Impl
         {
             StringBuilder condition = new();
             string sqlLimit = string.Empty;
+            string orderBy = $"u.{nameof(EsFileTransferUploadDTO.CreatedAt)}";
             Dictionary<string, object> paras = [];
 
             if (searchVO.IsLimit1)
@@ -55,6 +56,7 @@ FROM EsFileTransferUpload u
 LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
 WHERE 1=1
 {condition}
+ORDER BY {orderBy}
 {sqlLimit}";
 
             return DbHelper.FindList<EsFileTransferUploadDTO>(sql, paras);
@@ -65,22 +67,22 @@ WHERE 1=1
         /// </summary>
         public PageResult<EsFileTransferUploadDTO> GetPageList(PageEntity pageEntity, SearchVO searchVO)
         {
-            string condition = string.Empty;
-            var paras = new Dictionary<string, object>();
+            StringBuilder condition = new();
+            Dictionary<string, object> paras = [];
             // 代表上傳未儲存的資料
-            condition += $" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.ProcessStatus)}, 0) <> 0 ";
+            condition.Append($" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.ProcessStatus)}, 0) <> 0 ");
 
             if (searchVO.StatusEq.HasValue)
             {
-                condition += $" AND u.{nameof(EsFileTransferUploadDTO.Status)} = @{nameof(searchVO.StatusEq)} ";
+                condition.Append($" AND u.{nameof(EsFileTransferUploadDTO.Status)} = @{nameof(searchVO.StatusEq)} ");
                 paras.Add(nameof(searchVO.StatusEq), searchVO.StatusEq.Value);
             }
             if (!string.IsNullOrWhiteSpace(searchVO.KeywordLike))
             {
-                condition += $@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
+                condition.Append($@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.KeywordLike)}
-)";
+)");
                 paras.Add(nameof(searchVO.KeywordLike), $"%{searchVO.KeywordLike}%");
             }
 
@@ -162,18 +164,28 @@ WHERE
         /// </summary>
         public PageResult<EsFileTransferUploadDTO> GetPageListQuotationResult(PageEntity pageEntity, SearchVO searchVO)
         {
-            string condition = string.Empty;
-            var paras = new Dictionary<string, object>();
-            condition += $" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.Status)}, 0) <> {(int)Enums.StatusEnum.Cancel} ";
+            StringBuilder condition = new();
+            Dictionary<string, object> paras = [];
+            condition.Append($" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.Status)}, 0) <> {(int)Enums.StatusEnum.Cancel} ");
             // 已完成查價的資料
-            condition += $" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.ProcessStatus)}, 0) = {(int)EsFileTransferUploadProcessStatusEnum.PricingDone} ";
+            condition.Append($" AND COALESCE(u.{nameof(EsFileTransferUploadDTO.ProcessStatus)}, 0) = {(int)EsFileTransferUploadProcessStatusEnum.PricingDone} ");
 
+            if (searchVO.IdEq.HasValue)
+            {
+                condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.Id)} = @{nameof(searchVO.IdEq)} ");
+                paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
+            }
+            if (searchVO.StatusEq.HasValue)
+            {
+                condition.Append($" AND u.{nameof(EsFileTransferUploadDTO.Status)} = @{nameof(searchVO.StatusEq)} ");
+                paras.Add(nameof(searchVO.StatusEq), searchVO.StatusEq.Value);
+            }
             if (!string.IsNullOrWhiteSpace(searchVO.KeywordLike))
             {
-                condition += $@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
+                condition.Append($@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.KeywordLike)}
-)";
+)");
                 paras.Add(nameof(searchVO.KeywordLike), $"%{searchVO.KeywordLike}%");
             }
 

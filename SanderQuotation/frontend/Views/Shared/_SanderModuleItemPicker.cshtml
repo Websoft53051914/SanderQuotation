@@ -172,7 +172,6 @@
                     qs.total = res.Data.Total || 0;
                     _renderTable(list);
                     _renderPagination(qs.total);
-                    _renderResultInfo(qs.total);
                 },
                 error: function () {
                     $body.html('<tr><td colspan="5" class="text-center text-danger py-3">網路錯誤，請稍後再試</td></tr>');

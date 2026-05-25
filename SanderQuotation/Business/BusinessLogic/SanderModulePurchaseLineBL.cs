@@ -80,12 +80,28 @@ namespace Business.BusinessLogic
 
             return result;
         }
-
         #endregion
     }
 
     public partial class SanderModulePurchaseLineBL
     {
+        /// <summary>
+        /// 分頁查詢清單-價格分群
+        /// </summary>
+        /// <param name="pageEntity">分頁資訊</param>
+        /// <param name="searchVO">查詢條件</param>
+        /// <returns>分頁結果</returns>
+        public PageResult<SanderModulePurchaseLineDM> GetPageListPriceCluster(PageEntity pageEntity, SearchVO searchVO)
+        {
+            PageResult<SanderModulePurchaseLineDTO> pageResult = GetDAO().GetPageListPriceCluster(pageEntity, searchVO);
+
+            PageResult<SanderModulePurchaseLineDM> result = new();
+            result.DataCount = pageResult.DataCount;
+            result.Results = pageResult.Results.Select(x => _mapper.Map<SanderModulePurchaseLineDM>(x)).ToList();
+
+            return result;
+        }
+
         /// <summary>
         /// 新增資料
         /// </summary>

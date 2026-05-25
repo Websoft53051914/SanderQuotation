@@ -113,7 +113,6 @@
             FileName: '@nameof(QuotationFileGridVM.FileName)',
             CustomerCode: '@nameof(QuotationFileGridVM.CustomerCode)',
             CustomerName: '@nameof(QuotationFileGridVM.CustomerName)',
-            CustomerName: '@nameof(QuotationFileGridVM.ManualCustomerName)',
             ProdNo: '@nameof(QuotationFileGridVM.ProdNo)',
             QuotationQty: '@nameof(QuotationFileGridVM.QuotationQty)',
             ItemCount: '@nameof(QuotationFileGridVM.ItemCount)',
@@ -232,7 +231,7 @@
                 </td>
                 <td>${r[QfgM.No]}</td>
                 <td><span class="fw-semibold">${escapeHtml(r[QfgM.FileName])}</span></td>
-                <td>${escapeHtml(r[QfgM.CustomerName] || '')}${escapeHtml(r[QfgM.CustomerName] || r[QfgM.ManualCustomerName] || '')}</td>
+                <td>${escapeHtml(r[QfgM.CustomerName] || '')}</td>
                 <td><code class="fs-6">${escapeHtml(r[QfgM.CustomerCode] || '')}</code></td>
                 <td class="text-end">${(r[QfgM.QuotationQty] || 0).toLocaleString()}</td>
                 <td><span class="badge bg-secondary-subtle text-secondary">${r[QfgM.ItemCount] ?? '—'}</span></td>

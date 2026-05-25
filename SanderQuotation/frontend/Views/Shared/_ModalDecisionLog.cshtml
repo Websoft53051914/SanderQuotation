@@ -4,7 +4,7 @@
 }
 
 <!-- ── 決策歷程 Modal ─────────────────────────────────────────────── -->
-<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@(modalId)Label" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@(modalId)Label" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -68,12 +68,13 @@
                         <div id="@(modalId)-no-cluster" class="alert alert-info d-none">
                             <i class="ri-information-line me-1"></i>尚未執行內部查價，無分群範圍資料。
                         </div>
+                        <div id="@(modalId)-cluster-data-wrapper">
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width:105px;">採購日期</th>
-                                        <th style="min-width:140px;">型號(D2)</th>
+                                        <th style="min-width:140px;">採購型號</th>
                                         <th style="min-width:140px;">供應商</th>
                                         <th class="text-end" style="width:100px;">單價(原幣)</th>
                                         <th class="text-end" style="width:100px;">單價(台幣)</th>
@@ -96,6 +97,7 @@
                                 <ul class="pagination pagination-sm mb-0" id="@(modalId)-cluster-pager"></ul>
                             </div>
                         </nav>
+                        </div><!-- /#cluster-data-wrapper -->
                     </div>
 
                 </div>
@@ -112,25 +114,31 @@
         var modalId = '@modalId';
         var urls = {
             GetDecisionLogs: '@(Model?.UrlGetDecisionLogs ?? "")',
-            GetPriceClusterData: '@(Model?.UrlGetPriceClusterData ?? "")'
+            GetPriceClusterPageList: '@(Model?.UrlGetPriceClusterPageList ?? "")'
         };
 
         var currentBomFileContentId = null;
         var clusterLoaded = false;
-        var clusterRecordsAll = [];
         var clusterRangesData = null;
+        var clusterMeta = null;          // 快查模式：含 No, CustomerApprovedPartCsv, 4 price range numbers
         var clusterPage = 1;
         var clusterPageSize = 20;
+        var clusterTotalCount = 0;
 
         // ── 公開 API ──────────────────────────────────────────────────
         window.ModalDecisionLog = window.ModalDecisionLog || {};
         window.ModalDecisionLog[modalId] = {
+            /** 一般模式：以 bomFileContentId 向 API 取得決策歷程 */
             open: function (bomFileContentId) {
                 currentBomFileContentId = bomFileContentId;
                 clusterLoaded = false;
-                clusterRecordsAll = [];
                 clusterRangesData = null;
+                clusterMeta = null;
                 clusterPage = 1;
+                clusterTotalCount = 0;
+
+                // 恢復 Tab 顯示（一般模式永遠顯示）
+                $('#' + modalId + '-tab-cluster-btn').closest('li').removeClass('d-none');
 
                 // 切回第一個 Tab
                 var $firstTab = $('#' + modalId + '-tab-logs-btn');
@@ -138,10 +146,35 @@
 
                 loadDecisionLogs(bomFileContentId);
                 $('#' + modalId).modal('show');
+            },
+            /** 快查模式：傳入決策歷程陣列與 ClusterMeta（含分群範圍，Records 在 Tab 點擊時 lazy-load） */
+            openWithData: function (logsArray, clusterMetaData) {
+                currentBomFileContentId = null;
+                clusterLoaded = false;
+                clusterRangesData = null;
+                clusterMeta = clusterMetaData || null;
+                clusterPage = 1;
+                clusterTotalCount = 0;
+
+                // 切回第一個 Tab
+                var $firstTab = $('#' + modalId + '-tab-logs-btn');
+                bootstrap.Tab.getOrCreateInstance($firstTab[0]).show();
+
+                // 直接渲染決策歷程
+                renderLogsFromData(logsArray || []);
+
+                // 控制「價格分群結果」Tab 顯示/隱藏
+                if (clusterMeta) {
+                    $('#' + modalId + '-tab-cluster-btn').closest('li').removeClass('d-none');
+                } else {
+                    $('#' + modalId + '-tab-cluster-btn').closest('li').addClass('d-none');
+                }
+
+                $('#' + modalId).modal('show');
             }
         };
 
-        // ── 載入決策歷程 ──────────────────────────────────────────────
+        // ── 載入決策歷程（API 模式） ───────────────────────────────────
         function loadDecisionLogs(bomFileContentId) {
             var $body = $('#' + modalId + '-logs-body');
             $body.html('<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>');
@@ -155,14 +188,7 @@
                         $body.html('<tr><td colspan="3" class="text-center text-muted py-4">無決策歷程紀錄</td></tr>');
                         return;
                     }
-                    var rows = res.Data.map(function (row) {
-                        return `<tr>
-                        <td><span class="badge bg-primary-subtle text-primary border border-primary">${escapeHtml(row.StageText)}</span></td>
-                        <td class="text-muted small">${escapeHtml(row.StepText)}</td>
-                        <td style="white-space:pre-wrap;">${escapeHtml(row.Message)}</td>
-                    </tr>`;
-                    });
-                    $body.html(rows.join(''));
+                    renderLogsFromData(res.Data);
                 },
                 error: function () {
                     $body.html('<tr><td colspan="3" class="text-center text-danger py-4">載入失敗</td></tr>');
@@ -170,47 +196,61 @@
             });
         }
 
-        // ── 載入價格分群資料 ──────────────────────────────────────────
-        function loadPriceClusterData(bomFileContentId) {
-            if (clusterLoaded) return;
+        // ── 從資料陣列渲染決策歷程（API 與預載共用） ──────────────────
+        function renderLogsFromData(logs) {
+            var $body = $('#' + modalId + '-logs-body');
+            if (!logs || !logs.length) {
+                $body.html('<tr><td colspan="3" class="text-center text-muted py-4">無決策歷程紀錄</td></tr>');
+                return;
+            }
+            var rows = logs.map(function (row) {
+                return `<tr>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary">${escapeHtml(row.StageText)}</span></td>
+                        <td class="text-muted">${escapeHtml(row.StepText)}</td>
+                        <td style="white-space:pre-wrap;">${escapeHtml(row.Message)}</td>
+                    </tr>`;
+            });
+            $body.html(rows.join(''));
+        }
 
+        // ── 載入分群資料分頁（伺服器端分頁） ─────────────────────────
+        function loadClusterPage(page) {
             var $body = $('#' + modalId + '-cluster-body');
-            var $rangesEl = $('#' + modalId + '-cluster-ranges');
-            var $noCluster = $('#' + modalId + '-no-cluster');
-            var $pagination = $('#' + modalId + '-cluster-pagination');
-
             $body.html('<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>');
-            $rangesEl.addClass('d-none');
-            $noCluster.addClass('d-none');
-            $pagination.addClass('d-none');
+
+            var params = { page: page, pageSize: clusterPageSize };
+            if (currentBomFileContentId) {
+                params.bomFileContentId = currentBomFileContentId;
+            } else if (clusterMeta) {
+                params.no = clusterMeta.No;
+                params.customerApprovedPartCsv = clusterMeta.CustomerApprovedPartCsv || '';
+                params.lowMinPrice = clusterMeta.LowMinPrice;
+                params.lowMaxPrice = clusterMeta.LowMaxPrice;
+                params.highMinPrice = clusterMeta.HighMinPrice;
+                params.highMaxPrice = clusterMeta.HighMaxPrice;
+            }
 
             $.ajax({
-                url: urls.GetPriceClusterData,
+                url: urls.GetPriceClusterPageList,
                 type: 'GET',
-                data: { bomFileContentId: bomFileContentId },
+                data: params,
                 success: function (res) {
                     if (!res.Success || !res.Data) {
                         $body.html('<tr><td colspan="8" class="text-center text-muted py-4">無資料</td></tr>');
                         return;
                     }
+                    clusterPage = page;
 
-                    clusterRangesData = res.Data.ClusterRanges;
-                    var hasCluster = clusterRangesData &&
-                        (clusterRangesData.LowMinPrice != null || clusterRangesData.LowMaxPrice != null ||
-                            clusterRangesData.HighMinPrice != null || clusterRangesData.HighMaxPrice != null);
-
-                    if (hasCluster) {
-                        $('#' + modalId + '-range-low').text('低價群：' + fmtClusterPrice(clusterRangesData.LowMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.LowMaxPrice));
-                        $('#' + modalId + '-range-high').text('高價群：' + fmtClusterPrice(clusterRangesData.HighMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.HighMaxPrice));
-                        $rangesEl.removeClass('d-none');
-                    } else {
-                        $noCluster.removeClass('d-none');
+                    // 首次載入時填入分群範圍
+                    if (!clusterLoaded) {
+                        clusterRangesData = res.Data.ClusterRanges;
+                        renderClusterRangesUI();
+                        clusterLoaded = true;
                     }
 
-                    clusterRecordsAll = res.Data.Records || [];
-                    clusterPage = 1;
-                    renderClusterPage();
-                    clusterLoaded = true;
+                    clusterTotalCount = res.Data.Total;
+                    renderClusterRows(res.Data.Records || []);
+                    renderClusterPagination(res.Data.Total);
                 },
                 error: function () {
                     $body.html('<tr><td colspan="8" class="text-center text-danger py-4">載入失敗</td></tr>');
@@ -218,29 +258,42 @@
             });
         }
 
-        // ── 渲染當前分頁的分群資料 ────────────────────────────────────
-        function renderClusterPage() {
+        // ── 渲染分群範圍標籤 ──────────────────────────────────────────
+        function renderClusterRangesUI() {
+            var $rangesEl = $('#' + modalId + '-cluster-ranges');
+            var $noCluster = $('#' + modalId + '-no-cluster');
+            var $dataWrapper = $('#' + modalId + '-cluster-data-wrapper');
+
+            $rangesEl.addClass('d-none');
+            $noCluster.addClass('d-none');
+            $dataWrapper.removeClass('d-none');
+
+            var hasCluster = clusterRangesData &&
+                (clusterRangesData.LowMinPrice != null || clusterRangesData.LowMaxPrice != null ||
+                    clusterRangesData.HighMinPrice != null || clusterRangesData.HighMaxPrice != null);
+
+            if (hasCluster) {
+                $('#' + modalId + '-range-low').text('低價群：' + fmtClusterPrice(clusterRangesData.LowMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.LowMaxPrice));
+                $('#' + modalId + '-range-high').text('高價群：' + fmtClusterPrice(clusterRangesData.HighMinPrice) + ' ~ ' + fmtClusterPrice(clusterRangesData.HighMaxPrice));
+                $rangesEl.removeClass('d-none');
+            } else {
+                $dataWrapper.addClass('d-none');
+                $noCluster.removeClass('d-none');
+            }
+        }
+
+        // ── 渲染當前頁的分群資料列 ────────────────────────────────────
+        function renderClusterRows(records) {
             var $body = $('#' + modalId + '-cluster-body');
-            var $pagination = $('#' + modalId + '-cluster-pagination');
-            var $pageInfo = $('#' + modalId + '-cluster-page-info');
-            var $pager = $('#' + modalId + '-cluster-pager');
-
-            var total = clusterRecordsAll.length;
-
-            if (!total) {
+            if (!records || !records.length) {
                 $body.html('<tr><td colspan="8" class="text-center text-muted py-4">無歷史採購紀錄</td></tr>');
-                $pagination.addClass('d-none');
+                $('#' + modalId + '-cluster-pagination').addClass('d-none');
                 return;
             }
-
-            var totalPages = Math.ceil(total / clusterPageSize);
-            var start = (clusterPage - 1) * clusterPageSize;
-            var pageRecords = clusterRecordsAll.slice(start, start + clusterPageSize);
-
-            var rows = pageRecords.map(function (r) {
+            var rows = records.map(function (r) {
                 var badge = buildClusterBadge(r.UnitCostLcy, clusterRangesData);
                 return `<tr>
-                <td class="text-muted small">${escapeHtml(r.DocumentDate || '—')}</td>
+                <td class="text-muted">${escapeHtml(r.DocumentDate || '—')}</td>
                 <td><code class="fs-6">${escapeHtml(r.Description2 || '—')}</code></td>
                 <td>${escapeHtml(r.BuyFromVendorName || '—')}</td>
                 <td class="text-end font-monospace">${fmtPriceVal(r.UnitCost)}</td>
@@ -251,24 +304,36 @@
             </tr>`;
             });
             $body.html(rows.join(''));
+        }
 
-            // 分頁資訊
-            $pageInfo.text(`第 ${start + 1}～${Math.min(start + clusterPageSize, total)} 筆，共 ${total} 筆`);
+        // ── 渲染伺服器端分頁控制列 ───────────────────────────────────
+        function renderClusterPagination(total) {
+            var $pagination = $('#' + modalId + '-cluster-pagination');
+            var $pageInfo = $('#' + modalId + '-cluster-page-info');
+            var $pager = $('#' + modalId + '-cluster-pager');
 
-            // 分頁按鈕
+            if (!total) {
+                $pagination.addClass('d-none');
+                return;
+            }
+
+            var totalPages = Math.ceil(total / clusterPageSize);
+            var start = (clusterPage - 1) * clusterPageSize;
+            $pageInfo.text('第 ' + (start + 1) + '～' + Math.min(start + clusterPageSize, total) + ' 筆，共 ' + total + ' 筆');
+
             var pagerHtml = '';
-            pagerHtml += `<li class="page-item${clusterPage === 1 ? ' disabled' : ''}">
-            <a class="page-link mdl-cluster-page" href="#" data-page="${clusterPage - 1}">‹</a></li>`;
+            pagerHtml += '<li class="page-item' + (clusterPage === 1 ? ' disabled' : '') + '">' +
+                '<a class="page-link mdl-cluster-page" href="#" data-page="' + (clusterPage - 1) + '">‹</a></li>';
             var pageStart = Math.max(1, clusterPage - 2);
             var pageEnd = Math.min(totalPages, clusterPage + 2);
-            if (pageStart > 1) pagerHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+            if (pageStart > 1) pagerHtml += '<li class="page-item disabled"><span class="page-link">…</span></li>';
             for (var p = pageStart; p <= pageEnd; p++) {
-                pagerHtml += `<li class="page-item${p === clusterPage ? ' active' : ''}">
-                <a class="page-link mdl-cluster-page" href="#" data-page="${p}">${p}</a></li>`;
+                pagerHtml += '<li class="page-item' + (p === clusterPage ? ' active' : '') + '">' +
+                    '<a class="page-link mdl-cluster-page" href="#" data-page="' + p + '">' + p + '</a></li>';
             }
-            if (pageEnd < totalPages) pagerHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
-            pagerHtml += `<li class="page-item${clusterPage === totalPages ? ' disabled' : ''}">
-            <a class="page-link mdl-cluster-page" href="#" data-page="${clusterPage + 1}">›</a></li>`;
+            if (pageEnd < totalPages) pagerHtml += '<li class="page-item disabled"><span class="page-link">…</span></li>';
+            pagerHtml += '<li class="page-item' + (clusterPage === totalPages ? ' disabled' : '') + '">' +
+                '<a class="page-link mdl-cluster-page" href="#" data-page="' + (clusterPage + 1) + '">›</a></li>';
             $pager.html(pagerHtml);
             $pagination.toggleClass('d-none', totalPages <= 1);
         }
@@ -277,16 +342,26 @@
         $('#' + modalId).on('click', '.mdl-cluster-page', function (e) {
             e.preventDefault();
             var p = parseInt($(this).data('page'), 10);
-            var totalPages = Math.ceil(clusterRecordsAll.length / clusterPageSize);
+            var totalPages = Math.ceil(clusterTotalCount / clusterPageSize);
             if (p < 1 || p > totalPages) return;
-            clusterPage = p;
-            renderClusterPage();
+            loadClusterPage(p);
         });
 
         // ── Tab 切換時 lazy load 分群資料 ────────────────────────────
         $(document).on('shown.bs.tab', '#' + modalId + '-tab-cluster-btn', function () {
-            if (currentBomFileContentId) {
-                loadPriceClusterData(currentBomFileContentId);
+            if (!clusterLoaded) {
+                // 快查模式：clusterMeta 無分群範圍時不查詢，直接顯示無資料狀態
+                if (currentBomFileContentId === null && clusterMeta !== null) {
+                    var hasRanges = clusterMeta.LowMinPrice != null || clusterMeta.LowMaxPrice != null ||
+                                    clusterMeta.HighMinPrice != null || clusterMeta.HighMaxPrice != null;
+                    if (!hasRanges) {
+                        clusterRangesData = null;
+                        renderClusterRangesUI();
+                        clusterLoaded = true;
+                        return;
+                    }
+                }
+                loadClusterPage(1);
             }
         });
 
@@ -294,8 +369,12 @@
         $('#' + modalId).on('hidden.bs.modal', function () {
             currentBomFileContentId = null;
             clusterLoaded = false;
-            clusterRecordsAll = [];
             clusterRangesData = null;
+            clusterMeta = null;
+            clusterPage = 1;
+            clusterTotalCount = 0;
+            // 恢復 Tab 顯示
+            $('#' + modalId + '-tab-cluster-btn').closest('li').removeClass('d-none');
         });
 
         // ── 輔助函式 ──────────────────────────────────────────────────
@@ -311,22 +390,12 @@
 
         function fmtClusterPrice(val) {
             if (val == null) return '—';
-            return parseFloat(val).toFixed(2);
+            return parseFloat(val);
         }
 
         function fmtPriceVal(val) {
             if (val == null || val === '') return '<span class="text-muted">—</span>';
-            return parseFloat(val).toFixed(4);
-        }
-
-        function fmtClusterPrice(val) {
-            if (val == null) return '—';
-            return parseFloat(val).toFixed(2);
-        }
-
-        function fmtPriceVal(val) {
-            if (val == null || val === '') return '<span class="text-muted">—</span>';
-            return parseFloat(val).toFixed(4);
+            return parseFloat(val);
         }
     }());
 </script>

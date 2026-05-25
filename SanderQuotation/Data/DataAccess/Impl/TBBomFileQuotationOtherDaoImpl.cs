@@ -101,38 +101,42 @@ WHERE 1=1";
         }
 
         /// <summary>
-        /// 依條件刪除資料 (邏輯刪除)
+        /// 依條件刪除資料
         /// </summary>
         /// <param name="searchVO">查詢條件</param>
         /// <param name="account">執行帳號</param>
-        public void DeleteByFilter(SearchVO searchVO, string account)
+        /// <param name="isLogicalDelete">true 為邏輯刪除 (UPDATE status)；false 為物理刪除 (DELETE)</param>
+        public void DeleteByFilter(SearchVO searchVO, string account, bool isLogicalDelete = true)
         {
             StringBuilder condition = new();
             Dictionary<string, object> paras = [];
 
             if (searchVO.IdEq.HasValue)
             {
-                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherEntity.Id)} = @{nameof(searchVO.IdEq)} ");
+                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherDTO.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
             else if (searchVO.IdIn?.Count > 0)
             {
-                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherEntity.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
+                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherDTO.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
                 paras.Add(nameof(searchVO.IdIn), searchVO.IdIn);
             }
             if (searchVO.BomFileContentIdEq.HasValue)
             {
-                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherEntity.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
+                condition.Append($"AND q.{nameof(TBBomFileQuotationOtherDTO.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
                 paras.Add(nameof(searchVO.BomFileContentIdEq), searchVO.BomFileContentIdEq);
             }
 
             ArgumentNullException.ThrowIfNull(condition);
 
-            paras.Add("DeleteStatus", (int)StatusEnum.Cancel);
-            paras.Add("UpdatedBy", account);
-            paras.Add("UpdatedAt", DateTime.Now);
+            string sql;
+            if (isLogicalDelete)
+            {
+                paras.Add("DeleteStatus", (int)StatusEnum.Cancel);
+                paras.Add("UpdatedBy", account);
+                paras.Add("UpdatedAt", DateTime.Now);
 
-            string sql = $@"
+                sql = $@"
 UPDATE tb_bomfilequotationother q
 SET
     status = @DeleteStatus
@@ -141,6 +145,15 @@ SET
 WHERE
     1 = 1
 {condition}";
+            }
+            else
+            {
+                sql = $@"
+DELETE FROM tb_bomfilequotationother q
+WHERE
+    1 = 1
+{condition}";
+            }
 
             DbHelper.Execute(sql, paras);
         }

@@ -3,7 +3,6 @@ using Business.Common;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Helper.DB;
-using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
@@ -116,7 +115,8 @@ namespace Business.BusinessLogic
         {
             string account = SessionVO?.Account ?? string.Empty;
             GetDAO().DeleteByFilter(searchVO, account);
-            _unitOfWork.Commit();
+            if (DoSaveChange)
+                _unitOfWork.Commit();
         }
 
         #endregion -- TBBomFileQuotation --
@@ -242,6 +242,7 @@ namespace Business.BusinessLogic
             entity.InternalItemDescription2 = dm.InternalItemDescription2;
             entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
             entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
+            entity.InternalQuotationDate = nowTime;
             entity.UpdatedBy = account;
             entity.UpdatedAt = nowTime;
             GetDAO().Update(entity);
@@ -281,6 +282,25 @@ namespace Business.BusinessLogic
 
             if (DoSaveChange)
                 _unitOfWork.Commit();
+        }
+
+        /// <summary>
+        /// 取得效期內其他 BomFileContent 的最新內部查價結果（排除指定 BomFileContentId）
+        /// </summary>
+        /// <param name="itemNo">採購型號</param>
+        /// <param name="expirationDays">效期天數</param>
+        /// <param name="excludeBomFileContentId">排除的 BomFileContentId（目前料項本身）</param>
+        /// <returns>最近一筆有效的查價紀錄，找不到則回傳 null</returns>
+        public TBBomFileQuotationDM? GetOneForExpirationCache(string itemNo, int expirationDays, Guid excludeBomFileContentId)
+        {
+            SearchVO searchVO = new();
+            searchVO.SanderModuleItemNoEq = itemNo;
+            searchVO.InternalQuotationDateGte = DateTime.Now.AddDays(-expirationDays);
+            searchVO.BomFileContentIdNeq = excludeBomFileContentId;
+            searchVO.IsLimit1 = true;
+            searchVO.OrderByColumnList = [nameof(SearchVO.InternalQuotationDateOdr)];
+            searchVO.InternalQuotationDateOdr = "DESC";
+            return GetListEnabled(searchVO).FirstOrDefault();
         }
     }
 }

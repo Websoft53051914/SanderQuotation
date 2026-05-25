@@ -19,6 +19,7 @@ namespace Data.DataAccess.Impl
         public List<TBBomFileQuotationDTO> GetListByFilter(SearchVO searchVO)
         {
             StringBuilder condition = new();
+            string orderBy = "q.CreatedAt DESC";
             string sqlLimit = string.Empty;
             Dictionary<string, object> paras = [];
 
@@ -41,12 +42,47 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND q.{nameof(TBBomFileQuotationDTO.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
                 paras.Add(nameof(searchVO.BomFileContentIdEq), searchVO.BomFileContentIdEq);
             }
+            if (!string.IsNullOrWhiteSpace(searchVO.SanderModuleItemNoEq))
+            {
+                condition.Append($"AND q.\"no\" = @{nameof(searchVO.SanderModuleItemNoEq)} ");
+                paras.Add(nameof(searchVO.SanderModuleItemNoEq), searchVO.SanderModuleItemNoEq);
+            }
+            if (searchVO.BomFileContentIdNeq.HasValue)
+            {
+                condition.Append($"AND q.{nameof(TBBomFileQuotationDTO.BomFileContentId)} != @{nameof(searchVO.BomFileContentIdNeq)} ");
+                paras.Add(nameof(searchVO.BomFileContentIdNeq), searchVO.BomFileContentIdNeq);
+            }
+            if (searchVO.CreatedAtGte.HasValue)
+            {
+                condition.Append($"AND q.{nameof(TBBomFileQuotationDTO.CreatedAt)} >= @{nameof(searchVO.CreatedAtGte)} ");
+                paras.Add(nameof(searchVO.CreatedAtGte), searchVO.CreatedAtGte.Value);
+            }
+            if (searchVO.InternalQuotationDateGte.HasValue)
+            {
+                condition.Append($"AND q.{nameof(TBBomFileQuotationDTO.InternalQuotationDate)} >= @{nameof(searchVO.InternalQuotationDateGte)} ");
+                paras.Add(nameof(searchVO.InternalQuotationDateGte), searchVO.InternalQuotationDateGte.Value);
+            }
+            if (searchVO.OrderByColumnList?.Count > 0)
+            {
+                List<string> orderBySub = [];
+                foreach (string item in searchVO.OrderByColumnList)
+                {
+                    if(item == nameof(searchVO.InternalQuotationDateOdr))
+                    {
+                        searchVO.InternalQuotationDateOdr ??= "ASC";
+                        orderBySub.Add($"q.{nameof(TBBomFileQuotationDTO.InternalQuotationDate)} {searchVO.InternalQuotationDateOdr}");
+                    }
+
+                    orderBy = string.Join(",", orderBySub);
+                }
+            }
 
             string sql = $@"
 SELECT q.*
 FROM tb_bomfilequotation q
 WHERE 1=1
 {condition}
+ORDER BY {orderBy}
 {sqlLimit}";
 
             return DbHelper.FindList<TBBomFileQuotationDTO>(sql, paras);

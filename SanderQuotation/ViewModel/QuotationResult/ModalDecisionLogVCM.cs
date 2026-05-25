@@ -11,8 +11,8 @@ namespace ViewModel.QuotationResult
         public string UrlGetDecisionLogs { get; set; } = string.Empty;
 
         /// <summary>
-        /// 取得價格分群資料 API URL
+        /// 取得價格分群資料分頁列表 API URL
         /// </summary>
-        public string UrlGetPriceClusterData { get; set; } = string.Empty;
+        public string UrlGetPriceClusterPageList { get; set; } = string.Empty;
     }
 }

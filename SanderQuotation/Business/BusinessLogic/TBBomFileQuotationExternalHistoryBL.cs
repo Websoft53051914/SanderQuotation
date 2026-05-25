@@ -10,9 +10,9 @@ using Data.DataAccess.Entity;
 namespace Business.BusinessLogic
 {
     /// <summary>
-    /// BOM 現貨優惠價結果
+    /// BOM 外部查價歷史
     /// </summary>
-    public partial class TBBomFileQuotationOtherBL : BaseProjectBL
+    public partial class TBBomFileQuotationExternalHistoryBL : BaseProjectBL
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -21,15 +21,15 @@ namespace Business.BusinessLogic
         /// 建構子
         /// </summary>
         /// <param name="unitOfWork">工作單元</param>
-        public TBBomFileQuotationOtherBL(IUnitOfWork unitOfWork)
+        public TBBomFileQuotationExternalHistoryBL(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
 
             MapperConfiguration cfg = new(c =>
             {
                 c.AllowNullCollections = true;
-                c.CreateMap<TBBomFileQuotationOtherEntity, TBBomFileQuotationOtherDM>().ReverseMap();
-                c.CreateMap<TBBomFileQuotationOtherDTO, TBBomFileQuotationOtherDM>().ReverseMap();
+                c.CreateMap<TBBomFileQuotationExternalHistoryEntity, TBBomFileQuotationExternalHistoryDM>().ReverseMap();
+                c.CreateMap<TBBomFileQuotationExternalHistoryDTO, TBBomFileQuotationExternalHistoryDM>().ReverseMap();
             });
             _mapper = cfg.CreateMapper();
         }
@@ -39,24 +39,24 @@ namespace Business.BusinessLogic
         /// </summary>
         /// <param name="unitOfWork">工作單元</param>
         /// <param name="sessionVO">Session 資訊</param>
-        public TBBomFileQuotationOtherBL(IUnitOfWork unitOfWork, SessionVO sessionVO) : this(unitOfWork)
+        public TBBomFileQuotationExternalHistoryBL(IUnitOfWork unitOfWork, SessionVO sessionVO) : this(unitOfWork)
         {
             base.SessionVO = sessionVO;
         }
     }
 
-    public partial class TBBomFileQuotationOtherBL
+    public partial class TBBomFileQuotationExternalHistoryBL
     {
-        #region -- TBBomFileQuotationOther --
+        #region -- TBBomFileQuotationExternalHistory --
 
-        private ITBBomFileQuotationOtherDAO? _dao = null;
+        private ITBBomFileQuotationExternalHistoryDAO? _dao = null;
 
         /// <summary>
         /// 取得 DAO 實例
         /// </summary>
-        public ITBBomFileQuotationOtherDAO GetDAO()
+        public ITBBomFileQuotationExternalHistoryDAO GetDAO()
         {
-            _dao ??= _unitOfWork.Repository<ITBBomFileQuotationOtherDAO>();
+            _dao ??= _unitOfWork.Repository<ITBBomFileQuotationExternalHistoryDAO>();
 
             return _dao;
         }
@@ -66,14 +66,14 @@ namespace Business.BusinessLogic
         /// </summary>
         /// <param name="searchVO">查詢條件</param>
         /// <returns>DM 清單</returns>
-        public List<TBBomFileQuotationOtherDM> GetListByFilter(SearchVO searchVO)
+        public List<TBBomFileQuotationExternalHistoryDM> GetListByFilter(SearchVO searchVO)
         {
-            List<TBBomFileQuotationOtherDTO> dtoList = GetDAO().GetListByFilter(searchVO);
+            List<TBBomFileQuotationExternalHistoryDTO> dtoList = GetDAO().GetListByFilter(searchVO);
 
-            List<TBBomFileQuotationOtherDM> result = [];
-            foreach (TBBomFileQuotationOtherDTO item in dtoList)
+            List<TBBomFileQuotationExternalHistoryDM> result = [];
+            foreach (TBBomFileQuotationExternalHistoryDTO item in dtoList)
             {
-                TBBomFileQuotationOtherDM dm = _mapper.Map<TBBomFileQuotationOtherDM>(item);
+                TBBomFileQuotationExternalHistoryDM dm = _mapper.Map<TBBomFileQuotationExternalHistoryDM>(item);
                 result.Add(dm);
             }
 
@@ -85,7 +85,7 @@ namespace Business.BusinessLogic
         /// </summary>
         /// <param name="searchVO">查詢條件</param>
         /// <returns>DM 清單</returns>
-        public List<TBBomFileQuotationOtherDM> GetListEnabled(SearchVO searchVO)
+        public List<TBBomFileQuotationExternalHistoryDM> GetListEnabled(SearchVO searchVO)
         {
             searchVO.StatusEq = (int)Enums.StatusEnum.Enabled;
 
@@ -97,7 +97,7 @@ namespace Business.BusinessLogic
         /// </summary>
         /// <param name="id">資料代號</param>
         /// <returns>DM 物件，找不到則回傳 null</returns>
-        public TBBomFileQuotationOtherDM? GetOneInfo(Guid id)
+        public TBBomFileQuotationExternalHistoryDM? GetOneInfo(Guid id)
         {
             SearchVO searchVO = new();
             searchVO.IdEq = id;
@@ -121,13 +121,13 @@ namespace Business.BusinessLogic
             }
         }
 
-        #endregion -- TBBomFileQuotationOther --
+        #endregion -- TBBomFileQuotationExternalHistory --
 
         /// <summary>
-        /// 新增
+        /// 新增一筆外部查價歷史
         /// </summary>
-        /// <param name="dm">DM 物件，BomFileContentId 與 SourceType 須已填妥</param>
-        public void DoInsert(TBBomFileQuotationOtherDM dm)
+        /// <param name="dm">DM 物件，查價相關欄位須已填妥</param>
+        public void DoInsert(TBBomFileQuotationExternalHistoryDM dm)
         {
             string account = SessionVO?.Account ?? string.Empty;
             DateTime nowTime = DateTime.Now;
@@ -138,7 +138,7 @@ namespace Business.BusinessLogic
             dm.UpdatedAt = nowTime;
             dm.UpdatedBy = account;
 
-            TBBomFileQuotationOtherEntity entity = _mapper.Map<TBBomFileQuotationOtherEntity>(dm);
+            TBBomFileQuotationExternalHistoryEntity entity = _mapper.Map<TBBomFileQuotationExternalHistoryEntity>(dm);
             GetDAO().InsertAction(entity);
             if (DoSaveChange)
             {
@@ -147,21 +147,38 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 依已對應的 DM 新增一筆現貨優惠價（設定 BomFileContentId 與 SourceType 後存入）
+        /// 批次新增外部查價歷史，統一 Commit 一次
         /// </summary>
-        /// <param name="bomFileContentId">BOM 料項識別碼</param>
-        /// <param name="sourceType">來源類型（對應 BomFileQuotationOtherSourceTypeEnum）</param>
-        /// <param name="dm">已由呼叫端完成 VO→DM 對應的資料模型</param>
-        public void DoInsertFromApiResult(Guid bomFileContentId, int sourceType, TBBomFileQuotationOtherDM dm)
+        /// <param name="dmList">DM 清單</param>
+        public void BatchInsert(List<TBBomFileQuotationExternalHistoryDM> dmList)
         {
-            dm.BomFileContentId = bomFileContentId;
-            dm.SourceType = sourceType;
-            DoInsert(dm);
+            DoSaveChange = false;
+
+            foreach (TBBomFileQuotationExternalHistoryDM dm in dmList)
+            {
+                DoInsert(dm);
+            }
+
+            DoSaveChange = true;
+            _unitOfWork.Commit();
+        }
+
+        /// <summary>
+        /// 依廠商型號查詢效期內所有啟用的外部查價歷史清單
+        /// </summary>
+        /// <param name="mpn">廠商型號</param>
+        /// <param name="expirationDays">效期天數</param>
+        /// <returns>效期內的外部查價歷史清單</returns>
+        public List<TBBomFileQuotationExternalHistoryDM> GetListForExpirationCache(string mpn, int expirationDays)
+        {
+            SearchVO searchVO = new();
+            searchVO.ManufacturerPartNumberEq = mpn;
+            searchVO.QuotationDateGte = DateTime.Now.Date.AddDays(-expirationDays);
+            return GetListEnabled(searchVO);
         }
     }
 
-    public partial class TBBomFileQuotationOtherBL
+    public partial class TBBomFileQuotationExternalHistoryBL
     {
     }
 }
-

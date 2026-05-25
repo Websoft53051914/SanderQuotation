@@ -29,17 +29,17 @@ namespace Data.DataAccess.Impl
             }
             if (searchVO.IdEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Id)} = @{nameof(searchVO.IdEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
             if (searchVO.StatusEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Status)} = @{nameof(searchVO.StatusEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.Status)} = @{nameof(searchVO.StatusEq)} ");
                 paras.Add(nameof(searchVO.StatusEq), searchVO.StatusEq);
             }
             if (searchVO.BomFileContentIdEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
                 paras.Add(nameof(searchVO.BomFileContentIdEq), searchVO.BomFileContentIdEq);
             }
 
@@ -48,7 +48,7 @@ SELECT l.*
 FROM tb_bomfiledecisionlog l
 WHERE 1=1
 {condition}
-ORDER BY l.{nameof(TBBomFileDecisionLogEntity.Stage)}, l.{nameof(TBBomFileDecisionLogEntity.Step)}
+ORDER BY l.Stage, l.Step
 {sqlLimit}";
 
             return DbHelper.FindList<TBBomFileDecisionLogDTO>(sql, paras);
@@ -66,22 +66,22 @@ ORDER BY l.{nameof(TBBomFileDecisionLogEntity.Stage)}, l.{nameof(TBBomFileDecisi
 
             if (searchVO.IdEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Id)} = @{nameof(searchVO.IdEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.Id)} = @{nameof(searchVO.IdEq)} ");
                 paras.Add(nameof(searchVO.IdEq), searchVO.IdEq);
             }
             else if (searchVO.IdIn?.Count > 0)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
                 paras.Add(nameof(searchVO.IdIn), searchVO.IdIn);
             }
             if (searchVO.BomFileContentIdEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.BomFileContentId)} = @{nameof(searchVO.BomFileContentIdEq)} ");
                 paras.Add(nameof(searchVO.BomFileContentIdEq), searchVO.BomFileContentIdEq);
             }
             if (searchVO.StageEq.HasValue)
             {
-                condition.Append($"AND l.{nameof(TBBomFileDecisionLogEntity.Stage)} = @{nameof(searchVO.StageEq)} ");
+                condition.Append($"AND l.{nameof(TBBomFileDecisionLogDTO.Stage)} = @{nameof(searchVO.StageEq)} ");
                 paras.Add(nameof(searchVO.StageEq), searchVO.StageEq);
             }
 

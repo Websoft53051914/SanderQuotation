@@ -18,12 +18,12 @@ namespace Data.DataAccess.Dao
         List<SanderModulePurchaseLineDTO> GetListByFilter(SearchVO searchVO);
 
         /// <summary>
-        /// 分頁查詢清單
+        /// 分頁查詢清單-價格分群
         /// </summary>
         /// <param name="pageEntity">分頁資訊</param>
         /// <param name="searchVO">查詢條件</param>
         /// <returns>分頁清單資料</returns>
-        PageResult<SanderModulePurchaseLineDTO> GetPageList(PageEntity pageEntity, SearchVO searchVO);
+        PageResult<SanderModulePurchaseLineDTO> GetPageListPriceCluster(PageEntity pageEntity, SearchVO searchVO);
 
         /// <summary>
         /// 依條件刪除資料

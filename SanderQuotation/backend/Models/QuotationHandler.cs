@@ -1,9 +1,11 @@
 using backend.AI;
 using backend.Common;
+using backend.Common.ConfigurationHelper;
 using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
 using Const;
+using Core.Utility.Extensions;
 using static Const.Enums;
 
 namespace backend.Models
@@ -18,6 +20,7 @@ namespace backend.Models
         private readonly ExternalQuotationNexarHandler _externalQuotationNexarHandler;
         private readonly ExtractKeywordHandler _extractKeywordHandler;
         private readonly ManualBatchEmbedding _manualBatchEmbedding;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// 優先供應商快取（Lazy Loading；每次排程執行前設為 null 可清除快取）
@@ -40,6 +43,11 @@ namespace backend.Models
         public bool RunExternal { get; set; } = true;
 
         /// <summary>
+        /// 是否依效期快取嘗試辨識已有查價結果（true = 有效期內直接契用，false = 強制重新查價）
+        /// </summary>
+        public bool UseExpirationCache { get; set; } = true;
+
+        /// <summary>
         /// 建構子
         /// </summary>
         /// <param name="scopeFactory">DI Scope 工廠</param>
@@ -47,18 +55,21 @@ namespace backend.Models
         /// <param name="externalQuotationNexarHandler">Nexar 外部查價處理器</param>
         /// <param name="extractKeywordHandler">AI 關鍵字抽取處理器（用於 Variant 客戶承認料抽取）</param>
         /// <param name="manualBatchEmbedding">向量化處理器（用於查料 Step3 Description 向量搜尋）</param>
+        /// <param name="configuration">應用程式設定</param>
         public QuotationHandler(
             IServiceScopeFactory scopeFactory,
             OrderPriceDecison orderPriceDecison,
             ExternalQuotationNexarHandler externalQuotationNexarHandler,
             ExtractKeywordHandler extractKeywordHandler,
-            ManualBatchEmbedding manualBatchEmbedding)
+            ManualBatchEmbedding manualBatchEmbedding,
+            IConfiguration configuration)
         {
             _scopeFactory = scopeFactory;
             _orderPriceDecison = orderPriceDecison;
             _externalQuotationNexarHandler = externalQuotationNexarHandler;
             _extractKeywordHandler = extractKeywordHandler;
             _manualBatchEmbedding = manualBatchEmbedding;
+            _configuration = configuration;
         }
     }
 
@@ -133,6 +144,37 @@ namespace backend.Models
                 return;
             }
 
+            if (UseExpirationCache)
+            {
+                ConfigurationHelper configHelper = new(_configuration);
+                int internalExpirationDays = configHelper.GetIntValue("InternalQuotation:ExpirationDay");
+
+                TBBomFileQuotationBL blTBBomFileQuotation = BLFactory.GetInstanceBackGround<TBBomFileQuotationBL>();
+                TBBomFileQuotationDM? cachedQuotation = blTBBomFileQuotation.GetOneForExpirationCache(itemNo, internalExpirationDays, content.Id);
+
+                if (cachedQuotation != null && cachedQuotation.InternalUnitPriceTwd.HasValue)
+                {
+                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.InternalQuotation, (int)BomFileDecisionLogStepEnum.InternalQuotationResult,
+                        $"[效期快取] 採用 {internalExpirationDays} 天內紀錄，單價（TWD）= {cachedQuotation.InternalUnitPriceTwd}，查價時間：{cachedQuotation.InternalQuotationDate:yyyy-MM-dd HH:mm}");
+
+                    content.InternalPurchaseOrderDate = cachedQuotation.InternalPurchaseOrderDate;
+                    content.InternalUnitPriceOriginalCurrency = cachedQuotation.InternalUnitPriceOriginalCurrency;
+                    content.InternalUnitPriceTwd = cachedQuotation.InternalUnitPriceTwd;
+                    content.InternalQuantity = cachedQuotation.InternalQuantity;
+                    content.InternalCurrency = cachedQuotation.InternalCurrency;
+                    content.InternalSupplierName = cachedQuotation.InternalSupplierName;
+                    content.InternalSupplierCode = cachedQuotation.InternalSupplierCode;
+                    content.InternalItemDescription2 = cachedQuotation.InternalItemDescription2;
+                    content.InternalLowMinPrice = cachedQuotation.InternalLowMinPrice;
+                    content.InternalLowMaxPrice = cachedQuotation.InternalLowMaxPrice;
+                    content.InternalHighMinPrice = cachedQuotation.InternalHighMinPrice;
+                    content.InternalHighMaxPrice = cachedQuotation.InternalHighMaxPrice;
+                    content.IsFilterByCustomerApprovedPart = cachedQuotation.IsFilterByCustomerApprovedPart;
+                    content.CustomerApprovedPartCsv = cachedQuotation.CustomerApprovedPartCsv;
+                    return;
+                }
+            }
+
             List<string>? approvedParts = await ResolveCustomerApprovedPartsAsync(itemNo, customerCode, content);
 
             // 以 SearchVO 篩選：UnitCostLcy > 0，並依客戶承認料限縮 Description2
@@ -204,9 +246,52 @@ namespace backend.Models
             }
 
             int qty = (content.Qty ?? 0) * quotationQty;
-            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationNexarQuery, $"MPN：{mpn}，查詢數量：{qty}");
-
             List<string> preferredVendorList = GetPreferredVendorList();
+
+            if (UseExpirationCache)
+            {
+                ConfigurationHelper configHelper = new(_configuration);
+                int externalExpirationDays = configHelper.GetIntValue("ExternalQuotation:ExpirationDay");
+
+                TBBomFileQuotationExternalHistoryBL blTBBomFileQuotationExternalHistory = BLFactory.GetInstanceBackGround<TBBomFileQuotationExternalHistoryBL>();
+                List<TBBomFileQuotationExternalHistoryDM> historyList = blTBBomFileQuotationExternalHistory.GetListForExpirationCache(mpn, externalExpirationDays);
+
+                List<TBBomFileQuotationExternalHistoryDM> filteredList = historyList
+                    .Where(h => (h.Moq ?? 0) <= qty && (h.Stock ?? 0) >= qty && (h.UnitPriceTwd.HasValue || h.UnitPriceOriginalCurrency.HasValue))
+                    .GroupBy(h => h.SupplierName ?? string.Empty)
+                    .Select(g => g.OrderByDescending(h => h.Moq ?? 0).ThenBy(h => h.UnitPriceTwd ?? decimal.MaxValue).First())
+                    .ToList();
+
+                if (filteredList.Count > 0)
+                {
+                    List<TBBomFileQuotationExternalHistoryDM> preferredList = filteredList
+                        .Where(h => preferredVendorList.Contains(h.SupplierName ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                        .ToList();
+
+                    TBBomFileQuotationExternalHistoryDM selected = preferredList.Count > 0
+                        ? preferredList.OrderBy(h => h.UnitPriceTwd ?? decimal.MaxValue).First()
+                        : filteredList.OrderBy(h => h.UnitPriceTwd ?? decimal.MaxValue).First();
+
+                    bool isPreferred = preferredList.Count > 0;
+
+                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationResult,
+                        $"[效期快取] 採用 {externalExpirationDays} 天內外部查價紀錄，MPN：{mpn}，供應商：{selected.SupplierName}，單價（TWD）= {selected.UnitPriceTwd}，查價日期：{selected.QuotationDate:yyyy-MM-dd}，情境：{(isPreferred ? ExternalScenarioEnum.PreferredVendor.GetDescription() : ExternalScenarioEnum.Fallback.GetDescription())}");
+
+                    content.ExternalQuotationDate = selected.QuotationDate;
+                    content.ExternalUnitPriceOriginalCurrency = selected.UnitPriceOriginalCurrency;
+                    content.ExternalUnitPriceTwd = selected.UnitPriceTwd;
+                    content.ExternalMoq = selected.Moq;
+                    content.ExternalCurrency = selected.Currency;
+                    content.ExternalSupplierName = selected.SupplierName;
+                    content.ExternalStock = selected.Stock;
+                    content.ExternalScenario = isPreferred
+                        ? (int)ExternalScenarioEnum.PreferredVendor
+                        : (int)ExternalScenarioEnum.Fallback;
+                    return;
+                }
+            }
+
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.ExternalQuotation, (int)BomFileDecisionLogStepEnum.ExternalQuotationNexarQuery, $"MPN：{mpn}，查詢數量：{qty}");
 
             PriceBomVO bomVO = new();
             bomVO.ManufacturerPartNumber = mpn;
@@ -228,6 +313,10 @@ namespace backend.Models
                 content.ExternalScenario = externalResult.IsPreferred
                     ? (int)ExternalScenarioEnum.PreferredVendor
                     : (int)ExternalScenarioEnum.Fallback;
+            }
+            else if (!string.IsNullOrWhiteSpace(externalResult.ErrorMessage))
+            {
+                resultMsg = $"查詢失敗，錯誤訊息：{externalResult.ErrorMessage}";
             }
             else
             {
@@ -759,5 +848,10 @@ namespace backend.Models
         /// 是否為優先供應商報價
         /// </summary>
         public bool IsPreferred { get; set; }
+
+        /// <summary>
+        /// 錯誤訊息
+        /// </summary>
+        public string? ErrorMessage { get; set; }
     }
 }

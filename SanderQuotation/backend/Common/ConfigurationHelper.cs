@@ -44,29 +44,19 @@ namespace backend.Common.ConfigurationHelper
 
         private static readonly Dictionary<string, string> _dictDefaultValueConfig = new()
         {
-            // 社區公告顯示畫面設定
-            // 取得動態資料(公告、廣告、警告、版型更新)的間隔秒數
-            { "NoticeTemplate:GetDataIntervalSec", "10" },
-            // 預設廣告輪詢秒數
-            { "NoticeTemplate:DefaultAdPlaySec", "5" },
-            // 公告輪詢秒數
-            { "NoticeTemplate:NoticeIntervalSec", "10" },
-            // 重整頁面秒數
-            { "NoticeTemplate:ReloadSec", "1800" },
-            // 公告跑馬燈動畫時間
-            { "NoticeTemplate:MarqueeSpeedSec", "15" },
-            // 車道顯示畫面設定
-            // 取得動態資料(警告、版型更新)的間隔秒數
-            { "CarTemplate:GetDataIntervalSec", "10" },
-            // 燈號內文字樣式
-            { "CarTemplate:SignSecondTextStyle", "font-family:sans-serif;font-size:100px;color:white" },
-            // 燈號內秒數樣式
-            { "CarTemplate:SignSecondNumberStyle", "font-family:sans-serif;font-size:230px;color:white" },
-             // 重整頁面秒數
-            { "CarTemplate:ReloadSec", "1800" },
-            // Line 推播
-            // 公告訊息寄送時間
-            { "SendMessageService:CommunityNoticeSendTime", "08:00" },
+            #region -- 外部查價 --
+            // 外部查價效期天數
+            { "ExternalQuotation:ExpirationDay", "7" },
+            // Nexar API ClientId
+            { "ExternalQuotation:Nexar:ClientId", string.Empty },
+            // Nexar API ClientSecret
+            { "ExternalQuotation:Nexar:ClientSecret", string.Empty },
+	        #endregion
+            #region -- 內部查價 --
+            // 內部查價效期天數
+            { "InternalQuotation:ExpirationDay", "1" },
+	        #endregion
+            
         };
 
         /// <summary>

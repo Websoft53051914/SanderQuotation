@@ -348,6 +348,115 @@ namespace Business.BusinessLogic
 
     public partial class EsFileTransferUploadBL
     {
+        /// <summary>
+        /// 刪除上傳紀錄及所有關聯資料（TBBomFileDecisionLog、BomFileContent、TBBomFileQuotation、TBBomFileQuotationExternalHistory）
+        /// </summary>
+        /// <param name="idList">EsFileTransferUpload ID 清單</param>
+        public void DoDelete(List<Guid> idList)
+        {
+            BomFileContentBL blBomFileContent = GetBLBomFileContent();
+            TBBomFileDecisionLogBL blDecisionLog = GetBLTBBomFileDecisionLog();
+            TBBomFileQuotationBL blQuotation = GetBLTBBomFileQuotation();
+            TBBomFileQuotationOtherBL blTBBomFileQuotationOther = GetBLTBBomFileQuotationOther();
 
+            blBomFileContent.DoSaveChange = false;
+            blDecisionLog.DoSaveChange = false;
+            blQuotation.DoSaveChange = false;
+            blTBBomFileQuotationOther.DoSaveChange = false;
+
+            foreach (Guid id in idList)
+            {
+                EsFileTransferUploadDM? upload = GetOneInfo(id);
+                if (upload?.UploadId == null) continue;
+
+                SearchVO svBomContent = new();
+                svBomContent.UploadIdEq = upload.UploadId;
+                List<BomFileContentDM> contentList = blBomFileContent.GetListByFilter(svBomContent);
+
+                foreach (BomFileContentDM content in contentList)
+                {
+                    SearchVO svByContentId = new();
+                    svByContentId.BomFileContentIdEq = content.Id;
+
+                    blDecisionLog.DeleteByFilter(svByContentId);
+                    blQuotation.DeleteByFilter(svByContentId);
+                    blTBBomFileQuotationOther.DeleteByFilter(svByContentId);
+                }
+
+                blBomFileContent.DeleteByFilter(svBomContent);
+            }
+
+            SearchVO svUpload = new();
+            svUpload.IdIn = idList;
+            DeleteByFilter(svUpload);
+
+            blBomFileContent.DoSaveChange = true;
+            blDecisionLog.DoSaveChange = true;
+            blTBBomFileQuotationOther.DoSaveChange = true;
+            blQuotation.DoSaveChange = true;        
+        }
+    }
+
+    public partial class EsFileTransferUploadBL
+    {
+        private BomFileContentBL? _blBomFileContent = null;
+        /// <summary>
+        /// 取得 BomFileContentBL 實例
+        /// </summary>
+        protected BomFileContentBL GetBLBomFileContent()
+        {
+            _blBomFileContent ??= new BomFileContentBL(_unitOfWork, SessionVO ?? new());
+            _blBomFileContent._Configuration = _Configuration;
+
+            return _blBomFileContent;
+        }
+
+        private TBBomFileDecisionLogBL? _blTBBomFileDecisionLog = null;
+        /// <summary>
+        /// 取得 TBBomFileDecisionLogBL 實例
+        /// </summary>
+        protected TBBomFileDecisionLogBL GetBLTBBomFileDecisionLog()
+        {
+            _blTBBomFileDecisionLog ??= new TBBomFileDecisionLogBL(_unitOfWork, SessionVO ?? new());
+            _blTBBomFileDecisionLog._Configuration = _Configuration;
+
+            return _blTBBomFileDecisionLog;
+        }
+
+        private TBBomFileQuotationBL? _blTBBomFileQuotation = null;
+        /// <summary>
+        /// 取得 TBBomFileQuotationBL 實例
+        /// </summary>
+        protected TBBomFileQuotationBL GetBLTBBomFileQuotation()
+        {
+            _blTBBomFileQuotation ??= new TBBomFileQuotationBL(_unitOfWork, SessionVO ?? new());
+            _blTBBomFileQuotation._Configuration = _Configuration;
+
+            return _blTBBomFileQuotation;
+        }
+
+        private TBBomFileQuotationOtherBL? _blTBBomFileQuotationOther = null;
+        /// <summary>
+        /// 取得 TBBomFileQuotationOtherBL 實例
+        /// </summary>
+        protected TBBomFileQuotationOtherBL GetBLTBBomFileQuotationOther()
+        {
+            _blTBBomFileQuotationOther ??= new TBBomFileQuotationOtherBL(_unitOfWork, SessionVO ?? new());
+            _blTBBomFileQuotationOther._Configuration = _Configuration;
+
+            return _blTBBomFileQuotationOther;
+        }
+
+        private TBBomFileQuotationExternalHistoryBL? _blTBBomFileQuotationExternalHistory = null;
+        /// <summary>
+        /// 取得 TBBomFileQuotationExternalHistoryBL 實例
+        /// </summary>
+        protected TBBomFileQuotationExternalHistoryBL GetBLTBBomFileQuotationExternalHistory()
+        {
+            _blTBBomFileQuotationExternalHistory ??= new TBBomFileQuotationExternalHistoryBL(_unitOfWork, SessionVO ?? new());
+            _blTBBomFileQuotationExternalHistory._Configuration = _Configuration;
+
+            return _blTBBomFileQuotationExternalHistory;
+        }
     }
 }

@@ -1,5 +1,8 @@
 ﻿namespace Const
 {
+    /// <summary>
+    /// 篩選
+    /// </summary>
     public partial class SearchVO
     {
         /// <summary>
@@ -107,7 +110,10 @@
         /// </summary>
         public List<string> TypeStrIn { get; set; } = [];
 
-        public List<Guid> HistoryFileIdIn { get; set; } = [];
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        public DateTime? CreatedAtGte { get; set; }
     }
 
     public partial class SearchVO
@@ -204,5 +210,41 @@
         /// TBBomFileDecisionLog 決策階段
         /// </summary>
         public List<int> StageIn { get; set; } = [];
+
+        /// <summary>
+        /// 廠商型號
+        /// </summary>
+        public string? ManufacturerPartNumberEq { get; set; }
+
+        /// <summary>
+        /// 查價日期
+        /// </summary>
+        public DateTime? QuotationDateGte { get; set; }
+
+        /// <summary>
+        /// BomFileContent.Id
+        /// </summary>
+        public Guid? BomFileContentIdNeq { get; set; }
+
+        /// <summary>
+        /// 內部查價日期
+        /// </summary>
+        public DateTime? InternalQuotationDateGte { get; set; }
+    }
+
+    /// <summary>
+    /// 排序
+    /// </summary>
+    public partial class SearchVO
+    {
+        /// <summary>
+        /// 排序欄位
+        /// </summary>
+        public List<string> OrderByColumnList { get; set; } = [];
+
+        /// <summary>
+        /// 內部查價日期
+        /// </summary>
+        public string? InternalQuotationDateOdr { get; set; } = "ASC";
     }
 }

@@ -90,10 +90,10 @@ namespace backend.EIPSource
                     try
                     {
                         _quotationHandler.RunExternal = false;
-                        if (i == 0 || i == 1)
-                        {
-                            _quotationHandler.RunExternal = true;
-                        }
+                        //if (i == 0 || i == 1)
+                        //{
+                        //    _quotationHandler.RunExternal = true;
+                        //}
 
                         BomFileContentDM result = await _quotationHandler.RunAsync(content, upload);
                         results.Add(result);

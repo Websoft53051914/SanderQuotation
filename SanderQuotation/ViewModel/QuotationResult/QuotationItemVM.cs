@@ -131,5 +131,8 @@ namespace ViewModel.QuotationResult
 
         /// <summary>DigiKey 供應商名稱</summary>
         public string? DkSupplierName { get; set; }
+
+        /// <summary>是否套用 Variant 客戶承認料過濾（文字：是/否）</summary>
+        public string? IsFilterByCustomerApprovedPartText { get; set; }
     }
 }

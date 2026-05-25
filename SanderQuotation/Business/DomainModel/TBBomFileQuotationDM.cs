@@ -139,5 +139,10 @@ namespace Business.DomainModel
         /// 外部查價情境（對應 ExternalScenarioEnum：1=情境A優先名單 2=情境B後備）
         /// </summary>
         public int? ExternalScenario { get; set; }
+
+        /// <summary>
+        /// 內部查價日期（每次執行內部查價時更新）
+        /// </summary>
+        public DateTime? InternalQuotationDate { get; set; }
     }
 }

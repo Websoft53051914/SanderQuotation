@@ -370,5 +370,15 @@ namespace backend.Controllers
             _blTBBomFileQuotationOther ??= GetBLInstance<TBBomFileQuotationOtherBL>();
             return _blTBBomFileQuotationOther;
         }
+
+        private TBSysSettingBL? _blTBSysSetting = null;
+        /// <summary>
+        /// TBSysSettingBL
+        /// </summary>
+        protected TBSysSettingBL GetBlTBSysSetting()
+        {
+            _blTBSysSetting ??= GetBLInstance<TBSysSettingBL>();
+            return _blTBSysSetting;
+        }
     }
 }
