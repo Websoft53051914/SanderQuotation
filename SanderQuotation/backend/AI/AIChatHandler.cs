@@ -58,9 +58,6 @@ namespace backend.AI
             return $@"
 你是一個智慧資料查詢助理，可以透過工具（Function）查詢系統內的資料，並以自然語言回答使用者。
 
-# 可使用的工具
-- query_history_files：查詢歷史上傳檔案相關資料（例如：筆數、上傳者、特定日期、語意相似的檔案等）
-
 # 行為規則
 1. 若使用者的問題與上述工具能查詢的資料有關，請呼叫對應的工具取得資料，再以繁體中文友善地回答。
 2. 若問題與任何工具的查詢範圍完全無關（例如：問天氣、新聞、閒聊），請直接回覆：{CannotAnswerTag}
@@ -226,10 +223,6 @@ namespace backend.AI
                 {
                     using var doc = JsonDocument.Parse(content);
                     var root = doc.RootElement;
-
-                    // 取 rowCount
-                    if (root.TryGetProperty("rowCount", out var rc))
-                        response.RowCount = rc.GetInt32();
 
                     // 取 sql（由 HistoryFileQueryPlugin 寫入）
                     if (root.TryGetProperty("sql", out var sqlProp))

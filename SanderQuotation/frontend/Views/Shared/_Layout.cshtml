@@ -665,7 +665,7 @@
         </div>
         <div id="aiChatMessages">
             <div class="ai-msg bot">
-                <div class="bubble">您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?<br>例如：「昨天有幾筆上傳的檔案？」</div>
+                <div class="bubble">您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?</div>
                 <div class="msg-time" id="aiInitTime"></div>
             </div>
         </div>
@@ -725,7 +725,7 @@
             }
             _sessionId = null;
             $msgs.empty();
-                    appendBotMsg('您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?\n例如：「昨天有幾筆上傳的檔案？」', null, null);
+                    appendBotMsg('您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?');
             $('#aiInitTime').text(formatTime(new Date()));
             $panel.addClass('open');
             $toggle.addClass('hidden');
@@ -756,32 +756,12 @@
             scrollBottom();
         }
 
-        // ── 加入 AI 訊息（含可展開 SQL）──
-        function appendBotMsg(text, sql, rowCount) {
+        // ── 加入 AI 訊息──
+        function appendBotMsg(text) {
             var safeText = $('<span>').text(text).html().replace(/\n/g, '<br>');
-
-            var rowBadge = '';
-            if (rowCount !== null && rowCount !== undefined) {
-                rowBadge = '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">' +
-                    '<i class="ri-database-2-line"></i> 共 ' + rowCount + ' 筆</div>';
-            }
-
-            var sqlBlock = '';
-            if (sql) {
-                var sqlId = 'sql_' + Date.now();
-                sqlBlock = '<div class="ai-sql-block">' +
-                    '<button class="ai-sql-toggle" data-target="' + sqlId + '">' +
-                        '<i class="ri-code-s-slash-line"></i> 查看執行 SQL' +
-                    '</button>' +
-                    '<div class="ai-sql-code" id="' + sqlId + '">' +
-                        $('<span>').text(sql).html() +
-                    '</div>' +
-                '</div>';
-            }
 
             var $m = $('<div class="ai-msg bot">' +
                 '<div class="bubble">' + safeText + '</div>' +
-                rowBadge + sqlBlock +
                 '<div class="msg-time">' + formatTime(new Date()) + '</div>' +
                 '</div>');
             $msgs.append($m);
@@ -832,18 +812,18 @@
 
                     if (resp && resp.Success) {
                         _sessionId = resp.SessionId;   // 保存 sessionId 供下輪追問
-                        appendBotMsg(resp.Answer, resp.GeneratedSql, resp.RowCount);
+                        appendBotMsg(resp.Answer);
                     } else {
-                        appendBotMsg((resp && resp.Answer) ? resp.Answer : '發生未知錯誤，請稍後再試。', null, null);
+                        appendBotMsg((resp && resp.Answer) ? resp.Answer : '發生未知錯誤，請稍後再試。');
                     }
                 },
                 error: function (xhr) {
                     $('#aiThinkingRow').remove();
                     $panel.removeClass('ai-sending');
                     if (xhr.status === 401 || xhr.status === 403) {
-                        appendBotMsg('⚠️ 您沒有使用此功能的權限。', null, null);
+                        appendBotMsg('⚠️ 您沒有使用此功能的權限。');
                     } else {
-                        appendBotMsg('連線失敗（HTTP ' + xhr.status + '），請稍後再試。', null, null);
+                        appendBotMsg('連線失敗（HTTP ' + xhr.status + '），請稍後再試。');
                     }
                 }
             });
