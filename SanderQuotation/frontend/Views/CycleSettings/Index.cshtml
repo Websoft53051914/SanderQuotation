@@ -151,15 +151,15 @@
 
 <!-- 新增 / 編輯 Modal -->
 <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
                 <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
                 <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
-            <form class="needs-validation" novalidate="" method="post" id="submitForm">
-                <div class="modal-body">
+            <div class="modal-body">
+                <form class="needs-validation" novalidate="" method="post" id="submitForm">
                     <div class="row g-3">
 
                         <!-- ── 區塊一：基本資訊 ── -->
@@ -182,11 +182,11 @@
                         <div class="col-lg-6">
                             <label class="col-form-label pt-0">其他任務</label>
                             <select class="form-control" id="OtherTransferSettings" name="OtherTransferSettings" multiple>
-                                @foreach(var item in otherTransferSettingSelectList)
+                                @foreach (var item in otherTransferSettingSelectList)
                                 {
                                     <option value="@item.Value">@item.Text.ToHtmlString()</option>
                                 }
-)
+                                )
                             </select>
                         </div>
                         <div class="col-lg-6">
@@ -408,14 +408,16 @@
                         </div>
 
                     </div>
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="submit" class="btn btn-success" id="add-btn" form="submitForm">儲存</button>
                 </div>
-                <div class="modal-footer">
-                    <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                        <button type="submit" class="btn btn-success" id="add-btn">儲存</button>
-                    </div>
-                </div>
-            </form>
+            </div>
+
         </div>
     </div>
 </div>
