@@ -9,5 +9,6 @@ namespace Data.DataAccess.Dao
 {
     public interface IAILogDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<AILogEntity>
     {
+        void DeleteOldLog(int days);
     }
 }

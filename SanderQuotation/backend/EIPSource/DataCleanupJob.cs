@@ -15,6 +15,7 @@ namespace backend.EIPSource
     /// 4. 刪除 15 天前的 esScheduleCycleLog
     /// 5. 刪除 status &lt;&gt; 1 且 5 天以前的 HistoryFile 及其實體檔案
     /// 6. 刪除 status &lt;&gt; 1 且 5 天以前的 EsFileTransferUpload 及其實體檔案
+    /// 7. 刪除 30 天前的 ailog (不論 status)，確保資料庫不會累積過多無用資料
     /// </summary>
     public class DataCleanupJob
     {
@@ -40,6 +41,7 @@ namespace backend.EIPSource
             int CycleLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:CycleLogRetentionDays",15);
             int HistoryFileRetentionDays = _config.GetValue<int>("DataCleanupSettings:HistoryFileRetentionDays", 5);
             int EsFileTransferUploadRetentionDays = _config.GetValue<int>("DataCleanupSettings:EsFileTransferUploadRetentionDays", 5);
+            int AILogRetentionDays  = _config.GetValue<int>("DataCleanupSettings:AILogRetentionDays", 30);
             await Task.Run(() =>
             {
                 try
@@ -102,6 +104,17 @@ namespace backend.EIPSource
                     // 刪除 status <> 1 且 5 天以前的 EsFileTransferUpload 記錄及實體檔案
                     EsFileTransferUploadBL esFileTransferUploadBL = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>(_config);
                     esFileTransferUploadBL.DeleteOldNonActiveFiles(EsFileTransferUploadRetentionDays, _pathProvider.EsFileTransferUpload);
+                }
+                catch (Exception ex)
+                {
+                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                }
+
+                try
+                {
+                    // 刪除 30 天前的 ailog (不論 status)
+                    AILogBL aiLogBL = BLFactory.GetInstanceBackGround<AILogBL>(_config);
+                    aiLogBL.DeleteOldLog(AILogRetentionDays);
                 }
                 catch (Exception ex)
                 {

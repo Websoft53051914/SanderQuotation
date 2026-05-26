@@ -64,8 +64,14 @@ namespace Business.BusinessLogic
             GetDAO().Insert(entity);
         }
 
+        /// <summary>
+        /// 刪除 N 天前的排程執行紀錄 (esScheduleCycleLog)
+        /// </summary>
+        public void DeleteOldLog(int days)
+        {
+            GetDAO().DeleteOldLog(days);
+        }
 
 
-       
     }
 }
