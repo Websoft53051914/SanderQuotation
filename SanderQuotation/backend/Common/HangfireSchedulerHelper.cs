@@ -1,4 +1,7 @@
-﻿using Hangfire;
+﻿using Const;
+using Hangfire;
+using Hangfire.Storage;
+using static Const.Enums;
 
 namespace backend.Common
 {
@@ -7,24 +10,127 @@ namespace backend.Common
         /// <summary>
         /// 設定定時工作
         /// </summary>
-        /// <param name="scheduleCycleCode"></param>
-        /// <param name="cronExpression"></param>
         public void InsertRecurringJob(string scheduleCycleCode, string cronExpression)
         {
-
             RecurringJob.AddOrUpdate<TransferJob>(
                 scheduleCycleCode,
                 (job) => job.ExecuteTask(scheduleCycleCode, "Service"),
                 cronExpression,
-             new RecurringJobOptions
-             {
-                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time")
-             });
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time")
+                });
         }
 
         public void RemoveRecurringJob(string scheduleCycleCode)
         {
             RecurringJob.RemoveIfExists(scheduleCycleCode);
         }
+
+        /// <summary>
+        /// 刪除排程設定時，同步取消尚未執行的 BackgroundJob（Enqueued / Scheduled / Processing）
+        /// </summary>
+        public void CancelPendingBackgroundJobs(string scheduleCycleCode)
+        {
+            var monitoringApi = JobStorage.Current.GetMonitoringApi();
+
+            // 取消排隊中的 Job（Enqueued）
+            var enqueuedJobs = monitoringApi.EnqueuedJobs("default", 0, int.MaxValue);
+            foreach (var (jobId, job) in enqueuedJobs)
+            {
+                var args = job.Job?.Args;
+                if (args != null && args.Count > 0 && args[0] is string code
+                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    BackgroundJob.Delete(jobId);
+                }
+            }
+
+            // 取消排程中的 Job（Scheduled，尚未到執行時間）
+            var scheduledJobs = monitoringApi.ScheduledJobs(0, int.MaxValue);
+            foreach (var (jobId, job) in scheduledJobs)
+            {
+                var args = job.Job?.Args;
+                if (args != null && args.Count > 0 && args[0] is string code
+                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    BackgroundJob.Delete(jobId);
+                }
+            }
+
+            // 正在執行中的 Job 無法強制停止，僅標記為刪除（Hangfire 不支援強制中斷）
+            var processingJobs = monitoringApi.ProcessingJobs(0, int.MaxValue);
+            foreach (var (jobId, job) in processingJobs)
+            {
+                var args = job.Job?.Args;
+                if (args != null && args.Count > 0 && args[0] is string code
+                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    BackgroundJob.Delete(jobId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 取得多個 ScheduleCycleCode 的即時執行狀態
+        /// 結合 RecurringJob 歷史 + BackgroundJob 即時 Processing 狀態
+        /// </summary>
+        public Dictionary<string, JobStatusInfo> GetJobStatuses(IEnumerable<string> scheduleCycleCodes)
+        {
+            var result = new Dictionary<string, JobStatusInfo>(StringComparer.OrdinalIgnoreCase);
+
+            // 1. 從 RecurringJob 取得上次執行資訊
+            using var connection = JobStorage.Current.GetConnection();
+            var recurringJobs = connection.GetRecurringJobs();
+            var recurringDict = recurringJobs.ToDictionary(j => j.Id, j => j, StringComparer.OrdinalIgnoreCase);
+
+            // 2. 從 MonitoringApi 取得目前正在 Processing 的 BackgroundJob
+            //    (含 BackgroundJob.Enqueue 手動觸發 + RecurringJob 觸發)
+            var monitoringApi = JobStorage.Current.GetMonitoringApi();
+            var processingJobs = monitoringApi.ProcessingJobs(0, int.MaxValue);
+
+            // 解析 Processing Job 的第一個參數（ScheduleCycleCode）
+            var processingCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, processingJob) in processingJobs)
+            {
+                var args = processingJob.Job?.Args;
+                if (args != null && args.Count > 0 && args[0] is string code)
+                    processingCodes.Add(code);
+            }
+
+            // 3. 合併兩個來源，對應至 ScheduleCycleStateEnum（2 分法）
+            foreach (var cycleCode in scheduleCycleCodes)
+            {
+                var info = new JobStatusInfo { ScheduleCycleCode = cycleCode };
+
+                info.State = processingCodes.Contains(cycleCode)
+                    ? ScheduleCycleStateEnum.Processing
+                    : ScheduleCycleStateEnum.Idle;
+
+                if (recurringDict.TryGetValue(cycleCode, out var job))
+                {
+                    info.LastRunAt = job.LastExecution;
+                    info.NextRunAt = job.NextExecution;
+                    info.LastJobId = job.LastJobId;
+                    info.LastJobState = job.LastJobState;
+                }
+
+                result[cycleCode] = info;
+            }
+
+            return result;
+        }
+    }
+
+    public class JobStatusInfo
+    {
+        public string ScheduleCycleCode { get; set; }
+        /// <summary>對應 ScheduleCycleStateEnum：UnProcessing / Processing / Processed</summary>
+        public ScheduleCycleStateEnum State { get; set; }
+        /// <summary>Hangfire 原始狀態字串，例如 Succeeded / Failed（供前端細分顯示）</summary>
+        public string LastJobState { get; set; }
+        public DateTime? LastRunAt { get; set; }
+        public DateTime? NextRunAt { get; set; }
+        public string LastJobId { get; set; }
     }
 }

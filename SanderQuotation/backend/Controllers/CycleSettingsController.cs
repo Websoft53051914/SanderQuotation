@@ -5,12 +5,16 @@ using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
 using Const;
+using Core.Utility.Extensions;
 using Core.Utility.Utility;
+using Hangfire;
+using Hangfire.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Globalization;
 using ViewModel;
 using static Const.Enums;
+
 namespace backend.Controllers
 {
     [Route("api/cycle-settings")]
@@ -21,7 +25,7 @@ namespace backend.Controllers
         private readonly HangfireSchedulerHelper _hangfireSchedulerHelper;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public CycleSettingsController(IConfiguration config, HangfireSchedulerHelper hangfireSchedulerHelper, IServiceScopeFactory scopeFactory):base(config)
+        public CycleSettingsController(IConfiguration config, HangfireSchedulerHelper hangfireSchedulerHelper, IServiceScopeFactory scopeFactory) : base(config)
         {
             _config = config;
             _hangfireSchedulerHelper = hangfireSchedulerHelper;
@@ -45,18 +49,33 @@ namespace backend.Controllers
         // GET api/cycle-settings/GetPageList
         [HttpGet("GetPageList")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
-        public IActionResult GetPageList([FromQuery] ListPageEntity request,string Keyword)
+        public IActionResult GetPageList([FromQuery] ListPageEntity request, string Keyword)
         {
             try
             {
                 var pageEntity = base.GetPageEntity(request);
                 var pageResult = GetBL().GetPageList(pageEntity, new SearchVO { KeywordLike = Keyword });
                 var list = _mapper.Map<List<EsScheduleCycleVM>>(pageResult.Results);
+
+                // 取得所有 Code 的即時 Hangfire 狀態（含 Processing）
+                var codes = list.Select(x => x.ScheduleCycleCode).Where(c => c != null).Cast<string>();
+                var jobStatuses = _hangfireSchedulerHelper.GetJobStatuses(codes);
+
                 for (int i = 0; i < list.Count; i++)
                 {
                     list[i].No = (pageEntity.CurrentPage - 1) * pageEntity.PageDataSize + i + 1;
                     list[i].IsEnabled = list[i].Status == StatusEnum.Enabled.ToValueString();
-                    list[i].OtherTransferDescriptionSettings = list[i].OtherTransferSettings.Select(x => EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(x)).ToList();
+                    list[i].OtherTransferDescriptionSettings = list[i].OtherTransferSettings
+                        .Select(x => EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(x))
+                        .ToList();
+
+                    if (jobStatuses.TryGetValue(list[i].ScheduleCycleCode, out var jobInfo))
+                    {
+                        list[i].LastRunAt = jobInfo.LastRunAt;
+                        list[i].LastRunState = jobInfo.State.ToInt();
+                        list[i].LastRunStateDescription = jobInfo.State.GetDescription();
+                        list[i].LastRunMessage = jobInfo.LastJobId;
+                    }
                 }
 
                 return JsonSuccess(new
@@ -91,7 +110,6 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 LogError(ex);
-                //return JsonValidFail(HandleError(ex));
                 return JsonValidFail(ex.Message);
             }
         }
@@ -106,19 +124,18 @@ namespace backend.Controllers
                 var dm = _mapper.Map<EsScheduleCycleDM>(vm);
                 GetBL().CheckExist(dm);
                 if (GetBL().GetMessage().IsError())
-                {
                     return JsonValidFail(GetBL().GetMessage().GetErrMsg());
-                }
+
                 GetBL().Create(dm);
                 if (vm.IsEnabled)
                     _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
-                return JsonSuccess("新增成功");
 
+                return JsonSuccess("新增成功");
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                return JsonValidFail(GetMsg(_config,"System_Error"));
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
 
@@ -133,9 +150,7 @@ namespace backend.Controllers
                 GetBL().Edit(dm);
                 _hangfireSchedulerHelper.RemoveRecurringJob(dm.ScheduleCycleCode);
                 if (vm.IsEnabled)
-                {
                     _hangfireSchedulerHelper.InsertRecurringJob(dm.ScheduleCycleCode, dm.CronExpression);
-                }
 
                 return JsonSuccess("編輯成功");
             }
@@ -153,12 +168,13 @@ namespace backend.Controllers
         {
             try
             {
-
                 var codes = GetBL().Delete(rowGuids);
                 foreach (var code in codes)
                 {
                     _hangfireSchedulerHelper.RemoveRecurringJob(code);
+                    _hangfireSchedulerHelper.CancelPendingBackgroundJobs(code);
                 }
+
                 return JsonSuccess("刪除成功");
             }
             catch (Exception ex)
@@ -167,7 +183,6 @@ namespace backend.Controllers
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
-
 
         [HttpGet("GetSelectList")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Create, Const.Enums.FuncID.Cyclesettings_Edit)]
@@ -183,10 +198,7 @@ namespace backend.Controllers
                 {
                     dbSelectList = dbOptions.Select(o => new SelectListItem { Value = o.Value, Text = o.Text }).ToList(),
                     fileSelectList = fileOptions.Select(o => new SelectListItem { Value = o.Value, Text = o.Text }).ToList(),
-                    dbCSVSelectList = new List<SelectListItem>
-                    {
-                       
-                    }
+                    dbCSVSelectList = new List<SelectListItem>()
                 });
             }
             catch (Exception ex)
@@ -205,13 +217,13 @@ namespace backend.Controllers
                 var bl = GetBLInstance<EsScheduleCycleBL>();
                 var dm = bl.Get(rowGuid);
 
-                _ = Task.Run(async () =>
+                _ = Task.Run(() =>
                 {
                     try
                     {
-                        using var scope = _scopeFactory.CreateScope();
-                        var transferJob = scope.ServiceProvider.GetRequiredService<TransferJob>();
-                        await transferJob.ExecuteTask(dm.ScheduleCycleCode, "Manual");
+                        BackgroundJob.Enqueue<TransferJob>(
+                            job => job.ExecuteTask(dm.ScheduleCycleCode, "Manual")
+                        );
                     }
                     catch (Exception ex)
                     {
@@ -225,6 +237,26 @@ namespace backend.Controllers
             {
                 LogError(ex);
                 return JsonValidFail(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 即時查詢多個 ScheduleCycleCode 的 Hangfire 執行狀態
+        /// GET api/cycle-settings/GetJobStatuses?codes=CODE1&codes=CODE2
+        /// </summary>
+        [HttpGet("GetJobStatuses")]
+        [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
+        public IActionResult GetJobStatuses([FromQuery] List<string> codes)
+        {
+            try
+            {
+                var statuses = _hangfireSchedulerHelper.GetJobStatuses(codes);
+                return JsonSuccess(statuses.Values);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
             }
         }
     }

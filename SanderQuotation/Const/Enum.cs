@@ -740,5 +740,16 @@ namespace Const
             [Description("AI 助理")]
             Assistant = 3,
         }
+
+
+
+        public enum ScheduleCycleStateEnum
+        {
+            [Description("閒置")]
+            Idle = 1,
+
+            [Description("執行中")]
+            Processing = 2,
+        }
     }
 }

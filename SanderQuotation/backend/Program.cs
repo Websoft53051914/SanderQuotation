@@ -204,11 +204,12 @@ builder.Services.AddTransient<PriceSearchJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();
 builder.Services.AddSingleton<PathProvider>();
 #if !DEBUG
-//builder.Services.AddHostedService<EIPSourceScheduleHostService>();
+builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 #endif
 builder.Services.AddSingleton<TransferJob>();
 builder.Services.AddTransient<ExtractKeywordJob>();
 builder.Services.AddSingleton<DataCleanupJob>();
+builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 
 #region AI - Semantic Kernel
 builder.Services.AddHttpClient("GeminiHttpClient", client =>

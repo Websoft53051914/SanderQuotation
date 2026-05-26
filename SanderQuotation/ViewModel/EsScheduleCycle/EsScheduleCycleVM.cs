@@ -1,3 +1,6 @@
+using Const;
+using static Const.Enums;
+
 namespace ViewModel
 {
     public class EsScheduleCycleVM
@@ -44,7 +47,12 @@ namespace ViewModel
         public List<int> OtherTransferSettings { get; set; } = new();
 
         public DateTime? LastRunAt { get; set; }
-        public string LastRunStatus { get; set; }
+        public int LastRunState { get; set; }
+
+        public string LastRunStateDescription
+        {
+            get; set;
+        }
         public string LastRunMessage { get; set; }
 
         public int No { get; set; }

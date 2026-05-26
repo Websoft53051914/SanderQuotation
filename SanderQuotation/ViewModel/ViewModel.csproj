@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommonClass\CommonClass.csproj" />
+    <ProjectReference Include="..\Const\Const.csproj" />
   </ItemGroup>
 
 </Project>

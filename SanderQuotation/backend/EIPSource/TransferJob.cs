@@ -1,9 +1,11 @@
-﻿using backend.EIPSource;
+﻿using backend.Common.Attribute;
+using backend.EIPSource;
 using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Utility;
+using Hangfire;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -43,6 +45,10 @@ namespace backend.Common
             _webHostEnvironment = webHostEnvironment;
             _pathProvider = pathProvider;
         }
+
+        [LogDeletedJob]
+        [DisableConcurrentExecution(10)]
+        [AutomaticRetry(Attempts = 0, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
         public async Task ExecuteTask(string scheduleCycleCode, string TriggerType)
         {
             EsScheduleCycleLogDM log = new();
@@ -50,11 +56,14 @@ namespace backend.Common
             {
                 EsScheduleCycleBL bl = BLFactory.GetInstanceBackGround<EsScheduleCycleBL>();
                 var data = bl.GetByCode(scheduleCycleCode);
+                //Thread.Sleep(TimeSpan.FromSeconds(5));
                 if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0 && data.OtherTransferSettings.Count == 0))
                 {
                     // log not found
                     return;
                 }
+
+               
 
                 DateTime st = DateTime.Now;
 

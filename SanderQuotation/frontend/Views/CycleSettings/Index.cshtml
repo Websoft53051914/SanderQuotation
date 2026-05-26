@@ -60,7 +60,7 @@
                                 <th>項次</th>
                                 <th class="sort" data-sort="ScheduleCycleCode">週期代碼</th>
                                 <th class="sort" data-sort="CycleName">週期名稱</th>
-                                <th class="sort" data-sort="CycleType">週期類型</th>
+                                <th>執行狀態</th>
                                 <th class="sort" data-sort="CronExpression">Cron 表達式</th>
                                 <th class="sort" data-sort="Status">啟用</th>
                                 <th data-sort="DBTransferSettings">資料庫轉檔設定</th>
@@ -517,6 +517,20 @@
             }).join('');
         }
 
+        // ScheduleCycleStateEnum: 1=Idle, 2=Processing
+        function renderStateBadge(data) {
+            var state = data.LastRunState;
+
+            if (state == '@(ScheduleCycleStateEnum.Processing.ToInt())') {
+                return `<span class="badge bg-warning-subtle text-warning fs-5">${data.LastRunStateDescription}</span>`;
+            }
+            
+            else if (state == '@(ScheduleCycleStateEnum.Idle.ToInt())') {
+                return `<span class="badge bg-secondary-subtle text-secondary fs-5">${data.LastRunStateDescription}</span>`
+            }
+            return '';
+        }
+
         // ========================================
         // 週期類型標籤
         // ========================================
@@ -579,7 +593,7 @@
                         <td class="No">${data.No ?? ''}</td>
                         <td class="ScheduleCycleCode">${data.ScheduleCycleCode ?? ''}</td>
                         <td class="CycleName">${data.CycleName ?? ''}</td>
-                        <td class="CycleType">${typeLabel}</td>
+                        <td>${renderStateBadge(data)}</td>
                         <td class="CronExpression"><code class="fs-5">${data.CronExpression ?? ''}</code><br><small class="text-muted">${cronDescFromData(data)}</small></td>
                         <td class="IsEnabled">${enabledBadge}</td>
                         <td class="DBTransferSettings">${renderTagList(data.DBTransferSettings)}</td>
@@ -616,6 +630,7 @@
                             title: resp.Data,
                             confirmButtonText: pageConfig.messages.confirm,
                         });
+                        loadDatas();
                     } else {
                         Swal.fire({
                             icon: 'error',
