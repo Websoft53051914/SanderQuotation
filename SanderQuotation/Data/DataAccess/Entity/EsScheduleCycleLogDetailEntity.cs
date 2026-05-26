@@ -26,5 +26,8 @@ namespace Data.DataAccess.Entity
 
         /// <summary>任務層級例外訊息（DB連線失敗等）</summary>
         public string ErrorMessage { get; set; }
+
+        /// <summary>其他排程動作類型（對應 ScheduleCycleActionTypeEnum）</summary>
+        public int? OtherActionType { get; set; }
     }
 }
