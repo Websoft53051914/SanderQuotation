@@ -201,6 +201,8 @@
         var qsPricingResult = null;   // 查價結果 { Internal, External, InStock, ClusterMeta, DecisionLogs }
         var allDecisionLogs = [];     // 查料 + 查價 決策歷程合併
         var customersLoaded = false;  // 客戶清單是否已載入
+        var pendingSubModal = null;   // 待開啟的子 Modal 類型（'smip' | 'mld'）
+        var suppressReset = false;    // 從子 Modal 返回時抑制重置
 
         // ── 格式化工具 ───────────────────────────────────────────────────
         function esc(v) { return $('<div>').text(v ?? '').html(); }
@@ -443,8 +445,7 @@
         // ── ③ 查看歷程記錄 ───────────────────────────────────────────────
         $('#btnQsViewLog').on('click', function () {
             if (typeof ModalDecisionLog === 'undefined' || !ModalDecisionLog[qsMdlId]) return;
-            var clusterMeta = qsPricingResult ? qsPricingResult.ClusterMeta || null : null;
-            ModalDecisionLog[qsMdlId].openWithData(allDecisionLogs, clusterMeta);
+            openSubModal('mld');
         });
 
         // ── 客戶名稱 select2 ───────────────────────────────────────────
@@ -474,17 +475,50 @@
             });
         }
 
+        // ── 子 Modal：先隱藏當前 Modal，待子 Modal 關閉後再還原 ──────────────
+        function openSubModal(type) {
+            pendingSubModal = type;
+            bootstrap.Modal.getInstance(document.getElementById('quickPartSearchModal')).hide();
+        }
+
+        document.getElementById('quickPartSearchModal').addEventListener('hidden.bs.modal', function () {
+            var type = pendingSubModal;
+            if (!type) return;
+            pendingSubModal = null;
+
+            if (type === 'smip') {
+                if (typeof SanderModuleItemPicker === 'undefined' || !SanderModuleItemPicker[qsSmipId]) return;
+                $('#' + qsSmipId).one('hidden.bs.modal', function () {
+                    suppressReset = true;
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('quickPartSearchModal')).show();
+                });
+                SanderModuleItemPicker[qsSmipId].open(function (no) {
+                    $('#qs_No').val(no);
+                });
+            } else if (type === 'mld') {
+                if (typeof ModalDecisionLog === 'undefined' || !ModalDecisionLog[qsMdlId]) return;
+                var clusterMeta = qsPricingResult ? qsPricingResult.ClusterMeta || null : null;
+                $('#' + qsMdlId).one('hidden.bs.modal', function () {
+                    suppressReset = true;
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('quickPartSearchModal')).show();
+                });
+                ModalDecisionLog[qsMdlId].openWithData(allDecisionLogs, clusterMeta);
+            }
+        });
+
         // ── 內部料號選取器 ───────────────────────────────────────────────
         $('#btnQsPickNo').on('click', function () {
             if (typeof SanderModuleItemPicker === 'undefined' || !SanderModuleItemPicker[qsSmipId]) return;
-            SanderModuleItemPicker[qsSmipId].open(function (no) {
-                $('#qs_No').val(no);
-            });
+            openSubModal('smip');
         });
 
         // ── Modal 開啟時重置 ─────────────────────────────────────────────
         document.getElementById('quickPartSearchModal').addEventListener('show.bs.modal', function () {
             loadCustomers();
+            if (suppressReset) {
+                suppressReset = false;
+                return;
+            }
             $('#qs_ManufacturerPartNo, #qs_Manufacturer, #qs_ComponentPart, #qs_Description').val('');
             $('#qs_No').val('');
             if ($('#qs_CustomerCode').hasClass('select2-hidden-accessible')) {

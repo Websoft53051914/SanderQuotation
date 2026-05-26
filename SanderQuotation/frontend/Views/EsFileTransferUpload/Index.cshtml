@@ -427,9 +427,9 @@
                     <td class="text-muted">${r[EftuM.No]}</td>
                     <td class="fw-semibold">${escapeHtml(r[EftuM.FileName])}</td>
                     <td>${escapeHtml(r[EftuM.TransferMappingCode] || '')}</td>
-                    <td class="text-center">${r[EftuM.QuotationQty] || 0}</td>
+                    <td>${r[EftuM.QuotationQty] || 0}</td>
                     <td>${escapeHtml(r[EftuM.CustomerName] || r[EftuM.ManualCustomerName] || '')}</td>
-                    <td class="text-center"><span class="${sc.cls}">${escapeHtml(sc.text)}</span></td>
+                    <td><span class="${sc.cls}">${escapeHtml(sc.text)}</span></td>
                     <td class="text-muted">${escapeHtml(r[EftuM.CreatedAtText])}</td>
                     <td class="text-muted">${escapeHtml(r[EftuM.UpdatedAtText])}</td>
                 </tr>`;

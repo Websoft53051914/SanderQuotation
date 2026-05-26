@@ -90,7 +90,7 @@
                                     </div>
                                 </th>
                                 <th rowspan="2" style="width:40px;" class="text-center align-middle decision-log-col"></th>
-                                <th rowspan="2" style="width:40px;" class="text-center align-middle">項次</th>
+                                <th rowspan="2" style="width:40px;" class="align-middle">項次</th>
                                 <th rowspan="2" style="min-width:100px;" class="align-middle">元件料號</th>
                                 <th rowspan="2" style="min-width:100px;" class="align-middle">顯示料號</th>
                                 <th rowspan="2" style="min-width:160px;" class="align-middle">元件描述</th>
@@ -386,28 +386,28 @@
                         </button>
                     </div>
                 </td>
-                <td class="text-center">${fmtMatchCategory(r[FI.MatchCategoryText])}</td>
+                <td>${fmtMatchCategory(r[FI.MatchCategoryText])}</td>
                 <td>${escapeHtml(r[FI.MatchField] || '')}</td>
                 <td>${fmtDate(r[FI.InternalPurchaseOrderDate])}</td>
-                <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceOriginalCurrency])}</td>
-                <td class="text-end">${fmtPrice(r[FI.InternalUnitPriceTwd])}</td>
-                <td class="text-center">${fmtNum(r[FI.InternalQuantity])}</td>
-                <td class="text-center">${fmtCurrency(r[FI.InternalCurrency])}</td>
+                <td>${fmtPrice(r[FI.InternalUnitPriceOriginalCurrency])}</td>
+                <td>${fmtPrice(r[FI.InternalUnitPriceTwd])}</td>
+                <td>${fmtNum(r[FI.InternalQuantity])}</td>
+                <td>${fmtCurrency(r[FI.InternalCurrency])}</td>
                 <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
                 <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
-                <td class="text-center">${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
+                <td>${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
-                <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
-                <td class="text-end">${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>
-                <td class="text-center">${fmtNum(r[FI.ExternalMoq])}</td>
-                <td class="text-center">${fmtCurrency(r[FI.ExternalCurrency])}</td>
+                <td>${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
+                <td>${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>
+                <td>${fmtNum(r[FI.ExternalMoq])}</td>
+                <td>${fmtCurrency(r[FI.ExternalCurrency])}</td>
                 <td>${escapeHtml(r[FI.ExternalSupplierName] != null ? String(r[FI.ExternalSupplierName]) : '')}</td>
-                <td class="text-center">${fmtNum(r[FI.ExternalStock])}</td>
-                <td class="text-center">${fmtScenarioText(r[FI.ExternalScenarioText])}</td>
+                <td>${fmtNum(r[FI.ExternalStock])}</td>
+                <td>${fmtScenarioText(r[FI.ExternalScenarioText])}</td>
                 <td>${fmtDate(r[FI.MouserQuotationDate])}</td>
-                <td class="text-end">${fmtPrice(r[FI.MouserUnitPriceOriginalCurrency])}</td>
+                <td>${fmtPrice(r[FI.MouserUnitPriceOriginalCurrency])}</td>
                 <td>${fmtDate(r[FI.DkQuotationDate])}</td>
-                <td class="text-end">${fmtPrice(r[FI.DkUnitPriceOriginalCurrency])}</td>
+                <td>${fmtPrice(r[FI.DkUnitPriceOriginalCurrency])}</td>
             </tr>`;
         }
 
