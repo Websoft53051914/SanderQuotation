@@ -335,13 +335,13 @@ namespace backend.Controllers
 
                     using var conn = CreateDbConnection(dm);
                     conn.Open();
-                    tables = QueryTables(conn);
+                    tables = QueryTables(conn, includeViews: false);
                 }
                 else
                 {
                     using var conn = new SqlConnection(_config.GetConnectionString("MainConnection"));
                     conn.Open();
-                    tables = QueryTables(conn);
+                    tables = QueryTables(conn, includeViews: false);
                 }
                 return JsonSuccess(tables);
             }
@@ -409,7 +409,7 @@ namespace backend.Controllers
             return new SqlConnection($"Data Source={dm.DbHost}{portPart};Initial Catalog={dm.DbName};User ID={dm.DbUser};Password={dm.DbPassword};TrustServerCertificate=true;Encrypt=true");
         }
 
-        private static List<SelectListItem> QueryTables(IDbConnection conn)
+        private static List<SelectListItem> QueryTables(IDbConnection conn, bool includeViews = true)
         {
             var tables = new List<SelectListItem>();
             using var cmd = conn.CreateCommand();
@@ -418,25 +418,29 @@ namespace backend.Controllers
 
             if (isPostgres)
             {
-                cmd.CommandText = @"
-                    SELECT t.table_name, COALESCE(obj_description(pc.oid, 'pg_class'), '') AS table_desc
+                var tableFilter = includeViews ? "IN ('BASE TABLE', 'VIEW')" : "= 'BASE TABLE'";
+                cmd.CommandText = $@"
+                    SELECT t.table_name, COALESCE(obj_description(pc.oid, 'pg_class'), '') AS table_desc,
+                           t.table_type
                     FROM information_schema.tables t
                     LEFT JOIN pg_class pc ON pc.relname = t.table_name
-                    WHERE t.table_type = 'BASE TABLE'
+                    WHERE t.table_type {tableFilter}
                       AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
-                    ORDER BY t.table_name";
+                    ORDER BY t.table_type, t.table_name";
             }
             else
             {
-                cmd.CommandText = @"
-                    SELECT t.TABLE_NAME, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS table_desc
+                var tableFilter = includeViews ? "IN ('BASE TABLE', 'VIEW')" : "= 'BASE TABLE'";
+                cmd.CommandText = $@"
+                    SELECT t.TABLE_NAME, ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS table_desc,
+                           t.TABLE_TYPE
                     FROM INFORMATION_SCHEMA.TABLES t
                     LEFT JOIN sys.extended_properties ep
                         ON ep.major_id = OBJECT_ID(t.TABLE_NAME)
                         AND ep.minor_id = 0
                         AND ep.name = 'MS_Description'
-                    WHERE t.TABLE_TYPE = 'BASE TABLE'
-                    ORDER BY t.TABLE_NAME";
+                    WHERE t.TABLE_TYPE {tableFilter}
+                    ORDER BY t.TABLE_TYPE, t.TABLE_NAME";
             }
 
             using var reader = cmd.ExecuteReader();
@@ -444,10 +448,16 @@ namespace backend.Controllers
             {
                 var tableName = reader.GetString(0);
                 var desc = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                var tableType = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                bool isView = tableType.IndexOf("VIEW", StringComparison.OrdinalIgnoreCase) >= 0;
+                var prefix = isView ? "[VIEW] " : "";
+                var displayText = string.IsNullOrWhiteSpace(desc)
+                    ? $"{tableName}"
+                    : $"{tableName} ({desc})";
                 tables.Add(new SelectListItem
                 {
                     Value = tableName,
-                    Text = string.IsNullOrWhiteSpace(desc) ? tableName : $"{tableName} ({desc})"
+                    Text = displayText
                 });
             }
             return tables;
@@ -466,9 +476,13 @@ namespace backend.Controllers
                     SELECT c.column_name, COALESCE(pd.description, '') AS col_desc
                     FROM information_schema.columns c
                     LEFT JOIN pg_class pc ON pc.relname = c.table_name
+                        AND pc.relnamespace = (
+                            SELECT oid FROM pg_namespace WHERE nspname = c.table_schema
+                        )
                     LEFT JOIN pg_attribute pa ON pa.attrelid = pc.oid AND pa.attname = c.column_name
                     LEFT JOIN pg_description pd ON pd.objoid = pc.oid AND pd.objsubid = pa.attnum
                     WHERE c.table_name = @tbl
+                      AND c.table_schema NOT IN ('pg_catalog', 'information_schema')
                     ORDER BY c.ordinal_position";
             }
             else
