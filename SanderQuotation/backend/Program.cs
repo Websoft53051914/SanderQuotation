@@ -243,6 +243,8 @@ builder.Services.AddSingleton<ManualBatchEmbedding>();
 // AI Plugins & Chat Handler
 builder.Services.AddScoped<SqlExecutorPlugin>();
 builder.Services.AddScoped<HistoryFileQueryPlugin>();
+builder.Services.AddScoped<QuotationQueryPlugin>();
+builder.Services.AddScoped<ReportPlugin>();
 builder.Services.AddScoped<AIChatHandler>();
 
 // Polly Resilience Pipeline：AI 呼叫自動重試 + Timeout

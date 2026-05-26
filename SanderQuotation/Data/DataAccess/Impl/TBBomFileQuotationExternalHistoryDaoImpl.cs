@@ -47,6 +47,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND h.{nameof(TBBomFileQuotationExternalHistoryDTO.QuotationDate)} >= @{nameof(searchVO.QuotationDateGte)} ");
                 paras.Add(nameof(searchVO.QuotationDateGte), searchVO.QuotationDateGte.Value);
             }
+            if (searchVO.QuotationDateLt.HasValue)
+            {
+                condition.Append($"AND h.{nameof(TBBomFileQuotationExternalHistoryDTO.QuotationDate)} < @{nameof(searchVO.QuotationDateLt)} ");
+                paras.Add(nameof(searchVO.QuotationDateLt), searchVO.QuotationDateLt.Value);
+            }
 
             string sql = $@"
 SELECT h.*
@@ -79,6 +84,16 @@ ORDER BY h.QuotationDate DESC, h.UpdatedAt DESC
             {
                 condition.Append($"AND h.{nameof(TBBomFileQuotationExternalHistoryDTO.Id)} = ANY(@{nameof(searchVO.IdIn)}) ");
                 paras.Add(nameof(searchVO.IdIn), searchVO.IdIn);
+            }
+            if (!string.IsNullOrWhiteSpace(searchVO.ManufacturerPartNumberEq))
+            {
+                condition.Append($"AND h.{nameof(TBBomFileQuotationExternalHistoryDTO.ManufacturerPartNumber)} = @{nameof(searchVO.ManufacturerPartNumberEq)} ");
+                paras.Add(nameof(searchVO.ManufacturerPartNumberEq), searchVO.ManufacturerPartNumberEq);
+            }
+            if (searchVO.QuotationDateLt.HasValue)
+            {
+                condition.Append($"AND h.{nameof(TBBomFileQuotationExternalHistoryDTO.QuotationDate)} < @{nameof(searchVO.QuotationDateLt)} ");
+                paras.Add(nameof(searchVO.QuotationDateLt), searchVO.QuotationDateLt.Value);
             }
 
             ArgumentNullException.ThrowIfNull(condition);

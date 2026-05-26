@@ -222,6 +222,11 @@
         public DateTime? QuotationDateGte { get; set; }
 
         /// <summary>
+        /// 查價日期
+        /// </summary>
+        public DateTime? QuotationDateLt { get; set; }
+
+        /// <summary>
         /// BomFileContent.Id
         /// </summary>
         public Guid? BomFileContentIdNeq { get; set; }

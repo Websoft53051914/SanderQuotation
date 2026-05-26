@@ -27,6 +27,7 @@ namespace backend.AI
         private readonly IMemoryCache _cache;
         private readonly ResiliencePipeline _resiliencePipeline;
         private readonly HistoryFileQueryPlugin _historyFileQueryPlugin;
+        private readonly QuotationQueryPlugin _quotationQueryPlugin;
 
         // AI 回覆無法回答時的識別標記
         private const string CannotAnswerTag = "[CANNOT_ANSWER]";
@@ -41,7 +42,11 @@ namespace backend.AI
             new(targetCount: 10, thresholdCount: 2);
 
         /// <summary>constructor</summary>
-        public AIChatHandler(Kernel kernel, IConfiguration config, ManualBatchEmbedding embedding, IMemoryCache cache, HistoryFileQueryPlugin historyFileQueryPlugin, ResiliencePipelineProvider<string> resiliencePipelineProvider)
+        public AIChatHandler(Kernel kernel, IConfiguration config, ManualBatchEmbedding embedding, IMemoryCache cache
+            , HistoryFileQueryPlugin historyFileQueryPlugin
+            , QuotationQueryPlugin quotationQueryPlugin
+            , ReportPlugin reportPlugin
+            , ResiliencePipelineProvider<string> resiliencePipelineProvider)
         {
             _kernel = kernel;
             _config = config;
@@ -49,9 +54,12 @@ namespace backend.AI
             _cache = cache;
             _resiliencePipeline = resiliencePipelineProvider.GetPipeline("ai-retry");
             _historyFileQueryPlugin = historyFileQueryPlugin;
+            _quotationQueryPlugin = quotationQueryPlugin;
 
             // 將 Plugin 註冊進 Kernel，讓 Gemini Function Calling 能看到可用工具
             _kernel.Plugins.AddFromObject(historyFileQueryPlugin);
+            _kernel.Plugins.AddFromObject(quotationQueryPlugin);
+            _kernel.Plugins.AddFromObject(reportPlugin);
         }
 
         // ─────────────────────────────────────────────
@@ -220,49 +228,55 @@ namespace backend.AI
                 response.FunctionName = _historyFileQueryPlugin.LastFunctionName;
                 return;
             }
+            if (_quotationQueryPlugin.LastExecutedSqls.Count > 0)
+            {
+                response.GeneratedSql = string.Join("\n\n", _quotationQueryPlugin.LastExecutedSqls);
+                response.FunctionName = _quotationQueryPlugin.LastFunctionName;
+                return;
+            }
 
             // 保留 fallback：從 chatHistory 的 Tool 訊息嘗試解析 SQL
             foreach (var msg in chatHistory.Reverse())
-            {
-                if (msg.Role != AuthorRole.Tool)
-                    continue;
-
-                string? content = msg.Content;
-                if (string.IsNullOrWhiteSpace(content))
-                    continue;
-
-                try
                 {
-                    using var doc = JsonDocument.Parse(content);
-                    var root = doc.RootElement;
+                    if (msg.Role != AuthorRole.Tool)
+                        continue;
 
-                    if (root.TryGetProperty("steps", out var stepsProp) && stepsProp.ValueKind == JsonValueKind.Array)
+                    string? content = msg.Content;
+                    if (string.IsNullOrWhiteSpace(content))
+                        continue;
+
+                    try
                     {
-                        var sqlParts = new List<string>();
-                        foreach (var step in stepsProp.EnumerateArray())
+                        using var doc = JsonDocument.Parse(content);
+                        var root = doc.RootElement;
+
+                        if (root.TryGetProperty("steps", out var stepsProp) && stepsProp.ValueKind == JsonValueKind.Array)
                         {
-                            if (step.TryGetProperty("sql", out var s))
+                            var sqlParts = new List<string>();
+                            foreach (var step in stepsProp.EnumerateArray())
                             {
-                                var sqlStr = s.GetString();
-                                if (!string.IsNullOrWhiteSpace(sqlStr))
-                                    sqlParts.Add(sqlStr);
+                                if (step.TryGetProperty("sql", out var s))
+                                {
+                                    var sqlStr = s.GetString();
+                                    if (!string.IsNullOrWhiteSpace(sqlStr))
+                                        sqlParts.Add(sqlStr);
+                                }
                             }
+                            if (sqlParts.Count > 0)
+                                response.GeneratedSql = string.Join("\n\n", sqlParts);
                         }
-                        if (sqlParts.Count > 0)
-                            response.GeneratedSql = string.Join("\n\n", sqlParts);
+                        else if (root.TryGetProperty("sql", out var sqlProp))
+                        {
+                            response.GeneratedSql = sqlProp.GetString() ?? string.Empty;
+                        }
                     }
-                    else if (root.TryGetProperty("sql", out var sqlProp))
+                    catch
                     {
-                        response.GeneratedSql = sqlProp.GetString() ?? string.Empty;
+                        // JSON 解析失敗忽略即可
                     }
-                }
-                catch
-                {
-                    // JSON 解析失敗忽略即可
-                }
 
-                break;
-            }
+                    break;
+                }
 
             // 從 Assistant 訊息中擷取 Kernel Function 名稱（fallback）
             foreach (var msg in chatHistory.Reverse())

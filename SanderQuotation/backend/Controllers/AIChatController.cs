@@ -1,8 +1,10 @@
 ﻿using backend.AI;
 using backend.AI.VO;
+using backend.Common;
 using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
+using Google.GenAI;
 using Microsoft.AspNetCore.Mvc;
 using static Const.Enums;
 
@@ -12,10 +14,20 @@ namespace backend.Controllers
     public class AIChatController : BaseProjectController
     {
         private readonly AIChatHandler _aiChatHandler;
+        private readonly PathProvider _pathProvider;
 
-        public AIChatController(IConfiguration config, AIChatHandler aiChatHandler) : base(config)
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="aiChatHandler"></param>
+        /// <param name="pathProvider"></param>
+        public AIChatController(IConfiguration config
+            , AIChatHandler aiChatHandler
+            , PathProvider pathProvider) : base(config)
         {
             _aiChatHandler = aiChatHandler;
+            _pathProvider = pathProvider;
         }
 
         /// <summary>
@@ -77,6 +89,32 @@ namespace backend.Controllers
                 return StatusCode(500, new { Success = false, Message = "清除對話歷史失敗，請稍後再試。" });
             }
             
+        }
+
+        /// <summary>
+        /// 下載 AI 產生檔案
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        [HttpGet("DownloadAIFile")]
+        public IActionResult DownloadAIFile(string fileName)
+        {
+            try
+            {
+                string dirPath = _pathProvider.AIExcel;
+                string filePath = dirPath + "/" + fileName;
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return BadRequest(JsonValidFail("檔案不存在"));
+                }
+                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                return File(fileStream, MimeTypes.GetMimeType(fileName), fileName);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return BadRequest(JsonValidFail(_config[$"message:{LoginSession.Current.Locale}:SystemErrorMsg"]));
+            }
         }
     }
 }

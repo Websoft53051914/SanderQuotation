@@ -20,3 +20,45 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* AI ¤U¸ü«ö¶s¼Ë¦¡ */
+.ai-download-btn {
+    max-width: 100%;
+    word-break: break-all;
+    display: flex;
+    padding: 5px 5px;
+    background: linear-gradient(135deg, #6BA767 0%, #45a049 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+    .ai-download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .ai-download-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .ai-download-btn svg {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .ai-download-btn span {
+        vertical-align: middle;
+    }

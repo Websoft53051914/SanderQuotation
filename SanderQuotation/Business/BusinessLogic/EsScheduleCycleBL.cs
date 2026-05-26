@@ -1,10 +1,8 @@
 using AutoMapper;
 using Business.Common;
 using Business.DomainModel;
-using CommonClass.Model;
 using CommonClass.Models;
 using Const;
-using Core.Utility.Base.Data;
 using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
@@ -79,7 +77,11 @@ namespace Business.BusinessLogic
 
         public EsScheduleCycleDM? GetByCode(string code)
         {
-            var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.ScheduleCycleCode), code);
+            var entity = GetDao().FindByPropertys(new Dictionary<string, object>
+            {
+                { nameof(EsScheduleCycleEntity.ScheduleCycleCode), code },
+                { nameof(EsScheduleCycleEntity.Status), (int)StatusEnum.Enabled },
+            });
             if (entity == null) return null;
             var dm = _mapper.Map<EsScheduleCycleDM>(entity);
             FillSubTables(dm);

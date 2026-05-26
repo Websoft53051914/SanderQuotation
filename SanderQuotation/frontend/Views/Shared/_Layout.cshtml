@@ -752,14 +752,65 @@
 
         // ── 加入 AI 訊息──
         function appendBotMsg(text) {
-            var safeText = $('<span>').text(text).html().replace(/\n/g, '<br>');
+            // 將文字分段：普通文字 escape，[DOWNLOAD_BUTTON] 段落直接轉為 HTML
+            var html = '';
+            var regex = /\[DOWNLOAD_BUTTON\](.*?)\[\/DOWNLOAD_BUTTON\]/g;
+            var lastIndex = 0;
+            var match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match.index > lastIndex) {
+                    html += $('<span>').text(text.substring(lastIndex, match.index)).html().replace(/\n/g, '');
+                }
+                html += parseDownloadButtons('[DOWNLOAD_BUTTON]' + match[1] + '[/DOWNLOAD_BUTTON]');
+                lastIndex = regex.lastIndex;
+            }
+            if (lastIndex < text.length) {
+                html += $('<span>').text(text.substring(lastIndex)).html().replace(/\n/g, '');
+            }
 
             var $m = $('<div class="ai-msg bot">' +
-                '<div class="bubble">' + safeText + '</div>' +
+                '<div class="bubble">' + html + '</div>' +
                 '<div class="msg-time">' + formatTime(new Date()) + '</div>' +
                 '</div>');
             $msgs.append($m);
             scrollBottom();
+        }
+
+        /**
+         * 解析訊息中的下載按鈕標記並轉換為 HTML
+         */
+        function parseDownloadButtons(message) {
+            if (!message) return message;
+
+            // 使用正則表達式找出所有 [DOWNLOAD_BUTTON]...[/DOWNLOAD_BUTTON] 標記
+            const regex = /\[DOWNLOAD_BUTTON\](.*?)\[\/DOWNLOAD_BUTTON\]/g;
+
+            return message.replace(regex, function (match, jsonStr) {
+                try {
+                    // 解析 JSON
+                    const data = JSON.parse(jsonStr);
+
+                    // 生成下載按鈕 HTML
+                    const buttonHtml = `
+                    <a href="${data.url}" 
+                       class="ai-download-btn" 
+                       download="${data.fileName}"
+                       target="_blank">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      <span>下載 ${data.fileName}</span>
+                    </a>
+                  `;
+
+                    return buttonHtml;
+                } catch (e) {
+                    console.error('解析下載按鈕失敗:', e);
+                    return match; // 解析失敗就返回原始文字
+                }
+            });
         }
 
         // ── SQL 展開/收合（事件委派）──

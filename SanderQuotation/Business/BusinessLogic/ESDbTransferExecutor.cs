@@ -64,12 +64,18 @@ namespace Business.BusinessLogic
                 using var srcConnection = _srcDialect.CreateConnection();
                 srcConnection.Open();
 
+                // 查詢來源資料表欄位型別，供 WHERE 條件參數型別轉換使用
+                Dictionary<string, string> srcColumnTypes = _srcDialect.GetColumnTypes(srcConnection, _mapping.SrcTableName);
+
                 // 建立目的資料庫連線
                 using var dstConnection = _dstDialect.CreateConnection();
                 dstConnection.Open();
 
+                // 查詢目的資料表欄位型別，供型別轉換使用
+                Dictionary<string, string> dstColumnTypes = _dstDialect.GetColumnTypes(dstConnection, _mapping.DstTableName);
+
                 // 從來源資料庫讀取資料
-                var sourceData = FetchSourceData(srcConnection);
+                var sourceData = FetchSourceData(srcConnection, srcColumnTypes);
 
                 if (sourceData == null || sourceData.Rows.Count == 0)
                     return result;
@@ -82,7 +88,7 @@ namespace Business.BusinessLogic
                     try
                     {
                         result.DataCount += 1;
-                        ProcessRow(row, dstConnection, transaction);
+                        ProcessRow(row, dstConnection, transaction, dstColumnTypes);
                         transaction.Commit();
 
                     }
@@ -150,11 +156,19 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 從來源資料庫讀取資料
         /// </summary>
-        private DataTable FetchSourceData(DbConnection connection)
+        private DataTable FetchSourceData(DbConnection connection, Dictionary<string, string> srcColumnTypes)
         {
-            string query = BuildSourceQuery();
+            (string query, List<(string Name, object Value)> filterParams) = BuildSourceQuery(srcColumnTypes);
             using DbCommand command = connection.CreateCommand();
             command.CommandText = query;
+
+            foreach ((string name, object value) in filterParams)
+            {
+                DbParameter param = command.CreateParameter();
+                param.ParameterName = name;
+                param.Value = value ?? DBNull.Value;
+                command.Parameters.Add(param);
+            }
 
             DataTable dataTable = new DataTable();
             using DbDataReader reader = command.ExecuteReader();
@@ -164,165 +178,170 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 建立來源查詢SQL
+        /// 建立來源查詢 SQL（含參數化過濾條件）
         /// </summary>
-        private string BuildSourceQuery()
+        private (string Sql, List<(string Name, object Value)> Params) BuildSourceQuery(Dictionary<string, string> srcColumnTypes)
         {
             IEnumerable<string> columnNames = _columns.Select(c => _srcDialect.QuoteIdentifier(c.SrcColumnName));
-            string query = $"SELECT {string.Join(", ", columnNames)} FROM {_srcDialect.QuoteIdentifier(_mapping.SrcTableName)}";
+            string sql = $"SELECT {string.Join(", ", columnNames)} FROM {_srcDialect.QuoteIdentifier(_mapping.SrcTableName)}";
 
-            // 處理過濾條件
-            string whereClause = BuildWhereClause();
+            (string whereClause, List<(string Name, object Value)> filterParams) = BuildWhereClause(srcColumnTypes);
             if (!string.IsNullOrWhiteSpace(whereClause))
-            {
-                query += $" WHERE {whereClause}";
-            }
+                sql += $" WHERE {whereClause}";
 
-            return query;
+            return (sql, filterParams);
         }
 
         /// <summary>
-        /// 根據 FilterMode 建立 WHERE 子句
+        /// 根據 FilterMode 建立 WHERE 子句（builder 模式回傳參數清單）
         /// </summary>
-        private string BuildWhereClause()
+        private (string WhereClause, List<(string Name, object Value)> Params) BuildWhereClause(Dictionary<string, string> srcColumnTypes)
         {
-            // 如果沒有設定過濾條件，回傳空字串
             if (string.IsNullOrWhiteSpace(_mapping.FilterCondition))
-            {
-                return string.Empty;
-            }
+                return (string.Empty, new List<(string, object)>());
 
-            // 判斷 FilterMode
             if (string.IsNullOrWhiteSpace(_mapping.FilterMode))
-            {
-                // 如果沒有設定 FilterMode，預設為 manual
-                return _mapping.FilterCondition;
-            }
+                return (_mapping.FilterCondition, new List<(string, object)>());
 
             switch (_mapping.FilterMode.ToLower())
             {
-                case "manual":
-                    // 手寫 SQL 模式：直接使用 FilterCondition
-                    return _mapping.FilterCondition;
-
                 case "builder":
-                    // 條件建構器模式：解析 JSON 並建立 WHERE 子句
-                    return BuildWhereClauseFromJson(_mapping.FilterCondition);
+                    return BuildWhereClauseFromJson(_mapping.FilterCondition, srcColumnTypes);
 
+                case "manual":
                 default:
-                    // 未知模式，預設為 manual
-                    return _mapping.FilterCondition;
+                    // 手寫 SQL：直接使用，無額外參數
+                    return (_mapping.FilterCondition, new List<(string, object)>());
             }
         }
 
         /// <summary>
-        /// 從 JSON 格式的條件陣列建立 WHERE 子句
+        /// 從 JSON 格式的條件陣列建立參數化 WHERE 子句
         /// </summary>
-        /// <param name="jsonCondition">JSON 格式的條件陣列</param>
-        /// <returns>WHERE 子句</returns>
-        private string BuildWhereClauseFromJson(string jsonCondition)
+        private (string WhereClause, List<(string Name, object Value)> Params) BuildWhereClauseFromJson(string jsonCondition, Dictionary<string, string> srcColumnTypes)
         {
+            List<(string Name, object Value)> parameters = new();
             try
             {
-                // 解析 JSON（格式：{"mode":"builder","sql":"","rows":[{"logic":"","col":"SourceA","op":"=","val":"A1"}]}）
-                var filterConfig = System.Text.Json.JsonSerializer.Deserialize<FilterConfiguration>(
+                FilterConfiguration filterConfig = System.Text.Json.JsonSerializer.Deserialize<FilterConfiguration>(
                     jsonCondition,
-                    new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (filterConfig == null || filterConfig.Rows == null || filterConfig.Rows.Count == 0)
+                    return (string.Empty, parameters);
+
+                List<string> whereClauses = new();
+
+                foreach (FilterRow row in filterConfig.Rows)
                 {
-                    return string.Empty;
-                }
-
-                var whereClauses = new List<string>();
-
-                for (int i = 0; i < filterConfig.Rows.Count; i++)
-                {
-                    var row = filterConfig.Rows[i];
-
                     if (string.IsNullOrWhiteSpace(row.Col) || string.IsNullOrWhiteSpace(row.Op))
-                    {
                         continue;
-                    }
 
-                    var clause = BuildSingleCondition(row);
+                    string clause = BuildSingleCondition(row, parameters, srcColumnTypes);
                     if (!string.IsNullOrWhiteSpace(clause))
                     {
-                        // 第一個條件不加邏輯運算子，後續條件根據 logic 決定
-                        if (i == 0)
-                        {
-                            whereClauses.Add(clause);
-                        }
-                        else
-                        {
-                            var logic = string.IsNullOrWhiteSpace(row.Logic) ? "AND" : row.Logic.ToUpper();
-                            whereClauses.Add($"{logic} {clause}");
-                        }
+                        // whereClauses 為空時為第一個條件，不加邏輯運算子
+                        string prefix = whereClauses.Count == 0
+                            ? string.Empty
+                            : (string.IsNullOrWhiteSpace(row.Logic) ? "AND" : row.Logic.ToUpper()) + " ";
+                        whereClauses.Add($"{prefix}{clause}");
                     }
                 }
 
-                return whereClauses.Count > 0 ? string.Join(" ", whereClauses) : string.Empty;
+                return (string.Join(" ", whereClauses), parameters);
             }
             catch (Exception ex)
             {
-                // JSON 解析失敗，記錄錯誤並回傳空字串
                 Console.WriteLine($"解析過濾條件 JSON 時發生錯誤: {ex.Message}");
-                return string.Empty;
+                return (string.Empty, parameters);
             }
         }
 
         /// <summary>
-        /// 建立單一條件子句
+        /// 建立單一參數化條件子句，並將參數加入 parameters 清單。
+        /// 單值比較運算子（=、!=、&lt;&gt;、&gt;、&gt;=、&lt;、&lt;=）會依來源欄位型別套用 CoerceToDbType，
+        /// 使 PostgreSQL 等強型態資料庫能正確做型態比對。
+        /// LIKE、IN、BETWEEN 等以字串語意為主，保留字串型別。
         /// </summary>
-        private string BuildSingleCondition(FilterRow row)
+        private string BuildSingleCondition(FilterRow row, List<(string Name, object Value)> parameters, Dictionary<string, string> srcColumnTypes)
         {
             string field = _srcDialect.QuoteIdentifier(row.Col);
             string op = row.Op?.ToUpper();
             string value = row.Val;
+            int baseIdx = parameters.Count;
 
-            // 處理不同的運算子
             switch (op)
             {
                 case "=":
                 case "!=":
+                case "<>":
                 case ">":
                 case ">=":
                 case "<":
                 case "<=":
-                case "<>":
-                    // 判斷值的類型，加上適當的引號
-                    if (IsNumeric(value))
-                    {
-                        return $"{field} {row.Op} {value}";
-                    }
-                    else
-                    {
-                        return $"{field} {row.Op} '{EscapeSqlString(value)}'";
-                    }
+                {
+                    string pName = $"@w{baseIdx}";
+                    srcColumnTypes.TryGetValue(row.Col, out string srcDbType);
+                    object coerced = string.IsNullOrEmpty(value)
+                        ? DBNull.Value
+                        : CoerceToDbType(value, srcDbType);
+                    parameters.Add((pName, coerced));
+                    return $"{field} {row.Op} {pName}";
+                }
 
                 case "LIKE":
-                    return $"{field} LIKE '%{EscapeSqlString(value)}%'";
+                {
+                    string pName = $"@w{baseIdx}";
+                    parameters.Add((pName, $"%{value}%"));
+                    return $"{field} LIKE {pName}";
+                }
 
                 case "NOT LIKE":
-                    return $"{field} NOT LIKE '%{EscapeSqlString(value)}%'";
+                {
+                    string pName = $"@w{baseIdx}";
+                    parameters.Add((pName, $"%{value}%"));
+                    return $"{field} NOT LIKE {pName}";
+                }
 
                 case "STARTS WITH":
-                    return $"{field} LIKE '{EscapeSqlString(value)}%'";
+                {
+                    string pName = $"@w{baseIdx}";
+                    parameters.Add((pName, $"{value}%"));
+                    return $"{field} LIKE {pName}";
+                }
 
                 case "ENDS WITH":
-                    return $"{field} LIKE '%{EscapeSqlString(value)}'";
+                {
+                    string pName = $"@w{baseIdx}";
+                    parameters.Add((pName, $"%{value}"));
+                    return $"{field} LIKE {pName}";
+                }
 
                 case "IN":
-                    // value 應該是逗號分隔的值
-                    var values = value?.Split(',').Select(v => $"'{EscapeSqlString(v.Trim())}'");
-                    return $"{field} IN ({string.Join(",", values ?? Array.Empty<string>())})";
+                {
+                    string[] vals = value?.Split(',') ?? Array.Empty<string>();
+                    List<string> pNames = new();
+                    for (int i = 0; i < vals.Length; i++)
+                    {
+                        string pName = $"@w{baseIdx + i}";
+                        parameters.Add((pName, vals[i].Trim()));
+                        pNames.Add(pName);
+                    }
+                    return pNames.Count > 0 ? $"{field} IN ({string.Join(", ", pNames)})" : string.Empty;
+                }
 
                 case "NOT IN":
-                    var notInValues = value?.Split(',').Select(v => $"'{EscapeSqlString(v.Trim())}'");
-                    return $"{field} NOT IN ({string.Join(",", notInValues ?? Array.Empty<string>())})";
+                {
+                    string[] vals = value?.Split(',') ?? Array.Empty<string>();
+                    List<string> pNames = new();
+                    for (int i = 0; i < vals.Length; i++)
+                    {
+                        string pName = $"@w{baseIdx + i}";
+                        parameters.Add((pName, vals[i].Trim()));
+                        pNames.Add(pName);
+                    }
+                    return pNames.Count > 0 ? $"{field} NOT IN ({string.Join(", ", pNames)})" : string.Empty;
+                }
 
                 case "IS NULL":
                     return $"{field} IS NULL";
@@ -331,13 +350,18 @@ namespace Business.BusinessLogic
                     return $"{field} IS NOT NULL";
 
                 case "BETWEEN":
-                    // value 格式：value1,value2
-                    var betweenValues = value?.Split(',');
-                    if (betweenValues?.Length == 2)
+                {
+                    string[] parts = value?.Split(',') ?? Array.Empty<string>();
+                    if (parts.Length == 2)
                     {
-                        return $"{field} BETWEEN '{EscapeSqlString(betweenValues[0].Trim())}' AND '{EscapeSqlString(betweenValues[1].Trim())}'";
+                        string p1 = $"@w{baseIdx}";
+                        string p2 = $"@w{baseIdx + 1}";
+                        parameters.Add((p1, parts[0].Trim()));
+                        parameters.Add((p2, parts[1].Trim()));
+                        return $"{field} BETWEEN {p1} AND {p2}";
                     }
                     return string.Empty;
+                }
 
                 default:
                     return string.Empty;
@@ -345,27 +369,58 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 判斷字串是否為數字
+        /// 將字串值依目標資料庫欄位型別轉換為對應的 .NET 型別。
+        /// dbType 為 null 或無法辨識時，保留原始字串。
         /// </summary>
-        private bool IsNumeric(string value)
+        private static object CoerceToDbType(string rawValue, string dbType)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-            return double.TryParse(value, out _);
-        }
+            if (string.IsNullOrEmpty(dbType))
+                return rawValue;
 
-        /// <summary>
-        /// 跳脫 SQL 字串中的單引號，防止 SQL Injection
-        /// </summary>
-        private string EscapeSqlString(string value)
-        {
-            if (string.IsNullOrEmpty(value))
+            string t = dbType.ToLower();
+
+            // 整數類型（MSSQL: int/bigint/smallint/tinyint；PostgreSQL: int4/int8/int2）
+            if (t is "int" or "integer" or "bigint" or "smallint" or "tinyint" or "int4" or "int8" or "int2")
             {
-                return string.Empty;
+                if (long.TryParse(rawValue, out long lv)) return lv;
+                return DBNull.Value;
             }
-            return value.Replace("'", "''");
+
+            // 浮點/小數類型
+            if (t is "decimal" or "numeric" or "money" or "smallmoney" or "float" or "real"
+                    or "double precision" or "float8" or "float4" or "double")
+            {
+                if (decimal.TryParse(rawValue, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out decimal dv)) return dv;
+                return DBNull.Value;
+            }
+
+            // 布林類型（MSSQL: bit；PostgreSQL: bool/boolean）
+            if (t is "bit" or "bool" or "boolean")
+            {
+                if (rawValue == "1" || rawValue.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
+                if (rawValue == "0" || rawValue.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
+                return DBNull.Value;
+            }
+
+            // GUID 類型（MSSQL: uniqueidentifier；PostgreSQL: uuid）
+            if (t is "uniqueidentifier" or "uuid")
+            {
+                if (Guid.TryParse(rawValue, out Guid gv)) return gv;
+                return DBNull.Value;
+            }
+
+            // 日期時間類型
+            if (t is "datetime" or "datetime2" or "date" or "time" or "smalldatetime"
+                    or "timestamp" or "timestamp without time zone" or "timestamp with time zone"
+                    or "timestamptz" or "timetz")
+            {
+                if (DateTime.TryParse(rawValue, out DateTime dtv)) return dtv;
+                return DBNull.Value;
+            }
+
+            // 預設：字串
+            return rawValue;
         }
 
         /// <summary>
@@ -393,7 +448,7 @@ namespace Business.BusinessLogic
         /// <summary>
         /// 處理單筆資料
         /// </summary>
-        private void ProcessRow(DataRow sourceRow, DbConnection dstConnection, DbTransaction transaction)
+        private void ProcessRow(DataRow sourceRow, DbConnection dstConnection, DbTransaction transaction, Dictionary<string, string> dstColumnTypes)
         {
             // 準備目的資料
             var targetData = new Dictionary<string, object>();
@@ -417,14 +472,17 @@ namespace Business.BusinessLogic
                     {
                         throw new InvalidOperationException("加密金鑰或IV未設定");
                     }
-                    var encryptedValue = SecurityUtility.Encrypt(sourceValue.ToString(), _secretKey, _secretIV);
+                    string encryptedValue = SecurityUtility.Encrypt(sourceValue.ToString(), _secretKey, _secretIV);
                     targetData[column.DstColumnName] = encryptedValue;
                 }
                 else
                 {
-                    targetData[column.DstColumnName] = sourceValue;
+                    // 依目的欄位型別做型別轉換
+                    dstColumnTypes.TryGetValue(column.DstColumnName, out string dbType);
+                    targetData[column.DstColumnName] = CoerceToDbType(sourceValue.ToString(), dbType);
                 }
             }
+
 
             // 判斷是否需要 UPDATE 或 INSERT
             if (primaryKeyColumns.Count > 0)

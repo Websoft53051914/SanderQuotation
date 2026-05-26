@@ -74,7 +74,8 @@ namespace Business.BusinessLogic
         {
             var entity = GetMappingDAO().FindByPropertys(new Dictionary<string, object>
             {
-                { nameof(EsFileTransferMappingEntity.TransferMappingCode), transferMappingCode }
+                { nameof(EsFileTransferMappingEntity.TransferMappingCode), transferMappingCode },
+                { nameof(EsFileTransferMappingEntity.Status), (int)StatusEnum.Enabled }
             });
             if (entity == null) return null;
 

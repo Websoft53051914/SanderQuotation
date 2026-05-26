@@ -180,5 +180,15 @@ namespace Business.BusinessLogic
 
     public partial class TBBomFileQuotationExternalHistoryBL
     {
+        /// <summary>
+        /// 物理刪除查價日期早於指定天數的歷史紀錄
+        /// </summary>
+        /// <param name="expirationDays">效期天數，超過此天數的紀錄將被刪除</param>
+        public void DeleteOldRecords(int expirationDays)
+        {
+            SearchVO searchVO = new();
+            searchVO.QuotationDateLt = DateTime.Now.Date.AddDays(-expirationDays);
+            DeleteByFilter(searchVO, isLogicalDelete: false);
+        }
     }
 }

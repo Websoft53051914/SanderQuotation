@@ -1,26 +1,28 @@
-using backend.Common;
+ï»¿using backend.Common;
+using backend.Common.ConfigurationHelper;
 using Business.BusinessLogic;
 using Const;
-using DocumentFormat.OpenXml.Presentation;
 using static Const.Enums;
 
 namespace backend.EIPSource
 {
     /// <summary>
-    /// ¸ê®Æ²M²z±Æµ{¤u§@
-    /// ¨C¤Ñ­â±á 3 ÂI°õ¦æ¡G
-    /// 1. §R°£ 15 ¤Ñ«eªº tb_controllog
-    /// 2. §R°£ Status = 9 (§@¼o) ªº tb_bomfiledecisionlog
-    /// 3. §R°£ 15 ¤Ñ«eªº esScheduleCycleLogDetail
-    /// 4. §R°£ 15 ¤Ñ«eªº esScheduleCycleLog
-    /// 5. §R°£ status &lt;&gt; 1 ¥B 5 ¤Ñ¥H«eªº HistoryFile ¤Î¨ä¹êÅéÀÉ®×
-    /// 6. §R°£ status &lt;&gt; 1 ¥B 5 ¤Ñ¥H«eªº EsFileTransferUpload ¤Î¨ä¹êÅéÀÉ®×
-    /// 7. §R°£ 30 ¤Ñ«eªº ailog (¤£½× status)¡A½T«O¸ê®Æ®w¤£·|²Ö¿n¹L¦hµL¥Î¸ê®Æ
+    /// è³‡æ–™æ¸…ç†æ’ç¨‹å·¥ä½œ
+    /// æ¯å¤©å‡Œæ™¨ 3 é»åŸ·è¡Œï¼š
+    /// 1. åˆªé™¤ 15 å¤©å‰çš„ tb_controllog
+    /// 2. åˆªé™¤ Status = 9 (ä½œå»¢) çš„ tb_bomfiledecisionlog
+    /// 3. åˆªé™¤ 15 å¤©å‰çš„ esScheduleCycleLogDetail
+    /// 4. åˆªé™¤ 15 å¤©å‰çš„ esScheduleCycleLog
+    /// 5. åˆªé™¤ status &lt;&gt; 1 ä¸” 5 å¤©ä»¥å‰çš„ HistoryFile åŠå…¶å¯¦é«”æª”æ¡ˆ
+    /// 6. åˆªé™¤ status &lt;&gt; 1 ä¸” 5 å¤©ä»¥å‰çš„ EsFileTransferUpload åŠå…¶å¯¦é«”æª”æ¡ˆ
+    /// 7. åˆªé™¤ 30 å¤©å‰çš„ ailog (ä¸è«– status)ï¼Œç¢ºä¿è³‡æ–™åº«ä¸æœƒç´¯ç©éå¤šç„¡ç”¨è³‡æ–™
+    /// 8. åˆªé™¤è¶…é ExternalQuotation:ExpirationDay å¤©çš„ TBBomFileQuotationExternalHistory ç´€éŒ„
+    /// 9. åˆªé™¤è¶…é DataCleanupSettings:AIFileRetentionDays å¤©çš„ AI ç”¢ç”Ÿ Excel æš«å­˜æª”æ¡ˆ
     /// </summary>
     public class DataCleanupJob
     {
         /// <summary>
-        /// Log ¤¤ªº Controller ¦WºÙ¡A¤è«KÃÑ§O¬O­ş­Ó¤u§@²£¥Íªº Log
+        /// Log ä¸­çš„ Controller åç¨±ï¼Œæ–¹ä¾¿è­˜åˆ¥æ˜¯å“ªå€‹å·¥ä½œç”¢ç”Ÿçš„ Log
         /// </summary>
         private const string LogControllerName = nameof(DataCleanupJob);
 
@@ -37,6 +39,7 @@ namespace backend.EIPSource
 
         public async Task ExecuteAsync()
         {   
+            ConfigurationHelper configurationHelper = new ConfigurationHelper(_config);
             int ControlLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:ControlLogRetentionDays",15);
             int CycleLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:CycleLogRetentionDays",15);
             int HistoryFileRetentionDays = _config.GetValue<int>("DataCleanupSettings:HistoryFileRetentionDays", 5);
@@ -46,7 +49,7 @@ namespace backend.EIPSource
             {
                 try
                 {
-                    // §R°£ 15 ¤Ñ«eªº tb_controllog
+                    // åˆªé™¤ 15 å¤©å‰çš„ tb_controllog
                     LogBL logBL = BLFactory.GetInstanceBackGround<LogBL>(_config);
                     logBL.DeleteOldLog(ControlLogRetentionDays);
                 }
@@ -57,7 +60,7 @@ namespace backend.EIPSource
 
                 try
                 {
-                    // §R°£ Status = 9 (§@¼o) ªº tb_bomfiledecisionlog
+                    // åˆªé™¤ Status = 9 (ä½œå»¢) çš„ tb_bomfiledecisionlog
                     TBBomFileDecisionLogBL decisionLogBL = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>(_config);
                     decisionLogBL.PhysicalDeleteByStatus((int)StatusEnum.Cancel);
                 }
@@ -68,7 +71,7 @@ namespace backend.EIPSource
 
                 try
                 {
-                    // ¥ı§R detail ¦A§R master¡AÁ×§K FK °İÃD
+                    // å…ˆåˆª detail å†åˆª masterï¼Œé¿å… FK å•é¡Œ
                     EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
                     cycleLogBL.DeleteOldLogDetail(CycleLogRetentionDays);
                 }
@@ -89,7 +92,7 @@ namespace backend.EIPSource
 
                 try
                 {
-                    // §R°£ status <> 1 ¥B 5 ¤Ñ¥H«eªº HistoryFile °O¿ı¤Î¹êÅéÀÉ®×
+                    // åˆªé™¤ status <> 1 ä¸” 5 å¤©ä»¥å‰çš„ HistoryFile è¨˜éŒ„åŠå¯¦é«”æª”æ¡ˆ
                     string historyFileDir = Path.Combine(_env.ContentRootPath, FileDirectoryConst.HistoryFile);
                     HistoryFileBL historyFileBL = BLFactory.GetInstanceBackGround<HistoryFileBL>(_config);
                     historyFileBL.DeleteOldNonActiveFiles(HistoryFileRetentionDays, historyFileDir);
@@ -101,7 +104,7 @@ namespace backend.EIPSource
 
                 try
                 {
-                    // §R°£ status <> 1 ¥B 5 ¤Ñ¥H«eªº EsFileTransferUpload °O¿ı¤Î¹êÅéÀÉ®×
+                    // åˆªé™¤ status <> 1 ä¸” 5 å¤©ä»¥å‰çš„ EsFileTransferUpload è¨˜éŒ„åŠå¯¦é«”æª”æ¡ˆ
                     EsFileTransferUploadBL esFileTransferUploadBL = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>(_config);
                     esFileTransferUploadBL.DeleteOldNonActiveFiles(EsFileTransferUploadRetentionDays, _pathProvider.EsFileTransferUpload);
                 }
@@ -112,9 +115,41 @@ namespace backend.EIPSource
 
                 try
                 {
-                    // §R°£ 30 ¤Ñ«eªº ailog (¤£½× status)
+                    // åˆªé™¤ 30 å¤©å‰çš„ ailog (ä¸è«– status)
                     AILogBL aiLogBL = BLFactory.GetInstanceBackGround<AILogBL>(_config);
                     aiLogBL.DeleteOldLog(AILogRetentionDays);
+                }
+                catch (Exception ex)
+                {
+                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                }
+
+                try
+                {
+                    // åˆªé™¤è¶…éæ•ˆæœŸå¤©æ•¸çš„å¤–éƒ¨æŸ¥åƒ¹æ­·å²ç´€éŒ„
+                    int externalExpirationDays = configurationHelper.GetIntValue("ExternalQuotation:ExpirationDay");
+                    TBBomFileQuotationExternalHistoryBL externalHistoryBL = BLFactory.GetInstanceBackGround<TBBomFileQuotationExternalHistoryBL>(_config);
+                    externalHistoryBL.DeleteOldRecords(externalExpirationDays);
+                }
+                catch (Exception ex)
+                {
+                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                }
+
+                try
+                {
+                    // åˆªé™¤ AI ç”¢ç”Ÿçš„ Excel æš«å­˜æª”æ¡ˆï¼ˆè¶…éè¨­å®šä¿ç•™å¤©æ•¸ï¼‰
+                    int aiFileRetentionDays = configurationHelper.GetIntValue("DataCleanupSettings:AIFileRetentionDays");
+                    string aiExcelDir = _pathProvider.AIExcel;
+                    DateTime cutoff = DateTime.Now.AddDays(-aiFileRetentionDays);
+                    if (Directory.Exists(aiExcelDir))
+                    {
+                        foreach (string file in Directory.GetFiles(aiExcelDir))
+                        {
+                            if (File.GetCreationTime(file) < cutoff)
+                                File.Delete(file);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

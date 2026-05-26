@@ -1,5 +1,4 @@
-using backend.Common;
-using Microsoft.SemanticKernel;
+ï»¿using backend.Common;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.ComponentModel;
@@ -10,9 +9,9 @@ using static Const.Enums;
 namespace backend.AI.Plugins
 {
     /// <summary>
-    /// Kernel Function Plugin¡G¾ú¥v¸ê®Æ¤W¶ÇÀÉ®×¬d¸ß¤u¨ã
-    /// ­t³d¡G²z¸Ñ¨Ï¥ÎªÌ·N¹Ï ¡÷ ¥Í¦¨¹ïÀ³ SQL ¡÷ ©I¥s SqlExecutorPlugin °õ¦æ
-    /// ­Y»İ­nÂX¥R¨ä¥L¸ê®Æªí¡A¥é·Ó¦¹ Plugin ·s¼W§Y¥i
+    /// Kernel Function Pluginï¼šæ­·å²è³‡æ–™ä¸Šå‚³æª”æ¡ˆæŸ¥è©¢å·¥å…·
+    /// è² è²¬ï¼šç†è§£ä½¿ç”¨è€…æ„åœ– â†’ ç”Ÿæˆå°æ‡‰ SQL â†’ å‘¼å« SqlExecutorPlugin åŸ·è¡Œ
+    /// è‹¥éœ€è¦æ“´å……å…¶ä»–è³‡æ–™è¡¨ï¼Œä»¿ç…§æ­¤ Plugin æ–°å¢å³å¯
     /// </summary>
     public class HistoryFileQueryPlugin
     {
@@ -20,13 +19,13 @@ namespace backend.AI.Plugins
         private readonly SqlExecutorPlugin _sqlExecutor;
         private readonly ManualBatchEmbedding _embedding;
 
-        // ¦V¶q¦û¦ì²ÅÃÑ§O¦r¦ê¡]AI ¥Í¦¨ SQL ®É¨Ï¥Î¡A¦¹³B´À´«¦¨¹ê»Ú¦V¶q¡^
+        // å‘é‡ä½”ä½ç¬¦è­˜åˆ¥å­—ä¸²ï¼ˆAI ç”Ÿæˆ SQL æ™‚ä½¿ç”¨ï¼Œæ­¤è™•æ›¿æ›æˆå¯¦éš›å‘é‡ï¼‰
         private const string VectorPlaceholder = "{QUERY_VECTOR}";
 
-        /// <summary>³Ì«á¤@¦¸©I¥s©Ò°õ¦æªº©Ò¦³ SQL¡]¦h¨BÆJ®É¬°¦hµ§¡^</summary>
+        /// <summary>æœ€å¾Œä¸€æ¬¡å‘¼å«æ‰€åŸ·è¡Œçš„æ‰€æœ‰ SQLï¼ˆå¤šæ­¥é©Ÿæ™‚ç‚ºå¤šç­†ï¼‰</summary>
         public List<string> LastExecutedSqls { get; private set; } = new();
 
-        /// <summary>³Ì«á¤@¦¸©I¥sªº Kernel Function ¦WºÙ</summary>
+        /// <summary>æœ€å¾Œä¸€æ¬¡å‘¼å«çš„ Kernel Function åç¨±</summary>
         public string LastFunctionName { get; private set; } = string.Empty;
 
         public HistoryFileQueryPlugin(
@@ -39,43 +38,43 @@ namespace backend.AI.Plugins
             _embedding = embedding;
         }
 
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
-        // Schema & ¬d¸ßÅŞ¿è´y­z¡]System Prompt ·h²¾¦Ü¦¹¡^
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Schema & æŸ¥è©¢é‚è¼¯æè¿°ï¼ˆSystem Prompt æ¬ç§»è‡³æ­¤ï¼‰
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private string GetQuerySystemPrompt()
         {
             return $@"
-§A¬O¤@­Ó±Mºë©ó PostgreSQL ªº¸ê®Æ®w±M®a¡A±Mªù­t³d¡uAI¾ú¥v¸ê®Æ¤W¶ÇÀÉ®×¡v¬ÛÃöªº¬d¸ß¡C
+ä½ æ˜¯ä¸€å€‹å°ˆç²¾æ–¼ PostgreSQL çš„è³‡æ–™åº«å°ˆå®¶ï¼Œå°ˆé–€è² è²¬ã€ŒAIæ­·å²è³‡æ–™ä¸Šå‚³æª”æ¡ˆã€ç›¸é—œçš„æŸ¥è©¢ã€‚
 
-# §A­t³dªº¸ê®Æªí
+# ä½ è² è²¬çš„è³‡æ–™è¡¨
 
-## historyfile¡]AI¾ú¥v¸ê®ÆÀÉ®×¥Dªí¡^
-- id (uuid, ¥DÁä)
-- filename (varchar(100))¡G¤W¶ÇªºÀÉ®×¦WºÙ
-- uploadid (varchar(36))¡GÀÉ®×Àx¦s¥N¸¹
-- createdat (timestamp)¡G«Ø¥ß®É¶¡
-- updatedat (timestamp)¡G§ó·s®É¶¡
-- createdby (varchar(100))¡G«Ø¥ß±b¸¹
-- updatedby (varchar(100))¡G§ó·s±b¸¹
-- status (int4)¡Gª¬ºA 0=°±¥Î, 1=±Ò¥Î, 9=§R°£
-- filesummary (text)¡GÀÉ®×¤º®eºK­n
+## historyfileï¼ˆAIæ­·å²è³‡æ–™æª”æ¡ˆä¸»è¡¨ï¼‰
+- id (uuid, ä¸»éµ)
+- filename (varchar(100))ï¼šä¸Šå‚³çš„æª”æ¡ˆåç¨±
+- uploadid (varchar(36))ï¼šæª”æ¡ˆå„²å­˜ä»£è™Ÿ
+- createdat (timestamp)ï¼šå»ºç«‹æ™‚é–“
+- updatedat (timestamp)ï¼šæ›´æ–°æ™‚é–“
+- createdby (varchar(100))ï¼šå»ºç«‹å¸³è™Ÿ
+- updatedby (varchar(100))ï¼šæ›´æ–°å¸³è™Ÿ
+- status (int4)ï¼šç‹€æ…‹ 0=åœç”¨, 1=å•Ÿç”¨, 9=åˆªé™¤
+- filesummary (text)ï¼šæª”æ¡ˆå…§å®¹æ‘˜è¦
 
-## embeddedhistoryfile¡]AI¾ú¥v¸ê®ÆÀÉ®×ºK­n¦V¶qªí¡^
-- id (uuid, ¥DÁä)
-- embedding (vector)¡GÀÉ®×ºK­n¦V¶q¡]¥Î©ó»y·N¬Û¦ü«×·j´M¡^
-- status (int4)¡G1=±Ò¥Î, 9=§R°£
-- historyfileid (uuid)¡G¥~Áä¡AÃöÁp¦Ü historyfile.id
+## embeddedhistoryfileï¼ˆAIæ­·å²è³‡æ–™æª”æ¡ˆæ‘˜è¦å‘é‡è¡¨ï¼‰
+- id (uuid, ä¸»éµ)
+- embedding (vector)ï¼šæª”æ¡ˆæ‘˜è¦å‘é‡ï¼ˆç”¨æ–¼èªæ„ç›¸ä¼¼åº¦æœå°‹ï¼‰
+- status (int4)ï¼š1=å•Ÿç”¨, 9=åˆªé™¤
+- historyfileid (uuid)ï¼šå¤–éµï¼Œé—œè¯è‡³ historyfile.id
 - createdby (varchar(100)), updatedby (varchar(100))
 - createdat (timestamp), updatedat (timestamp)
 
-# ¬d¸ß³W«h¡]·¥­«­n¡^
-1. ¬d¸ß historyfile ®É¡A¥²¶·¥[¤W `status = {(int)StatusEnum.Enabled}`¡C
-2. ¬d¸ß embeddedhistoryfile ®É¡A¥²¶·¥[¤W `status = {(int)StatusEnum.Enabled}`¡C
-3. ²{¦b®É¶¡¡G{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}¡C¥»¶g½d³ò¡G{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}¡]¶g¤@¡^¡ã {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}¡]¶g¤é¡^¡A¡u¥»¶g¡v©Î¡u³o¶g¡v¤@«ß«ü¦¹½d³ò¡C
-4. ¥u¯à¥Í¦¨ SELECT¡Aµ´¹ï¸T¤î INSERT / UPDATE / DELETE / DROP µ¥¡C
-5. ­Y°İÃD»İ­n»y·N¬Û¦ü«×·j´M¡ASQL ¤¤½Ğ¨Ï¥Î {VectorPlaceholder} §@¬°¦V¶q¦û¦ì²Å¡A¨t²Î·|¦Û°Ê´À´«¦¨¹ê»Ú¦V¶q­È¡A­­©w¬Û¦ü«×¤@©w­n¤j©ó0.7¡C
+# æŸ¥è©¢è¦å‰‡ï¼ˆæ¥µé‡è¦ï¼‰
+1. æŸ¥è©¢ historyfile æ™‚ï¼Œå¿…é ˆåŠ ä¸Š `status = {(int)StatusEnum.Enabled}`ã€‚
+2. æŸ¥è©¢ embeddedhistoryfile æ™‚ï¼Œå¿…é ˆåŠ ä¸Š `status = {(int)StatusEnum.Enabled}`ã€‚
+3. ç¾åœ¨æ™‚é–“ï¼š{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}ã€‚æœ¬é€±ç¯„åœï¼š{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}ï¼ˆé€±ä¸€ï¼‰ï½ {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}ï¼ˆé€±æ—¥ï¼‰ï¼Œã€Œæœ¬é€±ã€æˆ–ã€Œé€™é€±ã€ä¸€å¾‹æŒ‡æ­¤ç¯„åœã€‚
+4. åªèƒ½ç”Ÿæˆ SELECTï¼Œçµ•å°ç¦æ­¢ INSERT / UPDATE / DELETE / DROP ç­‰ã€‚
+5. è‹¥å•é¡Œéœ€è¦èªæ„ç›¸ä¼¼åº¦æœå°‹ï¼ŒSQL ä¸­è«‹ä½¿ç”¨ {VectorPlaceholder} ä½œç‚ºå‘é‡ä½”ä½ç¬¦ï¼Œç³»çµ±æœƒè‡ªå‹•æ›¿æ›æˆå¯¦éš›å‘é‡å€¼ï¼Œé™å®šç›¸ä¼¼åº¦ä¸€å®šè¦å¤§æ–¼0.7ã€‚
 
-# ¦V¶q¬d¸ß½d¨Ò¡]¾A¥Î©ó¡u§ä¸ò XX ¬ÛÃöªºÀÉ®×¡vÃş«¬ªº°İÃD¡^
+# å‘é‡æŸ¥è©¢ç¯„ä¾‹ï¼ˆé©ç”¨æ–¼ã€Œæ‰¾è·Ÿ XX ç›¸é—œçš„æª”æ¡ˆã€é¡å‹çš„å•é¡Œï¼‰
 SELECT a.id, a.filename, a.filesummary, (1 - (b.embedding <=> '{VectorPlaceholder}')) AS similarity
 FROM historyfile a
 INNER JOIN embeddedhistoryfile b ON a.id = b.historyfileid
@@ -85,27 +84,27 @@ WHERE a.status = {(int)StatusEnum.Enabled}
 ORDER BY b.embedding <=> '{VectorPlaceholder}'
 LIMIT 10;
 
-# ¿é¥X®æ¦¡¡]·¥­«­n¡^
-- ­Y°İÃD¥i¥Î¤@±ø SQL ¦^µª¡G¿é¥X¤@­Ó ```sql ... ``` °Ï¶ô¡C
-- ­Y°İÃD»İ­n¦h±ø SQL ¨Ì§Ç°õ¦æ¡]¨Ò¦p¡G¥ı¬d¥X id ²M³æ¡A¦A¥Î id ¬d¸Ô²Ó¸ê®Æ¡F©Î¥ı²Î­p¦A¿z¿ï¡^¡G¨Ì§Ç¿é¥X¦h­Ó ```sql ... ``` °Ï¶ô¡A¨C­Ó°Ï¶ô¤@±ø SQL¡A¨t²Î·|¦Û°Ê¨Ì§Ç°õ¦æ¨Ã±N«e¨Bµ²ªG¶Ç¤J¤U¤@¨B¡C
-- ¤£­n¦³¥ô¦ó¨ä¥L»¡©ú¤å¦r¡A¥u¿é¥X SQL °Ï¶ô¡C
+# è¼¸å‡ºæ ¼å¼ï¼ˆæ¥µé‡è¦ï¼‰
+- è‹¥å•é¡Œå¯ç”¨ä¸€æ¢ SQL å›ç­”ï¼šè¼¸å‡ºä¸€å€‹ ```sql ... ``` å€å¡Šã€‚
+- è‹¥å•é¡Œéœ€è¦å¤šæ¢ SQL ä¾åºåŸ·è¡Œï¼ˆä¾‹å¦‚ï¼šå…ˆæŸ¥å‡º id æ¸…å–®ï¼Œå†ç”¨ id æŸ¥è©³ç´°è³‡æ–™ï¼›æˆ–å…ˆçµ±è¨ˆå†ç¯©é¸ï¼‰ï¼šä¾åºè¼¸å‡ºå¤šå€‹ ```sql ... ``` å€å¡Šï¼Œæ¯å€‹å€å¡Šä¸€æ¢ SQLï¼Œç³»çµ±æœƒè‡ªå‹•ä¾åºåŸ·è¡Œä¸¦å°‡å‰æ­¥çµæœå‚³å…¥ä¸‹ä¸€æ­¥ã€‚
+- ä¸è¦æœ‰ä»»ä½•å…¶ä»–èªªæ˜æ–‡å­—ï¼Œåªè¼¸å‡º SQL å€å¡Šã€‚
 ";
         }
 
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
-        // Kernel Function¡G¬d¸ß¾ú¥v¤W¶ÇÀÉ®×
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Kernel Functionï¼šæŸ¥è©¢æ­·å²ä¸Šå‚³æª”æ¡ˆ
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
-        /// ®Ú¾Ú¨Ï¥ÎªÌ¹ï¾ú¥v¤W¶ÇÀÉ®×ªº¦ÛµM»y¨¥°İÃD¡A¥Í¦¨¨Ã¨Ì§Ç°õ¦æ¤@©Î¦h±ø SQL ¬d¸ß¡A¦^¶Ç¥]§t¨C¨Bµ²ªGªº JSON¡C
-        /// ¤ä´©¦h¨BÆJ¬d¸ß¡GAI ¥i¥Í¦¨¦h±ø SQL¡A¨C¨B¥i°Ñ¦Ò«e¤@¨Bµ²ªG§@¬°±ø¥ó¡C
+        /// æ ¹æ“šä½¿ç”¨è€…å°æ­·å²ä¸Šå‚³æª”æ¡ˆçš„è‡ªç„¶èªè¨€å•é¡Œï¼Œç”Ÿæˆä¸¦ä¾åºåŸ·è¡Œä¸€æˆ–å¤šæ¢ SQL æŸ¥è©¢ï¼Œå›å‚³åŒ…å«æ¯æ­¥çµæœçš„ JSONã€‚
+        /// æ”¯æ´å¤šæ­¥é©ŸæŸ¥è©¢ï¼šAI å¯ç”Ÿæˆå¤šæ¢ SQLï¼Œæ¯æ­¥å¯åƒè€ƒå‰ä¸€æ­¥çµæœä½œç‚ºæ¢ä»¶ã€‚
         /// </summary>
         [KernelFunction("query_history_files")]
-        [Description("¬d¸ß¾ú¥v¤W¶ÇÀÉ®×ªº¬ÛÃö¸ê®Æ¡A¨Ò¦p¡G¬d¸ß¯S©w¤é´Áªº¤W¶Çµ§¼Æ¡B·j´M¯S©w±b¸¹ªº¤W¶Ç¬ö¿ı¡B¨Ì»y·N´M§ä»P¯S©w¥DÃD¬ÛÃöªºÀÉ®×¡]¦V¶q·j´M¡^¡C¤ä´©»İ­n¦h¦¸ SQL ¤~¯à¦^µªªº°İÃD¡C¦^¶Ç¥]§t steps¡]¨C¨B sql/rowCount/data¡^»P finalData ªº JSON ¦r¦ê¡C")]
+        [Description("æŸ¥è©¢æ­·å²ä¸Šå‚³æª”æ¡ˆçš„ç›¸é—œè³‡æ–™ï¼Œä¾‹å¦‚ï¼šæŸ¥è©¢ç‰¹å®šæ—¥æœŸçš„ä¸Šå‚³ç­†æ•¸ã€æœå°‹ç‰¹å®šå¸³è™Ÿçš„ä¸Šå‚³ç´€éŒ„ã€ä¾èªæ„å°‹æ‰¾èˆ‡ç‰¹å®šä¸»é¡Œç›¸é—œçš„æª”æ¡ˆï¼ˆå‘é‡æœå°‹ï¼‰ã€‚æ”¯æ´éœ€è¦å¤šæ¬¡ SQL æ‰èƒ½å›ç­”çš„å•é¡Œã€‚å›å‚³åŒ…å« stepsï¼ˆæ¯æ­¥ sql/rowCount/dataï¼‰èˆ‡ finalData çš„ JSON å­—ä¸²ã€‚")]
         public async Task<string> QueryHistoryFilesAsync(
-            [Description("¨Ï¥ÎªÌÃö©ó¾ú¥v¤W¶ÇÀÉ®×ªº¦ÛµM»y¨¥°İÃD¡A¨Ò¦p¡G¡y¬Q¤Ñ¦³´Xµ§¤W¶Ç¡H¡z¡B¡y§ä¤Ñ®ğ¬ÛÃöªºÀÉ®×¡z¡B¡y½Ö¤W¶Ç¤F³Ì¦hÀÉ®×¡H¡z")] string question)
+            [Description("ä½¿ç”¨è€…é—œæ–¼æ­·å²ä¸Šå‚³æª”æ¡ˆçš„è‡ªç„¶èªè¨€å•é¡Œï¼Œä¾‹å¦‚ï¼šã€æ˜¨å¤©æœ‰å¹¾ç­†ä¸Šå‚³ï¼Ÿã€ã€ã€æ‰¾å¤©æ°£ç›¸é—œçš„æª”æ¡ˆã€ã€ã€èª°ä¸Šå‚³äº†æœ€å¤šæª”æ¡ˆï¼Ÿã€")] string question)
         {
-            // Step 1¡G©I¥s AI ®Ú¾Ú Schema ´y­z¥Í¦¨¤@©Î¦h±ø SQL
+            // Step 1ï¼šå‘¼å« AI æ ¹æ“š Schema æè¿°ç”Ÿæˆä¸€æˆ–å¤šæ¢ SQL
             var tempHistory = new ChatHistory();
             tempHistory.AddSystemMessage(GetQuerySystemPrompt());
             tempHistory.AddUserMessage(question);
@@ -116,9 +115,9 @@ LIMIT 10;
             var sqlList = ExtractAllSqlFromMarkdown(aiContent);
 
             if (sqlList.Count == 0)
-                return JsonSerializer.Serialize(new { steps = Array.Empty<object>(), finalData = Array.Empty<object>(), error = "AI µLªk¬°¦¹°İÃD¥Í¦¨¦³®Äªº SQL¡C" });
+                return JsonSerializer.Serialize(new { steps = Array.Empty<object>(), finalData = Array.Empty<object>(), error = "AI ç„¡æ³•ç‚ºæ­¤å•é¡Œç”Ÿæˆæœ‰æ•ˆçš„ SQLã€‚" });
 
-            // °O¿ı¥»¦¸©I¥sªº function ¦WºÙ»P SQL
+            // è¨˜éŒ„æœ¬æ¬¡å‘¼å«çš„ function åç¨±èˆ‡ SQL
             LastFunctionName = "query_history_files";
             LastExecutedSqls = new List<string>();
 
@@ -130,7 +129,7 @@ LIMIT 10;
             {
                 string rawSql = sqlList[i];
 
-                // ¦h¨BÆJ®É¡A½Ğ AI ±N«e¨Bµ²ªGª`¤J·í«e SQL
+                // å¤šæ­¥é©Ÿæ™‚ï¼Œè«‹ AI å°‡å‰æ­¥çµæœæ³¨å…¥ç•¶å‰ SQL
                 if (i > 0 && !string.IsNullOrWhiteSpace(previousResultJson))
                     rawSql = await RefineSqlWithPreviousResultAsync(rawSql, previousResultJson, question);
 
@@ -157,7 +156,7 @@ LIMIT 10;
                 }
             }
 
-            // ³Ì«á¤@¨Bªº data §@¬° finalData
+            // æœ€å¾Œä¸€æ­¥çš„ data ä½œç‚º finalData
             object? finalData = null;
             if (steps.Count > 0)
                 finalData = steps.Last().GetType().GetProperty("data")?.GetValue(steps.Last());
@@ -168,21 +167,21 @@ LIMIT 10;
             });
         }
 
-        /// <summary>·í¦h¨BÆJ¬d¸ß®É¡A½Ğ AI ±N«e¨Bµ²ªG¿Ä¤J·í«e SQL¡]¸É¥R IN ±ø¥óµ¥¡^</summary>
+        /// <summary>ç•¶å¤šæ­¥é©ŸæŸ¥è©¢æ™‚ï¼Œè«‹ AI å°‡å‰æ­¥çµæœèå…¥ç•¶å‰ SQLï¼ˆè£œå…… IN æ¢ä»¶ç­‰ï¼‰</summary>
         private async Task<string> RefineSqlWithPreviousResultAsync(string currentSql, string previousResultJson, string originalQuestion)
         {
             var refineHistory = new ChatHistory();
             refineHistory.AddSystemMessage(GetQuerySystemPrompt());
             refineHistory.AddUserMessage($@"
-­ì©l°İÃD¡G{originalQuestion}
+åŸå§‹å•é¡Œï¼š{originalQuestion}
 
-«e¤@¨B SQL ¬d¸ßµ²ªG¡]JSON¡^¡G
+å‰ä¸€æ­¥ SQL æŸ¥è©¢çµæœï¼ˆJSONï¼‰ï¼š
 {previousResultJson}
 
-½Ğ®Ú¾Ú¤W­z«e¨Bµ²ªG¡A­×§ï¤U­±ªº SQL¡A¨Ï¨ä¯à¥¿½T§Q¥Î«e¨Bµ²ªG¤¤ªº id ©Î¨ä¥LÄæ¦ì§@¬°±ø¥ó¡]¨Ò¦p IN (...)¡^¡A¥H±o¥X³Ì²×µª®×¡C
-­Y SQL ¤w¨¬°÷©ÎµL»İ­×§ï¡A­ì¼Ë¿é¥X§Y¥i¡C
+è«‹æ ¹æ“šä¸Šè¿°å‰æ­¥çµæœï¼Œä¿®æ”¹ä¸‹é¢çš„ SQLï¼Œä½¿å…¶èƒ½æ­£ç¢ºåˆ©ç”¨å‰æ­¥çµæœä¸­çš„ id æˆ–å…¶ä»–æ¬„ä½ä½œç‚ºæ¢ä»¶ï¼ˆä¾‹å¦‚ IN (...)ï¼‰ï¼Œä»¥å¾—å‡ºæœ€çµ‚ç­”æ¡ˆã€‚
+è‹¥ SQL å·²è¶³å¤ æˆ–ç„¡éœ€ä¿®æ”¹ï¼ŒåŸæ¨£è¼¸å‡ºå³å¯ã€‚
 
-«İ­×§ï SQL¡G
+å¾…ä¿®æ”¹ SQLï¼š
 ```sql
 {currentSql}
 ```
@@ -192,9 +191,9 @@ LIMIT 10;
             return string.IsNullOrWhiteSpace(refined) ? currentSql : refined;
         }
 
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
-        // ¤u¨ã¤èªk
-        // ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // å·¥å…·æ–¹æ³•
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 
@@ -208,7 +207,7 @@ LIMIT 10;
             return selectMatch.Success ? selectMatch.Groups[1].Value.Trim() : string.Empty;
         }
 
-        /// <summary>±q AI ¦^ÂĞ¤¤Â^¨ú©Ò¦³ SQL °Ï¶ô¡]¤ä´©¦h±ø¡^</summary>
+        /// <summary>å¾ AI å›è¦†ä¸­æ“·å–æ‰€æœ‰ SQL å€å¡Šï¼ˆæ”¯æ´å¤šæ¢ï¼‰</summary>
         private static List<string> ExtractAllSqlFromMarkdown(string content)
         {
             var results = new List<string>();
@@ -219,7 +218,7 @@ LIMIT 10;
                 if (!string.IsNullOrWhiteSpace(sql))
                     results.Add(sql);
             }
-            // ­Y¨S¦³ markdown block¡Afallback §ì²Ä¤@±ø SELECT
+            // è‹¥æ²’æœ‰ markdown blockï¼Œfallback æŠ“ç¬¬ä¸€æ¢ SELECT
             if (results.Count == 0)
             {
                 var selectMatch = Regex.Match(content, @"(SELECT[\s\S]+)", RegexOptions.IgnoreCase);

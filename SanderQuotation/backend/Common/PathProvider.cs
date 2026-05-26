@@ -28,5 +28,10 @@
         /// 轉入檔案上傳
         /// </summary>
         public string EsFileTransferUpload => Path.Combine(Upload, "EsFileTransferUpload");
+
+        /// <summary>
+        /// AI 產生的 Excel 暫存目錄
+        /// </summary>
+        public string AIExcel => Path.Combine(Upload, "AIExcel");
     }
 }

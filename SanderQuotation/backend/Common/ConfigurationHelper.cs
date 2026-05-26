@@ -56,6 +56,10 @@ namespace backend.Common.ConfigurationHelper
             // 內部查價效期天數
             { "InternalQuotation:ExpirationDay", "1" },
 	        #endregion
+            #region -- DataCleanupJob --
+            // AI 產生檔案保留天數
+            { "DataCleanupSettings:AIFileRetentionDays", "1" },
+	        #endregion
             
         };
 
