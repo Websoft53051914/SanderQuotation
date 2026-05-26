@@ -32,6 +32,11 @@ namespace backend.AI.VO
         public string GeneratedSql { get; set; } = string.Empty;
 
         /// <summary>
+        /// 本次呼叫的 Kernel Function 名稱
+        /// </summary>
+        public string? FunctionName { get; set; }
+
+        /// <summary>
         /// 查詢結果的自然語言回答
         /// </summary>
         public string Answer { get; set; } = string.Empty;

@@ -220,7 +220,7 @@ var httpClientFactory = builder.Services.BuildServiceProvider().GetRequiredServi
 var geminiHttpClient = httpClientFactory.CreateClient("GeminiHttpClient");
 builder.Services.AddKernel()
                 .AddGoogleAIGeminiChatCompletion(
-                    modelId: "gemini-3.1-flash-lite-preview",
+                    modelId: "gemini-3.1-flash-lite",
                     apiKey: geminiApiKey,
                     httpClient: geminiHttpClient
                 );

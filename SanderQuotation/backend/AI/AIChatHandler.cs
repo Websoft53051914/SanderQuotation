@@ -11,6 +11,8 @@ using Polly.Registry;
 using System.Text;
 using System.Text.Json;
 using static Const.Enums;
+using Core.Utility.Extensions;
+using backend.Common;
 
 namespace backend.AI
 {
@@ -24,6 +26,7 @@ namespace backend.AI
         private readonly ManualBatchEmbedding _embedding;
         private readonly IMemoryCache _cache;
         private readonly ResiliencePipeline _resiliencePipeline;
+        private readonly HistoryFileQueryPlugin _historyFileQueryPlugin;
 
         // AI 回覆無法回答時的識別標記
         private const string CannotAnswerTag = "[CANNOT_ANSWER]";
@@ -45,6 +48,7 @@ namespace backend.AI
             _embedding = embedding;
             _cache = cache;
             _resiliencePipeline = resiliencePipelineProvider.GetPipeline("ai-retry");
+            _historyFileQueryPlugin = historyFileQueryPlugin;
 
             // 將 Plugin 註冊進 Kernel，讓 Gemini Function Calling 能看到可用工具
             _kernel.Plugins.AddFromObject(historyFileQueryPlugin);
@@ -63,7 +67,7 @@ namespace backend.AI
 2. 若問題與任何工具的查詢範圍完全無關（例如：問天氣、新聞、閒聊），請直接回覆：{CannotAnswerTag}
 3. 支援多輪追問：當使用者說「上面」、「剛才」、「再篩選」、「它」等指代詞時，請參考對話歷史理解語意。
 4. 取得工具回傳的 JSON 資料後，請用繁體中文以自然語氣摘要回答，不要直接把 JSON 丟給使用者。
-5. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss}。
+5. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}，本週範圍：{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}（週一）～ {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}（週日），「本週」或「這週」一律指此範圍。
 
 # 回答風格
 - 簡潔、友善、使用繁體中文
@@ -160,7 +164,7 @@ namespace backend.AI
                     chatHistory.RemoveAt(chatHistory.Count - 1);
 
                 response.Success = false;
-                response.ErrorMessage = ex.Message;
+                response.ErrorMessage = ex.ToString();
                 response.Answer = $"很抱歉，處理您的問題時發生錯誤：{ex.Message}";
                 AICommon.LogError(ex, new { SessionId = resolvedSessionId, UserMessage = userMessage });
             }
@@ -207,9 +211,17 @@ namespace backend.AI
         /// 在 Kernel Function Calling 執行後，從 chatHistory 的 Tool/Function 訊息中，
         /// 嘗試萃取 SQL（供前端 SQL 展開區塊使用）與 rowCount
         /// </summary>
-        private static void ExtractFunctionCallMeta(ChatHistory chatHistory, AIChatResponseVO response)
+        private void ExtractFunctionCallMeta(ChatHistory chatHistory, AIChatResponseVO response)
         {
-            // 從最新幾則訊息中找 Tool Result（Function 回傳的 JSON）
+            // 直接從 Plugin 讀取最後一次執行的 SQL 與 FunctionName
+            if (_historyFileQueryPlugin.LastExecutedSqls.Count > 0)
+            {
+                response.GeneratedSql = string.Join("\n\n", _historyFileQueryPlugin.LastExecutedSqls);
+                response.FunctionName = _historyFileQueryPlugin.LastFunctionName;
+                return;
+            }
+
+            // 保留 fallback：從 chatHistory 的 Tool 訊息嘗試解析 SQL
             foreach (var msg in chatHistory.Reverse())
             {
                 if (msg.Role != AuthorRole.Tool)
@@ -224,16 +236,46 @@ namespace backend.AI
                     using var doc = JsonDocument.Parse(content);
                     var root = doc.RootElement;
 
-                    // 取 sql（由 HistoryFileQueryPlugin 寫入）
-                    if (root.TryGetProperty("sql", out var sqlProp))
+                    if (root.TryGetProperty("steps", out var stepsProp) && stepsProp.ValueKind == JsonValueKind.Array)
+                    {
+                        var sqlParts = new List<string>();
+                        foreach (var step in stepsProp.EnumerateArray())
+                        {
+                            if (step.TryGetProperty("sql", out var s))
+                            {
+                                var sqlStr = s.GetString();
+                                if (!string.IsNullOrWhiteSpace(sqlStr))
+                                    sqlParts.Add(sqlStr);
+                            }
+                        }
+                        if (sqlParts.Count > 0)
+                            response.GeneratedSql = string.Join("\n\n", sqlParts);
+                    }
+                    else if (root.TryGetProperty("sql", out var sqlProp))
+                    {
                         response.GeneratedSql = sqlProp.GetString() ?? string.Empty;
+                    }
                 }
                 catch
                 {
                     // JSON 解析失敗忽略即可
                 }
 
-                break; // 只取最近一次 Function 結果
+                break;
+            }
+
+            // 從 Assistant 訊息中擷取 Kernel Function 名稱（fallback）
+            foreach (var msg in chatHistory.Reverse())
+            {
+                if (msg.Role != AuthorRole.Assistant)
+                    continue;
+
+                var functionCallContent = msg.Items?.OfType<FunctionCallContent>().FirstOrDefault();
+                if (functionCallContent != null)
+                {
+                    response.FunctionName = functionCallContent.FunctionName;
+                    break;
+                }
             }
         }
 

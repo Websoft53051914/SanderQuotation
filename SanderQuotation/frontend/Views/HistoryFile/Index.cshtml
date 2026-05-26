@@ -206,8 +206,8 @@
             let queryState = {
                 pageIndex: 1,
                 pageSize: 10,
-                sortField: "FileName", //*** 頁面預設排序欄位，必須是TABLE內欄位
-                sortOrder: "asc",
+                sortField: "UpdatedAt", //*** 頁面預設排序欄位，必須是TABLE內欄位
+                sortOrder: "desc",
 
                 //*** 篩選條件
                 Keyword1: "",
@@ -546,7 +546,10 @@
                         bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadModal')).hide();
                         const icon = res.Success ? 'success' : 'warning';
                         Swal.fire({ icon: icon, title: res.Success?res.Data:res.Message, confirmButtonText: '確認' })
-                            .then(() => loadDatas());
+                            .then(() =>{
+                                queryState.pageIndex= 1;
+                                loadDatas();
+                            });
                     },
                     error: function () {
                         Swal.fire({ icon: 'error', title: '@config.GetMessage("System_Error").ToHtmlString()', confirmButtonText: '確認' });

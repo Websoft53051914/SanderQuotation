@@ -924,5 +924,38 @@ namespace backend.Common
             blLog.DoInsert(logDM);
         }
 
+
+        public static string GetDayName(DayOfWeek dayOfWeek)
+        {
+            switch (dayOfWeek)
+            {
+                case DayOfWeek.Monday:
+                    return "星期一";
+                case DayOfWeek.Tuesday:
+                    return "星期二";
+                case DayOfWeek.Wednesday:
+                    return "星期三";
+                case DayOfWeek.Thursday:
+                    return "星期四";
+                case DayOfWeek.Friday:
+                    return "星期五";
+                case DayOfWeek.Saturday:
+                    return "星期六";
+                case DayOfWeek.Sunday:
+                    return "星期日";
+            }
+
+            return "system error";
+        }
+
+        /// <summary>取得指定日期所在週的週一（ISO 8601：週一為第一天）</summary>
+        public static DateTime GetWeekStart(DateTime date)
+        {
+            int diff = ((int)date.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            return date.AddDays(-diff).Date;
+        }
+
+        /// <summary>取得指定日期所在週的週日</summary>
+        public static DateTime GetWeekEnd(DateTime date) => GetWeekStart(date).AddDays(6);
     }
 }

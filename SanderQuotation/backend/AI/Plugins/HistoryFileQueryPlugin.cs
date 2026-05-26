@@ -1,3 +1,4 @@
+using backend.Common;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -22,6 +23,12 @@ namespace backend.AI.Plugins
         // 向量佔位符識別字串（AI 生成 SQL 時使用，此處替換成實際向量）
         private const string VectorPlaceholder = "{QUERY_VECTOR}";
 
+        /// <summary>最後一次呼叫所執行的所有 SQL（多步驟時為多筆）</summary>
+        public List<string> LastExecutedSqls { get; private set; } = new();
+
+        /// <summary>最後一次呼叫的 Kernel Function 名稱</summary>
+        public string LastFunctionName { get; private set; } = string.Empty;
+
         public HistoryFileQueryPlugin(
             IChatCompletionService chatService,
             SqlExecutorPlugin sqlExecutor,
@@ -38,11 +45,11 @@ namespace backend.AI.Plugins
         private string GetQuerySystemPrompt()
         {
             return $@"
-你是一個專精於 PostgreSQL 的資料庫專家，專門負責「歷史資料上傳檔案」相關的查詢。
+你是一個專精於 PostgreSQL 的資料庫專家，專門負責「AI歷史資料上傳檔案」相關的查詢。
 
 # 你負責的資料表
 
-## historyfile（歷史資料檔案主表）
+## historyfile（AI歷史資料檔案主表）
 - id (uuid, 主鍵)
 - filename (varchar(100))：上傳的檔案名稱
 - uploadid (varchar(36))：檔案儲存代號
@@ -53,7 +60,7 @@ namespace backend.AI.Plugins
 - status (int4)：狀態 0=停用, 1=啟用, 9=刪除
 - filesummary (text)：檔案內容摘要
 
-## embeddedhistoryfile（歷史資料檔案摘要向量表）
+## embeddedhistoryfile（AI歷史資料檔案摘要向量表）
 - id (uuid, 主鍵)
 - embedding (vector)：檔案摘要向量（用於語意相似度搜尋）
 - status (int4)：1=啟用, 9=刪除
@@ -64,7 +71,7 @@ namespace backend.AI.Plugins
 # 查詢規則（極重要）
 1. 查詢 historyfile 時，必須加上 `status = {(int)StatusEnum.Enabled}`。
 2. 查詢 embeddedhistoryfile 時，必須加上 `status = {(int)StatusEnum.Enabled}`。
-3. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss}。
+3. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}。本週範圍：{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}（週一）～ {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}（週日），「本週」或「這週」一律指此範圍。
 4. 只能生成 SELECT，絕對禁止 INSERT / UPDATE / DELETE / DROP 等。
 5. 若問題需要語意相似度搜尋，SQL 中請使用 {VectorPlaceholder} 作為向量佔位符，系統會自動替換成實際向量值，限定相似度一定要大於0.7。
 
@@ -79,7 +86,9 @@ ORDER BY b.embedding <=> '{VectorPlaceholder}'
 LIMIT 10;
 
 # 輸出格式（極重要）
-只輸出 SQL 語句本身，用 ```sql 與 ``` 包裹，不要有任何其他說明文字。
+- 若問題可用一條 SQL 回答：輸出一個 ```sql ... ``` 區塊。
+- 若問題需要多條 SQL 依序執行（例如：先查出 id 清單，再用 id 查詳細資料；或先統計再篩選）：依序輸出多個 ```sql ... ``` 區塊，每個區塊一條 SQL，系統會自動依序執行並將前步結果傳入下一步。
+- 不要有任何其他說明文字，只輸出 SQL 區塊。
 ";
         }
 
@@ -88,55 +97,106 @@ LIMIT 10;
         // ─────────────────────────────────────────────
 
         /// <summary>
-        /// 根據使用者對歷史上傳檔案的自然語言問題，生成並執行 SQL 查詢，回傳結果 JSON
+        /// 根據使用者對歷史上傳檔案的自然語言問題，生成並依序執行一或多條 SQL 查詢，回傳包含每步結果的 JSON。
+        /// 支援多步驟查詢：AI 可生成多條 SQL，每步可參考前一步結果作為條件。
         /// </summary>
         [KernelFunction("query_history_files")]
-        [Description("查詢歷史上傳檔案的相關資料，例如：查詢特定日期的上傳筆數、搜尋特定帳號的上傳紀錄、依語意尋找與特定主題相關的檔案（向量搜尋）。回傳包含 rowCount 與 data 的 JSON 字串。")]
+        [Description("查詢歷史上傳檔案的相關資料，例如：查詢特定日期的上傳筆數、搜尋特定帳號的上傳紀錄、依語意尋找與特定主題相關的檔案（向量搜尋）。支援需要多次 SQL 才能回答的問題。回傳包含 steps（每步 sql/rowCount/data）與 finalData 的 JSON 字串。")]
         public async Task<string> QueryHistoryFilesAsync(
-            [Description("使用者關於歷史上傳檔案的自然語言問題，例如：『昨天有幾筆上傳？』、『找天氣相關的檔案』")] string question)
+            [Description("使用者關於歷史上傳檔案的自然語言問題，例如：『昨天有幾筆上傳？』、『找天氣相關的檔案』、『誰上傳了最多檔案？』")] string question)
         {
-            // Step 1：呼叫 AI 根據 Schema 描述生成 SQL
+            // Step 1：呼叫 AI 根據 Schema 描述生成一或多條 SQL
             var tempHistory = new ChatHistory();
             tempHistory.AddSystemMessage(GetQuerySystemPrompt());
             tempHistory.AddUserMessage(question);
 
             var result = await _chatService.GetChatMessageContentAsync(tempHistory);
-            string rawSql = ExtractSqlFromMarkdown(result.Content ?? string.Empty);
+            string aiContent = result.Content ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(rawSql))
-                return JsonSerializer.Serialize(new { rowCount = 0, sql = "", data = Array.Empty<object>(), error = "AI 無法為此問題生成有效的 SQL。" });
+            var sqlList = ExtractAllSqlFromMarkdown(aiContent);
 
-            // Step 2：若 SQL 含向量佔位符，取得 Embedding 並替換
-            string executableSql = await ResolveVectorPlaceholderAsync(rawSql, question);
+            if (sqlList.Count == 0)
+                return JsonSerializer.Serialize(new { steps = Array.Empty<object>(), finalData = Array.Empty<object>(), error = "AI 無法為此問題生成有效的 SQL。" });
 
-            // Step 3：直接呼叫 SqlExecutorPlugin 執行 SQL
-            string rawResult = await _sqlExecutor.ExecuteSqlAsync(executableSql);
+            // 記錄本次呼叫的 function 名稱與 SQL
+            LastFunctionName = "query_history_files";
+            LastExecutedSqls = new List<string>();
 
-            // Step 4：將 sql 欄位附加到回傳結果，供前端 SQL 展開區塊使用
-            try
+            // Step 2
+            var steps = new List<object>();
+            string previousResultJson = string.Empty;
+
+            for (int i = 0; i < sqlList.Count; i++)
             {
-                using var doc = JsonDocument.Parse(rawResult);
-                var dict = new Dictionary<string, object?>
+                string rawSql = sqlList[i];
+
+                // 多步驟時，請 AI 將前步結果注入當前 SQL
+                if (i > 0 && !string.IsNullOrWhiteSpace(previousResultJson))
+                    rawSql = await RefineSqlWithPreviousResultAsync(rawSql, previousResultJson, question);
+
+                string executableSql = await ResolveVectorPlaceholderAsync(rawSql, question);
+                LastExecutedSqls.Add(executableSql);
+                string rawResult = await _sqlExecutor.ExecuteSqlAsync(executableSql);
+                previousResultJson = rawResult;
+
+                try
                 {
-                    ["sql"] = rawSql,
-                    ["rowCount"] = doc.RootElement.TryGetProperty("rowCount", out var rc) ? rc.GetInt32() : 0,
-                    ["data"] = JsonSerializer.Deserialize<object>(
-                        doc.RootElement.TryGetProperty("data", out var d) ? d.GetRawText() : "[]")
-                };
-                return JsonSerializer.Serialize(dict, new JsonSerializerOptions
+                    using var doc = JsonDocument.Parse(rawResult);
+                    steps.Add(new
+                    {
+                        step = i + 1,
+                        sql = rawSql,
+                        rowCount = doc.RootElement.TryGetProperty("rowCount", out var rc) ? rc.GetInt32() : 0,
+                        data = JsonSerializer.Deserialize<object>(
+                            doc.RootElement.TryGetProperty("data", out var d) ? d.GetRawText() : "[]")
+                    });
+                }
+                catch
                 {
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
+                    steps.Add(new { step = i + 1, sql = rawSql, rawResult });
+                }
             }
-            catch
+
+            // 最後一步的 data 作為 finalData
+            object? finalData = null;
+            if (steps.Count > 0)
+                finalData = steps.Last().GetType().GetProperty("data")?.GetValue(steps.Last());
+
+            return JsonSerializer.Serialize(new { steps, finalData }, new JsonSerializerOptions
             {
-                return rawResult;
-            }
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
+        }
+
+        /// <summary>當多步驟查詢時，請 AI 將前步結果融入當前 SQL（補充 IN 條件等）</summary>
+        private async Task<string> RefineSqlWithPreviousResultAsync(string currentSql, string previousResultJson, string originalQuestion)
+        {
+            var refineHistory = new ChatHistory();
+            refineHistory.AddSystemMessage(GetQuerySystemPrompt());
+            refineHistory.AddUserMessage($@"
+原始問題：{originalQuestion}
+
+前一步 SQL 查詢結果（JSON）：
+{previousResultJson}
+
+請根據上述前步結果，修改下面的 SQL，使其能正確利用前步結果中的 id 或其他欄位作為條件（例如 IN (...)），以得出最終答案。
+若 SQL 已足夠或無需修改，原樣輸出即可。
+
+待修改 SQL：
+```sql
+{currentSql}
+```
+");
+            var result = await _chatService.GetChatMessageContentAsync(refineHistory);
+            string refined = ExtractSqlFromMarkdown(result.Content ?? string.Empty);
+            return string.IsNullOrWhiteSpace(refined) ? currentSql : refined;
         }
 
         // ─────────────────────────────────────────────
         // 工具方法
         // ─────────────────────────────────────────────
+
+
 
         private static string ExtractSqlFromMarkdown(string content)
         {
@@ -146,6 +206,27 @@ LIMIT 10;
 
             var selectMatch = Regex.Match(content, @"(SELECT[\s\S]+)", RegexOptions.IgnoreCase);
             return selectMatch.Success ? selectMatch.Groups[1].Value.Trim() : string.Empty;
+        }
+
+        /// <summary>從 AI 回覆中擷取所有 SQL 區塊（支援多條）</summary>
+        private static List<string> ExtractAllSqlFromMarkdown(string content)
+        {
+            var results = new List<string>();
+            var matches = Regex.Matches(content, @"```sql\s*([\s\S]*?)```", RegexOptions.IgnoreCase);
+            foreach (Match m in matches)
+            {
+                var sql = m.Groups[1].Value.Trim();
+                if (!string.IsNullOrWhiteSpace(sql))
+                    results.Add(sql);
+            }
+            // 若沒有 markdown block，fallback 抓第一條 SELECT
+            if (results.Count == 0)
+            {
+                var selectMatch = Regex.Match(content, @"(SELECT[\s\S]+)", RegexOptions.IgnoreCase);
+                if (selectMatch.Success)
+                    results.Add(selectMatch.Groups[1].Value.Trim());
+            }
+            return results;
         }
 
         private async Task<string> ResolveVectorPlaceholderAsync(string sql, string question)

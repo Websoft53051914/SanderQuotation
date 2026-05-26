@@ -707,26 +707,20 @@
         var $send   = $('#aiChatSend');
         var $msgs   = $('#aiChatMessages');
 
-        // 多輪對話 Session ID（每次開啟面板都會重置為新對話）
-        var _sessionId = null;
+        // 多輪對話 Session ID（從 sessionStorage 還原，頁面關閉後自動清除）
+        var _storageKey = 'aiChatSessionId';
+        var _sessionId = sessionStorage.getItem(_storageKey) || null;
 
         // Backend API base URL
         var _apiBase = '@(Configuration["BackendURL"])';
 
         // ── 開關面板 ──
         function openPanel() {
-            // 每次開啟都是新一輪對話：清除舊 Session 與訊息
-            if (_sessionId) {
-                $.ajax({
-                    url: _apiBase + '/api/AIChat/Session/' + _sessionId,
-                    type: 'DELETE',
-                    xhrFields: { withCredentials: true }
-                });
+            // 首次開啟（無 sessionId 且無訊息）才顯示歡迎訊息
+            if (!_sessionId && $msgs.children().length === 0) {
+                appendBotMsg('您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?');
+                $('#aiInitTime').text(formatTime(new Date()));
             }
-            _sessionId = null;
-            $msgs.empty();
-                    appendBotMsg('您好！我是 AI 智慧助理，有什麼需要幫忙的嗎?');
-            $('#aiInitTime').text(formatTime(new Date()));
             $panel.addClass('open');
             $toggle.addClass('hidden');
             $input.focus();
@@ -811,7 +805,8 @@
                     $panel.removeClass('ai-sending');
 
                     if (resp && resp.Success) {
-                        _sessionId = resp.SessionId;   // 保存 sessionId 供下輪追問
+                        _sessionId = resp.SessionId;
+                        sessionStorage.setItem(_storageKey, _sessionId);  // 同步存入 sessionStorage
                         appendBotMsg(resp.Answer);
                     } else {
                         appendBotMsg((resp && resp.Answer) ? resp.Answer : '發生未知錯誤，請稍後再試。');

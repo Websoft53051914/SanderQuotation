@@ -65,6 +65,8 @@ namespace Data.Register
                 .RegisterType<IEsFileTransferUploadDAO, EsFileTransferUploadDaoImpl>()
                 .RegisterType<IHistoryFileDAO, HistoryFileDaoImpl>()
                 .RegisterType<IEmbeddedHistoryFileDAO, EmbeddedHistoryFileDaoImpl>()
+                .RegisterType<IAILogDAO, AILogDaoImpl>()
+
 
                 .RegisterType<IEsTransferErrorLogDAO, EsTransferErrorLogDaoImpl>()
                 .RegisterType<IEsScheduleCycleDAO, EsScheduleCycleDaoImpl>()

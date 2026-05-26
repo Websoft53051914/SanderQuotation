@@ -718,5 +718,27 @@ namespace Const
             /// </summary>
             DigiKey = 2,
         }
+
+        /// <summary>
+        /// AI對話中心角色
+        /// </summary>
+        public enum AILogRoleEnum
+        {
+            /// <summary>
+            /// 系統
+            /// </summary>
+            [Description("系統")]
+            System = 1,
+            /// <summary>
+            /// 使用者
+            /// </summary>
+            [Description("使用者")]
+            User = 2,
+            /// <summary>
+            /// AI 助理
+            /// </summary>
+            [Description("AI 助理")]
+            Assistant = 3,
+        }
     }
 }
