@@ -29,7 +29,7 @@ namespace Business.BusinessLogic
     public partial class HandleQuotationBL
     {
         /// <summary>
-        /// 批次儲存查料結果，並更新 EsFileTransferUpload.ProcessStatus = PartSearchDone，在同一 transaction 中完成
+        /// 批次儲存查料結果，並更新 EsFileTransferUpload.ProcessStatus = PendingPricingSearch，在同一 transaction 中完成
         /// </summary>
         /// <param name="uploadId">EsFileTransferUpload 主鍵</param>
         /// <param name="results">查料結果清單（BomFileContentDM）：No、IsRecommendedNo 與 PendingDecisionLogs 須已填入</param>
@@ -45,7 +45,34 @@ namespace Business.BusinessLogic
                 GetBLTBBomFileDecisionLog().DoInsertPendingLogs(dm.Id, dm.PendingDecisionLogs);
             }
 
-            GetBLEsFileTransferUpload().DoUpdateProcessStatus(uploadId, (int)EsFileTransferUploadProcessStatusEnum.PartSearchDone);
+            GetBLEsFileTransferUpload().DoUpdateProcessStatus(uploadId, (int)EsFileTransferUploadProcessStatusEnum.PendingPricingSearch);
+
+            _unitOfWork.Commit();
+            GetBLTBBomFileQuotation().DoSaveChange = true;
+            GetBLEsFileTransferUpload().DoSaveChange = true;
+            GetBLTBBomFileDecisionLog().DoSaveChange = true;
+        }
+
+        /// <summary>
+        /// 批次儲存查料＋查價結果（合併流程），並更新 EsFileTransferUpload.ProcessStatus = PricingDone，在同一 transaction 中完成
+        /// 先以 DoUpsertPartSearchItem 建立 TBBomFileQuotation 紀錄（含 No），再以 DoUpdatePriceItem 寫入查價欄位
+        /// </summary>
+        /// <param name="uploadId">EsFileTransferUpload 主鍵</param>
+        /// <param name="results">已完成查料與查價的結果清單（BomFileContentDM）</param>
+        public void DoSaveFullSearchResult(Guid uploadId, List<BomFileContentDM> results)
+        {
+            GetBLTBBomFileQuotation().DoSaveChange = false;
+            GetBLEsFileTransferUpload().DoSaveChange = false;
+            GetBLTBBomFileDecisionLog().DoSaveChange = false;
+
+            foreach (BomFileContentDM dm in results)
+            {
+                GetBLTBBomFileQuotation().DoUpsertPartSearchItem(dm);
+                GetBLTBBomFileQuotation().DoUpdatePriceItem(dm);
+                GetBLTBBomFileDecisionLog().DoInsertPendingLogs(dm.Id, dm.PendingDecisionLogs);
+            }
+
+            GetBLEsFileTransferUpload().DoUpdateProcessStatus(uploadId, (int)EsFileTransferUploadProcessStatusEnum.PricingDone);
 
             _unitOfWork.Commit();
             GetBLTBBomFileQuotation().DoSaveChange = true;

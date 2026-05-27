@@ -1,9 +1,6 @@
 ﻿using Const.ApiModels.QueryPrice;
-using Const.ApiModels.QueryPrice;
 using Core.Utility.Extensions;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Newtonsoft.Json;
-using System.Net.Http.Json;
 using static Const.Enums;
 
 namespace backend.Common

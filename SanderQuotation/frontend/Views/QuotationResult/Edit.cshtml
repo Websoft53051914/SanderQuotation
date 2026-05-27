@@ -607,18 +607,19 @@
 
             showLoader();
 
-            var tasks = checkedItems.map(function (item) {
-                return $.ajax({
-                    url: pageUrls.ReExternalQuotation,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ BomFileContentId: item.BomFileContentId })
-                }).then(function (res) {
-                    if (!res.Success) return Promise.reject(res.Message);
+            // 依序執行，避免同時呼叫 Nexar token endpoint 觸發 429 (Too Many Requests)
+            checkedItems.reduce(function (chain, item) {
+                return chain.then(function () {
+                    return $.ajax({
+                        url: pageUrls.ReExternalQuotation,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ BomFileContentId: item.BomFileContentId })
+                    }).then(function (res) {
+                        if (!res.Success) return Promise.reject(res.Message);
+                    });
                 });
-            });
-
-            Promise.all(tasks)
+            }, Promise.resolve())
                 .then(function () {
                     Swal.fire({ icon: 'success', title: '外部查價完成', timer: 1200, showConfirmButton: false })
                         .then(function () { loadDetail(); });
