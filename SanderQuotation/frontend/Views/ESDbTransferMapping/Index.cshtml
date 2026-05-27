@@ -208,8 +208,8 @@
                                 <tr>
                                     <th style="width:32%">來源欄位</th>
                                     <th style="width:32%">目標欄位</th>
-                                    <th style="width:12%" class="text-center">是否加密</th>
-                                    <th style="width:12%" class="text-center">是否為主鍵</th>
+                                    @*<th style="width:12%">是否加密</th>*@
+                                    <th style="width:12%">是否為主鍵</th>
                                     <th style="width:12%">動作</th>
                                 </tr>
                             </thead>
@@ -598,6 +598,16 @@
 
         function addMappingRow(srcVal, dstVal, isEncrypt, isPrimaryKey) {
             const idx = $('#mappingRows tr').length;
+            @* 是否加密
+<text>
+    <td class="text-center align-middle">
+        <div class="form-check d-flex justify-content-center mb-0">
+            <input class="form-check-input is-encrypt-check" type="checkbox" ${isEncrypt ? 'checked' : ''}>
+        </div>
+    </td>
+</text>
+            *@
+
             const $tr = $(`
                 <tr data-row="${idx}">
                     <td>
@@ -611,16 +621,11 @@
                         </select>
                     </td>
                     <td class="text-center align-middle">
-                        <div class="form-check d-flex justify-content-center mb-0">
-                            <input class="form-check-input is-encrypt-check" type="checkbox" ${isEncrypt ? 'checked' : ''}>
-                        </div>
-                    </td>
-                    <td class="text-center align-middle">
-                        <div class="form-check d-flex justify-content-center mb-0">
+                        <div class="form-check d-flex mb-0">
                             <input class="form-check-input is-primary-key-check" type="checkbox" ${isPrimaryKey ? 'checked' : ''}>
                         </div>
                     </td>
-                    <td class="text-center align-middle">
+                    <td class="align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-row">
                             <i class="ri-delete-bin-line"></i>
                         </button>
@@ -1205,7 +1210,7 @@
                         <input type="text" class="form-control filter-val"
                                value="${escHtml(value)}" ${hideVal ? 'style="display:none"' : ''}>
                     </td>
-                    <td class="text-center align-middle">
+                    <td class="align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-filter">
                             <i class="ri-delete-bin-line"></i>
                         </button>
