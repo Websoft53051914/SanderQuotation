@@ -44,7 +44,7 @@ namespace Const.ApiModels.QueryPrice
             /// <summary>
             /// 可用庫存數量
             /// </summary>
-            public int AvailabilityInStock { get; set; }
+            public int? AvailabilityInStock { get; set; }
 
             /// <summary>
             /// 標準階梯定價陣列

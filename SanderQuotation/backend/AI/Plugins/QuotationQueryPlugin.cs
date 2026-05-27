@@ -66,7 +66,7 @@ namespace backend.AI.Plugins
 - customercode (varchar)：ERP 客戶代碼
 - manualcustomername (varchar)：客戶名稱（手動）
 - prodno (varchar)：產品料號
-- processstatus (int4)：執行狀態（1=未轉檔, 2=已轉檔, 3=未查料, 4=已查料, 5=已查價, 99=轉檔失敗）
+- processstatus (int4)：執行狀態（1=未轉檔, 2=已轉檔, 3=未查價, 5=已查價, 99=轉檔失敗）
 - esfiletransfermappingid (uuid)：匯入規則 ID
 - status (int4)：0=停用, 1=啟用, 9=刪除
 - createdby (varchar), updatedby (varchar), createdat (timestamp), updatedat (timestamp)
@@ -133,27 +133,27 @@ namespace backend.AI.Plugins
 - matchfield (varchar)：比對命中欄位（MPN / Component Part / 規格）
 - isfilterbycustomerapprovedpart (bool)：是否套用客戶承認料過濾
 - customerapprovedpartcsv (text)：使用的客戶承認料清單
-- internalpurchaseorderdate (timestamp)：內部採購單日期
-- internalunitpriceoriginalcurrency (numeric)：內部單價（原幣）
-- internalunitpricetwd (numeric)：內部單價（台幣）
-- internalquantity (int4)：內部數量
-- internalcurrency (varchar)：內部幣別
-- internalsuppliername (varchar)：內部供應商名稱
-- internalsuppliercode (varchar)：內部供應商代碼
-- internalitemdescription2 (varchar)：採購型號 Description2
-- internallowminprice (numeric)：AI 分群低價群最低價
-- internallowmaxprice (numeric)：AI 分群低價群最高價
-- internalhighminprice (numeric)：AI 分群高價群最低價
-- internalhighmaxprice (numeric)：AI 分群高價群最高價
+- internalpurchaseorderdate (timestamp)：內部查價-採購單日期
+- internalunitpriceoriginalcurrency (numeric)：內部查價-單價（原幣）
+- internalunitpricetwd (numeric)：內部查價-單價（台幣）
+- internalquantity (int4)：內部查價-數量
+- internalcurrency (varchar)：內部查價-幣別
+- internalsuppliername (varchar)：內部查價-供應商名稱
+- internalsuppliercode (varchar)：內部查價-供應商代碼
+- internalitemdescription2 (varchar)：內部查價-採購型號 Description2
+- internallowminprice (numeric)：內部查價-AI 分群低價群最低價
+- internallowmaxprice (numeric)：內部查價-AI 分群低價群最高價
+- internalhighminprice (numeric)：內部查價-AI 分群高價群最低價
+- internalhighmaxprice (numeric)：內部查價-AI 分群高價群最高價
 - internalquotationdate (timestamp)：內部查價日期
 - externalquotationdate (timestamp)：外部查價日期
-- externalunitpriceoriginalcurrency (numeric)：外部單價（原幣）
-- externalunitpricetwd (numeric)：外部單價（台幣）
-- externalmoq (int4)：外部 MOQ
-- externalcurrency (varchar)：外部幣別
-- externalsuppliername (varchar)：外部供應商名稱
-- externalstock (int4)：外部庫存量
-- externalscenario (int4)：外部查價情境（1=情境A優先名單, 2=情境B後備）
+- externalunitpriceoriginalcurrency (numeric)：外部查價-單價（原幣）
+- externalunitpricetwd (numeric)：外部查價-單價（台幣）
+- externalmoq (int4)：外部查價-MOQ
+- externalcurrency (varchar)：外部查價-幣別
+- externalsuppliername (varchar)：外部查價-供應商名稱
+- externalstock (int4)：外部查價-庫存量
+- externalscenario (int4)：外部查價-查價情境（1=情境A優先名單, 2=情境B後備）
 - createdby (varchar), updatedby (varchar), createdat (timestamp), updatedat (timestamp)
 
 ## tb_bomfilequotationexternalhistory（BOM 外部查價歷史）
@@ -161,18 +161,18 @@ namespace backend.AI.Plugins
 - quotationdate (timestamp)：查價日期
 - manufacturerpartnumber (text)：廠商型號（MPN）
 - suppliername (varchar)：供應商名稱
-- unitpriceoriginalcurrency (numeric)：單價（原幣）
-- unitpricetwd (numeric)：單價（台幣）
-- moq (int4)：最小訂購量
-- currency (varchar)：幣別
-- stock (int4)：庫存量
+- unitpriceoriginalcurrency (numeric)：外部查價-單價（原幣）
+- unitpricetwd (numeric)：外部查價-單價（台幣）
+- moq (int4)：外部查價-最小訂購量
+- currency (varchar)：外部查價-幣別
+- stock (int4)：外部查價-庫存量
 - status (int4)：0=停用, 1=啟用, 9=刪除
 - createdby (varchar), updatedby (varchar), createdat (timestamp), updatedat (timestamp)
 
-## tb_bomfilequotationother（BOM 現貨優惠價結果）
+## tb_bomfilequotationother（BOM 現貨優惠價結果(Mouser、DigiKey API 查價結果)）
 - id (uuid, 主鍵)
 - bomfilecontentid (uuid)：外鍵，關聯至 bomfilecontent.id
-- sourcetype (int4)：來源類型
+- sourcetype (int4)：來源類型(1 = Mouser, 2 = DigiKey)
 - quotationdate (timestamp)：查價日期
 - unitpriceoriginalcurrency (numeric)：單價（原幣）
 - unitpricetwd (numeric)：單價（台幣）
@@ -204,9 +204,19 @@ namespace backend.AI.Plugins
 1. 查詢有 status 欄位的資料表時，必須加上 `status = {(int)StatusEnum.Enabled}`，除非使用者明確要求查詢其他狀態。
 2. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}。本週範圍：{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}（週一）～ {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}（週日）。
 3. 只能生成 SELECT，絕對禁止 INSERT / UPDATE / DELETE / DROP 等。
-4. bomfilecontent 沒有 status 欄位，不需要加 status 過濾。
-5. sandermoduleitem、sandermoduleitemvariant、reportitemcustomer、sandermodulepurchaseline 沒有 status 欄位，不需要 status 過濾。
-6. 若問題需要語意相似度搜尋，SQL 中請使用 {VectorPlaceholder} 作為向量佔位符，系統會自動替換成實際向量值，限定相似度一定要大於 0.7。
+4. sandermoduleitem、sandermoduleitemvariant、reportitemcustomer、sandermodulepurchaseline、bomfilecontent 沒有 status 欄位，不需要 status 過濾。
+5. 若問題需要語意相似度搜尋，SQL 中請使用 {VectorPlaceholder} 作為向量佔位符，系統會自動替換成實際向量值，限定相似度一定要大於 0.7。
+6. 使用者用語 → 查詢欄位對照（極重要，決定查哪張表的哪個欄位）
+當使用者輸入關鍵字搜尋時，請根據以下對照決定查詢目標。若無法明確判斷意圖，應以以下所有條件進行查詢，而非只查單一欄位：
+- 元件料號 / ComponentPart / BOM 上的料號 → bomfilecontent.componentpart
+- 元件描述 / BOM 描述                       → bomfilecontent.description
+- 廠商型號 / MPN / manufacturerpartnumber / 製造商料號   → bomfilecontent.manufacturerpartnumber
+- 廠商名稱（BOM 上的） / manufacturer/ 製造商 → bomfilecontent.manufacturer
+- 顯示用料號 / displaypart                  → bomfilecontent.displaypart
+- 內部料號 / sandermodule 料號              → sandermoduleitem.no 或 tb_bomfilequotation.no
+- 採購型號（查價結果）                       → tb_bomfilequotation.no
+- 供應商型號（採購記錄）                     → sandermodulepurchaseline.description2
+- 客戶承認料                                → sandermoduleitemvariant.customerapprovedpartcsv
 
 # 向量查詢範例（適用於「找跟 XX 相關的料品關鍵字」類型的問題）
 SELECT a.no, a.description, b.columnname, b.keyword,

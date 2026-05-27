@@ -444,16 +444,10 @@ namespace Const
             Transferred = 2,
 
             /// <summary>
-            /// 未查料：已轉檔，尚未執行查詢採購型號作業（只有 BOM 檔案有此狀態）
+            /// 未查價：已轉檔
             /// </summary>
-            [Description("未查料")]
-            PendingPartSearch = 3,
-
-            /// <summary>
-            /// 已查料：查詢採購型號作業完成（只有 BOM 檔案有此狀態）
-            /// </summary>
-            [Description("已查料")]
-            PartSearchDone = 4,
+            [Description("未查價")]
+            PendingPricingSearch = 3,
 
             /// <summary>
             /// 已查價：內部 + 外部查價完成

@@ -88,6 +88,8 @@ namespace backend.Models
             string? customerCode = dmUpload.CustomerCode;
             int quotationQty = dmUpload.QuotationQty ?? 1;
 
+            await RunPartSearchAsync(content, GetBrandComparisonCategorySet());
+
             if (RunInternal)
                 await RunInternalAsync(content, customerCode);
 

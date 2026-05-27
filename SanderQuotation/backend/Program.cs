@@ -195,7 +195,6 @@ builder.Services.AddHangfireServer(options =>
 builder.Services.AddSingleton<ExtractKeywordHandler>();
 builder.Services.AddSingleton<ManualBatchEmbedding>();
 builder.Services.AddSingleton<ExtractKeywordJob>();
-builder.Services.AddSingleton<DesideSanderModuleItemNoJob>();
 builder.Services.AddSingleton<OrderPriceDecison>();
 builder.Services.AddSingleton<ExternalQuotationNexarHandler>();
 builder.Services.AddTransient<QuotationHandler>();

@@ -426,7 +426,7 @@ namespace backend.Common
                         bool hasBomTable = tableGroups.Any(tg =>
                             string.Equals(tg.Key.TargetTableName, "bomfilecontent", StringComparison.OrdinalIgnoreCase));
                         EsFileTransferUploadProcessStatusEnum newStatus = hasBomTable
-                            ? EsFileTransferUploadProcessStatusEnum.PendingPartSearch
+                            ? EsFileTransferUploadProcessStatusEnum.PendingPricingSearch
                             : EsFileTransferUploadProcessStatusEnum.Transferred;
                         EsFileTransferUploadDM? uploadDM = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>().GetOneInfoByUploadId(resolvedUploadId.Value);
                         if (uploadDM != null)
@@ -1134,10 +1134,6 @@ namespace backend.Common
                     case ScheduleCycleActionTypeEnum.ExtractKeyword:
                         ExtractKeywordJob extractKeywordJob = scope.ServiceProvider.GetRequiredService<ExtractKeywordJob>();
                         await extractKeywordJob.ExecuteAsync(logDM);
-                        break;
-                    case ScheduleCycleActionTypeEnum.PartSearch:
-                        DesideSanderModuleItemNoJob desideSanderModuleItemNoJob = scope.ServiceProvider.GetRequiredService<DesideSanderModuleItemNoJob>();
-                        await desideSanderModuleItemNoJob.ExecuteAsync(logDM);
                         break;
                     case ScheduleCycleActionTypeEnum.PriceSearch:
                         PriceSearchJob priceSearchJob = scope.ServiceProvider.GetRequiredService<PriceSearchJob>();

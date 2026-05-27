@@ -30,7 +30,7 @@ namespace backend.EIPSource
 
         /// <summary>
         /// 執行查價工作
-        /// 取 ProcessStatus = PartSearchDone(4) 的上傳檔案，對每筆 BomFileContent 執行內部與外部查價，
+        /// 取 ProcessStatus = PendingPricingSearch(3) 的上傳檔案，對每筆 BomFileContent 依序執行查料、內部與外部查價，
         /// 結果寫入 TBBomFileQuotation，全部處理完畢後更新 ProcessStatus = PricingDone(5)
         /// </summary>
         /// <param name="logDM">排程執行紀錄；傳入 null 時略過紀錄更新</param>
@@ -43,7 +43,7 @@ namespace backend.EIPSource
                 EsFileTransferUploadBL blEsFileTransferUpload = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>();
 
                 SearchVO uploadSearchVO = new();
-                uploadSearchVO.ProcessStatusEq = (int)EsFileTransferUploadProcessStatusEnum.PartSearchDone;
+                uploadSearchVO.ProcessStatusEq = (int)EsFileTransferUploadProcessStatusEnum.PendingPricingSearch;
                 // 取得可處理的上傳檔案清單
                 List<EsFileTransferUploadDM> uploads = blEsFileTransferUpload.GetListEnabled(uploadSearchVO).ToList();
 
@@ -78,9 +78,7 @@ namespace backend.EIPSource
                 BomFileContentBL blBomFileContent = BLFactory.GetInstanceBackGround<BomFileContentBL>();
                 HandleQuotationBL blHandleQuotation = BLFactory.GetInstanceBackGround<HandleQuotationBL>();
 
-                SearchVO contentSearchVO = new();
-                contentSearchVO.UploadIdEq = upload.UploadId;
-                List<BomFileContentDM> contents = blBomFileContent.GetListWithQuotationByFilter(contentSearchVO);
+                List<BomFileContentDM> contents = blBomFileContent.GetListByUploadId(upload.UploadId);
                 List<BomFileContentDM> results = new();
 
                 for (int i = 0; i < contents.Count; i++)
@@ -108,7 +106,7 @@ namespace backend.EIPSource
                     }
                 }
 
-                blHandleQuotation.DoSavePriceSearchResult(upload.Id, results);
+                blHandleQuotation.DoSaveFullSearchResult(upload.Id, results);
             }
             catch (Exception ex)
             {
