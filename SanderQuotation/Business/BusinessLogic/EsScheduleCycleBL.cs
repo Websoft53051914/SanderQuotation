@@ -150,11 +150,7 @@ namespace Business.BusinessLogic
                 var entity = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), rowGuid);
                 if (entity == null) continue;
 
-                DeleteSubTables(entity.ScheduleCycleCode);
-                entity.UpdatedAt = base.now;
-                entity.UpdatedBy = UserInfo?.UserAccount;
-                entity.Status = StatusEnum.Cancel.ToInt();
-                GetDao().Update(entity);
+                GetDao().Delete(rowGuid);
                 codes.Add(entity.ScheduleCycleCode);
             }
 
@@ -319,46 +315,11 @@ namespace Business.BusinessLogic
 
         private void DeleteSubTables(string code)
         {
-            GetWeekDao().FindListByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleWeekDayEntity.ScheduleCycleCode), code },{nameof(EsScheduleCycleWeekDayEntity.Status), StatusEnum.Enabled.ToInt() } })
-                .ForEach(x =>
-                {
-                    x.UpdatedAt = base.now;
-                    x.UpdatedBy = UserInfo?.UserAccount;
-                    x.Status = StatusEnum.Cancel.ToInt();
-                    GetWeekDao().Update(x);
-                });
-            GetMonthDao().FindListByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleMonthDayEntity.ScheduleCycleCode), code }, { nameof(EsScheduleCycleMonthDayEntity.Status), StatusEnum.Enabled.ToInt() } })
-                .ForEach(x =>
-                {
-                    x.UpdatedAt = base.now;
-                    x.UpdatedBy = UserInfo?.UserAccount;
-                    x.Status = StatusEnum.Cancel.ToInt();
-                    GetMonthDao().Update(x);
-                });
-            GetTransferDao().FindListByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleDbTransferEntity.ScheduleCycleCode), code }, { nameof(EsScheduleCycleDbTransferEntity.Status), StatusEnum.Enabled.ToInt() } })
-                .ForEach(x =>
-                {
-                    x.UpdatedAt = base.now;
-                    x.UpdatedBy = UserInfo?.UserAccount;
-                    x.Status = StatusEnum.Cancel.ToInt();
-                    GetTransferDao().Update(x);
-                });
-            GetExcelDao().FindListByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code }, { nameof(EsScheduleCycleFileTransferEntity.Status), StatusEnum.Enabled.ToInt() } })
-                .ForEach(x =>
-                {
-                    x.UpdatedAt = base.now;
-                    x.UpdatedBy = UserInfo?.UserAccount;
-                    x.Status = StatusEnum.Cancel.ToInt();
-                    GetExcelDao().Update(x);
-                });
-                GetOtherTransferDao().FindListByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleOtherTransferEntity.ScheduleCycleCode), code }, { nameof(EsScheduleCycleOtherTransferEntity.Status), StatusEnum.Enabled.ToInt() } })
-                .ForEach(x =>
-                {
-                    x.UpdatedAt = base.now;
-                    x.UpdatedBy = UserInfo?.UserAccount;
-                    x.Status = StatusEnum.Cancel.ToInt();
-                    GetOtherTransferDao().Update(x);
-                });
+            GetWeekDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleWeekDayEntity.ScheduleCycleCode), code } });
+            GetMonthDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleMonthDayEntity.ScheduleCycleCode), code } });
+            GetTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleDbTransferEntity.ScheduleCycleCode), code } });
+            GetExcelDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleFileTransferEntity.ScheduleCycleCode), code } });
+            GetOtherTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleOtherTransferEntity.ScheduleCycleCode), code } });
         }
 
         public List<(string Value, string Text)> GetDbTransferOptions()

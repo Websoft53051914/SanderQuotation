@@ -11,13 +11,11 @@ namespace backend.EIPSource
     /// 每天凌晨 3 點執行：
     /// 1. 刪除 15 天前的 tb_controllog
     /// 2. 刪除 Status = 9 (作廢) 的 tb_bomfiledecisionlog
-    /// 3. 刪除 15 天前的 esScheduleCycleLogDetail
-    /// 4. 刪除 15 天前的 esScheduleCycleLog
-    /// 5. 刪除 status &lt;&gt; 1 且 5 天以前的 HistoryFile 及其實體檔案
-    /// 6. 刪除 status &lt;&gt; 1 且 5 天以前的 EsFileTransferUpload 及其實體檔案
-    /// 7. 刪除 30 天前的 ailog (不論 status)，確保資料庫不會累積過多無用資料
-    /// 8. 刪除超過 ExternalQuotation:ExpirationDay 天的 TBBomFileQuotationExternalHistory 紀錄
-    /// 9. 刪除超過 DataCleanupSettings:AIFileRetentionDays 天的 AI 產生 Excel 暫存檔案
+    /// 3. 刪除 status &lt;&gt; 1 且 5 天以前的 HistoryFile 及其實體檔案
+    /// 4. 刪除 status &lt;&gt; 1 且 5 天以前的 EsFileTransferUpload 及其實體檔案
+    /// 5. 刪除 30 天前的 ailog (不論 status)，確保資料庫不會累積過多無用資料
+    /// 6. 刪除超過 ExternalQuotation:ExpirationDay 天的 TBBomFileQuotationExternalHistory 紀錄
+    /// 7. 刪除超過 DataCleanupSettings:AIFileRetentionDays 天的 AI 產生 Excel 暫存檔案
     /// </summary>
     public class DataCleanupJob
     {
@@ -41,7 +39,6 @@ namespace backend.EIPSource
         {   
             ConfigurationHelper configurationHelper = new ConfigurationHelper(_config);
             int ControlLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:ControlLogRetentionDays",15);
-            int CycleLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:CycleLogRetentionDays",15);
             int HistoryFileRetentionDays = _config.GetValue<int>("DataCleanupSettings:HistoryFileRetentionDays", 5);
             int EsFileTransferUploadRetentionDays = _config.GetValue<int>("DataCleanupSettings:EsFileTransferUploadRetentionDays", 5);
             int AILogRetentionDays  = _config.GetValue<int>("DataCleanupSettings:AILogRetentionDays", 30);
@@ -63,27 +60,6 @@ namespace backend.EIPSource
                     // 刪除 Status = 9 (作廢) 的 tb_bomfiledecisionlog
                     TBBomFileDecisionLogBL decisionLogBL = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>(_config);
                     decisionLogBL.PhysicalDeleteByStatus((int)StatusEnum.Cancel);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
-
-                try
-                {
-                    // 先刪 detail 再刪 master，避免 FK 問題
-                    EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
-                    cycleLogBL.DeleteOldLogDetail(CycleLogRetentionDays);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
-
-                try
-                {
-                    EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
-                    cycleLogBL.DeleteOldLog(CycleLogRetentionDays);
                 }
                 catch (Exception ex)
                 {

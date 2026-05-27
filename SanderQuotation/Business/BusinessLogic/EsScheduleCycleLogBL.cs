@@ -25,6 +25,7 @@ namespace Business.BusinessLogic
                 cfg.CreateMap<EsScheduleCycleLogDM, EsScheduleCycleLogEntity>().ReverseMap();
                 cfg.CreateMap<EsScheduleCycleLogDM, EsScheduleCycleLogDTO>().ReverseMap();
                 cfg.CreateMap<EsScheduleCycleLogDetailDM, EsScheduleCycleLogDetailEntity>().ReverseMap();
+                cfg.CreateMap<EsScheduleCycleLogDetailDM, EsScheduleCycleLogDetailWithLogDTO>().ReverseMap();
                 cfg.CreateMap<EsTransferErrorLogDM, EsTransferErrorLogEntity>().ReverseMap();
 
             });
@@ -44,10 +45,10 @@ namespace Business.BusinessLogic
         private IEsTransferErrorLogDAO GetErrorLogDAO() => _unitOfWork.Repository<IEsTransferErrorLogDAO>();
 
 
-        public List<EsScheduleCycleLogDM> GetLogsAfter(DateTime since)
+        public List<EsScheduleCycleLogDM> GetLogsAfter()
         {
             var allLogs = GetDAO().FindByAll();
-            var filtered = allLogs.Where(x => x.RunAt >= since).OrderByDescending(x => x.RunAt).ToList();
+            var filtered = allLogs.OrderByDescending(x => x.RunAt).ToList();
             var dms = _mapper.Map<List<EsScheduleCycleLogDM>>(filtered);
 
             // fill details
@@ -69,6 +70,54 @@ namespace Business.BusinessLogic
             return dms;
         }
 
+        /// <summary>
+        /// 以 EsScheduleCycleLogDetail 為主表，依 ScheduleCycleCode查詢，重組為 Log 結構回傳
+        /// </summary>
+        public List<EsScheduleCycleLogDM> GetLogsByCode(string scheduleCycleCode)
+        {
+            var details = GetDetailDAO().GetDetailsByCode(scheduleCycleCode);
+            var allErrors = GetErrorLogDAO().FindByAll();
+
+            // 依 ScheduleCycleLogId 分組，建構 Log
+            var grouped = details
+                .GroupBy(d => new
+                {
+                    d.ScheduleCycleLogId,
+                    d.ScheduleCycleCode,
+                    d.LogRunAt,
+                    d.LogDurationMs,
+                    d.LogStatus,
+                    d.TriggerType
+                })
+                .OrderByDescending(g => g.Key.LogRunAt);
+
+            var result = new List<EsScheduleCycleLogDM>();
+            foreach (var g in grouped)
+            {
+                var logDm = new EsScheduleCycleLogDM
+                {
+                    Id = g.Key.ScheduleCycleLogId,
+                    ScheduleCycleCode = g.Key.ScheduleCycleCode,
+                    RunAt = g.Key.LogRunAt,
+                    DurationMs = g.Key.LogDurationMs,
+                    Status = g.Key.LogStatus,
+                    TriggerType = g.Key.TriggerType,
+                    Details = g.Select(d =>
+                    {
+                        var detailDm = _mapper.Map<EsScheduleCycleLogDetailDM>(d);
+                        detailDm.ErrorLogs = allErrors
+                            .Where(e => e.ScheduleCycleLogDetailId == d.Id)
+                            .Select(e => _mapper.Map<EsTransferErrorLogDM>(e))
+                            .ToList();
+                        return detailDm;
+                    }).ToList()
+                };
+                result.Add(logDm);
+            }
+
+            return result;
+        }
+
         public EsScheduleCycleLogDetailDM GetDetailWithErrors(Guid detailId)
         {
             var detailEntity = GetDetailDAO().FindByProperty(nameof(EsScheduleCycleLogDetailEntity.Id), detailId);
@@ -79,6 +128,9 @@ namespace Business.BusinessLogic
             dm.ErrorLogs = _mapper.Map<List<EsTransferErrorLogDM>>(errors);
             return dm;
         }
+
+
+        
 
         public void InserLog(EsScheduleCycleLogDM dm)
         {

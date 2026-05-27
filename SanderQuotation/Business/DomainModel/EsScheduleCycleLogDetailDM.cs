@@ -1,3 +1,9 @@
+using Const;
+using Core.Utility.Utility;
+using System.ComponentModel;
+using System.Reflection;
+using static Const.Enums;
+
 namespace Business.DomainModel
 {
     public class EsScheduleCycleLogDetailDM : BaseDM
@@ -27,19 +33,29 @@ namespace Business.DomainModel
 
         public List<EsTransferErrorLogDM> ErrorLogs = new();
 
-        /// <summary>取得該筆 Detail 的 TransferCode（依優先順序：DB轉入 > 轉出CSV > 檔案轉入）</summary>
+        /// <summary>取得該筆 Detail 的 TransferCode（依優先順序：DB轉入 > 檔案轉入 > 其他動作 Description）</summary>
         public string GetTransferCode()
         {
             if (!string.IsNullOrEmpty(DBTransferCode)) return DBTransferCode;
-            return FileTransferCode;
+            if (!string.IsNullOrEmpty(FileTransferCode)) return FileTransferCode;
+            if (OtherActionType.HasValue)
+                return GetActionTypeDescription(OtherActionType.Value);
+            return string.Empty;
         }
 
-        /// <summary>取得中文類型名稱：資料轉入 / 轉出檔案 / 檔案轉入</summary>
+        /// <summary>取得中文類型名稱：資料轉入 / 檔案轉入 / 其他動作 Description</summary>
         public string GetTransferTypeDisplay()
         {
             if (!string.IsNullOrEmpty(DBTransferCode)) return "資料轉入";
             if (!string.IsNullOrEmpty(FileTransferCode)) return "檔案轉入";
+            if (OtherActionType.HasValue)
+                return "其他任務";
             return "未知類型";
+        }
+
+        private static string GetActionTypeDescription(int value)
+        {
+            return EnumUtility.GetDescriptionByInt<ScheduleCycleActionTypeEnum>(value);
         }
     }
 }

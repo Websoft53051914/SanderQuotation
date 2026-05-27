@@ -28,50 +28,6 @@ namespace backend.Common
         }
 
         /// <summary>
-        /// 刪除排程設定時，同步取消尚未執行的 BackgroundJob（Enqueued / Scheduled / Processing）
-        /// </summary>
-        public void CancelPendingBackgroundJobs(string scheduleCycleCode)
-        {
-            var monitoringApi = JobStorage.Current.GetMonitoringApi();
-
-            // 取消排隊中的 Job（Enqueued）
-            var enqueuedJobs = monitoringApi.EnqueuedJobs("default", 0, int.MaxValue);
-            foreach (var (jobId, job) in enqueuedJobs)
-            {
-                var args = job.Job?.Args;
-                if (args != null && args.Count > 0 && args[0] is string code
-                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
-                {
-                    BackgroundJob.Delete(jobId);
-                }
-            }
-
-            // 取消排程中的 Job（Scheduled，尚未到執行時間）
-            var scheduledJobs = monitoringApi.ScheduledJobs(0, int.MaxValue);
-            foreach (var (jobId, job) in scheduledJobs)
-            {
-                var args = job.Job?.Args;
-                if (args != null && args.Count > 0 && args[0] is string code
-                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
-                {
-                    BackgroundJob.Delete(jobId);
-                }
-            }
-
-            // 正在執行中的 Job 無法強制停止，僅標記為刪除（Hangfire 不支援強制中斷）
-            var processingJobs = monitoringApi.ProcessingJobs(0, int.MaxValue);
-            foreach (var (jobId, job) in processingJobs)
-            {
-                var args = job.Job?.Args;
-                if (args != null && args.Count > 0 && args[0] is string code
-                    && string.Equals(code, scheduleCycleCode, StringComparison.OrdinalIgnoreCase))
-                {
-                    BackgroundJob.Delete(jobId);
-                }
-            }
-        }
-
-        /// <summary>
         /// 取得多個 ScheduleCycleCode 的即時執行狀態
         /// 結合 RecurringJob 歷史 + BackgroundJob 即時 Processing 狀態
         /// </summary>

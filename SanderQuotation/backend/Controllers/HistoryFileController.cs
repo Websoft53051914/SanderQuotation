@@ -172,7 +172,9 @@ namespace backend.Controllers
 
                 string mimeType = Method.GetMimeType(dm.FileName);
                 var fileBytes = System.IO.File.ReadAllBytes(pathFile);
-                return File(fileBytes, mimeType, dm.FileName);
+                var encodedFileName = Uri.EscapeDataString(dm.FileName);
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"{encodedFileName}\"; filename*=UTF-8''{encodedFileName}";
+                return File(fileBytes, mimeType);
             }
             catch (Exception ex)
             {

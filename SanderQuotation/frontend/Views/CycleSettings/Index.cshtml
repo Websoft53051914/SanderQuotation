@@ -1,6 +1,6 @@
-@{
-    ViewBag.Title = "±Æµ{³]©w";
-    ViewBag.pTitle = "±Æµ{³]©w";
+ï»¿@{
+    ViewBag.Title = "æ’ç¨‹è¨­å®š";
+    ViewBag.pTitle = "æ’ç¨‹è¨­å®š";
     ViewBag.pageTitle = config.GetMessage("SystemManagementModule").ToHtmlString();
 
     var otherTransferSettingSelectList = ViewData["OtherTransferSettingSelectList"] as List<SelectListItem>;
@@ -14,7 +14,7 @@
                     <h5 class="card-title mb-0 flex-grow-1"></h5>
                     <div class="flex-shrink-0">
                         <div class="d-flex flex-wrap gap-2">
-                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> ·s¼W</button>
+                            <button id="btnShowModal" class="btn btn-danger add-btn" data-bs-toggle="modal" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> æ–°å¢</button>
                             <button class="btn btn-soft-danger" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
                         </div>
                     </div>
@@ -29,17 +29,17 @@
                                 <input type="text"
                                        id="globalSearchInput"
                                        class="form-control search bg-light border-light"
-                                       placeholder="·j´Mªí®æ¤º®e">
+                                       placeholder="æœå°‹è¡¨æ ¼å…§å®¹">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
                         <div class="col-xxl-3 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="½Ğ¿é¤J¶g´Á¥N½X¡B¶g´Á¦WºÙ©ÎCron ªí¹F¦¡" id="Keyword" name="Keyword">
+                            <input type="text" class="form-control bg-light border-light" placeholder="è«‹è¼¸å…¥é€±æœŸä»£ç¢¼ã€é€±æœŸåç¨±æˆ–Cron è¡¨é”å¼" id="Keyword" name="Keyword">
                         </div>
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
                                 <i class="ri-equalizer-fill me-1 align-bottom"></i>
-                                ¿z¿ï
+                                ç¯©é¸
                             </button>
                         </div>
                     </div>
@@ -57,15 +57,15 @@
                                     </div>
                                 </th>
                                 <th>Action</th>
-                                <th>¶µ¦¸</th>
-                                <th class="sort" data-sort="ScheduleCycleCode">¶g´Á¥N½X</th>
-                                <th class="sort" data-sort="CycleName">¶g´Á¦WºÙ</th>
-                                <th>°õ¦æª¬ºA</th>
-                                <th class="sort" data-sort="CronExpression">Cron ªí¹F¦¡</th>
-                                <th class="sort" data-sort="Status">±Ò¥Î</th>
-                                <th data-sort="DBTransferSettings">¸ê®Æ®wÂàÀÉ³]©w</th>
-                                <th data-sort="OtherTaskSettings">¨ä¥L¥ô°È³]©w</th>
-                                <th data-sort="FileTransferSettings">ÀÉ®×Âà¤J¸ê®Æªí¹ïÀ³³]©w</th>
+                                <th>é …æ¬¡</th>
+                                <th class="sort" data-sort="ScheduleCycleCode">é€±æœŸä»£ç¢¼</th>
+                                <th class="sort" data-sort="CycleName">é€±æœŸåç¨±</th>
+                                <th>åŸ·è¡Œç‹€æ…‹</th>
+                                <th class="sort" data-sort="CronExpression">Cron è¡¨é”å¼</th>
+                                <th class="sort" data-sort="Status">å•Ÿç”¨</th>
+                                <th data-sort="DBTransferSettings">è³‡æ–™åº«è½‰æª”è¨­å®š</th>
+                                <th data-sort="OtherTaskSettings">å…¶ä»–ä»»å‹™è¨­å®š</th>
+                                <th data-sort="FileTransferSettings">æª”æ¡ˆè½‰å…¥è³‡æ–™è¡¨å°æ‡‰è¨­å®š</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -81,18 +81,18 @@
                     <div class="noresult" style="display: none">
                         <div class="text-center">
                             <lord-icon src="@Url.Content("~/assets/json/lord-icon/msoeawqm.json")" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
-                            <h5 class="mt-2">¬dµL¸ê®Æ</h5>
+                            <h5 class="mt-2">æŸ¥ç„¡è³‡æ–™</h5>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end mt-2">
                     <div class="pagination-wrap hstack gap-2">
                         <a class="page-item pagination-prev disabled" href="#">
-                            ¤W¤@­¶
+                            ä¸Šä¸€é 
                         </a>
                         <ul class="pagination listjs-pagination mb-0"></ul>
                         <a class="page-item pagination-next" href="#">
-                            ¤U¤@­¶
+                            ä¸‹ä¸€é 
                         </a>
                     </div>
                 </div>
@@ -105,15 +105,15 @@
                                 <lord-icon src="@Url.Content("~/assets/json/lord-icon/gsqxdxog.json")" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
                                     <h4>
-                                        ±z½T©w­n§R°£¦¹¶µ¥Ø¶Ü¡H
+                                        æ‚¨ç¢ºå®šè¦åˆªé™¤æ­¤é …ç›®å—ï¼Ÿ
                                     </h4>
 
                                     <div class="hstack gap-2 justify-content-center remove">
                                         <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            Ãö³¬
+                                            é—œé–‰
                                         </button>
-                                        <button class="btn btn-danger" id="delete-record">¬Oªº¡A§R°£¥¦¡I</button>
+                                        <button class="btn btn-danger" id="delete-record">æ˜¯çš„ï¼Œåˆªé™¤å®ƒï¼</button>
                                     </div>
                                 </div>
                             </div>
@@ -127,16 +127,16 @@
                             <div class="modal-body p-5 text-center">
                                 <lord-icon src="https://cdn.lordicon.com/uukerzzv.json" trigger="loop" colors="primary:#405189,secondary:#08a88a" style="width:90px;height:90px"></lord-icon>
                                 <div class="mt-4 text-center">
-                                    <h4>½T»{¥ß§Y°õ¦æ</h4>
-                                    <p class="text-muted">½T©w­n¥ß§Y°õ¦æ¦¹±Æµ{¶Ü¡H</p>
+                                    <h4>ç¢ºèªç«‹å³åŸ·è¡Œ</h4>
+                                    <p class="text-muted">ç¢ºå®šè¦ç«‹å³åŸ·è¡Œæ­¤æ’ç¨‹å—ï¼Ÿ</p>
                                     <div class="hstack gap-2 justify-content-center">
                                         <button class="btn btn-link link-danger fw-medium text-decoration-none" id="executeNow-close" data-bs-dismiss="modal">
                                             <i class="ri-close-line me-1 align-middle"></i>
-                                            Ãö³¬
+                                            é—œé–‰
                                         </button>
                                         <button class="btn btn-primary" id="executeNow-confirm">
                                             <i class="ri-play-circle-line me-1 align-middle"></i>
-                                            ¥ß§Y°õ¦æ
+                                            ç«‹å³åŸ·è¡Œ
                                         </button>
                                     </div>
                                 </div>
@@ -149,38 +149,69 @@
     </div>
 </div>
 
-<!-- ·s¼W / ½s¿è Modal -->
+<!-- åŸ·è¡Œç´€éŒ„ Modal -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header p-3 bg-light">
+                <h5 class="modal-title" id="logModalLabel"><i class="ri-history-line me-2"></i>åŸ·è¡Œæ™‚é–“è»¸</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="min-height:300px;">
+                <!-- ç¯©é¸æ¨™ç±¤åˆ— -->
+                <div id="logFilterBar" class="d-flex flex-wrap gap-2 mb-3"></div>
+                <!-- æ™‚é–“è»¸å®¹å™¨ -->
+                <div id="logTimelineContainer" style="max-height:65vh; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- éŒ¯èª¤è©³æƒ… Modal -->
+<div class="modal fade" id="logErrorModal" tabindex="-1" aria-labelledby="logErrorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-danger-subtle">
+                <h5 class="modal-title text-danger" id="logErrorModalLabel"><i class="ri-alert-line me-2"></i>éŒ¯èª¤è©³æƒ…</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="logErrorModalBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- æ–°å¢ / ç·¨è¼¯ Modal -->
 <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
-                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">·s¼W</h5>
-                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">½s¿è</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">æ–°å¢</h5>
+                <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">ç·¨è¼¯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
             <div class="modal-body">
                 <form class="needs-validation" novalidate="" method="post" id="submitForm">
                     <div class="row g-3">
 
-                        <!-- ¢w¢w °Ï¶ô¤@¡G°ò¥»¸ê°T ¢w¢w -->
+                        <!-- â”€â”€ å€å¡Šä¸€ï¼šåŸºæœ¬è³‡è¨Š â”€â”€ -->
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">¶g´Á¥N½X</label>
+                            <label class="col-form-label required pt-0">é€±æœŸä»£ç¢¼</label>
                             <input type="text" name="ScheduleCycleCode" id="ScheduleCycleCode" class="form-control" maxlength="50" required />
-                            <div class="invalid-feedback">½Ğ¿é¤J¶g´Á¥N½X</div>
+                            <div class="invalid-feedback">è«‹è¼¸å…¥é€±æœŸä»£ç¢¼</div>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">¶g´Á¦WºÙ</label>
+                            <label class="col-form-label required pt-0">é€±æœŸåç¨±</label>
                             <input type="text" name="CycleName" id="CycleName" class="form-control" maxlength="100"
-                                   placeholder="¶g´Á¦WºÙ" required />
-                            <div class="invalid-feedback">½Ğ¿é¤J¶g´Á¦WºÙ</div>
+                                   placeholder="é€±æœŸåç¨±" required />
+                            <div class="invalid-feedback">è«‹è¼¸å…¥é€±æœŸåç¨±</div>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">¸ê®Æ®wÂàÀÉ³]©w</label>
+                            <label class="col-form-label pt-0">è³‡æ–™åº«è½‰æª”è¨­å®š</label>
                             <select class="form-control" id="DBTransferSettings" name="DBTransferSettings" multiple>
                             </select>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">¨ä¥L¥ô°È</label>
+                            <label class="col-form-label pt-0">å…¶ä»–ä»»å‹™</label>
                             <select class="form-control" id="OtherTransferSettings" name="OtherTransferSettings" multiple>
                                 @foreach (var item in otherTransferSettingSelectList)
                                 {
@@ -190,7 +221,7 @@
                             </select>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">ÀÉ®×Âà¤J¸ê®Æªí¹ïÀ³³]©w</label>
+                            <label class="col-form-label pt-0">æª”æ¡ˆè½‰å…¥è³‡æ–™è¡¨å°æ‡‰è¨­å®š</label>
                             <select class="form-control" id="FileTransferSettings" name="FileTransferSettings" multiple>
                             </select>
                         </div>
@@ -198,159 +229,159 @@
                             <label class="col-form-label pt-0 d-block">&nbsp;</label>
                             <div class="form-check mt-2">
                                 <input type="checkbox" class="form-check-input" id="IsEnabled" name="IsEnabled" checked>
-                                <label class="form-check-label" for="IsEnabled">±Ò¥Î</label>
+                                <label class="form-check-label" for="IsEnabled">å•Ÿç”¨</label>
                             </div>
                         </div>
                         <div class="col-lg-12">
-                            <label class="col-form-label pt-0">»¡©ú</label>
+                            <label class="col-form-label pt-0">èªªæ˜</label>
                             <textarea name="Description" id="Description" class="form-control" maxlength="500"
-                                      placeholder="»¡©ú" rows="2"></textarea>
+                                      placeholder="èªªæ˜" rows="2"></textarea>
                         </div>
 
-                        <!-- ¢w¢w ¤À¹j½u ¢w¢w -->
+                        <!-- â”€â”€ åˆ†éš”ç·š â”€â”€ -->
                         <div class="col-12"><hr class="my-1"></div>
-                        <div class="col-12"><small class="text-muted">¶g´ÁÃş«¬³]©w</small></div>
+                        <div class="col-12"><small class="text-muted">é€±æœŸé¡å‹è¨­å®š</small></div>
 
-                        <!-- ¢w¢w °Ï¶ô¤G¡G¶g´ÁÃş«¬¿ï¾Ü ¢w¢w -->
+                        <!-- â”€â”€ å€å¡ŠäºŒï¼šé€±æœŸé¡å‹é¸æ“‡ â”€â”€ -->
                         <div class="col-lg-6">
-                            <label class="col-form-label required pt-0">¶g´ÁÃş«¬</label>
+                            <label class="col-form-label required pt-0">é€±æœŸé¡å‹</label>
                             <select name="CycleType" id="CycleType" class="form-control" required>
-                                <option value="">½Ğ¿ï¾Ü</option>
-                                <option value="SECOND">¨C¬í</option>
-                                <option value="MINUTE">¨C¤ÀÄÁ</option>
-                                <option value="HOUR">¨C¤p®É</option>
-                                <option value="DAY">¨C¤é</option>
-                                <option value="WEEK">¨C¶g</option>
-                                <option value="MONTH">¨C¤ë</option>
+                                <option value="">è«‹é¸æ“‡</option>
+                                <option value="SECOND">æ¯ç§’</option>
+                                <option value="MINUTE">æ¯åˆ†é˜</option>
+                                <option value="HOUR">æ¯å°æ™‚</option>
+                                <option value="DAY">æ¯æ—¥</option>
+                                <option value="WEEK">æ¯é€±</option>
+                                <option value="MONTH">æ¯æœˆ</option>
                             </select>
-                            <div class="invalid-feedback">½Ğ¿ï¾Ü¶g´ÁÃş«¬</div>
+                            <div class="invalid-feedback">è«‹é¸æ“‡é€±æœŸé¡å‹</div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¬í ¢w¢w -->
+                        <!-- â”€â”€ æ¯ç§’ â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-SECOND" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">¨C¹j</label></div>
+                                        <div class="col-auto"><label class="col-form-label">æ¯éš”</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="SecondInterval" name="SecondInterval"
-                                                   class="form-control" min="1" max="59" value="1" placeholder="¨C¬í">
+                                                   class="form-control" min="1" max="59" value="1" placeholder="æ¯ç§’">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¬í°õ¦æ¤@¦¸</label></div>
+                                        <div class="col-auto"><label class="col-form-label">ç§’åŸ·è¡Œä¸€æ¬¡</label></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¤ÀÄÁ ¢w¢w -->
+                        <!-- â”€â”€ æ¯åˆ†é˜ â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-MINUTE" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">¨C¹j</label></div>
+                                        <div class="col-auto"><label class="col-form-label">æ¯éš”</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="MinuteInterval" name="MinuteInterval"
-                                                   class="form-control" min="1" max="59" value="1" placeholder="¨C¤ÀÄÁ">
+                                                   class="form-control" min="1" max="59" value="1" placeholder="æ¯åˆ†é˜">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¤ÀÄÁ¡A²Ä</label></div>
+                                        <div class="col-auto"><label class="col-form-label">åˆ†é˜ï¼Œç¬¬</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="MinuteAtSecond" name="MinuteAtSecond"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="¨C¬í">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="æ¯ç§’">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¬í®É°õ¦æ</label></div>
+                                        <div class="col-auto"><label class="col-form-label">ç§’æ™‚åŸ·è¡Œ</label></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¤p®É ¢w¢w -->
+                        <!-- â”€â”€ æ¯å°æ™‚ â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-HOUR" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">¨C¹j</label></div>
+                                        <div class="col-auto"><label class="col-form-label">æ¯éš”</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourInterval" name="HourInterval"
-                                                   class="form-control" min="1" max="23" value="1" placeholder="¨C¤p®É">
+                                                   class="form-control" min="1" max="23" value="1" placeholder="æ¯å°æ™‚">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¤p®É¡A©ó</label></div>
+                                        <div class="col-auto"><label class="col-form-label">å°æ™‚ï¼Œæ–¼</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourAtMinute" name="HourAtMinute"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="¤À">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="åˆ†">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¤À</label></div>
+                                        <div class="col-auto"><label class="col-form-label">åˆ†</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="HourAtSecond" name="HourAtSecond"
-                                                   class="form-control" min="0" max="59" value="0" placeholder="¨C¬í">
+                                                   class="form-control" min="0" max="59" value="0" placeholder="æ¯ç§’">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¬í®É°õ¦æ</label></div>
+                                        <div class="col-auto"><label class="col-form-label">ç§’æ™‚åŸ·è¡Œ</label></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¤é ¢w¢w -->
+                        <!-- â”€â”€ æ¯æ—¥ â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-DAY" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2 align-items-center">
-                                        <div class="col-auto"><label class="col-form-label">¨C¹j</label></div>
+                                        <div class="col-auto"><label class="col-form-label">æ¯éš”</label></div>
                                         <div class="col-lg-2">
                                             <input type="number" id="DayInterval" name="DayInterval"
-                                                   class="form-control" min="1" max="31" value="1" placeholder="¨C¤é">
+                                                   class="form-control" min="1" max="31" value="1" placeholder="æ¯æ—¥">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">¤Ñ¡A©ó</label></div>
+                                        <div class="col-auto"><label class="col-form-label">å¤©ï¼Œæ–¼</label></div>
                                         <div class="col-lg-3">
                                             <input type="time" id="DayAtTime" name="DayAtTime"
                                                    class="form-control" value="08:00">
                                         </div>
-                                        <div class="col-auto"><label class="col-form-label">°õ¦æ</label></div>
+                                        <div class="col-auto"><label class="col-form-label">åŸ·è¡Œ</label></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¶g ¢w¢w -->
+                        <!-- â”€â”€ æ¯é€± â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-WEEK" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2">
                                         <div class="col-12">
-                                            <label class="col-form-label">¬P´Á´X°õ¦æ</label>
+                                            <label class="col-form-label">æ˜ŸæœŸå¹¾åŸ·è¡Œ</label>
                                             <div class="d-flex flex-wrap gap-3 mt-1">
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdSun" value="0">
-                                                    <label class="form-check-label" for="wdSun">¤é</label>
+                                                    <label class="form-check-label" for="wdSun">æ—¥</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdMon" value="1">
-                                                    <label class="form-check-label" for="wdMon">¤@</label>
+                                                    <label class="form-check-label" for="wdMon">ä¸€</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdTue" value="2">
-                                                    <label class="form-check-label" for="wdTue">¤G</label>
+                                                    <label class="form-check-label" for="wdTue">äºŒ</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdWed" value="3">
-                                                    <label class="form-check-label" for="wdWed">¤T</label>
+                                                    <label class="form-check-label" for="wdWed">ä¸‰</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdThu" value="4">
-                                                    <label class="form-check-label" for="wdThu">¥|</label>
+                                                    <label class="form-check-label" for="wdThu">å››</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdFri" value="5">
-                                                    <label class="form-check-label" for="wdFri">¤­</label>
+                                                    <label class="form-check-label" for="wdFri">äº”</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" id="wdSat" value="6">
-                                                    <label class="form-check-label" for="wdSat">¤»</label>
+                                                    <label class="form-check-label" for="wdSat">å…­</label>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-2 align-items-center">
-                                                <div class="col-auto"><label class="col-form-label">°õ¦æ®É¶¡</label></div>
+                                                <div class="col-auto"><label class="col-form-label">åŸ·è¡Œæ™‚é–“</label></div>
                                                 <div class="col-lg-3">
                                                     <input type="time" id="WeekAtTime" name="WeekAtTime"
                                                            class="form-control" value="08:00">
@@ -362,13 +393,13 @@
                             </div>
                         </div>
 
-                        <!-- ¢w¢w ¨C¤ë ¢w¢w -->
+                        <!-- â”€â”€ æ¯æœˆ â”€â”€ -->
                         <div class="col-lg-12 cycle-block" id="block-MONTH" style="display:none;">
                             <div class="card border mb-0">
                                 <div class="card-body pb-2">
                                     <div class="row g-2">
                                         <div class="col-12">
-                                            <label class="col-form-label">¿ï¾Ü¨C¤ë°õ¦æ¤é´Á¡]¥i¦h¿ï¡^</label>
+                                            <label class="col-form-label">é¸æ“‡æ¯æœˆåŸ·è¡Œæ—¥æœŸï¼ˆå¯å¤šé¸ï¼‰</label>
                                             <div class="d-flex flex-wrap gap-1 mt-1">
                                                 @for (int d = 1; d <= 31; d++)
                                                 {
@@ -382,7 +413,7 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-2 align-items-center">
-                                                <div class="col-auto"><label class="col-form-label">°õ¦æ®É¶¡</label></div>
+                                                <div class="col-auto"><label class="col-form-label">åŸ·è¡Œæ™‚é–“</label></div>
                                                 <div class="col-lg-3">
                                                     <input type="time" id="MonthAtTime" name="MonthAtTime"
                                                            class="form-control" value="08:00">
@@ -394,13 +425,13 @@
                             </div>
                         </div>
 
-                        <!-- Cron ¹wÄı -->
+                        <!-- Cron é è¦½ -->
                         <div class="col-12">
-                            <label class="col-form-label pt-0">Cron ªí¹F¦¡¹wÄı</label>
+                            <label class="col-form-label pt-0">Cron è¡¨é”å¼é è¦½</label>
                             <div class="input-group">
                                 <input type="text" id="CronExpression" name="CronExpression"
-                                       class="form-control font-monospace" readonly placeholder="½Ğ¥ı¿ï¾Ü¶g´ÁÃş«¬">
-                                <button type="button" class="btn btn-outline-secondary" onclick="buildCron()" title="­«·s²£¥Í">
+                                       class="form-control font-monospace" readonly placeholder="è«‹å…ˆé¸æ“‡é€±æœŸé¡å‹">
+                                <button type="button" class="btn btn-outline-secondary" onclick="buildCron()" title="é‡æ–°ç”¢ç”Ÿ">
                                     <i class="ri-refresh-line"></i>
                                 </button>
                             </div>
@@ -413,8 +444,8 @@
             </div>
             <div class="modal-footer">
                 <div class="hstack gap-2 justify-content-end">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Ãö³¬</button>
-                    <button type="submit" class="btn btn-success" id="add-btn" form="submitForm">Àx¦s</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">é—œé–‰</button>
+                    <button type="submit" class="btn btn-success" id="add-btn" form="submitForm">å„²å­˜</button>
                 </div>
             </div>
 
@@ -427,7 +458,7 @@
     <script src="~/assets/libs/list.pagination.js/list.pagination.min.js"></script>
     <script>
         // ========================================
-        // ­¶­±±MÄİ³]©w
+        // é é¢å°ˆå±¬è¨­å®š
         // ========================================
         var pageUrls = {
             GetPageList:    '@(Configuration["BackendURL"])/api/cycle-settings/GetPageList',
@@ -447,7 +478,7 @@
             Keyword: '',
         };
 
-        // Åı _CrudCommonScripts ©I¥s¡AÁ×§K­«½Æªì©l¤Æ
+        // è®“ _CrudCommonScripts å‘¼å«ï¼Œé¿å…é‡è¤‡åˆå§‹åŒ–
         function initPageChoices() {
             $('#CycleType').select2({
                 minimumResultsForSearch: Infinity,
@@ -456,7 +487,7 @@
             });
             ['#DBTransferSettings', '#OtherTaskSettings', '#FileTransferSettings', '#OtherTransferSettings'].forEach(function(id) {
                 $(id).select2({
-                    placeholder: '½Ğ¿ï¾Ü',
+                    placeholder: 'è«‹é¸æ“‡',
                     allowClear: true,
                     width: '100%',
                     dropdownParent: $('#showModal')
@@ -466,7 +497,7 @@
         }
 
         // ========================================
-        // ¼ĞÅÒ²M³æ´è¬V»²§U¡]¥Ñ API °ÊºA¸ü¤J¡^
+        // æ¨™ç±¤æ¸…å–®æ¸²æŸ“è¼”åŠ©ï¼ˆç”± API å‹•æ…‹è¼‰å…¥ï¼‰
         // ========================================
         var dbTransferLabelMap = {};
         var dbCsvTransferLabelMap = {};
@@ -476,12 +507,12 @@
             $.getJSON(pageUrls.GetSelectList, function(resp) {
                 if (!resp || !resp.Data) return;
                 var data = resp.Data;
-                // «Ø¥ß label map
+                // å»ºç«‹ label map
                 dbTransferLabelMap = {};
                 dbCsvTransferLabelMap = {};
                 fileTransferLabelMap = {};
 
-                // ¶ñ¥R DBTransferSettings
+                // å¡«å…… DBTransferSettings
                 var dbEl = document.getElementById('DBTransferSettings');
                 if (dbEl) {
                     var $dbSel = $('#DBTransferSettings');
@@ -493,7 +524,7 @@
                     $dbSel.trigger('change');
                 }
 
-                // ¶ñ¥R FileTransferSettings
+                // å¡«å…… FileTransferSettings
                 var fileEl = document.getElementById('FileTransferSettings');
                 if (fileEl) {
                     var $fileSel = $('#FileTransferSettings');
@@ -532,7 +563,7 @@
         }
 
         // ========================================
-        // ¶g´ÁÃş«¬¼ĞÅÒ
+        // é€±æœŸé¡å‹æ¨™ç±¤
         // ========================================
         var cycleTypeLabels = {
             'SECOND': '<span class="">@(config.GetMessage("Cycle_SECOND").ToHtmlString())</span>',
@@ -544,7 +575,7 @@
         };
 
         // ========================================
-        // ªí®æ´è¬V
+        // è¡¨æ ¼æ¸²æŸ“
         // ========================================
         function renderTable(rows) {
             const tbody = $('#data-list-data');
@@ -576,9 +607,10 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item edit-item-btn" href="#showModal" data-bs-toggle="modal"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> @(config.GetMessage("Edit").ToHtmlString())</a></li>
-                                    <li><a class="dropdown-item execute-now-btn${data.IsEnabled ? '' : ' disabled'}"
+                                    <li><a class="dropdown-item view-log-btn" href="javascript:void(0)" data-code="${data.ScheduleCycleCode}" data-name="${data.CycleName}"><i class="ri-history-line align-bottom me-2 text-muted"></i> æª¢è¦–åŸ·è¡Œç´€éŒ„</a></li>
+                                    <li><a class="dropdown-item execute-now-btn${(data.IsEnabled && data.LastRunState != '@(ScheduleCycleStateEnum.Processing.ToInt())') ? '' : ' disabled'}"
                                            href="javascript:void(0)"
-                                           ${data.IsEnabled ? `data-id="${data.Id}"` : 'tabindex="-1" aria-disabled="true"'}>
+                                           ${(data.IsEnabled && data.LastRunState != '@(ScheduleCycleStateEnum.Processing.ToInt())') ? `data-id="${data.Id}"` : 'tabindex="-1" aria-disabled="true"'}>
                                         <i class="ri-play-circle-line align-bottom me-2 text-muted"></i> @(config.GetMessage("ExecuteNow").ToHtmlString())
                                     </a></li>
                                     <li>
@@ -606,7 +638,7 @@
         }
 
         // ========================================
-        // ¥ß§Y°õ¦æ
+        // ç«‹å³åŸ·è¡Œ
         // ========================================
         var _executeNowId = null;
 
@@ -651,14 +683,14 @@
         });
 
         // ========================================
-        // ·j´M
+        // æœå°‹
         // ========================================
         function onSearchData() {
             queryState.Keyword = $('#Keyword').val();
         }
 
         // ========================================
-        // ·s¼W«e¦^©I
+        // æ–°å¢å‰å›å‘¼
         // ========================================
         function onBeforeCreate() {
             currentId = '';
@@ -673,13 +705,13 @@
             $('#CronExpression').val('');
             $('#cronDescription').text('');
             $('#IsEnabled').prop('checked', true);
-            $('#ScheduleCycleCode').prop('readonly', false);  // ·s¼W®É¤¹³\¿é¤J
-            // ­«¸m¶g´ÁÃş«¬
+            $('#ScheduleCycleCode').prop('readonly', false);  // æ–°å¢æ™‚å…è¨±è¼¸å…¥
+            // é‡ç½®é€±æœŸé¡å‹
             var cycleTypeEl = document.getElementById('CycleType');
             if (cycleTypeEl) {
                 $('#CycleType').val('').trigger('change');
             }
-            // ±j¨î²M°£¶g/¤ë©Ò¦³ checkbox¡]reset() ¤£·|²M checked=false ªº¹w³]¡^
+            // å¼·åˆ¶æ¸…é™¤é€±/æœˆæ‰€æœ‰ checkboxï¼ˆreset() ä¸æœƒæ¸… checked=false çš„é è¨­ï¼‰
             ['wdSun','wdMon','wdTue','wdWed','wdThu','wdFri','wdSat'].forEach(function(id) {
                 document.getElementById(id).checked = false;
             });
@@ -696,7 +728,7 @@
         }
 
         // ========================================
-        // ¶g´ÁÃş«¬¤Á´«
+        // é€±æœŸé¡å‹åˆ‡æ›
         // ========================================
         var blockDefaults = {
             'SECOND': function() {
@@ -745,7 +777,7 @@
         }
 
         // ========================================
-        // Åª¨ú¶g/¤ë¤w¤Ä¿ï­È¡]¥Î ID ºë½TÅª¨ú¡A¤£¥Î class selector¡^
+        // è®€å–é€±/æœˆå·²å‹¾é¸å€¼ï¼ˆç”¨ ID ç²¾ç¢ºè®€å–ï¼Œä¸ç”¨ class selectorï¼‰
         // ========================================
         function getCheckedWeekDays() {
             var days = [];
@@ -764,12 +796,12 @@
                 var el = document.getElementById('md' + d);
                 if (el && el.checked) days.push(d);
             }
-            // ¤w¬O¤É§Ç¡A¤£»İ±Æ§Ç
+            // å·²æ˜¯å‡åºï¼Œä¸éœ€æ’åº
             return days;
         }
 
         // ========================================
-        // Cron ªí¹F¦¡²£¥Í  ®æ¦¡¡G¬í ¤À ®É ¤é ¤ë ¬P´Á
+        // Cron è¡¨é”å¼ç”¢ç”Ÿ  æ ¼å¼ï¼šç§’ åˆ† æ™‚ æ—¥ æœˆ æ˜ŸæœŸ
         // ========================================
         function buildCron() {
             var type = $('#CycleType').val();
@@ -779,14 +811,14 @@
                 case 'SECOND': {
                     var n = parseInt($('#SecondInterval').val()) || 1;
                     cron = (n === 1) ? '* * * * * *' : '*/' + n + ' * * * * *';
-                    desc = '¨C ' + n + ' ¬í°õ¦æ¤@¦¸';
+                    desc = 'æ¯ ' + n + ' ç§’åŸ·è¡Œä¸€æ¬¡';
                     break;
                 }
                 case 'MINUTE': {
                     var n = parseInt($('#MinuteInterval').val()) || 1;
                     var s = parseInt($('#MinuteAtSecond').val()) || 0;
                     cron = s + ' */' + n + ' * * * *';
-                    desc = '¨C ' + n + ' ¤ÀÄÁ¡A²Ä ' + s + ' ¬í®É°õ¦æ';
+                    desc = 'æ¯ ' + n + ' åˆ†é˜ï¼Œç¬¬ ' + s + ' ç§’æ™‚åŸ·è¡Œ';
                     break;
                 }
                 case 'HOUR': {
@@ -794,7 +826,7 @@
                     var mi = parseInt($('#HourAtMinute').val()) || 0;
                     var s  = parseInt($('#HourAtSecond').val()) || 0;
                     cron = s + ' ' + mi + ' */' + n + ' * * *';
-                    desc = '¨C ' + n + ' ¤p®É¡A©ó ' + pad(mi) + ' ¤À ' + pad(s) + ' ¬í°õ¦æ';
+                    desc = 'æ¯ ' + n + ' å°æ™‚ï¼Œæ–¼ ' + pad(mi) + ' åˆ† ' + pad(s) + ' ç§’åŸ·è¡Œ';
                     break;
                 }
                 case 'DAY': {
@@ -802,7 +834,7 @@
                     var tp = ($('#DayAtTime').val() || '08:00').split(':');
                     var h = parseInt(tp[0])||0, m = parseInt(tp[1])||0;
                     cron = '0 ' + m + ' ' + h + ' */' + n + ' * *';
-                    desc = '¨C ' + n + ' ¤Ñ¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                    desc = 'æ¯ ' + n + ' å¤©ï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                     break;
                 }
                 case 'WEEK': {
@@ -813,9 +845,9 @@
                     var h = parseInt(tp[0], 10); if (isNaN(h)) h = 8;
                     var m = parseInt(tp[1], 10); if (isNaN(m)) m = 0;
                     cron = '0 ' + m + ' ' + h + ' * * ' + dayStr;
-                    var names = {'0':'¤é','1':'¤@','2':'¤G','3':'¤T','4':'¥|','5':'¤­','6':'¤»'};
-                    var labels = days.map(function(v){ return '¶g' + (names[String(v)] || v); }).join('¡B');
-                    desc = (labels || '¨C¤Ñ') + '¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                    var names = {'0':'æ—¥','1':'ä¸€','2':'äºŒ','3':'ä¸‰','4':'å››','5':'äº”','6':'å…­'};
+                    var labels = days.map(function(v){ return 'é€±' + (names[String(v)] || v); }).join('ã€');
+                    desc = (labels || 'æ¯å¤©') + 'ï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                     break;
                 }
                 case 'MONTH': {
@@ -826,7 +858,7 @@
                     var h = parseInt(tp[0], 10); if (isNaN(h)) h = 8;
                     var m = parseInt(tp[1], 10); if (isNaN(m)) m = 0;
                     cron = '0 ' + m + ' ' + h + ' ' + dayStr + ' * *';
-                    desc = '¨C¤ë ' + dayStr + ' ¸¹¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                    desc = 'æ¯æœˆ ' + dayStr + ' è™Ÿï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                     break;
                 }
             }
@@ -837,54 +869,54 @@
         function pad(n) { return String(n).padStart(2, '0'); }
 
         // ========================================
-        // ±q¸ê®Æª«¥ó²£¥Í Cron ¤¤¤å»¡©ú
+        // å¾è³‡æ–™ç‰©ä»¶ç”¢ç”Ÿ Cron ä¸­æ–‡èªªæ˜
         // ========================================
         function cronDescFromData(data) {
             switch (data.CycleType) {
                 case 'SECOND': {
                     var n = parseInt(data.SecondInterval) || 1;
-                    return '¨C ' + n + ' ¬í°õ¦æ¤@¦¸';
+                    return 'æ¯ ' + n + ' ç§’åŸ·è¡Œä¸€æ¬¡';
                 }
                 case 'MINUTE': {
                     var n = parseInt(data.MinuteInterval) || 1;
                     var s = parseInt(data.MinuteAtSecond) || 0;
-                    return '¨C ' + n + ' ¤ÀÄÁ¡A²Ä ' + s + ' ¬í®É°õ¦æ';
+                    return 'æ¯ ' + n + ' åˆ†é˜ï¼Œç¬¬ ' + s + ' ç§’æ™‚åŸ·è¡Œ';
                 }
                 case 'HOUR': {
                     var n = parseInt(data.HourInterval) || 1;
                     var mi = parseInt(data.HourAtMinute) || 0;
                     var s  = parseInt(data.HourAtSecond) || 0;
-                    return '¨C ' + n + ' ¤p®É¡A©ó ' + pad(mi) + ' ¤À ' + pad(s) + ' ¬í°õ¦æ';
+                    return 'æ¯ ' + n + ' å°æ™‚ï¼Œæ–¼ ' + pad(mi) + ' åˆ† ' + pad(s) + ' ç§’åŸ·è¡Œ';
                 }
                 case 'DAY': {
                     var n = parseInt(data.DayInterval) || 1;
                     var tp = (data.DayAtTime || '08:00').split(':');
                     var h = parseInt(tp[0]) || 0, m = parseInt(tp[1]) || 0;
-                    return '¨C ' + n + ' ¤Ñ¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                    return 'æ¯ ' + n + ' å¤©ï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                 }
                 case 'WEEK': {
-                    var names = {'0':'¤é','1':'¤@','2':'¤G','3':'¤T','4':'¥|','5':'¤­','6':'¤»'};
+                    var names = {'0':'æ—¥','1':'ä¸€','2':'äºŒ','3':'ä¸‰','4':'å››','5':'äº”','6':'å…­'};
                     var tp = (data.WeekAtTime || '08:00').split(':');
                     var h = parseInt(tp[0], 10); if (isNaN(h)) h = 8;
                     var m = parseInt(tp[1], 10); if (isNaN(m)) m = 0;
                     var labels = data.WeekDays
-                        ? String(data.WeekDays).split(',').map(function(v){ return '¶g' + (names[v.trim()] || v.trim()); }).join('¡B')
-                        : '¨C¤Ñ';
-                    return labels + '¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                        ? String(data.WeekDays).split(',').map(function(v){ return 'é€±' + (names[v.trim()] || v.trim()); }).join('ã€')
+                        : 'æ¯å¤©';
+                    return labels + 'ï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                 }
                 case 'MONTH': {
                     var tp = (data.MonthAtTime || '08:00').split(':');
                     var h = parseInt(tp[0], 10); if (isNaN(h)) h = 8;
                     var m = parseInt(tp[1], 10); if (isNaN(m)) m = 0;
                     var dayStr = data.MonthDays || '1';
-                    return '¨C¤ë ' + dayStr + ' ¸¹¡A©ó ' + pad(h) + ':' + pad(m) + ' °õ¦æ';
+                    return 'æ¯æœˆ ' + dayStr + ' è™Ÿï¼Œæ–¼ ' + pad(h) + ':' + pad(m) + ' åŸ·è¡Œ';
                 }
                 default: return '';
             }
         }
 
         // ========================================
-        // °e¥X«eÅçÃÒ¡]¨C¶g/¨C¤ë¦Ü¤Ö¤Ä¿ï¤@¶µ¡^
+        // é€å‡ºå‰é©—è­‰ï¼ˆæ¯é€±/æ¯æœˆè‡³å°‘å‹¾é¸ä¸€é …ï¼‰
         // ========================================
         function beforeSubmitValidation() {
             var type = $('#CycleType').val();
@@ -912,7 +944,7 @@
         }
 
         // ========================================
-        // °e¥X¸ê®Æ·Ç³Æ
+        // é€å‡ºè³‡æ–™æº–å‚™
         // ========================================
         function prepareSubmitData($form) {
             buildCron();
@@ -951,19 +983,19 @@
         }
 
         // ========================================
-        // ½s¿è¶ñ¤J¦^©I
+        // ç·¨è¼¯å¡«å…¥å›å‘¼
         // ========================================
         function onAfterEditFill(data) {
             loadSelectOptions(function() {
-                // ¥ı²MªÅ¦A¶ñ¤J
+                // å…ˆæ¸…ç©ºå†å¡«å…¥
                 clearFormFields();
                 $('#ScheduleCycleCode').val(data.ScheduleCycleCode || '');
-                $('#ScheduleCycleCode').prop('readonly', true);  // ½s¿è®É¤£¤¹³\­×§ï PK
+                $('#ScheduleCycleCode').prop('readonly', true);  // ç·¨è¼¯æ™‚ä¸å…è¨±ä¿®æ”¹ PK
                 $('#CycleName').val(data.CycleName || '');
                 $('#IsEnabled').prop('checked', data.IsEnabled !== false);
                 $('#Description').val(data.Description || '');
 
-                // ÁÙ­ì¦U¶g´Á¼Æ­È
+                // é‚„åŸå„é€±æœŸæ•¸å€¼
                 $('#SecondInterval').val(data.SecondInterval != null ? data.SecondInterval : 1);
                 $('#MinuteInterval').val(data.MinuteInterval != null ? data.MinuteInterval : 1);
                 $('#MinuteAtSecond').val(data.MinuteAtSecond != null ? data.MinuteAtSecond : 0);
@@ -975,14 +1007,14 @@
                 $('#WeekAtTime').val(data.WeekAtTime || '08:00');
                 $('#MonthAtTime').val(data.MonthAtTime || '08:00');
 
-                // ¶g´ÁÃş«¬ ¡÷ Åã¥Ü¹ïÀ³ block
+                // é€±æœŸé¡å‹ â†’ é¡¯ç¤ºå°æ‡‰ block
                 var cycleTypeEl = document.getElementById('CycleType');
                 if (cycleTypeEl) {
                     $('#CycleType').val(data.CycleType || '').trigger('change');
                 }
                 onCycleTypeChange();
 
-                // ÁÙ­ì¶g/¤ë checkbox¡]¥Î ID ºë½T³]©w¡^
+                // é‚„åŸé€±/æœˆ checkboxï¼ˆç”¨ ID ç²¾ç¢ºè¨­å®šï¼‰
                 if (data.WeekDays) {
                     var wdMap = {'0':'wdSun','1':'wdMon','2':'wdTue','3':'wdWed','4':'wdThu','5':'wdFri','6':'wdSat'};
                     String(data.WeekDays).split(',').forEach(function(v) {
@@ -997,7 +1029,7 @@
                     });
                 }
 
-                // Choices ¦h¿ï
+                // Choices å¤šé¸
                 if (data.DBTransferSettings && data.DBTransferSettings.length) {
                     setChoicesValues('#DBTransferSettings', data.DBTransferSettings);
                 }
@@ -1020,13 +1052,13 @@
         }
 
         // ========================================
-        // ªì©l¤Æ
+        // åˆå§‹åŒ–
         // ========================================
         $(document).ready(function () {
-            // ¶g´ÁÃş«¬ change
+            // é€±æœŸé¡å‹ change
             $('#CycleType').on('change', function() { onCycleTypeChange(); });
 
-            // ¶g´Á²Ó¸`¿é¤J§Y®É¹wÄı¡]input/select ¥Î delegated¡Acheckbox ª½±µ¸j¡^
+            // é€±æœŸç´°ç¯€è¼¸å…¥å³æ™‚é è¦½ï¼ˆinput/select ç”¨ delegatedï¼Œcheckbox ç›´æ¥ç¶ï¼‰
             $(document).on('input change', '#block-SECOND input, #block-MINUTE input, #block-HOUR input, #block-DAY input, #WeekAtTime, #MonthAtTime', function() {
                 buildCron();
             });
@@ -1037,10 +1069,10 @@
                 document.getElementById('md' + d).addEventListener('change', buildCron);
             }
 
-            // ªì©l¤Æ Choices.js
-            // ¤w¥Ñ­¶­±³»ºİªº initPageChoices() ²Î¤@ªì©l¤Æ¡A¦¹³B¤£­«½Æ°õ¦æ
+            // åˆå§‹åŒ– Choices.js
+            // å·²ç”±é é¢é ‚ç«¯çš„ initPageChoices() çµ±ä¸€åˆå§‹åŒ–ï¼Œæ­¤è™•ä¸é‡è¤‡åŸ·è¡Œ
 
-            // ¥ß§Y°õ¦æ¡]¨Æ¥ó©e¬£¡^
+            // ç«‹å³åŸ·è¡Œï¼ˆäº‹ä»¶å§”æ´¾ï¼‰
             $(document).on('click', '.execute-now-btn', function () {
                 if ($(this).hasClass('disabled')) return;
                 var id = $(this).data('id');
@@ -1049,6 +1081,219 @@
 
             loadDatas();
         });
+
+        // ========================================
+        // åŸ·è¡Œç´€éŒ„
+        // ========================================
+        var _logAllData = [];
+        var _logActiveFilter = null;
+
+        $(document).on('click', '.view-log-btn', function () {
+            var code = $(this).data('code');
+            var name = $(this).data('name');
+            $('#logModalLabel').html('<i class="ri-history-line me-2"></i>éå» 24 å°æ™‚é€±æœŸåŸ·è¡Œæ™‚é–“è»¸ â€” <strong>' + name + '</strong>');
+            $('#logFilterBar').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
+            $('#logTimelineContainer').html('');
+            _logAllData = [];
+            _logActiveFilter = null;
+            var modal = new bootstrap.Modal(document.getElementById('logModal'));
+            modal.show();
+
+            $.getJSON('@(Configuration["BackendURL"])/api/cycle-settings/GetRecentLogs?scheduleCycleCode=' + encodeURIComponent(code), function (resp) {
+                if (!resp || !resp.Data) { $('#logFilterBar').html(''); renderLogTimeline([]); return; }
+                _logAllData = resp.Data;
+                renderLogFilters(_logAllData);
+                renderLogTimeline(_logAllData);
+            }).fail(function () {
+                $('#logFilterBar').html('');
+                $('#logTimelineContainer').html('<div class="text-danger p-3">è¼‰å…¥å¤±æ•—</div>');
+            });
+        });
+
+        function renderLogFilters(logs) {
+            var bar = $('#logFilterBar');
+            bar.empty();
+
+            // å…¨éƒ¨æŒ‰éˆ•
+            var allBtn = $('<button class="btn btn-sm btn-dark log-filter-btn" data-filter="all">å…¨éƒ¨</button>');
+            bar.append(allBtn);
+
+            // è’é›†æ‰€æœ‰ TransferCode + type
+            var seen = {};
+            logs.forEach(function (log) {
+                (log.Details || []).forEach(function (d) {
+                    var key = d.TransferCode;
+                    if (!seen[key]) {
+                        seen[key] = d.TransferTypeDisplay;
+                        var badge = getTypeBadge(d.TransferTypeDisplay);
+                        var btn = $('<button class="btn btn-sm btn-outline-secondary log-filter-btn" data-filter="' + key + '">' + key + ' ' + badge + '</button>');
+                        bar.append(btn);
+                    }
+                });
+            });
+
+            bar.on('click', '.log-filter-btn', function () {
+                bar.find('.log-filter-btn').removeClass('btn-dark').addClass('btn-outline-secondary');
+                $(this).removeClass('btn-outline-secondary').addClass('btn-dark');
+                var f = $(this).data('filter');
+                _logActiveFilter = (f === 'all') ? null : f;
+                renderLogTimeline(_logAllData);
+            });
+        }
+
+        function renderLogTimeline(logs) {
+            var container = $('#logTimelineContainer');
+            container.empty();
+
+            var filtered = logs;
+            if (_logActiveFilter) {
+                filtered = logs.filter(function (log) {
+                    return (log.Details || []).some(function (d) { return d.TransferCode === _logActiveFilter; });
+                });
+            }
+
+            if (!filtered || filtered.length === 0) {
+                container.html('<div class="text-muted p-3">ç„¡åŸ·è¡Œç´€éŒ„</div>');
+                return;
+            }
+
+            // ä¾æ—¥æœŸåˆ†çµ„
+            var byDate = {};
+            filtered.forEach(function (log) {
+                var date = log.RunAtDate;
+                if (!byDate[date]) byDate[date] = [];
+                byDate[date].push(log);
+            });
+
+            Object.keys(byDate).sort().reverse().forEach(function (date) {
+                var dateGroup = $('<div class="mb-3"></div>');
+                dateGroup.append('<div class="fw-bold text-muted mb-2"><i class="ri-calendar-line me-1"></i>' + date + '</div>');
+
+                byDate[date].forEach(function (log) {
+                    var details = (log.Details || []);
+                    if (_logActiveFilter) {
+                        details = details.filter(function (d) { return d.TransferCode === _logActiveFilter; });
+                    }
+
+                    var triggerBadge = log.TriggerType === 'Manual'
+                        ? '<span class="badge bg-info-subtle text-info border ms-1">æ‰‹å‹•</span>'
+                        : '<span class="badge bg-secondary-subtle text-secondary border ms-1">æ’ç¨‹</span>';
+
+                    var block = $('<div class="border-start border-warning border-3 ps-3 mb-3"></div>');
+                    block.append('<div class="text-muted small">' + log.RunAtTime + '</div>');
+                    block.append('<div class="fw-semibold">' + (log.ScheduleCycleCode || '') + triggerBadge + '</div>');
+                    block.append('<div class="text-muted small mb-1">è€—æ™‚ ' + (log.DurationMs || 0) + ' ms ï½œ è³‡æ–™ ' + log.TotalDataCount + ' ç­† ï½œ éŒ¯èª¤ ' + log.TotalErrorCount + ' ç­†</div>');
+
+                    details.forEach(function (d) {
+                        var statusBadge = getStatusBadge(d.JobStatus);
+                        var typeBadge = getTypeBadge(d.TransferTypeDisplay);
+                        var errorIcon = (d.ErrorCount > 0)
+                            ? ' <a href="javascript:void(0)" class="text-danger ms-1 show-error-detail-btn" data-detail-id="' + d.Id + '" title="æŸ¥çœ‹éŒ¯èª¤"><i class="ri-external-link-line"></i></a>'
+                            : '';
+                        block.append(
+                            '<div class="d-flex align-items-center gap-1 mb-1 small">' +
+                            statusBadge + ' ' + typeBadge +
+                            ' <span>' + (d.TransferCode || '') + ' â€” è³‡æ–™ ' + d.DataCount + ' / éŒ¯èª¤ ' + d.ErrorCount + ' / ' + (d.DurationMs || 0) + 'ms</span>' +
+                            errorIcon +
+                            '</div>'
+                        );
+                    });
+
+                    dateGroup.append(block);
+                });
+
+                container.append(dateGroup);
+            });
+
+            // éŒ¯èª¤ detail é»æ“Š
+            container.off('click', '.show-error-detail-btn').on('click', '.show-error-detail-btn', function () {
+                var detailId = $(this).data('detail-id');
+                showErrorDetail(detailId);
+            });
+        }
+
+        function showErrorDetail(detailId) {
+            // å¾å·²è¼‰å…¥çš„è³‡æ–™ä¸­æ‰¾
+            var detail = null;
+            _logAllData.forEach(function (log) {
+                (log.Details || []).forEach(function (d) {
+                    if (d.Id === detailId) detail = d;
+                });
+            });
+            if (!detail) return;
+
+            var body = $('#logErrorModalBody');
+            body.empty();
+
+            var typeBadge = getTypeBadge(detail.TransferTypeDisplay);
+            $('#logErrorModalLabel').html(
+                '<i class="ri-alert-line me-2"></i>éŒ¯èª¤è©³æƒ… â€” ' + (detail.TransferCode || '') + ' ' + typeBadge
+            );
+
+            // ä»»å‹™å±¤ç´šéŒ¯èª¤è¨Šæ¯
+            if (detail.ErrorMessage) {
+                body.append('<div class="alert alert-danger mb-3"><strong>ä»»å‹™éŒ¯èª¤ï¼š</strong> ' + escHtml(detail.ErrorMessage) + '</div>');
+            }
+
+            var errors = detail.ErrorLogs || [];
+            body.append('<div class="fw-semibold mb-2">è³‡æ–™åˆ—éŒ¯èª¤èªªæ˜ç´° <span class="badge bg-danger">' + errors.length + '</span></div>');
+
+            if (errors.length === 0) {
+                body.append('<div class="text-muted">ç„¡éŒ¯èª¤ç´€éŒ„</div>');
+            } else {
+                var table = $('<table class="table table-sm table-bordered align-top"></table>');
+                table.append('<thead><tr><th style="width:40px">#</th><th style="width:30%">SQL</th><th>Exception</th></tr></thead>');
+                var tbody = $('<tbody></tbody>');
+                errors.forEach(function (e, i) {
+                    tbody.append(
+                        '<tr>' +
+                        '<td>' + (i + 1) + '</td>' +
+                        '<td><code class="text-muted small">' + escHtml(e.Sql || '-') + '</code></td>' +
+                        '<td class="text-danger small">' + escHtml(e.Exception || '') + '</td>' +
+                        '</tr>'
+                    );
+                });
+                table.append(tbody);
+                body.append(table);
+            }
+
+            // å…ˆé—œé–‰ logModalï¼Œå†é–‹ logErrorModal
+            var logModalEl = document.getElementById('logModal');
+            var logModal = bootstrap.Modal.getInstance(logModalEl);
+            if (logModal) {
+                logModalEl.addEventListener('hidden.bs.modal', function openErr() {
+                    logModalEl.removeEventListener('hidden.bs.modal', openErr);
+                    new bootstrap.Modal(document.getElementById('logErrorModal')).show();
+                }, { once: true });
+                logModal.hide();
+            } else {
+                new bootstrap.Modal(document.getElementById('logErrorModal')).show();
+            }
+        }
+
+        // éŒ¯èª¤ Modal é—œé–‰å¾Œé‡é–‹ logModal
+        document.getElementById('logErrorModal').addEventListener('hidden.bs.modal', function () {
+            var logModalEl = document.getElementById('logModal');
+            if (logModalEl) new bootstrap.Modal(logModalEl).show();
+        });
+
+        function getStatusBadge(status) {
+            if (status === 'Success') return '<span class="badge bg-success-subtle text-success border">âœ” Success</span>';
+            if (status === 'PartialFail') return '<span class="badge bg-warning-subtle text-warning border">â—‘ PartialFail</span>';
+            if (status === 'Failed') return '<span class="badge bg-danger-subtle text-danger border">âœ– Failed</span>';
+            return '<span class="badge bg-secondary-subtle text-secondary border">' + (status || '') + '</span>';
+        }
+
+        function getTypeBadge(typeDisplay) {
+            if (typeDisplay === 'è³‡æ–™è½‰å…¥') return '<span class="badge bg-primary-subtle text-primary border">è³‡æ–™è½‰å…¥</span>';
+            if (typeDisplay === 'æª”æ¡ˆè½‰å…¥') return '<span class="badge bg-info-subtle text-info border">æª”æ¡ˆè½‰å…¥</span>';
+            return '<span class="badge bg-secondary-subtle text-secondary border">' + (typeDisplay || '') + '</span>';
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
     </script>
 
 }

@@ -187,19 +187,34 @@ namespace backend.AI
         private ChatHistory GetSessionChatHistory(string sessionId)
         {
             string cacheKey = $"AIChat_Session_{sessionId}";
-            return _cache.GetOrCreate(cacheKey, entry =>
+            var cached = _cache.GetOrCreate(cacheKey, entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(SessionCacheMinutes);
                 var history = new ChatHistory();
                 history.AddSystemMessage(GetOrchestratorSystemPrompt());
                 return history;
             })!;
+
+            // 回傳深複製，避免 SK Function Calling 直接修改 cache 內的物件
+            // 導致下一輪取出時已含有 Gemini 不接受的 Tool role 訊息
+            var copy = new ChatHistory();
+            foreach (var msg in cached)
+                copy.Add(msg);
+            return copy;
         }
 
         private void SaveSessionChatHistory(string sessionId, ChatHistory chatHistory)
         {
+            // Gemini 只接受 System / User / Assistant role
+            // Semantic Kernel Function Calling 會產生 Tool / Function role 訊息
+            // 必須在儲存前過濾，否則下一輪送出時 Gemini 回傳 400 INVALID_ARGUMENT
+            var allowedRoles = new[] { AuthorRole.System, AuthorRole.User, AuthorRole.Assistant };
+            var cleanHistory = new ChatHistory();
+            foreach (var msg in chatHistory.Where(m => allowedRoles.Contains(m.Role)))
+                cleanHistory.Add(msg);
+
             string cacheKey = $"AIChat_Session_{sessionId}";
-            _cache.Set(cacheKey, chatHistory, new MemoryCacheEntryOptions
+            _cache.Set(cacheKey, cleanHistory, new MemoryCacheEntryOptions
             {
                 SlidingExpiration = TimeSpan.FromMinutes(SessionCacheMinutes)
             });

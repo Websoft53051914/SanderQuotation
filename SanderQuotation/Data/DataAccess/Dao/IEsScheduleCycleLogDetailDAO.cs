@@ -1,4 +1,5 @@
 using Core.Utility.Base.Data;
+using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 
 namespace Data.DataAccess.Dao
@@ -6,5 +7,10 @@ namespace Data.DataAccess.Dao
     public interface IEsScheduleCycleLogDetailDAO : Core.Utility.Base.Data.GuidId.IBaseDAO<EsScheduleCycleLogDetailEntity>
     {
         void DeleteOldLog(int days);
+
+        /// <summary>
+        /// 以 EsScheduleCycleLogDetail 為主表，JOIN EsScheduleCycleLog 篩選 ScheduleCycleCode
+        /// </summary>
+        List<EsScheduleCycleLogDetailWithLogDTO> GetDetailsByCode(string scheduleCycleCode);
     }
 }

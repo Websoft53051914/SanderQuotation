@@ -140,7 +140,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 // JWT 設定
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -209,13 +208,18 @@ builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 builder.Services.AddSingleton<TransferJob>();
 builder.Services.AddTransient<ExtractKeywordJob>();
 builder.Services.AddSingleton<DataCleanupJob>();
-//builder.Services.AddHostedService<EIPSourceScheduleHostService>();
 
 #region AI - Semantic Kernel
+// 註冊 DelegatingHandler
+builder.Services.AddTransient<GeminiErrorLoggingHandler>();
+
+// 註冊 Named HttpClient，並掛上錯誤攔截 Handler
 builder.Services.AddHttpClient("GeminiHttpClient", client =>
 {
     client.Timeout = TimeSpan.FromMinutes(10);
-});
+})
+.AddHttpMessageHandler<GeminiErrorLoggingHandler>();
+
 string geminiApiKey = builder.Configuration["GeminiApiKey"] ?? string.Empty;
 var httpClientFactory = builder.Services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
 var geminiHttpClient = httpClientFactory.CreateClient("GeminiHttpClient");

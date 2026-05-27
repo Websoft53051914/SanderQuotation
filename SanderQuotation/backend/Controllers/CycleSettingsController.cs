@@ -172,7 +172,6 @@ namespace backend.Controllers
                 foreach (var code in codes)
                 {
                     _hangfireSchedulerHelper.RemoveRecurringJob(code);
-                    _hangfireSchedulerHelper.CancelPendingBackgroundJobs(code);
                 }
 
                 return JsonSuccess("刪除成功");
@@ -241,17 +240,52 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 即時查詢多個 ScheduleCycleCode 的 Hangfire 執行狀態
-        /// GET api/cycle-settings/GetJobStatuses?codes=CODE1&codes=CODE2
+        /// 取得指定排程最近 24 小時的執行紀錄（含 Detail 和 ErrorLog）
+        /// GET api/cycle-settings/GetRecentLogs?scheduleCycleCode=XXX
         /// </summary>
-        [HttpGet("GetJobStatuses")]
+        [HttpGet("GetRecentLogs")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
-        public IActionResult GetJobStatuses([FromQuery] List<string> codes)
+        public IActionResult GetRecentLogs([FromQuery] string scheduleCycleCode)
         {
             try
             {
-                var statuses = _hangfireSchedulerHelper.GetJobStatuses(codes);
-                return JsonSuccess(statuses.Values);
+                var bl = GetBLInstance<EsScheduleCycleLogBL>();
+                var logs = bl.GetLogsByCode(scheduleCycleCode)
+                    .OrderByDescending(x => x.RunAt)
+                    .Select(log => new
+                    {
+                        log.Id,
+                        log.ScheduleCycleCode,
+                        RunAt = log.RunAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        RunAtDate = log.RunAt.ToString("yyyy-MM-dd"),
+                        RunAtTime = log.RunAt.ToString("HH:mm:ss"),
+                        log.DurationMs,
+                        log.Status,
+                        log.TriggerType,
+                        TotalDataCount = log.Details.Sum(d => d.DataCount),
+                        TotalErrorCount = log.Details.Sum(d => d.ErrorCount),
+                        Details = log.Details.Select(d => new
+                        {
+                            d.Id,
+                            d.DBTransferCode,
+                            d.FileTransferCode,
+                            d.DataCount,
+                            d.ErrorCount,
+                            d.JobStatus,
+                            d.DurationMs,
+                            d.ErrorMessage,
+                            TransferTypeDisplay = d.GetTransferTypeDisplay(),
+                            TransferCode = d.GetTransferCode(),
+                            ErrorLogs = d.ErrorLogs.Select(e => new
+                            {
+                                e.Id,
+                                e.Sql,
+                                e.Exception
+                            }).ToList()
+                        }).ToList()
+                    }).ToList();
+
+                return JsonSuccess(logs);
             }
             catch (Exception ex)
             {
