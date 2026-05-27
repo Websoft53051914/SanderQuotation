@@ -33,8 +33,8 @@
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
-                        <div class="col-xxl-3 col-sm-12">
-                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入週期代碼、週期名稱或Cron 表達式" id="Keyword" name="Keyword">
+                        <div class="col-xxl-2 col-sm-12">
+                            <input type="text" class="form-control bg-light border-light" placeholder="請輸入週期代碼或週期名稱" id="Keyword" name="Keyword">
                         </div>
                         <div class="col-xxl-1 col-sm-4">
                             <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
@@ -61,11 +61,11 @@
                                 <th class="sort" data-sort="ScheduleCycleCode">週期代碼</th>
                                 <th class="sort" data-sort="CycleName">週期名稱</th>
                                 <th>執行狀態</th>
-                                <th class="sort" data-sort="CronExpression">Cron 表達式</th>
+                                <th>執行週期</th>
                                 <th class="sort" data-sort="Status">啟用</th>
                                 <th data-sort="DBTransferSettings">資料庫轉檔設定</th>
                                 <th data-sort="OtherTaskSettings">其他任務設定</th>
-                                <th data-sort="FileTransferSettings">檔案轉入資料表對應設定</th>
+                                <th data-sort="FileTransferSettings">Excel轉入資料表對應設定</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -221,7 +221,7 @@
                             </select>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">檔案轉入資料表對應設定</label>
+                            <label class="col-form-label pt-0">Excel轉入資料表對應設定</label>
                             <select class="form-control" id="FileTransferSettings" name="FileTransferSettings" multiple>
                             </select>
                         </div>
@@ -626,7 +626,7 @@
                         <td class="ScheduleCycleCode">${data.ScheduleCycleCode ?? ''}</td>
                         <td class="CycleName">${data.CycleName ?? ''}</td>
                         <td>${renderStateBadge(data)}</td>
-                        <td class="CronExpression"><code class="fs-5">${data.CronExpression ?? ''}</code><br><small class="text-muted">${cronDescFromData(data)}</small></td>
+                        <td class="CronExpression"><span class="text-muted">${cronDescFromData(data)}</span></td>
                         <td class="IsEnabled">${enabledBadge}</td>
                         <td class="DBTransferSettings">${renderTagList(data.DBTransferSettings)}</td>
                         <td class="OtherTransferDescriptionSettings">${renderTagList(data.OtherTransferDescriptionSettings)}</td>
@@ -1091,7 +1091,7 @@
         $(document).on('click', '.view-log-btn', function () {
             var code = $(this).data('code');
             var name = $(this).data('name');
-            $('#logModalLabel').html('<i class="ri-history-line me-2"></i>過去 24 小時週期執行時間軸 — <strong>' + name + '</strong>');
+            $('#logModalLabel').html('<i class="ri-history-line me-2"></i>執行時間軸 — <strong>' + name + '</strong>');
             $('#logFilterBar').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
             $('#logTimelineContainer').html('');
             _logAllData = [];

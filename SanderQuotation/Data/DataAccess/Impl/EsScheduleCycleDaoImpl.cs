@@ -21,7 +21,6 @@ namespace Data.DataAccess.Impl
                 paras.Add("@Keyword1", $"%{searchVO.KeywordLike}%");
                 whereSql += $@" AND (
     {nameof(EsScheduleCycleEntity.CycleName)} LIKE @Keyword1 OR
-    {nameof(EsScheduleCycleEntity.CronExpression)} LIKE @Keyword1 OR
     {nameof(EsScheduleCycleEntity.ScheduleCycleCode)} LIKE @Keyword1
 )";
             }
