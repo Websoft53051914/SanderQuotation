@@ -64,18 +64,15 @@
 
                 <!-- ── 查價結果表 ── -->
                 <div class="d-flex align-items-center gap-2">
-                    <h6 class="text-muted mb-0">
+                    <h6 class="text-dark mb-0">
                         <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
                     </h6>
                     <button type="button" class="btn btn-warning" id="btnToggleRecommended"
-                            title="切換建議料號的勾選狀態">
-                        <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
+                            title="勾選建議料號">
+                        <i class="ri-checkbox-line me-1"></i>勾選建議料號
                     </button>
                 </div>
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="text-muted small mb-2">
-                        <i class="ri-checkbox-blank-circle-fill me-1"></i>內部料號欄位黃底標示表示建議料號
-                    </div>
+                <div class="d-flex align-items-center justify-content-end mb-2">
                     <span class="badge bg-info-subtle text-info" id="itemCountBadge">— 筆料項</span>
                 </div>
 
@@ -98,7 +95,10 @@
                                 <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">顯示料號</th>
                                 <th rowspan="2" style="width:70px;" class="text-center align-middle">數量</th>
                                 <th rowspan="2" style="min-width:180px;"
-                                    class="text-center align-middle bg-warning-subtle text-warning">內部料號</th>
+                                    class="text-center align-middle bg-warning-subtle text-warning internal-part-col">
+                                    <div class="text-muted small fw-normal internal-part-hint mb-1">黃底標示表示建議料號</div>
+                                    <div>內部料號</div>
+                                </th>
                                 <th rowspan="2" style="min-width:80px;"
                                     class="text-center align-middle">比對分類</th>
                                 <th rowspan="2" style="min-width:80px;"
@@ -117,7 +117,7 @@
                                 <th class="bg-primary-subtle text-primary" style="width:65px;">幣別</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:120px;">採購型號</th>
-                                <th class="bg-primary-subtle text-primary" style="width:80px;">套用Variant過濾</th>
+                                <th class="bg-primary-subtle text-primary text-center" style="width:80px;">Variant 過濾</th>
                                 <!-- 外部查價 sub-headers -->
                                 <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
                                 <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
@@ -166,6 +166,27 @@
 @await Html.PartialAsync("_ModalDecisionLog", ui.PartialMdl)
 
 <style>
+    #e_FileName {
+        font-size: 150%;
+    }
+
+    #itemCountBadge {
+        font-size: 150%;
+    }
+
+    #btnToggleRecommended {
+        color: #4A3208;
+    }
+
+        #btnToggleRecommended i {
+            color: #4A3208;
+        }
+
+    #itemTable .internal-part-hint {
+        line-height: 1.3;
+        white-space: normal;
+    }
+
     #itemTable.hide-decision-log .decision-log-col {
         display: none;
     }
@@ -252,6 +273,11 @@
         #itemTable > :not(caption):first-child > tr:first-child > * {
             border-top-width: 1px !important;
         }
+
+    /* 群組標題列與子標題列之間的白色分隔線 */
+    #itemTable thead tr:first-child > th {
+        border-bottom: 2px solid #fff !important;
+    }
 </style>
 
 @section scripts {
@@ -478,7 +504,7 @@
                 <td>${fmtCurrency(r[FI.InternalCurrency])}</td>
                 <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
                 <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
-                <td>${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
+                <td class="text-center">${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>

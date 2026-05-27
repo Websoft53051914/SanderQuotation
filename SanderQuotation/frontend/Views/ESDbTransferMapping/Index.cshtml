@@ -209,8 +209,8 @@
                                     <th style="width:32%">來源欄位</th>
                                     <th style="width:32%">目標欄位</th>
                                     @*<th style="width:12%">是否加密</th>*@
-                                    <th style="width:12%">是否為主鍵</th>
-                                    <th style="width:12%">動作</th>
+                                    <th style="width:12%" class="text-center">是否為主鍵</th>
+                                    <th style="width:12%" class="text-center">動作</th>
                                 </tr>
                             </thead>
                             <tbody id="mappingRows">
@@ -245,7 +245,7 @@
                                     <th style="width:30%">來源欄位</th>
                                     <th style="width:20%">篩選</th>
                                     <th style="width:30%">內容</th>
-                                    <th style="width:10%">動作</th>
+                                    <th style="width:10%" class="text-center">動作</th>
                                 </tr>
                             </thead>
                             <tbody id="filterRows"></tbody>
@@ -290,6 +290,12 @@
         select.is-invalid + .select2-container .select2-selection:focus {
             border-color: #dc3545 !important;
             box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        #mappingTable th.text-center,
+        #mappingTable td.text-center,
+        #filterTable th.text-center,
+        #filterTable td.text-center {
+            vertical-align: middle;
         }
     </style>
     <script>
@@ -621,11 +627,11 @@
                         </select>
                     </td>
                     <td class="text-center align-middle">
-                        <div class="form-check d-flex mb-0">
+                        <div class="form-check d-flex justify-content-center mb-0">
                             <input class="form-check-input is-primary-key-check" type="checkbox" ${isPrimaryKey ? 'checked' : ''}>
                         </div>
                     </td>
-                    <td class="align-middle">
+                    <td class="text-center align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-row">
                             <i class="ri-delete-bin-line"></i>
                         </button>
@@ -1210,7 +1216,7 @@
                         <input type="text" class="form-control filter-val"
                                value="${escHtml(value)}" ${hideVal ? 'style="display:none"' : ''}>
                     </td>
-                    <td class="align-middle">
+                    <td class="text-center align-middle">
                         <button type="button" class="btn btn-sm btn-soft-danger btn-remove-filter">
                             <i class="ri-delete-bin-line"></i>
                         </button>
