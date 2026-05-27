@@ -285,6 +285,58 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 依 BomFileContentDM 在同一次 FindByPk 中同時更新 TBBomFileQuotation 的內部與外部查價欄位，
+        /// 避免分開呼叫時因佇列模式造成後者以 DB 舊值覆蓋前者的問題。
+        /// </summary>
+        /// <param name="dm">BOM 料項 DM，dm.Id 為 BomFileContentId</param>
+        public void DoUpdatePriceItem(BomFileContentDM dm)
+        {
+            string account = SessionVO?.Account ?? string.Empty;
+            DateTime nowTime = DateTime.Now;
+
+            TBBomFileQuotationDM? existing = GetOneByBomFileContentId(dm.Id);
+            if (existing == null)
+                return;
+
+            TBBomFileQuotationEntity? entity = GetDAO().FindByPk(existing.Id);
+            if (entity == null)
+                return;
+
+            // 內部查價欄位
+            entity.InternalPurchaseOrderDate = dm.InternalPurchaseOrderDate;
+            entity.InternalUnitPriceOriginalCurrency = dm.InternalUnitPriceOriginalCurrency;
+            entity.InternalUnitPriceTwd = dm.InternalUnitPriceTwd;
+            entity.InternalQuantity = dm.InternalQuantity;
+            entity.InternalLowMinPrice = dm.InternalLowMinPrice;
+            entity.InternalLowMaxPrice = dm.InternalLowMaxPrice;
+            entity.InternalHighMinPrice = dm.InternalHighMinPrice;
+            entity.InternalHighMaxPrice = dm.InternalHighMaxPrice;
+            entity.InternalSupplierName = dm.InternalSupplierName;
+            entity.InternalCurrency = dm.InternalCurrency;
+            entity.InternalSupplierCode = dm.InternalSupplierCode;
+            entity.InternalItemDescription2 = dm.InternalItemDescription2;
+            entity.IsFilterByCustomerApprovedPart = dm.IsFilterByCustomerApprovedPart;
+            entity.CustomerApprovedPartCsv = dm.CustomerApprovedPartCsv;
+            entity.InternalQuotationDate = nowTime;
+            // 外部查價欄位
+            entity.ExternalQuotationDate = dm.ExternalQuotationDate;
+            entity.ExternalUnitPriceOriginalCurrency = dm.ExternalUnitPriceOriginalCurrency;
+            entity.ExternalUnitPriceTwd = dm.ExternalUnitPriceTwd;
+            entity.ExternalMoq = dm.ExternalMoq;
+            entity.ExternalSupplierName = dm.ExternalSupplierName;
+            entity.ExternalCurrency = dm.ExternalCurrency;
+            entity.ExternalStock = dm.ExternalStock;
+            entity.ExternalScenario = dm.ExternalScenario;
+
+            entity.UpdatedBy = account;
+            entity.UpdatedAt = nowTime;
+            GetDAO().Update(entity);
+
+            if (DoSaveChange)
+                _unitOfWork.Commit();
+        }
+
+        /// <summary>
         /// 取得效期內其他 BomFileContent 的最新內部查價結果（排除指定 BomFileContentId）
         /// </summary>
         /// <param name="itemNo">採購型號</param>

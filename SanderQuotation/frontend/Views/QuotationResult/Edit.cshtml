@@ -21,13 +21,13 @@
 <div class="row">
     <div class="col-lg-12">
 
-        <div class="card">
+        <div class="card quotation-result-card">
             <div class="card-header border-0 pb-0">
 
                 <!-- ── Header 資訊 ── -->
                 <form id="headerForm" class="needs-validation" novalidate>
                     <input type="hidden" id="e_Id" />
-                    <div class="row g-2 align-items-end mb-3">
+                    <div class="row g-2 align-items-end quotation-header-row">
                         <div class="col-lg-2 col-md-3">
                             <label class="col-form-label pt-0">BOM 檔案名稱</label>
                             <input type="text" id="e_FileName" class="form-control" readonly />
@@ -60,21 +60,18 @@
                 </form>
             </div>
 
-            <div class="card-body">
+            <div class="card-body quotation-result-body">
 
                 <!-- ── 查價結果表 ── -->
-                <div class="d-flex align-items-center gap-2">
-                    <h6 class="text-muted mb-0">
-                        <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
-                    </h6>
-                    <button type="button" class="btn btn-warning" id="btnToggleRecommended"
-                            title="切換建議料號的勾選狀態">
-                        <i class="ri-checkbox-line me-1"></i>切換建議項目勾選
-                    </button>
-                </div>
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="text-muted small mb-2">
-                        <i class="ri-checkbox-blank-circle-fill me-1"></i>內部料號欄位黃底標示表示建議料號
+                <div class="d-flex align-items-center justify-content-between mb-2 quotation-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="text-dark mb-0">
+                            <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
+                        </h6>
+                        <button type="button" class="btn btn-warning" id="btnToggleRecommended"
+                                title="勾選建議料號">
+                            <i class="ri-checkbox-line me-1"></i>勾選建議料號
+                        </button>
                     </div>
                     <span class="badge bg-info-subtle text-info" id="itemCountBadge">— 筆料項</span>
                 </div>
@@ -84,21 +81,24 @@
                            style="min-width:1600px;">
                         <thead class="table-light sticky-top" style="top:0;z-index:10;">
                             <tr>
-                                <th rowspan="2" style="width:40px;" class="text-center align-middle">
+                                <th rowspan="2" style="min-width: 40px; max-width: 40px; " class="text-center align-middle">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="checkAllItems">
                                     </div>
                                 </th>
-                                <th rowspan="2" style="width:40px;" class="text-center align-middle decision-log-col"></th>
-                                <th rowspan="2" style="width:40px;" class="align-middle">項次</th>
-                                <th rowspan="2" style="min-width:100px;" class="align-middle">元件料號</th>
-                                <th rowspan="2" style="min-width:100px;" class="align-middle">顯示料號</th>
-                                <th rowspan="2" style="min-width:160px;" class="align-middle">元件描述</th>
-                                <th rowspan="2" style="min-width:120px;" class="align-middle">製造商</th>
-                                <th rowspan="2" style="min-width:160px;" class="align-middle">製造商料號</th>
+                                <th rowspan="2" style="min-width: 40px; max-width: 40px; " class="text-center align-middle decision-log-col"></th>
+                                <th rowspan="2" style="min-width: 40px; max-width: 40px; " class="align-middle">項次</th>
+                                <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">製造商料號</th>
+                                <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">製造商</th>
+                                <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">元件描述</th>
+                                <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">元件料號</th>
+                                <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">顯示料號</th>
                                 <th rowspan="2" style="width:70px;" class="text-center align-middle">數量</th>
                                 <th rowspan="2" style="min-width:180px;"
-                                    class="text-center align-middle bg-warning-subtle text-warning">內部料號</th>
+                                    class="text-center align-middle bg-warning-subtle text-warning internal-part-col">
+                                    <div class="small fw-normal internal-part-hint mb-1">黃底標示表示建議料號</div>
+                                    <div>內部料號</div>
+                                </th>
                                 <th rowspan="2" style="min-width:80px;"
                                     class="text-center align-middle">比對分類</th>
                                 <th rowspan="2" style="min-width:80px;"
@@ -117,7 +117,7 @@
                                 <th class="bg-primary-subtle text-primary" style="width:65px;">幣別</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
                                 <th class="bg-primary-subtle text-primary" style="min-width:120px;">採購型號</th>
-                                <th class="bg-primary-subtle text-primary" style="width:80px;">套用Variant過濾</th>
+                                <th class="bg-primary-subtle text-primary text-center" style="width:80px;">Variant 過濾</th>
                                 <!-- 外部查價 sub-headers -->
                                 <th class="bg-success-subtle text-success" style="min-width:100px;">查價日期</th>
                                 <th class="bg-success-subtle text-success" style="min-width:90px;">單價(原幣)</th>
@@ -166,8 +166,127 @@
 @await Html.PartialAsync("_ModalDecisionLog", ui.PartialMdl)
 
 <style>
+    /* 上方表單與工具列間距縮為約 30% */
+    .quotation-result-card .quotation-header-row {
+        margin-bottom: 0.3rem !important;
+    }
+
+    .quotation-result-card .quotation-result-body {
+        padding-top: 0.375rem;
+    }
+
+    #e_FileName {
+        font-size: 150%;
+    }
+
+    #itemCountBadge {
+        font-size: 150%;
+    }
+
+    #btnToggleRecommended {
+        color: #4A3208;
+    }
+
+        #btnToggleRecommended i {
+            color: #4A3208;
+        }
+
+    #itemTable .internal-part-hint {
+        color: #4A3208;
+        line-height: 1.3;
+        white-space: normal;
+    }
+
     #itemTable.hide-decision-log .decision-log-col {
         display: none;
+    }
+
+    /* ── 凍結欄（含元件描述）────────────────────────────── */
+    #itemTable thead tr:first-child th:nth-child(-n+6) {
+        position: sticky;
+        background-color: #f8f9fa;
+        z-index: 3;
+    }
+
+    #itemTable tbody td:nth-child(-n+6) {
+        position: sticky;
+        background-color: #fff;
+        z-index: 3;
+    }
+    /*left 偏移 – 正常狀態（decision-log 顯示） */
+    #itemTable th:nth-child(1), #itemTable td:nth-child(1) {
+        left: 0;
+    }
+
+    #itemTable th:nth-child(2), #itemTable td:nth-child(2) {
+        left: 40px;
+    }
+
+    #itemTable th:nth-child(3), #itemTable td:nth-child(3) {
+        left: 80px;
+    }
+
+    #itemTable th:nth-child(4), #itemTable td:nth-child(4) {
+        left: 120px;
+    }
+
+    #itemTable th:nth-child(5), #itemTable td:nth-child(5) {
+        left: 270px;
+    }
+
+    #itemTable th:nth-child(6), #itemTable td:nth-child(6) {
+        left: 420px;
+    }
+    /*left 偏移 – hide-decision-log 狀態（第 2 列隱藏，其餘左移 40px）*/
+    #itemTable.hide-decision-log th:nth-child(3), #itemTable.hide-decision-log td:nth-child(3) {
+        left: 40px;
+    }
+
+    #itemTable.hide-decision-log th:nth-child(4), #itemTable.hide-decision-log td:nth-child(4) {
+        left: 80px;
+    }
+
+    #itemTable.hide-decision-log th:nth-child(5), #itemTable.hide-decision-log td:nth-child(5) {
+        left: 230px;
+    }
+
+    #itemTable.hide-decision-log th:nth-child(6), #itemTable.hide-decision-log td:nth-child(6) {
+        left: 380px;
+    }
+    /* 凍結區右側陰影指示線 */
+    #itemTable thead tr:first-child th:nth-child(6),
+    #itemTable tbody td:nth-child(6) {
+        box-shadow: 2px 0 4px -1px rgba(0, 0, 0, .15);
+    }
+
+    /* border-collapse: separate 讓每格獨立持有邊框，背景完整覆蓋，縫隙消失 */
+    #itemTable {
+        border-collapse: separate !important;
+        border-spacing: 0;
+    }
+
+        /* 重建格線：separate 下邊框不合併，每格只留 right+bottom 避免 2px 雙線 */
+        #itemTable > :not(caption) > * {
+            border: 0 !important;
+        }
+
+            #itemTable > :not(caption) > * > * {
+                border-color: var(--vz-table-border-color) !important;
+                border-style: solid !important;
+                border-width: 0 1px 1px 0 !important;
+            }
+                /* 第一欄補回左邊框 */
+                #itemTable > :not(caption) > * > *:first-child {
+                    border-left-width: 1px !important;
+                }
+        /* 第一列補回上邊框 */
+        #itemTable > :not(caption):first-child > tr:first-child > * {
+            border-top-width: 1px !important;
+        }
+
+    /* 群組標題列與子標題列之間的白色分隔線 */
+    #itemTable thead tr:first-child > th {
+        border-bottom: 2px solid #fff !important;
     }
 </style>
 
@@ -371,11 +490,11 @@
                     </button>
                 </td>
                 <td class="text-center text-muted">${escapeHtml(no)}</td>
+                <td><code class="fs-6">${escapeHtml(r[FI.ManufacturerPartNumber] || '')}</code></td>
+                <td class="text-muted">${escapeHtml(r[FI.Manufacturer] || '')}</td>
+                <td><span title="${escapeHtml(r[FI.Description])}">${escapeHtml(r[FI.Description])}</span></td>
                 <td><span title="${escapeHtml(r[FI.ComponentPart])}">${escapeHtml(r[FI.ComponentPart] || '')}</span></td>
                 <td><span title="${escapeHtml(r[FI.DisplayPart])}">${escapeHtml(r[FI.DisplayPart] || '')}</span></td>
-                <td><span title="${escapeHtml(r[FI.Description])}">${escapeHtml(r[FI.Description])}</span></td>
-                <td class="text-muted">${escapeHtml(r[FI.Manufacturer] || '')}</td>
-                <td><code class="fs-6">${escapeHtml(r[FI.ManufacturerPartNumber] || '')}</code></td>
                 <td class="text-center">${fmtNum(r[FI.Qty])}</td>
                 <td class="p-1${isRecommended ? ' bg-warning-subtle' : ''}">
                     <div class="input-group">
@@ -395,7 +514,7 @@
                 <td>${fmtCurrency(r[FI.InternalCurrency])}</td>
                 <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
                 <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
-                <td>${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
+                <td class="text-center">${fmtYesNo(r[FI.IsFilterByCustomerApprovedPartText])}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>

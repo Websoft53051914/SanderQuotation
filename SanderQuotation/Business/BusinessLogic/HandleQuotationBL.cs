@@ -72,8 +72,7 @@ namespace Business.BusinessLogic
 
             foreach (BomFileContentDM dm in dmList)
             {
-                GetBLTBBomFileQuotation().DoUpdateInternalPriceItem(dm);
-                GetBLTBBomFileQuotation().DoUpdateExternalPriceItem(dm);
+                GetBLTBBomFileQuotation().DoUpdatePriceItem(dm);
                 GetBLTBBomFileDecisionLog().DoInsertPendingLogs(dm.Id, dm.PendingDecisionLogs);
             }
 

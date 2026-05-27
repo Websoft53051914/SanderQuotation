@@ -379,7 +379,7 @@
                     <th class="bg-primary-subtle text-primary" style="width:60px;">幣別</th>
                     <th class="bg-primary-subtle text-primary" style="min-width:140px;">供應商</th>
                     <th class="bg-primary-subtle text-primary" style="min-width:110px;">採購型號 D2</th>
-                    <th class="bg-primary-subtle text-primary" style="width:80px;">套用Variant過濾</th>`;
+                    <th class="bg-primary-subtle text-primary" style="width:80px;">Variant 過濾</th>`;
             }
             if (hasExt) {
                 row1 += '<th colspan="8" class="text-center bg-success-subtle text-success">外部查價</th>';
@@ -411,33 +411,33 @@
                 var supplier = esc((ir.InternalSupplierName || '') + (ir.InternalSupplierCode ? ' (' + ir.InternalSupplierCode + ')' : ''));
                 cells += `
                     <td>${fmtDate(ir.InternalPurchaseOrderDate)}</td>
-                    <td class="text-end">${fmtPrice(ir.InternalUnitPriceOriginalCurrency)}</td>
-                    <td class="text-end">${fmtPrice(ir.InternalUnitPriceTwd)}</td>
-                    <td class="text-center">${fmtNum(ir.InternalQuantity)}</td>
-                    <td class="text-center">${fmtCurrency(ir.InternalCurrency)}</td>
+                    <td>${fmtPrice(ir.InternalUnitPriceOriginalCurrency)}</td>
+                    <td>${fmtPrice(ir.InternalUnitPriceTwd)}</td>
+                    <td>${fmtNum(ir.InternalQuantity)}</td>
+                    <td>${fmtCurrency(ir.InternalCurrency)}</td>
                     <td>${supplier}</td>
                     <td>${esc(ir.InternalItemDescription2 != null ? String(ir.InternalItemDescription2) : '')}</td>
-                    <td class="text-center">${fmtYesNo(ir.IsFilterByCustomerApprovedPartText)}</td>`;
+                    <td>${fmtYesNo(ir.IsFilterByCustomerApprovedPartText)}</td>`;
             }
             if (hasExt) {
                 var er = data.External || {};
                 cells += `
                     <td>${fmtDate(er.ExternalQuotationDate)}</td>
-                    <td class="text-end">${fmtPrice(er.ExternalUnitPriceOriginalCurrency)}</td>
-                    <td class="text-end">${fmtPrice(er.ExternalUnitPriceTwd)}</td>
-                    <td class="text-center">${fmtNum(er.ExternalMoq)}</td>
-                    <td class="text-center">${fmtCurrency(er.ExternalCurrency)}</td>
+                    <td>${fmtPrice(er.ExternalUnitPriceOriginalCurrency)}</td>
+                    <td>${fmtPrice(er.ExternalUnitPriceTwd)}</td>
+                    <td>${fmtNum(er.ExternalMoq)}</td>
+                    <td>${fmtCurrency(er.ExternalCurrency)}</td>
                     <td>${esc(er.ExternalSupplierName || '')}</td>
-                    <td class="text-center">${fmtNum(er.ExternalStock)}</td>
-                    <td class="text-center">${fmtScenario(er.ExternalScenarioText)}</td>`;
+                    <td>${fmtNum(er.ExternalStock)}</td>
+                    <td>${fmtScenario(er.ExternalScenarioText)}</td>`;
             }
             if (hasInStock) {
                 var sr = data.InStock || {};
                 cells += `
                     <td>${fmtDate(sr.MouserQuotationDate)}</td>
-                    <td class="text-end">${fmtPrice(sr.MouserUnitPriceOriginalCurrency)}</td>
+                    <td>${fmtPrice(sr.MouserUnitPriceOriginalCurrency)}</td>
                     <td>${fmtDate(sr.DkQuotationDate)}</td>
-                    <td class="text-end">${fmtPrice(sr.DkUnitPriceOriginalCurrency)}</td>`;
+                    <td>${fmtPrice(sr.DkUnitPriceOriginalCurrency)}</td>`;
             }
             $tbody.html('<tr>' + cells + '</tr>');
         }
