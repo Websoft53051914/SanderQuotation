@@ -44,41 +44,14 @@ namespace Business.BusinessLogic
 
         private IEsTransferErrorLogDAO GetErrorLogDAO() => _unitOfWork.Repository<IEsTransferErrorLogDAO>();
 
-
-        public List<EsScheduleCycleLogDM> GetLogsAfter()
-        {
-            var allLogs = GetDAO().FindByAll();
-            var filtered = allLogs.OrderByDescending(x => x.RunAt).ToList();
-            var dms = _mapper.Map<List<EsScheduleCycleLogDM>>(filtered);
-
-            // fill details
-            var allDetails = GetDetailDAO().FindByAll();
-            var allErrors = GetErrorLogDAO().FindByAll();
-
-            foreach (var dm in dms)
-            {
-                var details = allDetails.Where(d => d.ScheduleCycleLogId == dm.Id).ToList();
-                dm.Details = details.Select(d =>
-                {
-                    var detailDm = _mapper.Map<EsScheduleCycleLogDetailDM>(d);
-                    var errors = allErrors.Where(e => e.ScheduleCycleLogDetailId == d.Id).ToList();
-                    detailDm.ErrorLogs = _mapper.Map<List<EsTransferErrorLogDM>>(errors);
-                    return detailDm;
-                }).ToList();
-            }
-
-            return dms;
-        }
-
         /// <summary>
-        /// 以 EsScheduleCycleLogDetail 為主表，依 ScheduleCycleCode查詢，重組為 Log 結構回傳
+        /// 以 EsScheduleCycleLogDetail 為主表，查詢 ScheduleCycleCode，並加上日期區間篩選
         /// </summary>
-        public List<EsScheduleCycleLogDM> GetLogsByCode(string scheduleCycleCode)
+        public List<EsScheduleCycleLogDM> GetLogsByCode(string scheduleCycleCode, DateTime? dateFrom, DateTime? dateTo)
         {
-            var details = GetDetailDAO().GetDetailsByCode(scheduleCycleCode);
-            var allErrors = GetErrorLogDAO().FindByAll();
+            var details = GetDetailDAO().GetDetailsByCode(scheduleCycleCode, dateFrom, dateTo);
+            var allErrors = GetErrorLogDAO().FindListByScheduleCode(scheduleCycleCode);
 
-            // 依 ScheduleCycleLogId 分組，建構 Log
             var grouped = details
                 .GroupBy(d => new
                 {

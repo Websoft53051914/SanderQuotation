@@ -40,7 +40,6 @@ namespace backend.Controllers
         /// 取得分頁列表
         /// </summary>
         [HttpGet("GetPageList")]
-        [CustomAuthorization(FuncID.SysFuncClass_View)]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, SysFuncClassVM vm)
         {
             try
@@ -75,7 +74,6 @@ namespace backend.Controllers
         /// 取得單筆資料
         /// </summary>
         [HttpPost("Get")]
-        [CustomAuthorization(FuncID.SysFuncClass_Edit)]
         public IActionResult Get(Guid id)
         {
             try
@@ -98,7 +96,6 @@ namespace backend.Controllers
         /// 新增
         /// </summary>
         [HttpPost("Create")]
-        [CustomAuthorization(FuncID.SysFuncClass_Create)]
         public IActionResult Create(SysFuncClassVM vm)
         {
             try
@@ -127,7 +124,6 @@ namespace backend.Controllers
         /// 編輯
         /// </summary>
         [HttpPost("Edit")]
-        [CustomAuthorization(FuncID.SysFuncClass_Edit)]
         public IActionResult Edit(SysFuncClassVM vm)
         {
             try
@@ -156,7 +152,6 @@ namespace backend.Controllers
         /// 刪除（批次）
         /// </summary>
         [HttpPost("Delete")]
-        [CustomAuthorization(FuncID.SysFuncClass_Delete)]
         public IActionResult Delete(List<Guid> list)
         {
             try
@@ -183,7 +178,6 @@ namespace backend.Controllers
         /// 啟用/停用
         /// </summary>
         [HttpPost("Enable")]
-        [CustomAuthorization(FuncID.SysFuncClass_Edit)]
         public IActionResult Enable(Guid id, int enable)
         {
             try
@@ -203,7 +197,6 @@ namespace backend.Controllers
         /// 取得所有功能類別（下拉選單用）
         /// </summary>
         [HttpGet("GetAll")]
-        [CustomAuthorization(FuncID.SysFuncClass_Edit,FuncID.SysFuncClass_Create)]
         public IActionResult GetAll()
         {
             try

@@ -63,9 +63,9 @@
                                 <th>執行狀態</th>
                                 <th>執行週期</th>
                                 <th class="sort" data-sort="Status">啟用</th>
-                                <th data-sort="DBTransferSettings">資料庫轉檔設定</th>
-                                <th data-sort="OtherTaskSettings">其他任務設定</th>
-                                <th data-sort="FileTransferSettings">Excel轉入資料表對應設定</th>
+                                <th data-sort="DBTransferSettings"   style="white-space:normal; min-width:80px; max-width:120px;">資料庫轉檔設定</th>
+                                <th data-sort="OtherTaskSettings"    style="white-space:normal; min-width:80px; max-width:120px;">其他任務設定</th>
+                                <th data-sort="FileTransferSettings" style="white-space:normal; min-width:80px; max-width:120px;">Excel轉入資料表對應設定</th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -158,10 +158,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="min-height:300px;">
+                <!-- 日期區間搜尋 -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <label class="col-form-label py-0 text-nowrap">日期區間</label>
+                    <input type="date" id="logDateFrom" class="form-control form-control-sm flatpickr-input" data-provider="flatpickr" data-date-format="Y/m/d" style="width:150px;">
+                    <span class="text-muted">～</span>
+                    <input type="date" id="logDateTo" class="form-control form-control-sm flatpickr-input" data-provider="flatpickr" data-date-format="Y/m/d" style="width:150px;">
+                    <button type="button" class="btn btn-sm btn-primary" id="logSearchBtn">
+                        <i class="ri-search-line me-1"></i>查詢
+                    </button>
+                </div>
                 <!-- 篩選標籤列 -->
                 <div id="logFilterBar" class="d-flex flex-wrap gap-2 mb-3"></div>
                 <!-- 時間軸容器 -->
-                <div id="logTimelineContainer" style="max-height:65vh; overflow-y:auto;"></div>
+                <div id="logTimelineContainer" style="max-height:60vh   ; overflow-y:auto;"></div>
             </div>
         </div>
     </div>
@@ -611,7 +621,7 @@
                                     <li><a class="dropdown-item execute-now-btn${(data.IsEnabled && data.LastRunState != '@(ScheduleCycleStateEnum.Processing.ToInt())') ? '' : ' disabled'}"
                                            href="javascript:void(0)"
                                            ${(data.IsEnabled && data.LastRunState != '@(ScheduleCycleStateEnum.Processing.ToInt())') ? `data-id="${data.Id}"` : 'tabindex="-1" aria-disabled="true"'}>
-                                        <i class="ri-play-circle-line align-bottom me-2 text-muted"></i> @(config.GetMessage("ExecuteNow").ToHtmlString())
+                                        <i class="ri-play-circle-line align-bottom me-1 text-muted"></i> @(config.GetMessage("ExecuteNow").ToHtmlString())
                                     </a></li>
                                     <li>
                                         <a class="dropdown-item remove-item-btn${canDelete ? '' : ' disabled'}"
@@ -628,9 +638,9 @@
                         <td>${renderStateBadge(data)}</td>
                         <td class="CronExpression"><span class="text-muted">${cronDescFromData(data)}</span></td>
                         <td class="IsEnabled">${enabledBadge}</td>
-                        <td class="DBTransferSettings">${renderTagList(data.DBTransferSettings)}</td>
-                        <td class="OtherTransferDescriptionSettings">${renderTagList(data.OtherTransferDescriptionSettings)}</td>
-                        <td class="FileTransferSettings">${renderTagList(data.FileTransferSettings)}</td>
+                        <td class="DBTransferSettings"              style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.DBTransferSettings)}</td>
+                        <td class="OtherTransferDescriptionSettings" style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.OtherTransferDescriptionSettings)}</td>
+                        <td class="FileTransferSettings"            style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.FileTransferSettings)}</td>
                     </tr>
                 `);
             });
@@ -1087,27 +1097,69 @@
         // ========================================
         var _logAllData = [];
         var _logActiveFilter = null;
+        var _logCurrentCode = null;
 
-        $(document).on('click', '.view-log-btn', function () {
-            var code = $(this).data('code');
-            var name = $(this).data('name');
-            $('#logModalLabel').html('<i class="ri-history-line me-2"></i>執行時間軸 — <strong>' + name + '</strong>');
+        function toDateStr(d) {
+            return d.toFullYear ? d.toFullYear() : d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function formatDate(d) {
+            return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function loadLogData(code, dateFrom, dateTo) {
             $('#logFilterBar').html('<span class="spinner-border spinner-border-sm text-secondary"></span>');
             $('#logTimelineContainer').html('');
             _logAllData = [];
             _logActiveFilter = null;
-            var modal = new bootstrap.Modal(document.getElementById('logModal'));
-            modal.show();
 
-            $.getJSON('@(Configuration["BackendURL"])/api/cycle-settings/GetRecentLogs?scheduleCycleCode=' + encodeURIComponent(code), function (resp) {
+            var url = '@(Configuration["BackendURL"])/api/cycle-settings/GetRecentLogs'
+                + '?scheduleCycleCode=' + encodeURIComponent(code)
+                + '&dateFrom=' + encodeURIComponent(dateFrom)
+                + '&dateTo=' + encodeURIComponent(dateTo);
+
+            $.getJSON(url, function (resp) {
                 if (!resp || !resp.Data) { $('#logFilterBar').html(''); renderLogTimeline([]); return; }
-                _logAllData = resp.Data;
+                _logAllData = resp.Data.Data;
                 renderLogFilters(_logAllData);
                 renderLogTimeline(_logAllData);
             }).fail(function () {
                 $('#logFilterBar').html('');
                 $('#logTimelineContainer').html('<div class="text-danger p-3">載入失敗</div>');
             });
+        }
+
+        $(document).on('click', '.view-log-btn', function () {
+            var code = $(this).data('code');
+            var name = $(this).data('name');
+            _logCurrentCode = code;
+
+            // 預設日期：今天 ~ 前7天
+            var today = new Date();
+            var weekAgo = new Date();
+            weekAgo.setDate(today.getDate() - 7);
+            var todayStr = formatDate(today);
+            var weekAgoStr = formatDate(weekAgo);
+
+            $('#logDateFrom').val(weekAgoStr);
+            $('#logDateTo').val(todayStr);
+            $('#logModalLabel').html('<i class="ri-history-line me-2"></i>執行時間軸 — <strong>' + name + '</strong>');
+
+            var modal = new bootstrap.Modal(document.getElementById('logModal'));
+            modal.show();
+
+            loadLogData(code, weekAgoStr, todayStr);
+        });
+
+        $(document).on('click', '#logSearchBtn', function () {
+            if (!_logCurrentCode) return;
+            var dateFrom = $('#logDateFrom').val();
+            var dateTo = $('#logDateTo').val();
+            if (dateFrom && dateTo && (dateFrom>=dateTo)) {
+                Swal.fire({ icon: 'warning', title: '日期區間必須起小於迄', confirmButtonText: pageConfig.messages.confirm });
+                return;
+            }
+            loadLogData(_logCurrentCode, dateFrom, dateTo);
         });
 
         function renderLogFilters(logs) {

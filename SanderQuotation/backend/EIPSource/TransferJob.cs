@@ -6,6 +6,7 @@ using Business.DomainModel;
 using Const;
 using Core.Utility.Utility;
 using Hangfire;
+using Hangfire.Storage;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -47,54 +48,65 @@ namespace backend.Common
         }
 
         [LogDeletedJob]
-        [DisableConcurrentExecution(10)]
         [AutomaticRetry(Attempts = 0, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
         public async Task ExecuteTask(string scheduleCycleCode, string TriggerType)
         {
-            EsScheduleCycleLogDM log = new();
+            // 以 scheduleCycleCode 為鎖定 key，防止同一排程重複執行，不影響其他排程
+            using var connection = JobStorage.Current.GetConnection();
+            IDisposable? distributedLock = null;
             try
             {
-                EsScheduleCycleBL bl = BLFactory.GetInstanceBackGround<EsScheduleCycleBL>();
-                var data = bl.GetByCode(scheduleCycleCode);
-                //Thread.Sleep(TimeSpan.FromSeconds(5));
-                if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0 && data.OtherTransferSettings.Count == 0))
+                distributedLock = connection.AcquireDistributedLock($"TransferJob:{scheduleCycleCode}", TimeSpan.FromSeconds(10));
+            }
+            catch (DistributedLockTimeoutException)
+            {
+                // 同一個 scheduleCycleCode 正在執行中，略過本次觸發
+                return;
+            }
+
+            using (distributedLock)
+            {
+                EsScheduleCycleLogDM log = new();
+                try
                 {
-                    // log not found
-                    return;
+                    EsScheduleCycleBL bl = BLFactory.GetInstanceBackGround<EsScheduleCycleBL>();
+                    var data = bl.GetByCode(scheduleCycleCode);
+                    if (data == null || data.Status != StatusEnum.Enabled.ToValueString() || (data.DBTransferSettings.Count == 0 && data.FileTransferSettings.Count == 0 && data.DbCsvTransferSettings.Count == 0 && data.OtherTransferSettings.Count == 0))
+                    {
+                        // log not found
+                        return;
+                    }
+
+                    DateTime st = DateTime.Now;
+
+                    log.RunAt = st;
+
+                    var dbTasks = data.DBTransferSettings.Select(setting => DBTransfer(setting));
+                    var fileTasks = data.FileTransferSettings.Select(setting => FileTransfer(setting));
+                    var otherTasks = data.OtherTransferSettings.Select(setting => OtherTransfer(setting));
+                    //var dbCsvTasks = data.DbCsvTransferSettings.Select(setting => DBToCSVTransfer(setting));
+
+                    var dbResults = await Task.WhenAll(dbTasks);
+                    var fileResults = await Task.WhenAll(fileTasks);
+                    var otherResults = await Task.WhenAll(otherTasks);
+                    //var dbCsvResults = await Task.WhenAll(dbCsvTasks);
+
+                    log.ScheduleCycleCode = scheduleCycleCode;
+                    log.DurationMs = (int)(DateTime.Now - st).TotalMilliseconds;
+                    log.Details = dbResults.Concat(fileResults).Concat(otherResults).ToList();
+                    log.TriggerType = TriggerType;
+                    EsScheduleCycleLogBL esScheduleCycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>();
+                    esScheduleCycleLogBL.InserLog(log);
                 }
-
-               
-
-                DateTime st = DateTime.Now;
-
-                log.RunAt = st;
-
-                var dbTasks = data.DBTransferSettings.Select(setting => DBTransfer(setting));
-                var fileTasks = data.FileTransferSettings.Select(setting => FileTransfer(setting));
-                var otherTasks = data.OtherTransferSettings.Select(setting => OtherTransfer(setting));
-                //var dbCsvTasks = data.DbCsvTransferSettings.Select(setting => DBToCSVTransfer(setting));
-
-                var dbResults = await Task.WhenAll(dbTasks);
-                var fileResults = await Task.WhenAll(fileTasks);
-                var otherResults = await Task.WhenAll(otherTasks);
-                //var dbCsvResults = await Task.WhenAll(dbCsvTasks);
-
-                log.ScheduleCycleCode = scheduleCycleCode;
-                log.DurationMs = (int)(DateTime.Now - st).TotalMilliseconds;
-                log.Details = dbResults.Concat(fileResults).Concat(otherResults).ToList();
-                log.TriggerType = TriggerType;
-                EsScheduleCycleLogBL esScheduleCycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>();
-                esScheduleCycleLogBL.InserLog(log);
-
-            }
-            catch (Exception ex)
-            {
-                // TODO: log ex
-                throw;
-            }
-            finally
-            {
-                await DoCompleted();
+                catch (Exception ex)
+                {
+                    // TODO: log ex
+                    throw;
+                }
+                finally
+                {
+                    await DoCompleted();
+                }
             }
         }
 

@@ -9,8 +9,8 @@ namespace Data.DataAccess.Dao
         void DeleteOldLog(int days);
 
         /// <summary>
-        /// 以 EsScheduleCycleLogDetail 為主表，JOIN EsScheduleCycleLog 篩選 ScheduleCycleCode
+        /// 以 EsScheduleCycleLogDetail 為主表，JOIN EsScheduleCycleLog 查詢 ScheduleCycleCode，並加上日期區間篩選
         /// </summary>
-        List<EsScheduleCycleLogDetailWithLogDTO> GetDetailsByCode(string scheduleCycleCode);
+        List<EsScheduleCycleLogDetailWithLogDTO> GetDetailsByCode(string scheduleCycleCode, DateTime? dateFrom, DateTime? dateTo);
     }
 }

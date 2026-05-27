@@ -240,17 +240,19 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 取得指定排程最近 24 小時的執行紀錄（含 Detail 和 ErrorLog）
-        /// GET api/cycle-settings/GetRecentLogs?scheduleCycleCode=XXX
+        /// 取得指定排程執行紀錄（含 Detail 和 ErrorLog），支援日期區間篩選
+        /// GET api/cycle-settings/GetRecentLogs?scheduleCycleCode=XXX&dateFrom=2025-01-01&dateTo=2025-01-07
         /// </summary>
         [HttpGet("GetRecentLogs")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
-        public IActionResult GetRecentLogs([FromQuery] string scheduleCycleCode)
+        public IActionResult GetRecentLogs([FromQuery] string scheduleCycleCode, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo)
         {
             try
             {
+                var today = DateTime.Today;
+
                 var bl = GetBLInstance<EsScheduleCycleLogBL>();
-                var logs = bl.GetLogsByCode(scheduleCycleCode)
+                var logs = bl.GetLogsByCode(scheduleCycleCode, dateFrom, dateTo)
                     .OrderByDescending(x => x.RunAt)
                     .Select(log => new
                     {
@@ -285,7 +287,12 @@ namespace backend.Controllers
                         }).ToList()
                     }).ToList();
 
-                return JsonSuccess(logs);
+                return JsonSuccess(new
+                {
+                    DateFrom = dateFrom?.ToString("yyyy-MM-dd"),
+                    DateTo = dateTo?.ToString("yyyy-MM-dd"),
+                    Data = logs
+                });
             }
             catch (Exception ex)
             {
