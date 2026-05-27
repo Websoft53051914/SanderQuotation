@@ -751,5 +751,12 @@ namespace Const
             [Description("執行中")]
             Processing = 2,
         }
+
+
+        public enum ScheduleCycleTypeEnum
+        {
+            Fixed = 1,
+            Default = 2
+        }
     }
 }

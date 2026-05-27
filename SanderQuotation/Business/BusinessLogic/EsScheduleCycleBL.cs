@@ -114,6 +114,7 @@ namespace Business.BusinessLogic
             entity.UpdatedAt = base.now;
             entity.CreatedBy = UserInfo?.UserAccount;
             entity.UpdatedBy = UserInfo?.UserAccount;
+            entity.Type = ScheduleCycleTypeEnum.Default.ToInt().ToString();
 
             GetDao().InsertAction(entity);
             SaveSubTables(dm, base.now);
@@ -125,9 +126,14 @@ namespace Business.BusinessLogic
         {
 
             var now = DateTime.Now;
+            // 先取得現有資料，保留不可被覆蓋的欄位
+            var existing = GetDao().FindByProperty(nameof(EsScheduleCycleEntity.Id), dm.Id);
             var entity = _mapper.Map<EsScheduleCycleEntity>(dm);
             // 保留建立資訊
-            //entity.RowGuid = existing.RowGuid;
+            entity.CreatedAt = existing?.CreatedAt;
+            entity.CreatedBy = existing?.CreatedBy;
+            // Type 不允許被修改，永遠保留原始值
+            entity.Type = existing?.Type;
             entity.UpdatedAt = now;
             entity.UpdatedBy = UserInfo?.UserAccount;
             //

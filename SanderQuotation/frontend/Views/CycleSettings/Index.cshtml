@@ -63,9 +63,9 @@
                                 <th>執行狀態</th>
                                 <th>執行週期</th>
                                 <th class="sort" data-sort="Status">啟用</th>
-                                <th data-sort="DBTransferSettings"   style="white-space:normal; min-width:80px; max-width:120px;">資料庫轉檔設定</th>
-                                <th data-sort="OtherTaskSettings"    style="white-space:normal; min-width:80px; max-width:120px;">其他任務設定</th>
-                                <th data-sort="FileTransferSettings" style="white-space:normal; min-width:80px; max-width:120px;">Excel轉入資料表對應設定</th>
+                                <th data-sort="DBTransferSettings"><div>資料庫轉檔設定</div></th>
+                                <th data-sort="OtherTaskSettings"><div>其他任務設定</div></th>
+                                <th data-sort="FileTransferSettings"><div>Excel轉入資料表對應設定</div></th>
                             </tr>
                         </thead>
                         <tbody class="list form-check-all" id="data-list-data">
@@ -554,7 +554,7 @@
             if (!arr || arr.length === 0) return '';
             return arr.map(function(v) {
                 var label = dbTransferLabelMap[v] || dbCsvTransferLabelMap[v] || fileTransferLabelMap[v] || v;
-                return '<span class="badge bg-light text-dark border me-1 fs-5">' + label + '</span>';
+                return '<span class="badge bg-light text-dark border me-1 fs-5 text-wrap" style="max-width:120px; vertical-align: middle;">' + label + '</span>';
             }).join('');
         }
 
@@ -602,12 +602,13 @@
                 var enabledBadge = data.IsEnabled
                     ? '<span class="badge bg-success-subtle text-success fs-5"><i class="ri-checkbox-circle-line me-1"></i>@(config.GetMessage("Enable").ToHtmlString())</span>'
                     : '<span class="badge bg-danger-subtle text-danger fs-5"><i class="ri-close-circle-line me-1"></i>@(config.GetMessage("Disable").ToHtmlString())</span>';
-                const canDelete = true;
+                const canDelete = data.Type == '@(ScheduleCycleTypeEnum.Default.ToInt())';
+                const inputChk = canDelete?`<input class="form-check-input row-check" type="checkbox" data-id="${data.RowGuid}" value=option1>`:'';
                 tbody.append(`
                     <tr data-id="${data.Id}" data-can-delete="${canDelete}">
                             <th scope="row">
                             <div class="form-check">
-                                <input class="form-check-input row-check" type="checkbox" data-id="${data.RowGuid}" value=option1 ${canDelete ? '' : 'disabled'}>
+                                ${inputChk}
                             </div>
                         </th>
                         <td>
@@ -638,9 +639,9 @@
                         <td>${renderStateBadge(data)}</td>
                         <td class="CronExpression"><span class="text-muted">${cronDescFromData(data)}</span></td>
                         <td class="IsEnabled">${enabledBadge}</td>
-                        <td class="DBTransferSettings"              style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.DBTransferSettings)}</td>
-                        <td class="OtherTransferDescriptionSettings" style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.OtherTransferDescriptionSettings)}</td>
-                        <td class="FileTransferSettings"            style="white-space:normal; min-width:80px; max-width:120px;">${renderTagList(data.FileTransferSettings)}</td>
+                        <td class="DBTransferSettings"><div>${renderTagList(data.DBTransferSettings)}</div></td>
+                        <td class="OtherTransferDescriptionSettings"><div>${renderTagList(data.OtherTransferDescriptionSettings)}</div></td>
+                        <td class="FileTransferSettings"><div>${renderTagList(data.FileTransferSettings)}</div></td>
                     </tr>
                 `);
             });
@@ -710,12 +711,16 @@
         }
 
         function clearFormFields() {
+            _editingType = null;
             $('#submitForm')[0].reset();
             $('.cycle-block').hide();
             $('#CronExpression').val('');
             $('#cronDescription').text('');
-            $('#IsEnabled').prop('checked', true);
+            $('#IsEnabled').prop('checked', true).prop('disabled', false);
             $('#ScheduleCycleCode').prop('readonly', false);  // 新增時允許輸入
+            // 恢復所有可能被停用的欄位
+            $('#DBTransferSettings, #OtherTransferSettings, #FileTransferSettings').prop('disabled', false);
+            $('#DBTransferSettings, #OtherTransferSettings, #FileTransferSettings').closest('.col-lg-6').find('.select2-container').removeClass('pe-none opacity-75');
             // 重置週期類型
             var cycleTypeEl = document.getElementById('CycleType');
             if (cycleTypeEl) {
@@ -995,7 +1000,10 @@
         // ========================================
         // 編輯填入回呼
         // ========================================
+        var _editingType = null;
+
         function onAfterEditFill(data) {
+            _editingType = data.Type;
             loadSelectOptions(function() {
                 // 先清空再填入
                 clearFormFields();
@@ -1004,6 +1012,13 @@
                 $('#CycleName').val(data.CycleName || '');
                 $('#IsEnabled').prop('checked', data.IsEnabled !== false);
                 $('#Description').val(data.Description || '');
+
+                // Type=1(Fixed) 時，僅允許編輯週期名稱、說明及時間週期設定，其他欄位唯讀
+                var isFixed = (String(data.Type) === '@(ScheduleCycleTypeEnum.Fixed.ToInt())');
+                $('#DBTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
+                $('#OtherTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
+                $('#FileTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
+                $('#IsEnabled').prop('disabled', isFixed);
 
                 // 還原各週期數值
                 $('#SecondInterval').val(data.SecondInterval != null ? data.SecondInterval : 1);
@@ -1187,7 +1202,7 @@
             bar.on('click', '.log-filter-btn', function () {
                 bar.find('.log-filter-btn').removeClass('btn-dark').addClass('btn-outline-secondary');
                 $(this).removeClass('btn-outline-secondary').addClass('btn-dark');
-                var f = $(this).data('filter');
+                var f = $(this).attr('data-filter');   // 用 attr() 強制取字串，避免 jQuery 自動型別轉換
                 _logActiveFilter = (f === 'all') ? null : f;
                 renderLogTimeline(_logAllData);
             });
