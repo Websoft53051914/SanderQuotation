@@ -68,6 +68,11 @@ namespace ViewModel.TableExcel
 
         /// <summary>對應資料表名稱</summary>
         public string TargetTableName { get; set; } = "";
+
+        /// <summary>
+        /// 對應資料表名稱的說明
+        /// </summary>
+        public string TargetTableNameComment { get; set; }
         public List<TableExcelMappingVM> Mappings { get; set; } = new();
 
         /// <summary>篩選條件（JSON 字串）</summary>
@@ -86,6 +91,7 @@ namespace ViewModel.TableExcel
         public string SrcFileColumnName { get; set; } = "";
         /// <summary>資料表對應欄位名稱</summary>
         public string TargetTableColumnName { get; set; } = "";
+
         /// <summary>是否為主鍵</summary>
         public bool IsPrimaryKey { get; set; }
         /// <summary>是否加密</summary>

@@ -207,6 +207,7 @@
                                     <select class="form-select" id="tableName" required>
                                         <option value="">請選擇</option>
                                     </select>
+                                    <div id="tableNameComment" class="form-text text-muted" style="display:none;"></div>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">標題起始行</label>
@@ -427,6 +428,7 @@
                 filePath: '',
                 dbName: '',
                 tableName: '',
+                tableNameComment: '',
                 mappings: [],
                 headerRowIndex: 1,
                 _sheetIndex: 0,
@@ -498,6 +500,7 @@
             sheet.filePath = $('#filePath').val() || '';
             sheet.dbName = $('#DBName').val() || '';
             sheet.tableName = $('#tableName').val() || '';
+            sheet.tableNameComment = $('#tableNameComment').text() || '';
             sheet.headerRowIndex = parseInt($('#headerRowIndex').val()) || sheet.headerRowIndex || 1;
             sheet.mappings = collectMappingRows();
             var fd = collectFilterData();
@@ -548,6 +551,7 @@
                 // 無 dbName 時清空 tableName 選項與值
                 $('#tableName').find('option:not(:first)').remove();
                 $('#tableName').val('');
+                updateTableNameComment('');
                 isLoadingSheet = false;
                 renderMappingTable(sheet.mappings, sheet.tableName);
                 loadFilterCondition(sheet.filterCondition || null, sheet.filterMode || 'builder');
@@ -762,6 +766,8 @@
         $('#tableName').on('change', function () {
             if (isLoadingSheet) return;
             var tableName = $(this).val();
+            var comment = $(this).find('option:selected').data('comment') || '';
+            updateTableNameComment(comment);
             if (!tableName) {
                 renderMappingTable([], tableName);
                 return;
@@ -786,6 +792,7 @@
             if (el) {
                 $('#tableName').find('option:not(:first)').remove();
                 $('#tableName').val('').trigger('change');
+                updateTableNameComment('');
             }
             // 保留 excel 欄位選擇，僅清除 db 欄位
             var currentMappings = collectMappingRows();
@@ -829,6 +836,15 @@
                 $sel.select2('destroy');
             }
             $sel[0].innerHTML = '<option value="">' + tableExcelMsg.pleaseSelect + '</option>';
+        }
+
+        function updateTableNameComment(comment) {
+            var $div = $('#tableNameComment');
+            if (comment) {
+                $div.text(comment).show();
+            } else {
+                $div.text('').hide();
+            }
         }
 
 function initSingleChoices(selectId) {
@@ -920,10 +936,12 @@ function loadDbTransferList(selectedValue, callback) {
                         var $sel = $('#tableName');
                         $sel.find('option:not(:first)').remove();
                         dbTableList.forEach(function (t) {
-                            $sel.append('<option value="' + t.Value + '">' + t.Text + '</option>');
+                            $sel.append('<option value="' + t.Value + '" data-comment="' + (t.Comment || '') + '">' + t.Text + '</option>');
                         });
                         if (selectedValue) {
                             $sel.val(selectedValue).trigger('change');
+                            var comment = $sel.find('option:selected').data('comment') || '';
+                            updateTableNameComment(comment);
                         }
                     }
                     if (callback) callback();
@@ -1272,6 +1290,7 @@ function loadDbTransferList(selectedValue, callback) {
                     HeaderRowIndex: s.headerRowIndex || 1,
                     DBName: s.dbName || '',
                     TargetTableName: s.tableName,
+                    TargetTableNameComment: s.tableNameComment || '',
                     FilterCondition: s.filterCondition || null,
                     FilterMode: s.filterMode || 'builder',
                     Mappings: s.mappings.map(function (m) {
@@ -1424,6 +1443,7 @@ function loadDbTransferList(selectedValue, callback) {
                 if (match) {
                     sheet.dbName = match.DBName || match.dbName || '';
                     sheet.tableName = match.TargetTableName || match.targetTableName || '';
+                    sheet.tableNameComment = match.TargetTableNameComment || match.targetTableNameComment || '';
                     sheet.filterCondition = match.FilterCondition || match.filterCondition || null;
                     sheet.filterMode = match.FilterMode || match.filterMode || 'builder';
                     sheet.mappings = (match.Mappings || match.mappings || []).map(function (m) {

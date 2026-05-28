@@ -326,7 +326,7 @@ namespace backend.Controllers
         {
             try
             {
-                List<SelectListItem> tables;
+                List<object> tables;
                 if (!string.IsNullOrEmpty(dbTransferGuid))
                 {
                     var dm = GetTransferDm(dbTransferGuid);
@@ -409,9 +409,9 @@ namespace backend.Controllers
             return new SqlConnection($"Data Source={dm.DbHost}{portPart};Initial Catalog={dm.DbName};User ID={dm.DbUser};Password={dm.DbPassword};TrustServerCertificate=true;Encrypt=true");
         }
 
-        private static List<SelectListItem> QueryTables(IDbConnection conn, bool includeViews = true)
+        private static List<object> QueryTables(IDbConnection conn, bool includeViews = true)
         {
-            var tables = new List<SelectListItem>();
+            var tables = new List<object>();
             using var cmd = conn.CreateCommand();
 
             bool isPostgres = conn is NpgsqlConnection;
@@ -454,10 +454,11 @@ namespace backend.Controllers
                 var displayText = string.IsNullOrWhiteSpace(desc)
                     ? $"{tableName}"
                     : $"{tableName} ({desc})";
-                tables.Add(new SelectListItem
+                tables.Add(new
                 {
                     Value = tableName,
-                    Text = displayText
+                    Text = displayText,
+                    Comment = desc
                 });
             }
             return tables;

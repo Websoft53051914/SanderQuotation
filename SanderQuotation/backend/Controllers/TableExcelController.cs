@@ -114,6 +114,7 @@ namespace backend.Controllers
                                 DBTransferMappingCode     = sheet.DBName,
 
                                 TargetTableName = sheet.TargetTableName,
+                                TargetTableNameComment = sheet.TargetTableNameComment,
                                 SrcFileColumnName     = mapping.SrcFileColumnName,
                                 TargetTableColumnName = mapping.TargetTableColumnName,
                                 IsPrimaryKey          = mapping.IsPrimaryKey,
@@ -199,6 +200,7 @@ namespace backend.Controllers
                                 HeaderRowIndex = first.HeaderRowIndex,
                                 DBName = first.DBTransferMappingCode,
                                 TargetTableName = first.TargetTableName,
+                                TargetTableNameComment = first.TargetTableNameComment,
                                 FilterCondition = first.FilterCondition,
                                 FilterMode = first.FilterMode,
 
@@ -298,6 +300,7 @@ namespace backend.Controllers
                                 DBTransferMappingCode   =sheet.DBName,
 
                                 TargetTableName = sheet.TargetTableName,
+                                TargetTableNameComment = sheet.TargetTableNameComment,
                                 SrcFileColumnName     = mapping.SrcFileColumnName,
                                 TargetTableColumnName = mapping.TargetTableColumnName,
                                 IsPrimaryKey          = mapping.IsPrimaryKey,

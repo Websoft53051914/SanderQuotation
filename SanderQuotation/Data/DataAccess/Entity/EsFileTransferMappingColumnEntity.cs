@@ -47,6 +47,9 @@ namespace Data.DataAccess.Entity
         // 對應資料表名稱
         public string TargetTableName { set; get; }
 
+        //對應資料表名稱註解
+        public string TargetTableNameComment { set; get; }
+
         // 檔案(Excel/csv)欄位名稱
         public string SrcFileColumnName { set; get; }
 

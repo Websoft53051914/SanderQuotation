@@ -36,6 +36,9 @@ namespace Business.DomainModel
         /// </summary>
         public string TargetTableName { set; get; }
 
+        //對應資料表名稱註解
+        public string TargetTableNameComment { set; get; }
+
         /// <summary>
         /// 檔案 (Excel/csv) 欄位名稱
         /// </summary>
