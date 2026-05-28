@@ -36,8 +36,8 @@ namespace Business.DomainModel
         public string? ItemCategoryCode { get; set; }
 
         /// <summary>
-        /// 是否需要執行 AI 關鍵字抽取
+        /// AI 關鍵字抽取旗標（0=否, 1=待處理, 2=錯誤）
         /// </summary>
-        public bool FlagNeedExtractKeyword { get; set; }
+        public int FlagNeedExtractKeyword { get; set; }
     }
 }

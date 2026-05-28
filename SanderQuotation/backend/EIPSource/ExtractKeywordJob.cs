@@ -37,16 +37,21 @@ namespace backend.EIPSource
 
         /// <summary>
         /// 執行關鍵字抽取工作
-        /// 取 FlagNeedExtractKeyword = true 的料品，每批 50 筆，處理後更新旗標為 false
+        /// 取 FlagNeedExtractKeyword = 1 的料品，每批 30 筆，處理後更新旗標為 0；
+        /// 批次失敗時將該批次旗標標為 2（錯誤），累計錯誤批次達 3 次則提前終止。
+        /// 工作結束後無論成功/失敗，將所有 2（錯誤）重置為 1（待處理）供下次執行。
         /// </summary>
         /// <param name="logDM">排程執行紀錄，供呼叫端彙總結果；傳入 null 時略過紀錄更新</param>
         public async Task ExecuteAsync(EsScheduleCycleLogDetailDM logDM = null)
         {
+            const int MaxErrorBatches = 3;
+            int errorBatchCount = 0;
+
+            SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
+            TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
+
             try
             {
-                SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
-                TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
-
                 while (true)
                 {
                     List<SanderModuleItemDM> batch = blSanderModuleItem.GetListNeedExtractKeyword(BatchSize);
@@ -71,6 +76,17 @@ namespace backend.EIPSource
                         Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
                         if (logDM != null)
                             logDM.ErrorCount += batch.Count;
+
+                        // 將此批次標為錯誤狀態（2），避免下次循環重複取到
+                        try { blSanderModuleItem.GetDAO().UpdateFlagNeedExtractKeyword(batchIds, 2); }
+                        catch (Exception markEx) { Method.LogSystem(markEx.ToString(), ControllerName: LogControllerName); }
+
+                        errorBatchCount++;
+                        if (errorBatchCount >= MaxErrorBatches)
+                        {
+                            Method.LogSystem($"[{LogControllerName}] 錯誤批次達 {MaxErrorBatches} 次，提前終止工作", ControllerName: LogControllerName);
+                            break;
+                        }
                     }
 
                     await Task.Delay(1000); // 每批次處理完後暫停 1 秒，避免對 API 造成過大壓力
@@ -87,7 +103,13 @@ namespace backend.EIPSource
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = ex.Message;
                 }
-            }     
+            }
+            finally
+            {
+                // 工作結束後，將所有標為錯誤（2）的料品重置為待處理（1），供下次執行
+                try { blSanderModuleItem.DoResetErrorItems(); }
+                catch (Exception resetEx) { Method.LogSystem(resetEx.ToString(), ControllerName: LogControllerName); }
+            }
         }
 
         /// <summary>

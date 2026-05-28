@@ -161,7 +161,7 @@ namespace Business.BusinessLogic
             // 更新 FlagNeedExtractKeyword
             if (ids.Count > 0)
             {
-                GetBLSanderModuleItem().GetDAO().UpdateFlagNeedExtractKeyword(ids, false);
+                GetBLSanderModuleItem().GetDAO().UpdateFlagNeedExtractKeyword(ids, 0);
             }
 
             _unitOfWork.Commit();

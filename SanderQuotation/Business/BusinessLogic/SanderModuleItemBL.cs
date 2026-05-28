@@ -179,17 +179,25 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 取得指定批次數量的待處理料品（FlagNeedExtractKeyword = true）
+        /// 取得指定批次數量的待處理料品（FlagNeedExtractKeyword = 1）
         /// </summary>
         /// <param name="batchSize">批次筆數上限</param>
         /// <returns>待處理的 DM 清單</returns>
         public List<SanderModuleItemDM> GetListNeedExtractKeyword(int batchSize)
         {
             SearchVO searchVO = new();
-            searchVO.SanderModuleItemFlagNeedExtractKeywordEq = true;
+            searchVO.SanderModuleItemFlagNeedExtractKeywordEq = 1;
             searchVO.LimitRows = batchSize;
 
             return GetListByFilter(searchVO);
+        }
+
+        /// <summary>
+        /// 將所有 FlagNeedExtractKeyword = 2（錯誤）的料品重置為 1（待處理）
+        /// </summary>
+        public void DoResetErrorItems()
+        {
+            GetDAO().ResetErrorFlagToNeedProcess();
         }
     }
 

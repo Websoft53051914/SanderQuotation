@@ -174,7 +174,7 @@
         /// <summary>
         /// SanderModuleItem 是否需要執行 AI 關鍵字抽取
         /// </summary>
-        public bool? SanderModuleItemFlagNeedExtractKeywordEq { get; set; }
+        public int? SanderModuleItemFlagNeedExtractKeywordEq { get; set; }
 
         /// <summary>
         /// EsFileTransferUpload 執行狀態
