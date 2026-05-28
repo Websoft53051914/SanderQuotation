@@ -1,6 +1,5 @@
 ﻿using Core.Utility.Base.Data;
 using Core.Utility.Helper.DB;
-using Data.Common.SopDb;
 using Data.DataAccess.Dao;
 using Data.DataAccess.Impl;
 using Data.UnitOfWork;
@@ -53,9 +52,6 @@ namespace Data.Register
                     break;
             }
 
-            container.RegisterType<IUnitOfWorkSOP, UnitOfWorkSOPSqlServer>();
-
-
             container
                 .RegisterType<IESDbTransferDAO, ESDbTransferDaoImpl>()
                 .RegisterType<IESDbTransferMappingDAO, ESDbTransferMappingDaoImpl>()
@@ -98,11 +94,6 @@ namespace Data.Register
                 .RegisterType<ITBBomFileDecisionLogDAO, TBBomFileDecisionLogDaoImpl>()
                 .RegisterType<ITBBomFileQuotationOtherDAO, TBBomFileQuotationOtherDaoImpl>()
                 .RegisterType<ITBBomFileQuotationExternalHistoryDAO, TBBomFileQuotationExternalHistoryDaoImpl>()
-
-                // SOP 資料庫專用 DAO
-                .RegisterType<ISopWorkRuleDAO, SopWorkRuleDAOImpl>()
-
-
                ;
         }
     }

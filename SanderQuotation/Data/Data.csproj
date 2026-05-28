@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Const\Const.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Common\" />
+  </ItemGroup>
+
 </Project>
