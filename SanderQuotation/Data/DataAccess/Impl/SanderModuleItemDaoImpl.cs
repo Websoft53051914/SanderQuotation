@@ -132,8 +132,8 @@ WHERE
         /// 批次更新 FlagNeedExtractKeyword 旗標
         /// </summary>
         /// <param name="ids">要更新的資料代號清單</param>
-        /// <param name="value">目標旗標值</param>
-        public void UpdateFlagNeedExtractKeyword(List<Guid> ids, bool value)
+        /// <param name="value">目標旗標值（0=否, 1=待處理, 2=錯誤）</param>
+        public void UpdateFlagNeedExtractKeyword(List<Guid> ids, int value)
         {
             if (ids.Count == 0)
                 return;
@@ -148,6 +148,19 @@ SET {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = @value
 WHERE {nameof(SanderModuleItemEntity.Id)} = ANY(@ids)";
 
             DbHelper.Execute(sql, paras);
+        }
+
+        /// <summary>
+        /// 將所有 FlagNeedExtractKeyword = 2（錯誤）的料品重置為 1（待處理）
+        /// </summary>
+        public void ResetErrorFlagToNeedProcess()
+        {
+            string sql = $@"
+UPDATE sandermoduleitem
+SET {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = 1
+WHERE {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = 2";
+
+            DbHelper.Execute(sql, []);
         }
     }
 }

@@ -36,7 +36,12 @@ namespace Data.DataAccess.Dao
         /// 批次更新 FlagNeedExtractKeyword 旗標
         /// </summary>
         /// <param name="ids">要更新的資料代號清單</param>
-        /// <param name="value">目標旗標值</param>
-        void UpdateFlagNeedExtractKeyword(List<Guid> ids, bool value);
+        /// <param name="value">目標旗標傀（0=否, 1=待處理, 2=錯誤）</param>
+        void UpdateFlagNeedExtractKeyword(List<Guid> ids, int value);
+
+        /// <summary>
+        /// 將所有 FlagNeedExtractKeyword = 2（錯誤）的料品重置為 1（待處理）
+        /// </summary>
+        void ResetErrorFlagToNeedProcess();
     }
 }

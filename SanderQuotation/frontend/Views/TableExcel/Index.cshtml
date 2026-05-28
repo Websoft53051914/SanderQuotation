@@ -223,9 +223,9 @@
                                             <th style="width:calc((100% - 260px) / 2)">檔案欄位 <span class="text-danger">*</span></th>
                                             <th style="width:calc((100% - 260px) / 2)">資料表對應欄位 <span class="text-danger">*</span></th>
                                             <th style="width:90px;" class="text-center">是否為主鍵</th>
-                                            <th style="width:90px;" class="text-center">是否加密</th>
+                                            @*<th style="width:90px;">是否加密</th>*@
                                             <th style="width:120px;">預設値(來源資料為空的時候)</th>
-                                            <th style="width:80px;">移除</th>
+                                            <th style="width:80px;" class="text-center">移除</th>
                                         </tr>
                                     </thead>
                                     <tbody id="mappingBody">
@@ -264,7 +264,7 @@
                                             <th style="width:30%">來源欄位</th>
                                             <th style="width:20%">篩選</th>
                                             <th style="width:30%">內容</th>
-                                            <th style="width:10%">動作</th>
+                                            <th style="width:10%" class="text-center">動作</th>
                                         </tr>
                                     </thead>
                                     <tbody id="filterRows"></tbody>
@@ -606,8 +606,8 @@
             });
         }
 
-         
-        
+
+
         function initMappingSelect2($sel) {
             $sel.select2({
                 placeholder: '請選擇',
@@ -625,9 +625,18 @@
             var excelOptions = buildExcelOptions(mapping.excelColumn);
             var dbOptions = buildDbColumnOptions(dbColumns, mapping.dbColumn);
             var selectPlaceholder = '請選擇';
+
+            @*是否加密
+<td>
+    <div class="form-check d-flex mb-0">
+        <input class="form-check-input chk-encrypt" type="checkbox" ${mapping.isEncrypt ? 'checked' : ''}>
+    </div>
+</td>
+            *@
+
             var $tr = $(`
                 <tr data-row="${rowNum}">
-                    <td class="text-center row-index">${rowNum + 1}</td>
+                    <td class="row-index">${rowNum + 1}</td>
                     <td>
                         <select class="form-select sel-excel-col" required>
                             <option value="">${selectPlaceholder}</option>
@@ -640,14 +649,9 @@
                             ${dbOptions}
                         </select>
                     </td>
-                    <td class="text-center">
+                    <td>
                         <div class="form-check d-flex justify-content-center mb-0">
                             <input class="form-check-input chk-primary-key" type="checkbox" ${mapping.isPrimaryKey ? 'checked' : ''}>
-                        </div>
-                    </td>
-                    <td class="text-center">
-                        <div class="form-check d-flex justify-content-center mb-0">
-                            <input class="form-check-input chk-encrypt" type="checkbox" ${mapping.isEncrypt ? 'checked' : ''}>
                         </div>
                     </td>
                     <td>
@@ -1268,7 +1272,7 @@ function loadDbTransferList(selectedValue, callback) {
             var errors = validateAllSheets();
             if (errors.length > 0) {
                 Swal.fire({
-                    icon: 'warning',                   
+                    icon: 'warning',
                     html: '<div style="text-align:center">' + errors.join('<br>') + '</div>',
                     confirmButtonText: pageConfig.messages.confirm
                 });
@@ -1362,9 +1366,9 @@ function loadDbTransferList(selectedValue, callback) {
                         contentType: false,
                         success: function (res) {
                             if (!res.Success) {
-                                    $status             
+                                    $status
                                     .addClass('text-danger')
-                                    .text(tableExcelMsg.loadFailed +'：' +(res.Message || tableExcelMsg.parseFailed)      
+                                    .text(tableExcelMsg.loadFailed +'：' +(res.Message || tableExcelMsg.parseFailed)
                                 );
                                 return;
                             }
@@ -1485,7 +1489,7 @@ function loadDbTransferList(selectedValue, callback) {
             }).join('');
         }
 
-       
+
         function renderTable(rows) {
             const tbody = $('#data-list-data');
             tbody.empty();
@@ -1499,7 +1503,7 @@ function loadDbTransferList(selectedValue, callback) {
             rows.forEach(data => {
                 var rowGuid = data.RowGuid || data.rowGuid || '';
                 var no = data.No || data.no || '';
-                var transferMappingCode = data.TransferMappingCode || data.transferMappingCode || '';                                
+                var transferMappingCode = data.TransferMappingCode || data.transferMappingCode || '';
                 var exampleFileName = data.ExampleFileName || data.exampleFileName || '';
 
                 var exampleFileTypeText = data.ExampleFileTypeText || data.exampleFileTypeText || '';
