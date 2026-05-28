@@ -152,7 +152,7 @@ namespace backend.Models
                 int internalExpirationDays = configHelper.GetIntValue("InternalQuotation:ExpirationDay");
 
                 TBBomFileQuotationBL blTBBomFileQuotation = BLFactory.GetInstanceBackGround<TBBomFileQuotationBL>();
-                TBBomFileQuotationDM? cachedQuotation = blTBBomFileQuotation.GetOneForExpirationCache(itemNo, internalExpirationDays, content.Id);
+                TBBomFileQuotationDM? cachedQuotation = blTBBomFileQuotation.GetOneForExpirationCache(itemNo, internalExpirationDays, content.Id, customerCode);
 
                 if (cachedQuotation != null && cachedQuotation.InternalUnitPriceTwd.HasValue)
                 {

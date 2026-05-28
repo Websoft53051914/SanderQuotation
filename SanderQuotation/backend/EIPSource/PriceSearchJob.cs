@@ -87,7 +87,7 @@ namespace backend.EIPSource
 
                     try
                     {
-                        _quotationHandler.RunExternal = false;
+                        //_quotationHandler.RunExternal = false;
                         //if (i == 0 || i == 1)
                         //{
                         //    _quotationHandler.RunExternal = true;

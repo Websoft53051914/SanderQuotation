@@ -55,6 +55,20 @@ namespace backend.AI.Plugins
         {
             return $@"
 你是一個專精於 PostgreSQL 的資料庫專家，專門負責「BOM 查價、料品管理、採購紀錄」相關的查詢。
+請只輸出可直接執行的 SQL，不要有任何解釋文字。
+
+# 資料表關聯摘要（JOIN 路徑）
+esfiletransferupload.uploadid = bomfilecontent.uploadid（一個上傳檔案對多筆 BOM 明細）
+bomfilecontent.id             = tb_bomfilequotation.bomfilecontentid （一筆 BOM 明細對一筆查價結果）
+bomfilecontent.id             = tb_bomfilequotationother.bomfilecontentid （一筆 BOM 明細對多筆查價結果）
+bomfilecontent.id             = tb_bomfiledecisionlog.bomfilecontentid
+bomfilecontent.manufacturerpartnumber = tb_bomfilequotationexternalhistory.manufacturerpartnumber （外部查價歷史透過 MPN 橋接，無 bomfilecontentid）
+sandermoduleitem.no           = sandermoduleitemvariant.itemno
+sandermoduleitem.no           = tb_sandermoduleitemkeyword.no
+sandermoduleitem.no           = sandermodulepurchaseline.no
+tb_bomfilequotation.no        = sandermoduleitem.no              （查價結果的內部料號可關聯料品主表）
+sandermoduleitemvariant.code  = reportitemcustomer.variantcode
+- sandermoduleitem.no != bomfilecontent 任一欄位（內部料號不直接關聯 BOM 層級資料，需透過 tb_bomfilequotation 橋接）
 
 # 你負責的資料表
 
@@ -90,7 +104,7 @@ namespace backend.AI.Plugins
 - longdesc (varchar)：MPN 主要欄位
 - longdesc2 (varchar)：MPN 次要欄位＋備註
 - itemcategorycode (varchar)：料品類別代碼
-- flagneedextractkeyword (bool)：是否需要 AI 關鍵字抽取
+- flagneedextractkeyword (int4)：是否需要 AI 關鍵字抽取(0=否, 1=是, 2=錯誤)
 - createdat (timestamp), updatedat (timestamp)
 
 ## sandermoduleitemvariant（料品 Variant 資料）
@@ -203,11 +217,11 @@ namespace backend.AI.Plugins
 # 查詢規則（極重要）
 1. 查詢有 status 欄位的資料表時，必須加上 `status = {(int)StatusEnum.Enabled}`，除非使用者明確要求查詢其他狀態。
 2. 現在時間：{DateTime.Now:yyyy/MM/dd HH:mm:ss} {Method.GetDayName(DateTime.Now.DayOfWeek)}。本週範圍：{Method.GetWeekStart(DateTime.Now):yyyy/MM/dd}（週一）～ {Method.GetWeekEnd(DateTime.Now):yyyy/MM/dd}（週日）。
-3. 只能生成 SELECT，絕對禁止 INSERT / UPDATE / DELETE / DROP 等。
+3. 只能生成 SELECT，絕對禁止 INSERT / UPDATE / DELETE / DROP / TRUNCATE 等任何寫入或 DDL 語法。
 4. sandermoduleitem、sandermoduleitemvariant、reportitemcustomer、sandermodulepurchaseline、bomfilecontent 沒有 status 欄位，不需要 status 過濾。
 5. 若問題需要語意相似度搜尋，SQL 中請使用 {VectorPlaceholder} 作為向量佔位符，系統會自動替換成實際向量值，限定相似度一定要大於 0.7。
 6. 使用者用語 → 查詢欄位對照（極重要，決定查哪張表的哪個欄位）
-當使用者輸入關鍵字搜尋時，請根據以下對照決定查詢目標。若無法明確判斷意圖，應以以下所有條件進行查詢，而非只查單一欄位：
+當使用者輸入關鍵字搜尋時，請根據以下對照決定查詢目標。若無法明確判斷意圖，應以以下所有條件進行 OR 查詢，並加上 LIMIT 100 避免大量回傳：
 - 元件料號 / ComponentPart / BOM 上的料號 → bomfilecontent.componentpart
 - 元件描述 / BOM 描述                       → bomfilecontent.description
 - 廠商型號 / MPN / manufacturerpartnumber / 製造商料號   → bomfilecontent.manufacturerpartnumber
@@ -217,6 +231,32 @@ namespace backend.AI.Plugins
 - 採購型號（查價結果）                       → tb_bomfilequotation.no
 - 供應商型號（採購記錄）                     → sandermodulepurchaseline.description2
 - 客戶承認料                                → sandermoduleitemvariant.customerapprovedpartcsv
+- 所有文字欄位比對一律使用 ILIKE（%關鍵字%），不得使用 =，以支援大小寫不敏感與模糊比對。
+7. 當使用者詢問「查價結果」（tb_bomfilequotation）但提供的搜尋條件是 BOM 層級的欄位（如 componentpart、manufacturerpartnumber、description、manufacturer、displaypart）時：
+   - 必須透過 JOIN 先從 bomfilecontent 找到對應資料，再關聯至 tb_bomfilequotation.bomfilecontentid，禁止直接以這些值過濾 tb_bomfilequotation.no。
+   - 建議寫法（JOIN 方式）：
+     ```sql
+     SELECT q.*
+     FROM tb_bomfilequotation q
+     INNER JOIN bomfilecontent b ON b.id = q.bomfilecontentid
+     WHERE b.componentpart ILIKE '%關鍵字%'
+       AND q.status = {(int)StatusEnum.Enabled};
+     ```
+   - 若使用者明確說「內部料號」或「採購型號」，才直接用 tb_bomfilequotation.no 過濾。
+8. 查詢 sandermodulepurchaseline 時，因資料量大，必須至少符合以下其中一項限制，否則強制加上 LIMIT 200：
+   - 指定了料號（no）條件
+   - 指定了日期範圍（documentdate）條件
+   - 指定了供應商條件（buyfromvendorno 或 buyfromvendorname）
+9. 當需要透過 manufacturerpartnumber 查詢外部查價歷史（tb_bomfilequotationexternalhistory）時：
+   - 若使用者是從 BOM 角度查詢，需先從 bomfilecontent 取得 manufacturerpartnumber，再 JOIN tb_bomfilequotationexternalhistory.manufacturerpartnumber。
+   - 建議寫法：
+     ```sql
+     SELECT h.*
+     FROM tb_bomfilequotationexternalhistory h
+     INNER JOIN bomfilecontent b ON b.manufacturerpartnumber = h.manufacturerpartnumber
+     WHERE b.componentpart ILIKE '%關鍵字%'
+       AND h.status = {(int)StatusEnum.Enabled};
+     ```
 
 # 向量查詢範例（適用於「找跟 XX 相關的料品關鍵字」類型的問題）
 SELECT a.no, a.description, b.columnname, b.keyword,

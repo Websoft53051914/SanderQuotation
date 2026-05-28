@@ -62,6 +62,16 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND q.{nameof(TBBomFileQuotationDTO.InternalQuotationDate)} >= @{nameof(searchVO.InternalQuotationDateGte)} ");
                 paras.Add(nameof(searchVO.InternalQuotationDateGte), searchVO.InternalQuotationDateGte.Value);
             }
+            if (!string.IsNullOrWhiteSpace(searchVO.CustomerCodeEq))
+            {
+                condition.Append($@"AND EXISTS (
+    SELECT 1 FROM bomfilecontent bc
+    INNER JOIN esfiletransferupload eu ON eu.uploadid = bc.uploadid
+    WHERE bc.id = q.BomFileContentId
+    AND eu.customercode = @{nameof(searchVO.CustomerCodeEq)}
+) ");
+                paras.Add(nameof(searchVO.CustomerCodeEq), searchVO.CustomerCodeEq);
+            }
             if (searchVO.OrderByColumnList?.Count > 0)
             {
                 List<string> orderBySub = [];

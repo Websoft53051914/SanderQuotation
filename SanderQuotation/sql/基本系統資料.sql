@@ -24,7 +24,7 @@ BEGIN
 	   OR OLD.longdesc IS DISTINCT FROM NEW.longdesc
 	   OR OLD.longdesc2 IS DISTINCT FROM NEW.longdesc2 
 	THEN 
-	  NEW.flagneedextractkeyword = true; 
+	  NEW.flagneedextractkeyword = 1; 
 	END IF;
 	RETURN NEW; 
 END; 
@@ -384,3 +384,16 @@ VALUES(gen_random_uuid(), 'DIODE', 'DIODE', 1, 'BrandComparisonCategoryList', ''
 INSERT INTO public.tb_syssetting
 (id, param, value, status, "type", createdby, updatedby, createdat, updatedat)
 VALUES(gen_random_uuid(), '1', '1', 1, 'AIDecisionProcessDisplaySwitch', '', '', now(), now());
+-- 系統排程設定
+INSERT INTO esschedulecycle
+(schedulecyclecode, "type", sortno, priority, createdat, updatedat, createdby, updatedby, cyclename, description, cycletype, cronexpression, secondinterval, minuteinterval, minuteatsecond, hourinterval, houratminute, houratsecond, dayinterval, dayattime, weekattime, monthattime, lastrunat, lastrunstatus, lastrunmessage, id, status)
+VALUES('SYS1', '1', '', ' ', '2026-05-28 13:52:44.617', '2026-05-28 14:24:40.995', NULL, 'admin', '內部料品表 AI 解析', '', 'DAY', '0 0 2 */1 * *', 1, 1, NULL, 1, NULL, NULL, 1, '02:00', '08:00', '08:00', NULL, NULL, NULL, '23854124-4470-446b-aae2-c55aeaf12097'::uuid, 1);
+INSERT INTO esschedulecycle
+(schedulecyclecode, "type", sortno, priority, createdat, updatedat, createdby, updatedby, cyclename, description, cycletype, cronexpression, secondinterval, minuteinterval, minuteatsecond, hourinterval, houratminute, houratsecond, dayinterval, dayattime, weekattime, monthattime, lastrunat, lastrunstatus, lastrunmessage, id, status)
+VALUES('SYS2', '1', '', ' ', '2026-05-28 13:52:44.617', '2026-05-28 14:25:34.789', NULL, 'admin', '查價', '', 'MINUTE', '0 */10 * * * *', 1, 10, NULL, 1, NULL, NULL, 1, '08:00', '08:00', '08:00', NULL, NULL, NULL, '5fe85cc4-c165-43c6-82ce-693be77b0368'::uuid, 1);
+INSERT INTO esschedulecycleothertransfer
+(id, schedulecyclecode, actiontype, "type", sortno, priority, createdat, updatedat, createdby, updatedby, status)
+VALUES('a0df14bb-02bb-48d8-a040-27afc0c7bc59'::uuid, 'SYS2', 1, NULL, '', ' ', '2026-05-28 14:25:34.789', '2026-05-28 14:25:34.789', 'admin', 'admin', 1);
+INSERT INTO esschedulecycleothertransfer
+(id, schedulecyclecode, actiontype, "type", sortno, priority, createdat, updatedat, createdby, updatedby, status)
+VALUES('043774b6-073c-4232-9dae-7d6519d5ff1b'::uuid, 'SYS1', 2, NULL, '', ' ', '2026-05-28 14:24:40.995', '2026-05-28 14:24:40.995', 'admin', 'admin', 1);

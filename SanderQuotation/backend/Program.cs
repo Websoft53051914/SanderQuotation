@@ -196,7 +196,7 @@ builder.Services.AddSingleton<ExtractKeywordHandler>();
 builder.Services.AddSingleton<ManualBatchEmbedding>();
 builder.Services.AddSingleton<ExtractKeywordJob>();
 builder.Services.AddSingleton<OrderPriceDecison>();
-builder.Services.AddSingleton<ExternalQuotationNexarHandler>();
+builder.Services.AddTransient<ExternalQuotationNexarHandler>();
 builder.Services.AddTransient<QuotationHandler>();
 builder.Services.AddTransient<PriceSearchJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();

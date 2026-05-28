@@ -39,6 +39,10 @@ namespace backend.Models
         /// AccessToken 物件
         /// </summary>
         private GetAccessTokenAsyncResM? _dataAccessToken = null;
+        /// <summary>
+        /// Authorization 錯誤訊息
+        /// </summary>
+        private string _msgAuthorization = string.Empty;
 
         /// <summary>
         /// 建構子
@@ -66,7 +70,15 @@ namespace backend.Models
         public async Task Authorization()
         {
             GetAccessTokenAsyncResM? result = null;
+            string clientId = _configuration["ExternalQuotation:Nexar:ClientId"] ?? string.Empty;
+            string clientSecret = _configuration["ExternalQuotation:Nexar:ClientSecret"] ?? string.Empty;
+            _dataAccessToken = null;
 
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+            {
+                _msgAuthorization = "請確認 ExternalQuotation:Nexar:ClientId、ExternalQuotation:Nexar:ClientSecret 是否設定";
+                return;
+            }
             if (_cache.TryGetValue(CacheKeyOfAccessToken, out result))
             {
                 if (result != null && !string.IsNullOrEmpty(result.AccessToken))
@@ -76,14 +88,16 @@ namespace backend.Models
                 }
             }
 
-            ApiTaskResult<GetAccessTokenAsyncResM> ret = await CallGetAccessTokenAsync();
+            ApiTaskResult<GetAccessTokenAsyncResM> ret = await CallGetAccessTokenAsync(clientId, clientSecret);
             if (ret.Status == ApiTaskStatusEnum.Success)
             {
                 result = ret.Data;
             }
             else
             {
-                throw new Exception(ret.Message);
+                _msgAuthorization = "取得 Access Token 失敗";
+                Method.LogSystem(ret.Message, ControllerName: LogControllerName);
+                return;
             }
 
             MemoryCacheEntryOptions cacheOption = new()
@@ -103,10 +117,13 @@ namespace backend.Models
         /// <returns>外部查價結果，找不到時回傳空白的 VO</returns>
         public async Task<ExternalQuotationRecordVO> Search(PriceBomVO bomVO, List<string> configPreferredVendorList)
         {
-            ArgumentNullException.ThrowIfNull(_dataAccessToken);
-
             int bomQty = bomVO.Qty ?? 0;
             ExternalQuotationRecordVO result = new();
+            if (_dataAccessToken == null)
+            {
+                result.ErrorMessage = _msgAuthorization;
+                return result;
+            }
 
             ApiTaskResult<NexarPartResult> ret = await CallSupSearchMpnAsync(bomVO.ManufacturerPartNumber ?? string.Empty);
 
@@ -198,7 +215,7 @@ namespace backend.Models
                     result.SearchMatchPreferredCount = preferredSellerList.Count;
                     result.IsPreferred = preferredSellerList.Count > 0;
                 }
-                else if(ret.Data.Error?.Count > 0)
+                else if (ret.Data.Error?.Count > 0)
                 {
                     result.ErrorMessage = string.Join("\n", ret.Data.Error.Select(e => e.Message));
                 }
@@ -214,14 +231,11 @@ namespace backend.Models
         /// 呼叫 Nexar API 取得 Access Token
         /// </summary>
         /// <returns>API 呼叫結果</returns>
-        private async Task<ApiTaskResult<GetAccessTokenAsyncResM>> CallGetAccessTokenAsync()
+        private async Task<ApiTaskResult<GetAccessTokenAsyncResM>> CallGetAccessTokenAsync(string clientId, string clientSecret)
         {
             try
             {
                 using HttpClient httpClient = _httpClientFactory.CreateClient();
-
-                string clientId = _configuration["ExternalQuotation:Nexar:ClientId"] ?? string.Empty;
-                string clientSecret = _configuration["ExternalQuotation:Nexar:ClientSecret"] ?? string.Empty;
 
                 string credentials = Convert.ToBase64String(
                     Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}")

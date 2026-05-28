@@ -342,16 +342,19 @@ namespace Business.BusinessLogic
         /// <param name="itemNo">採購型號</param>
         /// <param name="expirationDays">效期天數</param>
         /// <param name="excludeBomFileContentId">排除的 BomFileContentId（目前料項本身）</param>
+        /// <param name="customerCode">客戶代碼（僅回傳同一客戶查價的結果；null 表示不限）</param>
         /// <returns>最近一筆有效的查價紀錄，找不到則回傳 null</returns>
-        public TBBomFileQuotationDM? GetOneForExpirationCache(string itemNo, int expirationDays, Guid excludeBomFileContentId)
+        public TBBomFileQuotationDM? GetOneForExpirationCache(string itemNo, int expirationDays, Guid excludeBomFileContentId, string? customerCode = null)
         {
             SearchVO searchVO = new();
             searchVO.SanderModuleItemNoEq = itemNo;
             searchVO.InternalQuotationDateGte = DateTime.Now.AddDays(-expirationDays);
             searchVO.BomFileContentIdNeq = excludeBomFileContentId;
+            searchVO.CustomerCodeEq = customerCode;
             searchVO.IsLimit1 = true;
             searchVO.OrderByColumnList = [nameof(SearchVO.InternalQuotationDateOdr)];
             searchVO.InternalQuotationDateOdr = "DESC";
+
             return GetListEnabled(searchVO).FirstOrDefault();
         }
     }
