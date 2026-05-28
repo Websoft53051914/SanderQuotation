@@ -96,16 +96,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddDistributedMemoryCache();
- 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
-})
- .AddCookie(options =>
- {
-     //options.Cookie.HttpOnly = true;
-     //options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
- });
+
 
 builder.Services.AddSession(options =>
 {
