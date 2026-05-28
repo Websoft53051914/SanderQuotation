@@ -103,6 +103,12 @@
 
     @Html.Partial("~/Views/Shared/_vendor_scripts.cshtml")
 
+    <script>
+        // 登出時清除 AI 聊天紀錄與 Session
+        sessionStorage.removeItem('aiChatSessionId');
+        sessionStorage.removeItem('aiChatMessages');
+    </script>
+
     <!-- particles js -->
     <script src="~/assets/libs/particles.js/particles.js"></script>
 

@@ -296,6 +296,9 @@
                             localStorage.removeItem("login_username");
                             localStorage.removeItem("remember_account");
                         }
+                        // 登入時清除上一位使用者的 AI 聊天紀錄
+                        sessionStorage.removeItem('aiChatSessionId');
+                        sessionStorage.removeItem('aiChatMessages');
                       location.href = '@Url.Action("Index", "Home")';
                       
                     } else {

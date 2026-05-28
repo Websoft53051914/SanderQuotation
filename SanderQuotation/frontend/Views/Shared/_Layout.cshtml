@@ -707,12 +707,44 @@
         var $send   = $('#aiChatSend');
         var $msgs   = $('#aiChatMessages');
 
-        // 多輪對話 Session ID（從 sessionStorage 還原，頁面關閉後自動清除）
-        var _storageKey = 'aiChatSessionId';
+        // 多輪對話 Session ID（sessionStorage 保留，關閉分頁後自動清除）
+        var _storageKey    = 'aiChatSessionId';
+        var _msgsStorageKey = 'aiChatMessages';
         var _sessionId = sessionStorage.getItem(_storageKey) || null;
 
         // Backend API base URL
         var _apiBase = '@(Configuration["BackendURL"])';
+
+        // ── 訊息持久化 ──
+        function saveMsgs() {
+            var items = [];
+            $msgs.children('.ai-msg').each(function () {
+                var $m = $(this);
+                items.push({
+                    role: $m.hasClass('user') ? 'user' : 'bot',
+                    bubbleHtml: $m.find('.bubble').html(),
+                    time: $m.find('.msg-time').text()
+                });
+            });
+            sessionStorage.setItem(_msgsStorageKey, JSON.stringify(items));
+        }
+
+        function restoreMsgs() {
+            var raw = sessionStorage.getItem(_msgsStorageKey);
+            if (!raw) return;
+            try {
+                $msgs.empty();
+                var items = JSON.parse(raw);
+                if (!items || !items.length) return;
+                items.forEach(function (item) {
+                    var $m = $('<div class="ai-msg ' + item.role + '">' +
+                        '<div class="bubble">' + item.bubbleHtml + '</div>' +
+                        '<div class="msg-time">' + item.time + '</div>' +
+                        '</div>');
+                    $msgs.append($m);
+                });
+            } catch (e) { /* ignore */ }
+        }
 
         // ── 開關面板 ──
         function openPanel() {
@@ -724,6 +756,7 @@
             $panel.addClass('open');
             $toggle.addClass('hidden');
             $input.focus();
+            scrollBottom();  // 面板顯示後才能正確捲到底
         }
         function closePanel() {
             $panel.removeClass('open');
@@ -731,6 +764,9 @@
         }
         $toggle.on('click', function () { $panel.hasClass('open') ? closePanel() : openPanel(); });
         $close.on('click', closePanel);
+
+        // 頁面載入時還原聊天紀錄
+        restoreMsgs();
 
         // ── 時間格式 ──
         function formatTime(d) {
@@ -748,6 +784,7 @@
                 '</div>');
             $msgs.append($m);
             scrollBottom();
+            saveMsgs();
         }
 
         // ── 加入 AI 訊息──
@@ -759,13 +796,13 @@
             var match;
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) {
-                    html += $('<span>').text(text.substring(lastIndex, match.index)).html().replace(/\n/g, '');
+                    html += $('<span>').text(text.substring(lastIndex, match.index)).html().replace(/\n/g, '<br>');
                 }
                 html += parseDownloadButtons('[DOWNLOAD_BUTTON]' + match[1] + '[/DOWNLOAD_BUTTON]');
                 lastIndex = regex.lastIndex;
             }
             if (lastIndex < text.length) {
-                html += $('<span>').text(text.substring(lastIndex)).html().replace(/\n/g, '');
+                html += $('<span>').text(text.substring(lastIndex)).html().replace(/\n/g, '<br>');
             }
 
             var $m = $('<div class="ai-msg bot">' +
@@ -774,6 +811,7 @@
                 '</div>');
             $msgs.append($m);
             scrollBottom();
+            saveMsgs();
         }
 
         /**
