@@ -64,7 +64,7 @@
                                 <th>執行週期</th>
                                 <th class="sort" data-sort="Status">啟用</th>
                                 <th data-sort="DBTransferSettings"><div>資料庫轉檔設定</div></th>
-                                <th data-sort="OtherTaskSettings"><div>其他任務設定</div></th>
+                                <th data-sort="OtherTaskSettings"><div>固定任務設定</div></th>
                                 <th data-sort="FileTransferSettings"><div>Excel轉入資料表對應設定</div></th>
                             </tr>
                         </thead>
@@ -221,7 +221,7 @@
                             </select>
                         </div>
                         <div class="col-lg-6">
-                            <label class="col-form-label pt-0">其他任務</label>
+                            <label class="col-form-label pt-0">固定任務</label>
                             <select class="form-control" id="OtherTransferSettings" name="OtherTransferSettings" multiple>
                                 @foreach (var item in otherTransferSettingSelectList)
                                 {
