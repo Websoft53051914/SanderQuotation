@@ -1,0 +1,33 @@
+根據 /Velzon_TEMPLATE_PACK/CRUD_IMPLEMENTATION_SKILL 內容產生對應畫面
+本次建立功能名稱為：AnnouncementDemo
+頁面模式：單頁 Index + Modal
+資料來源模式：前端寫死
+
+### 1. 查詢條件
+
+1. 關鍵字｜text
+2. 公告類別｜select｜全部/一般公告/人資公告/資訊公告
+3. 狀態｜select｜全部/草稿/簽核中/已生效
+4. 發布區域｜radio｜全部/國內/國外
+
+### 2. 列表欄位
+
+1. 編號
+2. 公告標題
+3. 公告類別
+4. 發布區域
+5. 狀態
+6. 建立人
+7. 更新時間
+
+### 3. 編輯欄位
+
+1. 公告標題｜text｜必填
+2. 公告類別｜select｜一般公告/人資公告/資訊公告｜必填
+3. 發布區域｜radio｜國內/國外｜必填
+4. 套用部門｜checkbox-group｜人資/資訊/總務/財務
+5. 優先級｜number
+6. 起始日期時間｜datepicker｜必填
+7. 結束日期時間｜datepicker｜必填
+8. 內文｜textarea｜必填
+9. 附件｜file
