@@ -33,7 +33,7 @@ IS '料品規格次欄位';
 
 INSERT INTO esdbtransfer
 (transfercode, id, status, "type", sortno, priority, createdat, updatedat, createdby, updatedby, transfername, dbtype, dbhost, dbport, dbname, dbuser, dbpassword, description)
-VALUES('LocalSystem', '019e1a9f-02c4-723e-8f6c-4c1b57f8ff25'::uuid, 1, NULL, NULL, NULL, '2026-05-12 13:18:09.091', '2026-05-12 14:13:18.647', 'admin', NULL, '本地', '1', '192.168.21.27', NULL, 'sander', 'postgres', 'websoft@123', '本地資料庫');
+VALUES('LocalSystem', '019e1a9f-02c4-723e-8f6c-4c1b57f8ff25'::uuid, 1, NULL, NULL, NULL, '2026-05-12 13:18:09.091', '2026-05-12 14:13:18.647', 'admin', NULL, '本地', '1', '192.168.21.27', NULL, 'sander', 'postgres', 'sander@123', '本地資料庫');
 
 INSERT INTO esdbtransfermapping
 (transfermappingcode, id, status, "type", sortno, priority, createdat, updatedat, createdby, updatedby, srcdbtransfercode, srctablename, dstdbtransfercode, dsttablename, description, filtercondition, filtermode)
