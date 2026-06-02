@@ -721,6 +721,8 @@
             // 恢復所有可能被停用的欄位
             $('#DBTransferSettings, #OtherTransferSettings, #FileTransferSettings').prop('disabled', false);
             $('#DBTransferSettings, #OtherTransferSettings, #FileTransferSettings').closest('.col-lg-6').find('.select2-container').removeClass('pe-none opacity-75');
+            // 新增時隱藏固定任務欄位
+            $('#OtherTransferSettings').closest('.col-lg-6').hide();
             // 重置週期類型
             var cycleTypeEl = document.getElementById('CycleType');
             if (cycleTypeEl) {
@@ -1013,12 +1015,19 @@
                 $('#IsEnabled').prop('checked', data.IsEnabled !== false);
                 $('#Description').val(data.Description || '');
 
-                // Type=1(Fixed) 時，僅允許編輯週期名稱、說明及時間週期設定，其他欄位唯讀
+                // Type=1(Fixed) 時，僅允許編輯週期名稱、說明及時間週期設定及狀態，其他欄位唯讀
                 var isFixed = (String(data.Type) === '@(ScheduleCycleTypeEnum.Fixed.ToInt())');
                 $('#DBTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
-                $('#OtherTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
                 $('#FileTransferSettings').prop('disabled', isFixed).closest('.col-lg-6').find('.select2-container').toggleClass('pe-none opacity-75', isFixed);
-                $('#IsEnabled').prop('disabled', isFixed);
+
+                // 固定任務欄位：FixedType=1 顯示唯讀；FixedType=2 隱藏
+                var $otherCol = $('#OtherTransferSettings').closest('.col-lg-6');
+                if (isFixed) {
+                    $otherCol.show();
+                    $('#OtherTransferSettings').prop('disabled', true).closest('.col-lg-6').find('.select2-container').addClass('pe-none opacity-75');
+                } else {
+                    $otherCol.hide();
+                }
 
                 // 還原各週期數值
                 $('#SecondInterval').val(data.SecondInterval != null ? data.SecondInterval : 1);

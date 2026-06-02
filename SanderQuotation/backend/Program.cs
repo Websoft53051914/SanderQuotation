@@ -120,6 +120,11 @@ builder.Services.AddAuthentication(options =>
      }
  });
 
+// 1. 從 appsettings.json 讀取 AllowedOrigins 陣列
+var allowedOrigins = builder.Configuration
+    .GetSection("CorsSettings:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 // 註冊 CORS - 統一設定，適用於所有環境
 builder.Services.AddCors(options =>
 {
@@ -127,11 +132,7 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy.WithOrigins(
-                  "https://localhost:7067",          // Windows 前端 local HTTPS 開發環境   
-                  "http://localhost:7067",           // Windows 前端 local 開發環境 
-                  "http://localhost:5134",           // Windows 前端 local HTTP 開發環境
-                  "http://192.168.1.46:1011",       // Linux 前端環境 
-                  "http://localhost:1011"            // Linux 前端環境 
+                  allowedOrigins
               )
               .AllowAnyHeader()
               .AllowAnyMethod()

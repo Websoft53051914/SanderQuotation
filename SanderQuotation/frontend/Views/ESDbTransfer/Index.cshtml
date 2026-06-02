@@ -147,94 +147,94 @@
 <!--end row-->
 
 <div class="modal fade zoomIn" id="showModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0">
             <div class="modal-header p-3 bg-info-subtle">
                 <h5 class="modal-title" id="exampleModalLabel_Create" style="display:none;">新增</h5>
                 <h5 class="modal-title" id="exampleModalLabel_Edit" style="display:none;">編輯</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
             </div>
-            <form class="needs-validation" novalidate="" method="post" id="submitForm">
-                <div class="modal-body">
+            <div class="modal-body">
+                <form class="needs-validation" novalidate="" method="post" id="submitForm">
                     <div class="row g-3">
-                        <div class="col-lg-6">
-                            <div>
-                                <label for="TransferCode" class="form-label required">資料庫轉檔代碼</label>
-                                <input type="text" name="TransferCode" id="TransferCode" class="form-control" placeholder="請輸入資料庫轉檔代碼" required maxlength="100"/>
-                                <div class="invalid-feedback">請輸入資料庫轉檔代碼</div>
-                            </div>
+                    <div class="col-lg-6">
+                        <div>
+                            <label for="TransferCode" class="form-label required">資料庫轉檔代碼</label>
+                            <input type="text" name="TransferCode" id="TransferCode" class="form-control" placeholder="請輸入資料庫轉檔代碼" required maxlength="100" />
+                            <div class="invalid-feedback">請輸入資料庫轉檔代碼</div>
                         </div>
-                        <div class="col-lg-6">
-                            <div>
-                                <label for="TransferName" class="form-label required">名稱</label>
-                                <input type="text" name="TransferName" id="TransferName" class="form-control" placeholder="請輸入名稱" required maxlength="200"/>
-                                <div class="invalid-feedback">請輸入名稱</div>
-                            </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div>
+                            <label for="TransferName" class="form-label required">名稱</label>
+                            <input type="text" name="TransferName" id="TransferName" class="form-control" placeholder="請輸入名稱" required maxlength="200" />
+                            <div class="invalid-feedback">請輸入名稱</div>
                         </div>
-                        <div class="col-lg-8">
-                            <div>
-                                <label for="DbHost" class="form-label required">主機/IP</label>
-                                <input type="text" name="DbHost" id="DbHost" class="form-control" placeholder="請輸入主機名稱或IP" required maxlength="200" />
-                                <div class="invalid-feedback">請輸入主機/IP</div>
-                            </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div>
+                            <label for="DbHost" class="form-label required">主機/IP</label>
+                            <input type="text" name="DbHost" id="DbHost" class="form-control" placeholder="請輸入主機名稱或IP" required maxlength="200" />
+                            <div class="invalid-feedback">請輸入主機/IP</div>
                         </div>
-                        <div class="col-lg-4">
-                            <div>
-                                <label for="DbPort" class="form-label">埠號</label>
-                                <input type="text" name="DbPort" id="DbPort" class="form-control" placeholder="請輸入埠號" maxlength="20" />
-                            </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div>
+                            <label for="DbPort" class="form-label">埠號</label>
+                            <input type="text" name="DbPort" id="DbPort" class="form-control" placeholder="請輸入埠號" maxlength="20" />
                         </div>
-                        <div class="col-lg-12">
-                            <div>
-                                <label for="DbName" class="form-label required">資料庫名稱</label>
-                                <input type="text" name="DbName" id="DbName" class="form-control" placeholder="請輸入資料庫名稱" required maxlength="200"/>
-                                <div class="invalid-feedback">請輸入資料庫名稱</div>
-                            </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div>
+                            <label for="DbName" class="form-label required">資料庫名稱</label>
+                            <input type="text" name="DbName" id="DbName" class="form-control" placeholder="請輸入資料庫名稱" required maxlength="200" />
+                            <div class="invalid-feedback">請輸入資料庫名稱</div>
                         </div>
-                        <div class="col-lg-6">
-                            <div>
-                                <label for="DbType" class="form-label required">資料庫類型</label>
-                                <select class="form-select" id="DbType" name="DbType" required>
-                                    @foreach (var item in dbTypeSelectList)
-                                    {
-                                        <option value="@item.Value">@item.Text.ToHtmlString()</option>
-                                    }
-                                </select>
-                            </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div>
+                            <label for="DbType" class="form-label required">資料庫類型</label>
+                            <select class="form-select" id="DbType" name="DbType" required>
+                                @foreach (var item in dbTypeSelectList)
+                                {
+                                    <option value="@item.Value">@item.Text.ToHtmlString()</option>
+                                }
+                            </select>
                         </div>
-                        <div class="col-lg-6">
-                            <div>
-                                <label for="DbUser" class="form-label required">帳號</label>
-                                <input type="text" name="DbUser" id="DbUser" class="form-control" placeholder="請輸入帳號" required maxlength="100"/>
-                                <div class="invalid-feedback">請輸入帳號</div>
-                            </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div>
+                            <label for="DbUser" class="form-label required">帳號</label>
+                            <input type="text" name="DbUser" id="DbUser" class="form-control" placeholder="請輸入帳號" required maxlength="100" />
+                            <div class="invalid-feedback">請輸入帳號</div>
                         </div>
-                        <div class="col-lg-6">
-                            <div>
-                                <label for="DbPassword" class="form-label required">密碼</label>
-                                <input type="password" name="DbPassword" id="DbPassword" class="form-control" placeholder="請輸入密碼" required maxlength="200"/>
-                                <div class="invalid-feedback">請輸入密碼</div>
-                            </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div>
+                            <label for="DbPassword" class="form-label required">密碼</label>
+                            <input type="password" name="DbPassword" id="DbPassword" class="form-control" placeholder="請輸入密碼" required maxlength="200" />
+                            <div class="invalid-feedback">請輸入密碼</div>
                         </div>
-                        <div class="col-lg-12">
-                            <div>
-                                <label for="Description" class="form-label">
-                                    描述
-                                </label>
-                                <textarea name="Description" id="Description" class="form-control" placeholder="描述" rows="2"></textarea>
-                            </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div>
+                            <label for="Description" class="form-label">
+                                描述
+                            </label>
+                            <textarea name="Description" id="Description" class="form-control" placeholder="描述" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <div class="hstack gap-2 justify-content-end">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
-                        <button type="button" class="btn btn-info" id="btn-test-connection"><i class="ri-link me-1"></i>測試連線</button>
-                        <button type="submit" class="btn btn-success" id="add-btn">確認</button>
-                        <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
-                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="hstack gap-2 justify-content-end">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-info" id="btn-test-connection"><i class="ri-link me-1"></i>測試連線</button>
+                    <button type="submit" class="btn btn-success" id="add-btn">確認</button>
+                    <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
