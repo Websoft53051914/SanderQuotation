@@ -19,20 +19,18 @@ namespace Core.Utility.Web.Base
         /// <remarks>This field can be used to collect and inspect error details after an operation
         /// completes. The list is initially empty and can be modified by consumers as needed.</remarks>
         public List<string> ErrorMsgs = new();
-        /// <summary>
-        /// Displays an error message alert.
-        /// </summary>
-        /// <param name="msg">The error message to display.</param>
+        /// <summary>功能說明：將錯誤訊息寫入 ViewBag，供 MVC 頁面顯示 Alert。</summary>
+        /// <param name="msg">輸入參數：錯誤訊息文字。</param>
+        /// <remarks>參考功能名稱與用途：ViewBag.ErrorAlertMessage。訊息內容及生成條件：由呼叫端傳入 msg，無 JSON 回應。</remarks>
         [ApiExplorerSettings(IgnoreApi = true)]
         public void ErrorAlert(String msg)
         {
             ViewBag.ErrorAlertMessage = msg;
         }
 
-        /// <summary>
-        /// 警告訊息alert
-        /// </summary>
-        /// <param name="msg">警告訊息</param>
+        /// <summary>功能說明：將警告訊息寫入 ViewBag，供 MVC 頁面顯示 Alert。</summary>
+        /// <param name="msg">輸入參數：警告訊息文字。</param>
+        /// <remarks>參考功能名稱與用途：ViewBag.WarningAlertMessage。訊息內容及生成條件：由呼叫端傳入，無 JSON 回應。</remarks>
         [ApiExplorerSettings(IgnoreApi = true)]
         public void WarningAlert(String msg)
         {
@@ -41,11 +39,10 @@ namespace Core.Utility.Web.Base
 
 
 
-        /// <summary>
-        /// 取得分頁要傳入的值
-        /// </summary>
-        /// <param name="request">取得的page request內容</param>
-        /// <returns>傳回PageEntity</returns>
+        /// <summary>功能說明：將 DataSourceRequest 轉為 BL 使用的 PageEntity（含排序、頁碼）。</summary>
+        /// <param name="request">輸入參數：pageIndex、pageSize、SortField、SortOrder。</param>
+        /// <returns>輸出參數：PageEntity（CurrentPage、PageDataSize、Sort、Asc）。</returns>
+        /// <remarks>參考功能名稱與用途：供 Kendo/Grid 分頁查詢。訊息內容及生成條件：無 HTTP 回應。</remarks>
         [ApiExplorerSettings(IgnoreApi = true)]
         protected PageEntity GetPageEntity(DataSourceRequest request)
         {
@@ -221,12 +218,11 @@ namespace Core.Utility.Web.Base
             return Json(data);
         }
 
-        /// <summary>
-        /// ajax回傳OK的Json
-        /// </summary>
-        /// <typeparam name="T">取得的page request內容</typeparam>
-        /// <param name="data">要回傳的資料</param>
-        /// <returns>回傳JsonResult</returns>
+        /// <summary>功能說明：AJAX 成功回應，標準格式 { Success: true, Data }。</summary>
+        /// <typeparam name="T">輸出資料型別。</typeparam>
+        /// <param name="data">輸入參數：要回傳給前端的承載物件。</param>
+        /// <returns>輸出參數：JsonResult，Success=true，Data=data。</returns>
+        /// <remarks>參考功能名稱與用途：多數 Controller 查詢成功時使用。訊息內容及生成條件：由呼叫端決定 data 內容。</remarks>
         protected JsonResult JsonSuccess<T>(T data)
         {
             return Json(new
@@ -265,11 +261,10 @@ namespace Core.Utility.Web.Base
         }
 
 
-        /// <summary>
-        /// 驗證錯誤使用
-        /// </summary>
-        /// <param name="errorData">錯誤訊息資料</param>
-        /// <returns>回傳JsonResult</returns>
+        /// <summary>功能說明：AJAX 驗證/業務失敗回應，格式 { Success: false, Message }。</summary>
+        /// <param name="errorData">輸入參數：錯誤訊息字串（如「資料不存在」、GetMsg System_Error）。</param>
+        /// <returns>輸出參數：JsonResult，Success=false，Message=errorData。</returns>
+        /// <remarks>參考功能名稱與用途：BL 驗證失敗、catch 區塊。訊息內容及生成條件：由呼叫端傳入 errorData。</remarks>
         protected JsonResult JsonValidFail(string errorData)
         {
             return Json(new
@@ -324,12 +319,10 @@ namespace Core.Utility.Web.Base
             });
         }
 
-        // TODO
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="modelstate"></param>
-        /// <returns>回傳JsonResult</returns>
+        /// <summary>功能說明：彙整 ModelState 驗證錯誤為單一 Message 字串並回傳失敗 JSON。</summary>
+        /// <param name="modelstate">輸入參數：ASP.NET ModelState（含欄位驗證錯誤）。</param>
+        /// <returns>輸出參數：JsonResult，Success=false，Message=合併後錯誤字串。</returns>
+        /// <remarks>參考功能名稱與用途：表單 Model 驗證失敗。訊息內容及生成條件：任一欄位 Errors 非空時串接 ErrorMessage。</remarks>
         protected JsonResult JsonValiFailFromModelState(ModelStateDictionary modelstate)
         {
             string errorMsg = "";

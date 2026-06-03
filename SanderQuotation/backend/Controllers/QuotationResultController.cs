@@ -25,8 +25,15 @@ namespace backend.Controllers
         private readonly ExternalQueryExecuteHandler _externalQueryExecuteHandler;
 
         /// <summary>
-        /// constructor
+        /// 功能說明：建立定時查價結果 Controller，注入查價處理器與外部 API 執行器，並設定 AutoMapper。
         /// </summary>
+        /// <param name="configuration">輸入參數：應用程式組態。</param>
+        /// <param name="quotationHandler">輸入參數：內部/外部查價與查料流程。</param>
+        /// <param name="externalQueryExecuteHandler">輸入參數：Mouser/DigiKey 現貨查價。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：BaseProjectController；Mapper 對應 BomFileContent、QueryActionResult 至 DM/VM。
+        /// 訊息內容及生成條件：建構子本身不產生 API 回應。
+        /// </remarks>
         public QuotationResultController(
             IConfiguration configuration,
             QuotationHandler quotationHandler,
@@ -54,8 +61,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 將 ProcessStatus 代碼轉換為對應的中文描述文字
+        /// 功能說明：將 EsFileTransferUpload ProcessStatus 代碼轉為中文描述。
         /// </summary>
+        /// <param name="code">輸入參數：處理狀態整數代碼（可為 null）。</param>
+        /// <returns>輸出參數：enum 描述文字；未知代碼回傳數字字串；null 回傳空字串。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：EsFileTransferUploadProcessStatusEnum.GetDescription。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
         private static string GetProcessStatusText(int? code)
         {
             return code switch
@@ -74,8 +87,14 @@ namespace backend.Controllers
         #region -- 查詢 --
 
         /// <summary>
-        /// 分頁取得定時查價結果清單
+        /// 功能說明：分頁取得定時查價結果（BOM 上傳檔）清單。
         /// </summary>
+        /// <param name="filter">輸入參數：分頁、排序、KeywordLike（QuotationResultSearchVM）。</param>
+        /// <returns>輸出參數：JsonSuccess({ Data, Total, Page, PageSize })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetPageEntity、GetBlEsFileTransferUpload().GetPageListQuotationResult、GetProcessStatusText。
+        /// 訊息內容及生成條件：成功 → 清單 JSON；例外 → JsonValidFail(System_Error)。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetPageList")]
         public ActionResult GetPageList([FromQuery] QuotationResultSearchVM filter)
@@ -127,8 +146,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 依 Id 取得單筆查價結果詳細（Header + BOM 料項）
+        /// 功能說明：依 Id 取得單筆查價結果詳細（表頭 + BOM 料項 + Mouser/DigiKey 現貨價）。
         /// </summary>
+        /// <param name="id">輸入參數：EsFileTransferUpload 主鍵 Guid。</param>
+        /// <returns>輸出參數：JsonSuccess(QuotationFileEditVM)；資料不存在時 JsonValidFail「資料不存在」。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetOneForEditQuotationResult、GetBlBomFileContent、GetBlTBBomFileQuotationOther、GetBlTBSysSetting（AI 開關）。
+        /// 訊息內容及生成條件：dm==null →「資料不存在」；成功 → 完整 EditVM；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetById")]
         public ActionResult GetById(Guid id)
@@ -231,8 +256,14 @@ namespace backend.Controllers
         #region -- 操作 --
 
         /// <summary>
-        /// 重新內部查價：以前端調整的採購型號執行內部查價
+        /// 功能說明：重新內部查價；更新採購型號後執行 RunInternalAsync 並寫入 DB。
         /// </summary>
+        /// <param name="request">輸入參數：BomFileContentId、No（採購型號）。</param>
+        /// <returns>輸出參數：JsonOK()；資料不存在或例外時 JsonValidFail。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：DoUpdateNo、RunInternalAsync、DoSaveSingleInternalQuotationResult。
+        /// 訊息內容及生成條件：content==null →「資料不存在」；成功 → JsonOK；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_Edit)]
         [HttpPost("ReInternalQuotation")]
         public async Task<ActionResult> ReInternalQuotation([FromBody] QuotationReInternalQuotationRequestVM request)
@@ -271,8 +302,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 重新外部查價：對指定料項重新執行 Nexar 外部查價
+        /// 功能說明：重新外部查價（Nexar），依上傳檔報價數量執行並儲存結果。
         /// </summary>
+        /// <param name="request">輸入參數：BomFileContentId。</param>
+        /// <returns>輸出參數：JsonOK()；失敗時 JsonValidFail。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：AuthorizeExternalAsync、RunExternalAsync、DoSaveSingleExternalQuotationResult。
+        /// 訊息內容及生成條件：料項不存在 →「資料不存在」；成功 → JsonOK；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_Edit)]
         [HttpPost("ReExternalQuotation")]
         public async Task<ActionResult> ReExternalQuotation([FromBody] QuotationReExternalQuotationRequestVM request)
@@ -306,8 +343,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 查詢現貨優惠價：同時呼叫 Mouser 與 DigiKey API 取得現貨價，儲存至 TBBomFileQuotationOther
+        /// 功能說明：查詢現貨優惠價（並行 Mouser + DigiKey），結果寫入 TBBomFileQuotationOther 與決策歷程。
         /// </summary>
+        /// <param name="request">輸入參數：BomFileContentId。</param>
+        /// <returns>輸出參數：JsonOK()。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：QueryMouserAction、QueryDkAction、DoSaveSingleInStockPriceResult。
+        /// 訊息內容及生成條件：content==null →「資料不存在」；成功 → JsonOK；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_Edit)]
         [HttpPost("CheckInStockPrice")]
         public async Task<ActionResult> CheckInStockPrice([FromBody] QuotationCheckInStockPriceRequestVM request)
@@ -372,8 +415,13 @@ namespace backend.Controllers
         #region -- 料號快查 --
 
         /// <summary>
-        /// 取得客戶清單（供快查 Modal 客戶名稱下拉選單使用）
+        /// 功能說明：取得客戶清單（快查 Modal 下拉選單）。
         /// </summary>
+        /// <returns>輸出參數：JsonSuccess(List&lt;SelectItemVO&gt;)。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBlReportItemCustomer().GetListEnabled，依 CustomerCode 群組。
+        /// 訊息內容及生成條件：成功 → 客戶選項；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetCustomerList")]
         public ActionResult GetCustomerList()
@@ -396,8 +444,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 快查步驟一：僅執行查料（RunPartSearchAsync），結果不寫入資料庫
+        /// 功能說明：料號快查步驟一，僅查料（RunPartSearchAsync），不寫入 DB。
         /// </summary>
+        /// <param name="request">輸入參數：製造商料號、廠牌、元件料號、描述等。</param>
+        /// <returns>輸出參數：JsonSuccess({ No, MatchCategoryText, MatchField, DecisionLogs })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBrandComparisonCategorySet、RunPartSearchAsync。
+        /// 訊息內容及生成條件：成功 → 查料結果與 PendingDecisionLogs；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("QuickPartMatch")]
         public async Task<ActionResult> QuickPartMatch([FromQuery] QuotationQuickPartMatchRequestVM request)
@@ -449,8 +503,14 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 快查步驟二：依勾選項目執行查價（內部/外部/現貨），結果不寫入資料庫
+        /// 功能說明：料號快查步驟二，依勾選執行內部/外部/現貨查價，不寫入 DB。
         /// </summary>
+        /// <param name="request">輸入參數：RunInternal/RunExternal/RunInStock、料號、客戶、數量等。</param>
+        /// <returns>輸出參數：JsonSuccess({ Internal, External, InStock, ClusterMeta, DecisionLogs })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：RunInternalAsync、RunExternalAsync、QueryMouserAction、QueryDkAction。
+        /// 訊息內容及生成條件：成功 → 各區塊結果物件；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("QuickPricing")]
         public async Task<ActionResult> QuickPricing([FromQuery] QuotationQuickPricingRequestVM request)
@@ -617,8 +677,14 @@ namespace backend.Controllers
         #region -- 決策歷程 --
 
         /// <summary>
-        /// 取得指定料項的決策歷程清單
+        /// 功能說明：取得指定 BOM 料項的 AI/查價決策歷程清單。
         /// </summary>
+        /// <param name="bomFileContentId">輸入參數：BomFileContent 主鍵 Guid。</param>
+        /// <returns>輸出參數：JsonSuccess(決策歷程陣列，含 StageText/StepText/Message)。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBlTBBomFileDecisionLog().GetListEnabled。
+        /// 訊息內容及生成條件：成功 → 依 Stage/Step 排序的清單；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetDecisionLogs")]
         public ActionResult GetDecisionLogs(Guid bomFileContentId)
@@ -655,8 +721,22 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 取得指定料項的價格分群資料（分頁）—— 支援 bomFileContentId 模式（含 ClusterRanges）或 No 模式（快查）
+        /// 功能說明：取得價格分群採購紀錄（分頁）；支援 bomFileContentId 或快查 No 模式。
         /// </summary>
+        /// <param name="bomFileContentId">輸入參數：料項 Id（與 no 二擇一）。</param>
+        /// <param name="no">輸入參數：採購型號（快查模式）。</param>
+        /// <param name="customerApprovedPartCsv">輸入參數：客戶認可料號 CSV。</param>
+        /// <param name="lowMinPrice">輸入參數：低價群最小值（快查模式）。</param>
+        /// <param name="lowMaxPrice">輸入參數：低價群最大值。</param>
+        /// <param name="highMinPrice">輸入參數：高價群最小值。</param>
+        /// <param name="highMaxPrice">輸入參數：高價群最大值。</param>
+        /// <param name="page">輸入參數：頁碼，預設 1。</param>
+        /// <param name="pageSize">輸入參數：每頁筆數，預設 20。</param>
+        /// <returns>輸出參數：JsonSuccess({ ClusterRanges, Records, Total })；quotation 為 null 時 Total=0。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBlTBBomFileQuotation、GetBlSanderModulePurchaseLine().GetPageListPriceCluster。
+        /// 訊息內容及生成條件：有 bomFileContentId 但無 quotation → 空 Records；成功 → 分群範圍與採購明細；例外 → System_Error。
+        /// </remarks>
         [CustomAuthorization(FuncID.QuotationResult_View)]
         [HttpGet("GetPriceClusterPageList")]
         public ActionResult GetPriceClusterPageList(

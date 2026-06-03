@@ -21,6 +21,16 @@ namespace backend.Controllers
         private readonly JwtService _jwt;
         private readonly IConfiguration _config;
 
+        /// <summary>
+        /// 功能說明：建立驗證 Controller，注入 AD 驗證、JWT 與組態。
+        /// </summary>
+        /// <param name="ad">輸入參數：Active Directory 驗證服務。</param>
+        /// <param name="jwt">輸入參數：JWT 產生服務。</param>
+        /// <param name="config">輸入參數：應用程式組態。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：BaseProjectController — 基底與 GetMsg。
+        /// 訊息內容及生成條件：建構子本身不產生 API 回應。
+        /// </remarks>
         public AuthController(AdAuthService ad, JwtService jwt,  IConfiguration config):base(config)
         {
             _ad = ad;
@@ -294,6 +304,15 @@ namespace backend.Controllers
         //            }
         //        }
 
+        /// <summary>
+        /// 功能說明：使用者登入驗證，成功後寫入 JWT Cookie 並回傳登入資料。
+        /// </summary>
+        /// <param name="vm">輸入參數：UserName、Password 等登入表單。</param>
+        /// <returns>輸出參數：JsonSuccess(LoginDM)；鎖定或驗證失敗時 JsonValidFail；例外時 System_Error。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：LoginBL.CheckLock — 帳號鎖定檢查；AuthDoAuth — 驗證帳密；CookiesAppend — 產生 JWT Cookie；LogSuccess。
+        /// 訊息內容及生成條件：CheckLock 錯誤 → JsonValidFail(BL 訊息)；AuthDoAuth 錯誤 → JsonValidFail；成功 → JsonSuccess(loginDM) 並 LogSuccess「登入成功」；catch → System_Error。
+        /// </remarks>
         [HttpPost("AuthDoPost")]
         [AllowAnonymous] // 允許匿名訪問，登入前需要使用
         public async Task<IActionResult> AuthDoPost(LoginVM vm)
@@ -392,6 +411,15 @@ namespace backend.Controllers
         //            }
         //        }
 
+        /// <summary>
+        /// 功能說明：將 JWT 寫入 HttpOnly Cookie（依 HTTPS 調整 Secure/SameSite）。
+        /// </summary>
+        /// <param name="safeToken">輸入參數：經 CookieSafeEncode 編碼後的 Token。</param>
+        /// <param name="jwtExpiresUtc">輸入參數：Token 到期 UTC 時間。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：Const.Value.JWT_TokenName — Cookie 名稱；Request.IsHttps — 決定 Secure 與 SameSite。
+        /// 訊息內容及生成條件：無 JSON 回應，僅設定 Response.Cookies。
+        /// </remarks>
         private void AppendJwtCookie(string safeToken, DateTime jwtExpiresUtc)
         {
             var domain = Common.Method.GetAppSettingsDataByName("frontendDoamin");
@@ -413,6 +441,14 @@ namespace backend.Controllers
             });
         }
 
+        /// <summary>
+        /// 功能說明：依登入結果產生 JWT 並寫入 Cookie。
+        /// </summary>
+        /// <param name="result">輸入參數：LoginDM（含 MemberAccount、PermissionCodeList 等）。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：JwtService.Generate — 產生 Token；AppendJwtCookie — 寫入 Cookie。
+        /// 訊息內容及生成條件：無 JSON 回應。
+        /// </remarks>
         private void CookiesAppend(LoginDM result)
         {
             Dictionary<string, string> userInfo = new Dictionary<string, string>();
@@ -469,6 +505,14 @@ namespace backend.Controllers
         //            }
         //        }
 
+        /// <summary>
+        /// 功能說明：使用者登出，清除伺服器端登入狀態。
+        /// </summary>
+        /// <returns>輸出參數：JsonSuccess("")；例外時 JsonValidFail(System_Error)。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：LoginBL.LogoutDoPost — 依 UserInfo 執行登出邏輯。
+        /// 訊息內容及生成條件：成功 → JsonSuccess 空字串；例外 → System_Error。
+        /// </remarks>
         [HttpPost("LogoutDoPost")]
         [Authorize]
         public IActionResult LogoutDoPost()

@@ -31,10 +31,9 @@ namespace backend.Controllers
         /// 
         /// </summary>
         protected readonly ConfigurationHelper _configHelper;
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="configuration"></param>
+        /// <summary>功能說明：專案基底 Controller 建構子，載入組態與 ConfigurationHelper。</summary>
+        /// <param name="configuration">輸入參數：IConfiguration。</param>
+        /// <remarks>參考功能名稱與用途：ApiBaseController。訊息內容及生成條件：無 HTTP 回應。</remarks>
         public BaseProjectController(IConfiguration configuration)
         {
             _config = configuration;
@@ -45,6 +44,9 @@ namespace backend.Controllers
 
 
 
+        /// <summary>功能說明：Action 執行前從 JWT Claims 填入 UserInfo（帳號、姓名、權限清單、IP）。</summary>
+        /// <param name="context">輸入參數：ActionExecutingContext。</param>
+        /// <remarks>參考功能名稱與用途：User.FindFirst、JsonConvert.DeserializeObject PermissionCodeList。訊息內容及生成條件：每個需授權的 API 請求自動執行。</remarks>
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             if (UserInfo == null)
@@ -65,6 +67,10 @@ namespace backend.Controllers
 
 
 
+        /// <summary>功能說明：建立 Business Layer 實例並注入 UserInfo 與 IConfiguration。</summary>
+        /// <typeparam name="T">輸入參數：BaseProjectBL 衍生類型。</typeparam>
+        /// <returns>輸出參數：已設定 UserInfo 的 BL 實例。</returns>
+        /// <remarks>參考功能名稱與用途：BusinessFactory.GetInstance。訊息內容及生成條件：無 HTTP 回應。</remarks>
         public T GetBLInstance<T>() where T : BaseProjectBL
         {
             T bl = BusinessFactory.GetInstance<T>();
@@ -88,9 +94,11 @@ namespace backend.Controllers
             return _msgHelper;
         }
 
-        /// <summary>
-        /// 依目前語系取得 message.json 中的訊息
-        /// </summary>
+        /// <summary>功能說明：依組態鍵取得多語系訊息（預設 message:zh-tw:{key}）。</summary>
+        /// <param name="config">輸入參數：IConfiguration。</param>
+        /// <param name="key">輸入參數：訊息鍵（如 System_Error）。</param>
+        /// <returns>輸出參數：訊息文字；找不到時回傳 key 本身。</returns>
+        /// <remarks>參考功能名稱與用途：appsettings / message.json。訊息內容及生成條件：catch 區塊常用 System_Error。</remarks>
         protected string GetMsg(IConfiguration config, string key)
             => config[$"message:zh-tw:{key}"] ?? key;
 

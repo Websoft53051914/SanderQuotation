@@ -25,6 +25,16 @@ namespace backend.Controllers
         private readonly HangfireSchedulerHelper _hangfireSchedulerHelper;
         private readonly IServiceScopeFactory _scopeFactory;
 
+        /// <summary>
+        /// 功能說明：建立排程週期設定 Controller，設定 AutoMapper 與 Hangfire 排程輔助。
+        /// </summary>
+        /// <param name="config">輸入參數：應用程式組態。</param>
+        /// <param name="hangfireSchedulerHelper">輸入參數：Hangfire 週期工作註冊/移除/狀態查詢。</param>
+        /// <param name="scopeFactory">輸入參數：背景工作 DI 範圍（ExecuteNow 用）。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：BaseProjectController；EsScheduleCycleVM ↔ EsScheduleCycleDM 對應。
+        /// 訊息內容及生成條件：建構子本身不產生 API 回應。
+        /// </remarks>
         public CycleSettingsController(IConfiguration config, HangfireSchedulerHelper hangfireSchedulerHelper, IServiceScopeFactory scopeFactory) : base(config)
         {
             _config = config;
@@ -44,9 +54,23 @@ namespace backend.Controllers
         }
 
         private EsScheduleCycleBL? _bl;
+        /// <summary>
+        /// 功能說明：取得 EsScheduleCycleBL 單例。
+        /// </summary>
+        /// <returns>輸出參數：EsScheduleCycleBL。</returns>
+        /// <remarks>參考功能名稱與用途：GetBLInstance。訊息內容及生成條件：無 HTTP 回應。</remarks>
         private EsScheduleCycleBL GetBL() => _bl ??= GetBLInstance<EsScheduleCycleBL>();
 
-        // GET api/cycle-settings/GetPageList
+        /// <summary>
+        /// 功能說明：分頁取得排程週期清單，並附 Hangfire 最近執行狀態。
+        /// </summary>
+        /// <param name="request">輸入參數：分頁與排序（ListPageEntity）。</param>
+        /// <param name="Keyword">輸入參數：關鍵字模糊搜尋。</param>
+        /// <returns>輸出參數：JsonSuccess({ Data, Total, Page, PageSize })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetPageEntity、GetBL().GetPageList、HangfireSchedulerHelper.GetJobStatuses。
+        /// 訊息內容及生成條件：成功 → 清單含 LastRunAt/State；例外 → JsonValidFail(System_Error 或語系 message)。
+        /// </remarks>
         [HttpGet("GetPageList")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
         public IActionResult GetPageList([FromQuery] ListPageEntity request, string Keyword)
@@ -93,7 +117,15 @@ namespace backend.Controllers
             }
         }
 
-        // GET api/cycle-settings/Get?id=...
+        /// <summary>
+        /// 功能說明：依 Id 取得單筆排程週期設定。
+        /// </summary>
+        /// <param name="id">輸入參數：排程主鍵 Guid。</param>
+        /// <returns>輸出參數：JsonSuccess(EsScheduleCycleVM)；dm 為 null 時 NotFound()。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBL().Get、_mapper.Map。
+        /// 訊息內容及生成條件：找不到 → NotFound；例外 → JsonValidFail(ex.Message)。
+        /// </remarks>
         [HttpGet("Get")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult Get([FromQuery] Guid id)
@@ -114,7 +146,15 @@ namespace backend.Controllers
             }
         }
 
-        // POST api/cycle-settings/Create
+        /// <summary>
+        /// 功能說明：新增排程週期；啟用時註冊 Hangfire Recurring Job。
+        /// </summary>
+        /// <param name="vm">輸入參數：排程設定 VM（含 Cron、IsEnabled 等）。</param>
+        /// <returns>輸出參數：JsonSuccess「新增成功」；CheckExist 失敗或例外時 JsonValidFail。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：CheckExist、Create、InsertRecurringJob。
+        /// 訊息內容及生成條件：BL 錯誤 → JsonValidFail(GetErrMsg)；成功 →「新增成功」；例外 → System_Error。
+        /// </remarks>
         [HttpPost("Create")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Create)]
         public IActionResult Create([FromBody] EsScheduleCycleVM vm)
@@ -139,7 +179,15 @@ namespace backend.Controllers
             }
         }
 
-        // POST api/cycle-settings/Edit
+        /// <summary>
+        /// 功能說明：編輯排程週期；先移除再依 IsEnabled 重新註冊 Hangfire Job。
+        /// </summary>
+        /// <param name="vm">輸入參數：排程設定 VM。</param>
+        /// <returns>輸出參數：JsonSuccess「編輯成功」；例外時 JsonValidFail。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：Edit、RemoveRecurringJob、InsertRecurringJob。
+        /// 訊息內容及生成條件：成功 →「編輯成功」；例外 → System_Error。
+        /// </remarks>
         [HttpPost("Edit")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult Edit([FromBody] EsScheduleCycleVM vm)
@@ -161,7 +209,15 @@ namespace backend.Controllers
             }
         }
 
-        // POST api/cycle-settings/Delete
+        /// <summary>
+        /// 功能說明：批次刪除排程週期，並移除對應 Hangfire Recurring Job。
+        /// </summary>
+        /// <param name="rowGuids">輸入參數：要刪除的 Guid 清單。</param>
+        /// <returns>輸出參數：JsonSuccess「刪除成功」。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetBL().Delete、RemoveRecurringJob（逐 Code）。
+        /// 訊息內容及生成條件：成功 →「刪除成功」；例外 → System_Error。
+        /// </remarks>
         [HttpPost("Delete")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Delete)]
         public IActionResult Delete([FromBody] List<Guid> rowGuids)
@@ -183,6 +239,14 @@ namespace backend.Controllers
             }
         }
 
+        /// <summary>
+        /// 功能說明：取得新增/編輯排程時的下拉選項（DB 轉檔、檔案轉檔等）。
+        /// </summary>
+        /// <returns>輸出參數：JsonSuccess({ dbSelectList, fileSelectList, dbCSVSelectList })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：GetDbTransferOptions、GetFileTransferOptions。
+        /// 訊息內容及生成條件：成功 → 選項清單；例外 → JsonValidFail(ex.Message)。
+        /// </remarks>
         [HttpGet("GetSelectList")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_Create, Const.Enums.FuncID.Cyclesettings_Edit)]
         public IActionResult GetSelectList()
@@ -207,6 +271,15 @@ namespace backend.Controllers
             }
         }
 
+        /// <summary>
+        /// 功能說明：立即手動觸發指定排程（Enqueue TransferJob，TriggerType=Manual）。
+        /// </summary>
+        /// <param name="rowGuid">輸入參數：排程資料列 Guid。</param>
+        /// <returns>輸出參數：JsonSuccess「排程已觸發」。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：Get(rowGuid)、BackgroundJob.Enqueue&lt;TransferJob&gt;。
+        /// 訊息內容及生成條件：成功 →「排程已觸發」；背景 Enqueue 失敗僅 LogError；API 層 catch → ex.Message。
+        /// </remarks>
         [HttpPost("ExecuteNow/{rowGuid}")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
         public IActionResult ExecuteNow(Guid rowGuid)
@@ -240,9 +313,16 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// 取得指定排程執行紀錄（含 Detail 和 ErrorLog），支援日期區間篩選
-        /// GET api/cycle-settings/GetRecentLogs?scheduleCycleCode=XXX&dateFrom=2025-01-01&dateTo=2025-01-07
+        /// 功能說明：取得指定排程執行紀錄（含 Detail、ErrorLog），支援日期區間篩選。
         /// </summary>
+        /// <param name="scheduleCycleCode">輸入參數：排程代碼。</param>
+        /// <param name="dateFrom">輸入參數：起始日期（可選）。</param>
+        /// <param name="dateTo">輸入參數：結束日期（可選）。</param>
+        /// <returns>輸出參數：JsonSuccess({ DateFrom, DateTo, Data: logs })。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：EsScheduleCycleLogBL.GetLogsByCode。
+        /// 訊息內容及生成條件：成功 → 紀錄清單；例外 → System_Error。
+        /// </remarks>
         [HttpGet("GetRecentLogs")]
         [CustomAuthorization(Const.Enums.FuncID.Cyclesettings_View)]
         public IActionResult GetRecentLogs([FromQuery] string scheduleCycleCode, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo)

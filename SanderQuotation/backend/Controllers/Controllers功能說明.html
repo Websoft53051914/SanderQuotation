@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>backend/Controllers — 功能說明</title>
+    <style>
+        :root {
+            --bg: #f6f8fa;
+            --card: #fff;
+            --text: #1f2328;
+            --muted: #656d76;
+            --border: #d0d7de;
+            --accent: #0969da;
+            --accent-soft: #ddf4ff;
+            --base: #8250df;
+            --base-soft: #fbefff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+            line-height: 1.65;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem 1.5rem;
+        }
+        .wrap { max-width: 960px; margin: 0 auto; }
+        h1 {
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+        }
+        .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; color: var(--accent); }
+        h3 { font-size: 1.05rem; margin: 1rem 0 0.5rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .card.base {
+            border-left: 4px solid var(--base);
+            background: linear-gradient(90deg, var(--base-soft) 0%, var(--card) 12%);
+        }
+        .file-path {
+            font-family: Consolas, monospace;
+            font-size: 0.88rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+        }
+        .route {
+            font-family: Consolas, monospace;
+            font-size: 0.9rem;
+            color: #0550ae;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            margin-right: 0.35rem;
+            font-weight: 600;
+        }
+        .tag-base { background: var(--base-soft); color: var(--base); }
+        .tag-api { background: var(--accent-soft); color: var(--accent); }
+        .tag-test { background: #fff8c5; color: #7d4e00; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin: 0.6rem 0;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.45rem 0.65rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { background: #f0f3f6; }
+        ul { margin: 0.4rem 0; padding-left: 1.3rem; }
+        .diagram {
+            background: #f0f3f6;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: Consolas, monospace;
+            font-size: 0.82rem;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .toc {
+            columns: 2;
+            column-gap: 2rem;
+            font-size: 0.92rem;
+        }
+        .toc a { color: var(--accent); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .toc li { margin: 0.25rem 0; break-inside: avoid; }
+        footer { margin-top: 2rem; font-size: 0.85rem; color: var(--muted); }
+        code { font-size: 0.88em; background: #f0f3f6; padding: 0.1rem 0.3rem; border-radius: 3px; }
+        @media (max-width: 640px) { .toc { columns: 1; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>backend/Controllers — 功能說明</h1>
+        <p class="meta">
+            路徑：<span class="file-path">SanderQuotation/backend/Controllers/</span><br />
+            共 15 個 <code>.cs</code> 檔（2 基底 + 13 業務/測試 API）。業務 API 多數繼承
+            <code>BaseProjectController</code> → <code>ApiBaseController</code>，並以
+            <code>[CustomAuthorization]</code> 檢查功能權限。
+        </p>
+
+        <section class="card">
+            <h2>架構關係</h2>
+            <div class="diagram">Microsoft.AspNetCore.Mvc.Controller
+    └── ApiBaseController        … JSON 回應、分頁、驗證失敗
+            └── BaseProjectController … JWT UserInfo、Log、BL 工廠、GetMsg
+                    └── 業務 Controller   … Auth / QuotationResult / …</div>
+        </section>
+
+        <section class="card">
+            <h2>目錄</h2>
+            <ul class="toc">
+                <li><a href="#api-base">ApiBaseController.cs</a></li>
+                <li><a href="#base-proj">BaseProjectController.cs</a></li>
+                <li><a href="#auth">AuthController.cs</a></li>
+                <li><a href="#quotation">QuotationResultController.cs</a></li>
+                <li><a href="#es-upload">EsFileTransferUploadController.cs</a></li>
+                <li><a href="#filepond">FilepondEsFileTransferUploadController.cs</a></li>
+                <li><a href="#history">HistoryFileController.cs</a></li>
+                <li><a href="#sander">SanderModuleItemController.cs</a></li>
+                <li><a href="#sysset">SysSettingController.cs</a></li>
+                <li><a href="#sysfunc">SysFuncClassController.cs</a></li>
+                <li><a href="#cycle">CycleSettingsController.cs</a></li>
+                <li><a href="#es-map">ESDbTransferMappingController.cs</a></li>
+                <li><a href="#table-excel">TableExcelController.cs</a></li>
+                <li><a href="#aichat">AIChatController.cs</a></li>
+                <li><a href="#test-ext">TestExternalAPIController.cs</a></li>
+                <li><a href="#frontend-map">前端對應總覽</a></li>
+                <li><a href="#json">常見 JSON 回應</a></li>
+            </ul>
+        </section>
+
+        <!-- 基底 -->
+        <section class="card base" id="api-base">
+            <h2>ApiBaseController.cs <span class="tag tag-base">基底</span></h2>
+            <p><strong>功能說明：</strong>所有 backend API Controller 的 JSON／分頁共用基底，不對外直接路由。</p>
+            <p><strong>參考功能名稱與用途：</strong>供業務 Controller 呼叫統一回應格式與 <code>PageEntity</code> 轉換。</p>
+            <table>
+                <thead><tr><th>成員</th><th>主要功能</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ErrorMsgs</code></td><td>累積處理錯誤訊息</td></tr>
+                    <tr><td><code>GetPageEntity</code></td><td>前端分頁/排序 → <code>PageEntity</code></td></tr>
+                    <tr><td><code>JsonSuccess</code> / <code>JsonOK</code></td><td>成功：<code>{ Success: true, Data }</code></td></tr>
+                    <tr><td><code>JsonValidFail</code> 等</td><td>失敗：<code>{ Success: false, Message }</code></td></tr>
+                    <tr><td><code>GetDomainName</code></td><td>目前請求網域 URL</td></tr>
+                </tbody>
+            </table>
+            <p><strong>前端對應：</strong>無（由業務頁 AJAX 間接使用）。</p>
+        </section>
+
+        <section class="card base" id="base-proj">
+            <h2>BaseProjectController.cs <span class="tag tag-base">基底</span></h2>
+            <p><strong>功能說明：</strong>專案級基底：JWT 使用者、多語系訊息、ControlLog、BL 工廠與各模組 <code>GetBl*</code>。</p>
+            <table>
+                <thead><tr><th>成員</th><th>主要功能</th></tr></thead>
+                <tbody>
+                    <tr><td><code>OnActionExecuting</code></td><td>Claims → <code>UserInfo</code></td></tr>
+                    <tr><td><code>GetBLInstance&lt;T&gt;</code></td><td>建立 BL 並注入 Session/組態</td></tr>
+                    <tr><td><code>GetMsg</code></td><td><code>message:zh-tw:{key}</code></td></tr>
+                    <tr><td><code>LogError</code> / <code>LogSuccess</code></td><td>操作日誌</td></tr>
+                    <tr><td><code>GetBlEsFileTransferUpload</code> 等</td><td>延遲建立各模組 BL</td></tr>
+                </tbody>
+            </table>
+            <p><strong>前端對應：</strong>無。</p>
+        </section>
+
+        <!-- 業務 API -->
+        <section class="card" id="auth">
+            <h2>AuthController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/auth</span> — 登入、登出與 JWT Cookie。</p>
+            <p><strong>前端：</strong><code>/Login</code> → <code>Views/Login/Index.cshtml</code>（<code>AuthDoPost</code>）；登出 <code>_topbar</code> → <code>LogoutDoPost</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>POST</td><td>AuthDoPost</td><td>帳密驗證、JWT Cookie、回傳登入資料</td></tr>
+                    <tr><td>POST</td><td>LogoutDoPost</td><td>登出並清除狀態</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="quotation">
+            <h2>QuotationResultController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/QuotationResult</span> — 定時查價結果、明細、重新查價、快查、決策與價格分群。</p>
+            <p><strong>前端：</strong><code>/QuotationResult</code>、<code>/QuotationResult/Edit/{id}</code>；<code>_QuickPartSearch</code>、<code>_SanderModuleItemPicker</code>。</p>
+            <p><strong>依賴：</strong><code>QuotationHandler</code>、<code>ExternalQueryExecuteHandler</code>、多個 <code>GetBl*</code>（或 <code>IQuotationResultAppService</code> 若已委派）。</p>
+            <table>
+                <thead><tr><th>區塊</th><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>查詢</td><td>GET</td><td>GetPageList</td><td>分頁清單</td></tr>
+                    <tr><td>查詢</td><td>GET</td><td>GetById</td><td>單筆明細（表頭+料項+Mouser/DK）</td></tr>
+                    <tr><td>操作</td><td>POST</td><td>ReInternalQuotation</td><td>更新型號並重新內部查價</td></tr>
+                    <tr><td>操作</td><td>POST</td><td>ReExternalQuotation</td><td>重新 Nexar 外部查價</td></tr>
+                    <tr><td>操作</td><td>POST</td><td>CheckInStockPrice</td><td>Mouser+DK 現貨價寫入 DB</td></tr>
+                    <tr><td>快查</td><td>GET</td><td>GetCustomerList</td><td>客戶下拉</td></tr>
+                    <tr><td>快查</td><td>GET</td><td>QuickPartMatch</td><td>僅查料（不寫 DB）</td></tr>
+                    <tr><td>快查</td><td>GET</td><td>QuickPricing</td><td>勾選內部/外部/現貨（不寫 DB）</td></tr>
+                    <tr><td>決策</td><td>GET</td><td>GetDecisionLogs</td><td>決策歷程</td></tr>
+                    <tr><td>決策</td><td>GET</td><td>GetPriceClusterPageList</td><td>價格分群分頁</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="es-upload">
+            <h2>EsFileTransferUploadController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/EsFileTransferUpload</span> — BOM／轉入檔案上傳紀錄 CRUD 與正式上傳。</p>
+            <p><strong>前端：</strong><code>/EsFileTransferUpload</code> → <code>EsFileTransferUpload/Index.cshtml</code>（舊路徑 <code>/ImportTransferExcel</code> 302 導向）。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList</td><td>分頁清單</td></tr>
+                    <tr><td>GET</td><td>GetOptionData</td><td>匯入規則、客戶下拉</td></tr>
+                    <tr><td>POST</td><td>SaveEdit</td><td>更新客戶代碼等</td></tr>
+                    <tr><td>POST</td><td>Delete</td><td>批次邏輯刪除</td></tr>
+                    <tr><td>POST</td><td>SaveUpload</td><td>FilePond 暫存→正式並觸發流程</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="filepond">
+            <h2>FilepondEsFileTransferUploadController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/FilepondEsFileTransferUpload</span> — FilePond 分塊上傳協定。</p>
+            <p><strong>前端：</strong>與轉入上傳同頁，<code>ServerUrl</code> 指向本 API。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>POST</td><td>Process</td><td>接收檔案、建立暫存紀錄</td></tr>
+                    <tr><td>PATCH</td><td>Patch</td><td>分塊續傳</td></tr>
+                    <tr><td>DELETE</td><td>Revert</td><td>取消並清理暫存</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="history">
+            <h2>HistoryFileController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/HistoryFile</span> — 歷史檔案上傳、下載、清單、編輯、刪除。</p>
+            <p><strong>前端：</strong><code>/HistoryFile</code> → <code>HistoryFile/Index.cshtml</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>POST</td><td>Process</td><td>FilePond 初始上傳</td></tr>
+                    <tr><td>PATCH</td><td>Patch</td><td>分塊上傳</td></tr>
+                    <tr><td>GET</td><td>Download/{id}</td><td>下載</td></tr>
+                    <tr><td>DELETE</td><td>Revert</td><td>取消上傳</td></tr>
+                    <tr><td>POST</td><td>Upload</td><td>完成上傳寫入 DB</td></tr>
+                    <tr><td>GET</td><td>GetPageList</td><td>分頁清單</td></tr>
+                    <tr><td>POST</td><td>Delete / Edit</td><td>刪除、編輯</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="sander">
+            <h2>SanderModuleItemController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/SanderModuleItem</span> — 內部採購型號查詢；含 Excel 匯入私有方法（維護用）。</p>
+            <p><strong>前端：</strong><code>_SanderModuleItemPicker.cshtml</code>（嵌入查價明細與快查）。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList</td><td>分頁查詢採購型號</td></tr>
+                </tbody>
+            </table>
+            <p><strong>私有：</strong>ImportSandermoduleItem、ImportSanderModuleItemVariant、ImportReportItemCustomer、ImportSanderModulePurchaseLine。</p>
+        </section>
+
+        <section class="card" id="sysset">
+            <h2>SysSettingController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/SysSetting</span> — AI 決策開關、偏好廠商、品牌比對類別等系統參數。</p>
+            <p><strong>前端：</strong><code>/SysSetting</code> → <code>SysSetting/Index.cshtml</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetData</td><td>取得全部設定 VM</td></tr>
+                    <tr><td>POST</td><td>Create / Edit / Delete</td><td>清單項目 CRUD</td></tr>
+                    <tr><td>POST</td><td>SaveOther</td><td>儲存 AI 開關等</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="sysfunc">
+            <h2>SysFuncClassController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/SysFuncClass</span> — 系統功能類別（選單/權限分類）維護。</p>
+            <p><strong>前端：</strong>側欄 <code>/SysFuncClass</code>；View／frontend Controller 待實作。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList</td><td>分頁清單</td></tr>
+                    <tr><td>POST</td><td>Get / Create / Edit / Delete / Enable</td><td>CRUD 與啟停</td></tr>
+                    <tr><td>GET</td><td>GetAll</td><td>下拉選項</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="cycle">
+            <h2>CycleSettingsController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/cycle-settings</span> — 排程週期、Hangfire 定時轉檔與執行紀錄。</p>
+            <p><strong>前端：</strong><code>/CycleSettings</code> → <code>CycleSettings/Index.cshtml</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList / Get</td><td>清單、單筆（含 Hangfire 狀態）</td></tr>
+                    <tr><td>POST</td><td>Create / Edit / Delete</td><td>CRUD 並註冊/更新/移除 Job</td></tr>
+                    <tr><td>GET</td><td>GetSelectList</td><td>轉檔下拉</td></tr>
+                    <tr><td>POST</td><td>ExecuteNow/{rowGuid}</td><td>手動觸發</td></tr>
+                    <tr><td>GET</td><td>GetRecentLogs</td><td>執行紀錄與錯誤</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="es-map">
+            <h2>ESDbTransferMappingController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/ESDbTransferMapping</span> — DB 轉檔對應規則（來源/目標表欄位）。</p>
+            <p><strong>前端：</strong><code>/ESDbTransferMapping</code>、<code>DetailView?id=</code>（frontend SSR）。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList</td><td>分頁清單</td></tr>
+                    <tr><td>POST</td><td>Get / Create / Edit / Delete</td><td>CRUD</td></tr>
+                    <tr><td>GET</td><td>GetColumns</td><td>依規則代碼取欄位</td></tr>
+                    <tr><td>GET</td><td>GetDbTransferList</td><td>連線清單</td></tr>
+                    <tr><td>GET</td><td>GetSourceTables/Columns、GetTargetTables/Columns</td><td>DB 結構</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="table-excel">
+            <h2>TableExcelController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/TableExcel</span> — Excel/CSV 匯入規則、範例檔、欄位對應與解析。</p>
+            <p><strong>前端：</strong><code>/TableExcel</code>；部分下拉呼叫 <code>api/ESDbTransferMapping/*</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>GET</td><td>GetPageList / Get / GetExampleFile</td><td>清單、單筆、範例檔</td></tr>
+                    <tr><td>POST</td><td>Create / Update / Delete / UploadExcel</td><td>CRUD 與上傳暫存</td></tr>
+                    <tr><td>GET</td><td>GetTableList / GetTableColumns</td><td>資料表結構</td></tr>
+                    <tr><td>GET</td><td>GetExcelColumns / GetSheetColumns</td><td>解析檔案欄位</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="aichat">
+            <h2>AIChatController.cs <span class="tag tag-api">API</span></h2>
+            <p><span class="route">api/AIChat</span> — AI 多輪對話、Session 清除、產檔下載。</p>
+            <p><strong>前端：</strong><code>Shared/_Layout.cshtml</code> 聊天面板 → <code>Chat</code>。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>POST</td><td>Chat</td><td>多輪對話（含 SQL/工具）</td></tr>
+                    <tr><td>DELETE</td><td>Session/{sessionId}</td><td>清除歷史</td></tr>
+                    <tr><td>GET</td><td>DownloadAIFile</td><td>下載 AI 產出檔</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="test-ext">
+            <h2>TestExternalAPIController.cs <span class="tag tag-test">測試</span></h2>
+            <p><span class="route">api/TestExternalAPI</span> — 開發測試 Mouser、DigiKey 查價（<code>[AllowAnonymous]</code>）。</p>
+            <p><strong>前端：</strong>無專用頁面。</p>
+            <table>
+                <thead><tr><th>HTTP</th><th>Action</th><th>功能</th></tr></thead>
+                <tbody>
+                    <tr><td>POST</td><td>QueryMouser</td><td>測試 Mouser</td></tr>
+                    <tr><td>POST</td><td>QueryDk</td><td>測試 DigiKey</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card" id="frontend-map">
+            <h2>前端對應總覽</h2>
+            <p>前端專案 <code>SanderQuotation/frontend</code>，以 <code>BackendURL</code> + <code>api/...</code> 呼叫本目錄 API。</p>
+            <table>
+                <thead>
+                    <tr><th>backend Controller</th><th>MVC 路由</th><th>View / 元件</th><th>備註</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>AuthController</td><td>/Login</td><td>Login/Index</td><td>AuthDoPost、LogoutDoPost</td></tr>
+                    <tr><td>QuotationResultController</td><td>/QuotationResult、/Edit/{id}</td><td>Index、Edit、_QuickPartSearch</td><td>快查、分群</td></tr>
+                    <tr><td>EsFileTransferUpload</td><td>/EsFileTransferUpload</td><td>EsFileTransferUpload/Index</td><td>與 tb_sysfunc 一致</td></tr>
+                    <tr><td>FilepondEsFileTransferUpload</td><td>（同頁）</td><td>FilePond ServerUrl</td><td>Process/Patch/Revert</td></tr>
+                    <tr><td>HistoryFileController</td><td>/HistoryFile</td><td>HistoryFile/Index</td><td>—</td></tr>
+                    <tr><td>SanderModuleItemController</td><td>—</td><td>_SanderModuleItemPicker</td><td>無獨立列表頁</td></tr>
+                    <tr><td>SysSettingController</td><td>/SysSetting</td><td>SysSetting/Index</td><td>—</td></tr>
+                    <tr><td>SysFuncClassController</td><td>/SysFuncClass</td><td>待實作</td><td>API 已就緒</td></tr>
+                    <tr><td>CycleSettingsController</td><td>/CycleSettings</td><td>CycleSettings/Index</td><td>—</td></tr>
+                    <tr><td>ESDbTransferMapping</td><td>/ESDbTransferMapping</td><td>Index、DetailView</td><td>—</td></tr>
+                    <tr><td>TableExcelController</td><td>/TableExcel</td><td>TableExcel/Index</td><td>—</td></tr>
+                    <tr><td>AIChatController</td><td>全站 Layout</td><td>_Layout 聊天</td><td>—</td></tr>
+                    <tr><td>TestExternalAPI</td><td>—</td><td>—</td><td>僅 API 測試</td></tr>
+                </tbody>
+            </table>
+            <h3>其他前端頁（API 不在本目錄 15 檔）</h3>
+            <ul>
+                <li><code>/ControlLog</code> → <code>api/ControlLog</code></li>
+                <li><code>/ESDbTransfer</code> → <code>api/ESDbTransfer</code></li>
+                <li><code>/SysRole</code> → <code>api/SysRole</code>、<code>api/SysFunc</code></li>
+                <li><code>frontend/Controllers/UI/*</code> — Velzon 範本，不對應上表業務 API</li>
+            </ul>
+        </section>
+
+        <section class="card" id="json">
+            <h2>常見 JSON 回應（ApiBaseController）</h2>
+            <table>
+                <thead><tr><th>方法</th><th>結構</th><th>情境</th></tr></thead>
+                <tbody>
+                    <tr><td>JsonSuccess(data)</td><td><code>{ Success: true, Data }</code></td><td>查詢/操作成功</td></tr>
+                    <tr><td>JsonOK()</td><td><code>{ Success: true }</code></td><td>寫入成功</td></tr>
+                    <tr><td>JsonValidFail(msg)</td><td><code>{ Success: false, Message }</code></td><td>業務錯誤</td></tr>
+                    <tr><td>GetMsg("System_Error")</td><td>字串</td><td>catch 系統錯誤</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>檔案清單速查</h2>
+            <table>
+                <thead><tr><th>檔案</th><th>類型</th><th>一句話</th></tr></thead>
+                <tbody>
+                    <tr><td>ApiBaseController.cs</td><td>基底</td><td>JSON 與分頁共用</td></tr>
+                    <tr><td>BaseProjectController.cs</td><td>基底</td><td>JWT、日誌、BL、多語系</td></tr>
+                    <tr><td>AuthController.cs</td><td>API</td><td>登入/登出</td></tr>
+                    <tr><td>QuotationResultController.cs</td><td>API</td><td>定時查價與快查</td></tr>
+                    <tr><td>EsFileTransferUploadController.cs</td><td>API</td><td>轉入檔案 CRUD</td></tr>
+                    <tr><td>FilepondEsFileTransferUploadController.cs</td><td>API</td><td>FilePond 協定</td></tr>
+                    <tr><td>HistoryFileController.cs</td><td>API</td><td>歷史檔案</td></tr>
+                    <tr><td>SanderModuleItemController.cs</td><td>API</td><td>採購型號</td></tr>
+                    <tr><td>SysSettingController.cs</td><td>API</td><td>系統參數</td></tr>
+                    <tr><td>SysFuncClassController.cs</td><td>API</td><td>功能類別</td></tr>
+                    <tr><td>CycleSettingsController.cs</td><td>API</td><td>排程週期</td></tr>
+                    <tr><td>ESDbTransferMappingController.cs</td><td>API</td><td>DB 轉檔對應</td></tr>
+                    <tr><td>TableExcelController.cs</td><td>API</td><td>Excel 匯入規則</td></tr>
+                    <tr><td>AIChatController.cs</td><td>API</td><td>AI 對話</td></tr>
+                    <tr><td>TestExternalAPIController.cs</td><td>API</td><td>外部查價測試</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            詳細 Action 的 XML 註解（功能說明、參考功能、輸入/輸出、訊息條件）請見各 <code>.cs</code> 原始檔或
+            <code>ControllersOverview.md</code>。本 HTML 與該 MD 同步整理自專案現況。
+        </footer>
+    </div>
+</body>
+</html>
