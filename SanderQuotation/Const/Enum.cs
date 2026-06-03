@@ -507,8 +507,6 @@ namespace Const
             PriceSearch = 1,
             [Description("內部料品表 AI 解析")]
             ExtractKeyword = 2,
-            [Description("查料")]
-            PartSearch = 3,
         }
 
         public enum ParameterTypeEnum
