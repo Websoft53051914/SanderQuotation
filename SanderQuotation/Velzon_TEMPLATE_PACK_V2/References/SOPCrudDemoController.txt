@@ -1,0 +1,12 @@
+using Microsoft.AspNetCore.Mvc;
+
+namespace EIP.frontend.Controllers.SOPCrudDemo
+{
+    public class SOPCrudDemoController : BaseProjectController
+    {
+        public IActionResult Index()
+        {
+            return View();
+        }
+    }
+}

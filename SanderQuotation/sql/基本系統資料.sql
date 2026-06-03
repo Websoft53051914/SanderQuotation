@@ -44,7 +44,1015 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Table Schema
+-- public.ailog definition
 
+-- Drop table
+
+-- DROP TABLE public.ailog;
+
+CREATE TABLE public.ailog (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	logtime timestamp NOT NULL,
+	account varchar(100) NULL,
+	"role" int4 NOT NULL,
+	"content" text NULL,
+	"sql" text NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	"function" varchar(100) NULL,
+	CONSTRAINT pk_ailog PRIMARY KEY (id)
+);
+
+
+-- public.bomfilecontent definition
+
+-- Drop table
+
+-- DROP TABLE public.bomfilecontent;
+
+CREATE TABLE public.bomfilecontent (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	componentpart text NULL,
+	description text NULL,
+	qty int4 NULL,
+	manufacturer text NULL,
+	manufacturerpartnumber text NULL,
+	displaypart text NULL,
+	uploadid uuid NOT NULL,
+	createdat timestamp DEFAULT now() NOT NULL,
+	updatedat timestamp DEFAULT now() NOT NULL
+);
+
+-- Table Triggers
+
+create trigger trg_bomfilecontent_bu_updatedat before
+update
+    on
+    public.bomfilecontent for each row execute function trg_update_column_updatedat();
+
+
+-- public.embeddedhistoryfile definition
+
+-- Drop table
+
+-- DROP TABLE public.embeddedhistoryfile;
+
+CREATE TABLE public.embeddedhistoryfile (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	embedding public.vector NULL,
+	status int4 NULL,
+	historyfileid uuid NOT NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT embeddedhistoryfile_pk PRIMARY KEY (id)
+);
+
+
+-- public.esdbtransfer definition
+
+-- Drop table
+
+-- DROP TABLE public.esdbtransfer;
+
+CREATE TABLE public.esdbtransfer (
+	transfercode varchar(100) NOT NULL,
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	"type" varchar(50) NULL,
+	sortno varchar(50) NULL,
+	priority varchar(50) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	transfername varchar(200) NULL,
+	dbtype varchar(50) NULL,
+	dbhost varchar(200) NULL,
+	dbport varchar(20) NULL,
+	dbname varchar(200) NULL,
+	dbuser varchar(100) NULL,
+	dbpassword varchar(200) NULL,
+	description text NULL,
+	CONSTRAINT esdbtransfer_pk PRIMARY KEY (id)
+);
+
+
+-- public.esdbtransfermapping definition
+
+-- Drop table
+
+-- DROP TABLE public.esdbtransfermapping;
+
+CREATE TABLE public.esdbtransfermapping (
+	transfermappingcode varchar(100) NOT NULL,
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	"type" varchar(50) NULL,
+	sortno varchar(50) NULL,
+	priority varchar(50) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	srcdbtransfercode varchar(100) NOT NULL,
+	srctablename varchar(200) NOT NULL,
+	dstdbtransfercode varchar(100) NOT NULL,
+	dsttablename varchar(200) NOT NULL,
+	description text NULL,
+	filtercondition text NULL,
+	filtermode varchar(50) NULL,
+	CONSTRAINT esdbtransfermapping_pk PRIMARY KEY (id)
+);
+
+
+-- public.esdbtransfermappingcolumn definition
+
+-- Drop table
+
+-- DROP TABLE public.esdbtransfermappingcolumn;
+
+CREATE TABLE public.esdbtransfermappingcolumn (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	"type" varchar(50) NULL,
+	sortno varchar(50) NULL,
+	priority varchar(50) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	transfermappingcode varchar(100) NULL,
+	srccolumnname varchar(200) NOT NULL,
+	dstcolumnname varchar(200) NOT NULL,
+	isencrypt bool NULL,
+	isprimarykey bool NULL,
+	CONSTRAINT pk_esdbtransfermappingcolumn PRIMARY KEY (id)
+);
+
+
+-- public.esfiletransfermapping definition
+
+-- Drop table
+
+-- DROP TABLE public.esfiletransfermapping;
+
+CREATE TABLE public.esfiletransfermapping (
+	transfermappingcode varchar(50) NOT NULL,
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	"type" varchar(50) NULL,
+	sortno varchar(50) NULL,
+	priority varchar(50) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	examplefilename varchar(255) NULL,
+	examplefiletype int4 NOT NULL,
+	srcnasfilepath varchar(500) NULL,
+	description text NULL,
+	filename varchar(100) NULL,
+	CONSTRAINT esfiletransfermapping_pk PRIMARY KEY (id)
+);
+
+
+-- public.esfiletransfermappingcolumn definition
+
+-- Drop table
+
+-- DROP TABLE public.esfiletransfermappingcolumn;
+
+CREATE TABLE public.esfiletransfermappingcolumn (
+	esfiletransfermappingcolumnid varchar(50) NOT NULL,
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	"type" varchar(50) NULL,
+	sortno varchar(50) NULL,
+	priority varchar(50) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	transfermappingcode varchar(50) NOT NULL,
+	srcsheetname varchar(50) NULL,
+	srcsheetindex int4 NOT NULL,
+	headerrowindex int4 NOT NULL,
+	targettablename varchar(100) NULL,
+	srcfilecolumnname varchar(100) NULL,
+	targettablecolumnname varchar(100) NULL,
+	dbtransfermappingcode varchar(100) NULL,
+	filtercondition text NULL,
+	filtermode varchar(50) NULL,
+	defaultvalue text NULL,
+	isencrypt bool NULL,
+	isprimarykey bool NULL,
+	targettablenamecomment varchar(100) NULL,
+	CONSTRAINT esfiletransfermappingcolumn_pk PRIMARY KEY (id)
+);
+
+
+-- public.esfiletransferupload definition
+
+-- Drop table
+
+-- DROP TABLE public.esfiletransferupload;
+
+CREATE TABLE public.esfiletransferupload (
+	id uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	uploadid uuid NOT NULL,
+	filename varchar(1000) NOT NULL,
+	quotationqty int4 NULL,
+	customercode varchar(1000) NULL,
+	prodno varchar(1000) NULL,
+	processstatus int4 NULL,
+	esfiletransfermappingid uuid NULL,
+	manualcustomername varchar(50) NULL,
+	CONSTRAINT esfiletransferupload_pk PRIMARY KEY (id)
+);
+
+
+-- public.esschedulecycle definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecycle;
+
+CREATE TABLE public.esschedulecycle (
+	schedulecyclecode varchar(50) NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	cyclename varchar(100) NOT NULL,
+	description varchar(500) NULL,
+	cycletype varchar(20) NOT NULL,
+	cronexpression varchar(100) NOT NULL,
+	secondinterval int4 NULL,
+	minuteinterval int4 NULL,
+	minuteatsecond int4 NULL,
+	hourinterval int4 NULL,
+	houratminute int4 NULL,
+	houratsecond int4 NULL,
+	dayinterval int4 NULL,
+	dayattime bpchar(5) NULL,
+	weekattime bpchar(5) NULL,
+	monthattime bpchar(5) NULL,
+	lastrunat timestamp NULL,
+	lastrunstatus varchar(20) NULL,
+	lastrunmessage varchar(1000) NULL,
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	CONSTRAINT esschedulecycle_pk PRIMARY KEY (id),
+	CONSTRAINT esschedulecycle_unique UNIQUE (schedulecyclecode)
+);
+
+
+-- public.historyfile definition
+
+-- Drop table
+
+-- DROP TABLE public.historyfile;
+
+CREATE TABLE public.historyfile (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	filename varchar(100) NOT NULL,
+	uploadid varchar(36) NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	filesummary text NULL,
+	CONSTRAINT pk_historyfile PRIMARY KEY (id)
+);
+
+
+-- public.reportitemcustomer definition
+
+-- Drop table
+
+-- DROP TABLE public.reportitemcustomer;
+
+CREATE TABLE public.reportitemcustomer (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	variantcode varchar NULL,
+	customercode varchar NULL,
+	customername varchar NULL,
+	createdat timestamp DEFAULT now() NOT NULL,
+	updatedat timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT report_item_customer_pkey PRIMARY KEY (id)
+);
+
+-- Table Triggers
+
+create trigger trg_reportitemcustomer_bu_updatedat before
+update
+    on
+    public.reportitemcustomer for each row execute function trg_update_column_updatedat();
+
+
+-- public.sandermoduleitem definition
+
+-- Drop table
+
+-- DROP TABLE public.sandermoduleitem;
+
+CREATE TABLE public.sandermoduleitem (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"no" varchar(20) NULL,
+	description varchar(50) NULL,
+	description2 varchar(50) NULL,
+	longdesc varchar(250) NULL,
+	longdesc2 varchar(250) NULL,
+	createdat timestamp DEFAULT now() NOT NULL,
+	updatedat timestamp DEFAULT now() NOT NULL,
+	itemcategorycode varchar(10) NULL,
+	flagneedextractkeyword int4 DEFAULT 1 NOT NULL,
+	CONSTRAINT sandermodule_item_pk PRIMARY KEY (id)
+);
+
+-- Table Triggers
+
+create trigger trg_sandermoduleitem_bu_updatedat before
+update
+    on
+    public.sandermoduleitem for each row execute function trg_update_column_updatedat();
+create trigger trg_sandermoduleitem_bu_isupdate before
+update
+    on
+    public.sandermoduleitem for each row execute function trg_sandermoduleitem_check_update();
+
+
+-- public.sandermoduleitemvariant definition
+
+-- Drop table
+
+-- DROP TABLE public.sandermoduleitemvariant;
+
+CREATE TABLE public.sandermoduleitemvariant (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	itemno varchar(20) NULL,
+	code varchar(10) NULL,
+	description varchar(50) NULL,
+	description2 varchar(50) NULL,
+	createdat timestamp DEFAULT now() NOT NULL,
+	updatedat timestamp DEFAULT now() NOT NULL,
+	flagneedextractkeyword int4 DEFAULT 1 NOT NULL,
+	customerapprovedpartcsv text NULL,
+	CONSTRAINT sandermoduleitemvariant_pkey PRIMARY KEY (id)
+);
+
+-- Table Triggers
+
+create trigger trg_sandermoduleitemvariant_bu_updatedat before
+update
+    on
+    public.sandermoduleitemvariant for each row execute function trg_update_column_updatedat();
+create trigger trg_sandermoduleitemvariant_bu_check_update before
+update
+    on
+    public.sandermoduleitemvariant for each row execute function trg_sandermoduleitemvariant_check_update();
+
+
+-- public.sandermodulepurchaseline definition
+
+-- Drop table
+
+-- DROP TABLE public.sandermodulepurchaseline;
+
+CREATE TABLE public.sandermodulepurchaseline (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	documentdate timestamp NULL,
+	"no" varchar NULL,
+	buyfromvendorno varchar NULL,
+	buyfromvendorname varchar NULL,
+	unitcost numeric NULL,
+	unitcostlcy numeric NULL,
+	quantity int4 NULL,
+	currencycode varchar NULL,
+	description2 varchar NULL,
+	createdat timestamp DEFAULT now() NOT NULL,
+	updatedat timestamp DEFAULT now() NOT NULL
+);
+
+-- Table Triggers
+
+create trigger trg_sandermodulepurchaseline_bu_updatedat before
+update
+    on
+    public.sandermodulepurchaseline for each row execute function trg_update_column_updatedat();
+
+
+-- public.tb_account definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_account;
+
+CREATE TABLE public.tb_account (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	memberaccount varchar(100) NOT NULL,
+	accountname varchar(100) NOT NULL,
+	permissionid int8 NULL,
+	lastlogintime timestamp NULL,
+	memberpwd varchar(100) NOT NULL,
+	lastmemberpwdtime timestamp NULL,
+	accountemail varchar(100) NULL,
+	resetpwdcode varchar(100) NULL,
+	lastforgetpwdtime timestamp NULL,
+	logins int4 NOT NULL,
+	locktime timestamp NULL,
+	logouttime timestamp NULL,
+	status int4 NULL,
+	lineuserid varchar(100) NULL,
+	"type" varchar(100) NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	accountstatus bpchar(1) NOT NULL,
+	CONSTRAINT pk_tb_account PRIMARY KEY (id)
+);
+
+
+-- public.tb_accountpwdlog definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_accountpwdlog;
+
+CREATE TABLE public.tb_accountpwdlog (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	accountid uuid NOT NULL,
+	memberpwd varchar(100) NOT NULL,
+	createtime timestamp NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_accountpwdlog PRIMARY KEY (id)
+);
+
+
+-- public.tb_accountsysrole definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_accountsysrole;
+
+CREATE TABLE public.tb_accountsysrole (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	accountid uuid NOT NULL,
+	roleid uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_accountsysrole PRIMARY KEY (id)
+);
+
+
+-- public.tb_bomfiledecisionlog definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_bomfiledecisionlog;
+
+CREATE TABLE public.tb_bomfiledecisionlog (
+	id uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	bomfilecontentid uuid NOT NULL,
+	stage int4 NULL,
+	step int4 NULL,
+	message text NULL,
+	CONSTRAINT tb_bomfiledecisionlog_pk PRIMARY KEY (id)
+);
+
+
+-- public.tb_bomfilequotation definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_bomfilequotation;
+
+CREATE TABLE public.tb_bomfilequotation (
+	id uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	"no" varchar(100) NULL,
+	internalpurchaseorderdate timestamp NULL,
+	internalunitpriceoriginalcurrency numeric(18, 6) NULL,
+	internalunitpricetwd numeric(18, 6) NULL,
+	internalquantity int4 NULL,
+	internalcurrency varchar(50) NULL,
+	internalsuppliername varchar(100) NULL,
+	externalquotationdate timestamp NULL,
+	externalunitpriceoriginalcurrency numeric(18, 6) NULL,
+	externalunitpricetwd numeric(18, 6) NULL,
+	externalmoq int4 NULL,
+	externalcurrency varchar(50) NULL,
+	externalsuppliername varchar(100) NULL,
+	bomfilecontentid uuid NOT NULL,
+	isrecommendedno bool DEFAULT false NOT NULL,
+	internallowminprice numeric(18, 6) NULL,
+	internallowmaxprice numeric(18, 6) NULL,
+	internalhighminprice numeric(18, 6) NULL,
+	internalhighmaxprice numeric(18, 6) NULL,
+	isfilterbycustomerapprovedpart bool DEFAULT false NOT NULL,
+	customerapprovedpartcsv text NULL,
+	matchcategory int4 NULL,
+	matchfield varchar(100) NULL,
+	internalsuppliercode varchar(50) NULL,
+	internalitemdescription2 varchar(255) NULL,
+	externalstock int4 NULL,
+	externalscenario int4 NULL,
+	internalquotationdate timestamp NULL,
+	CONSTRAINT tb_bomfilequotation_pk PRIMARY KEY (id)
+);
+
+
+-- public.tb_bomfilequotationexternalhistory definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_bomfilequotationexternalhistory;
+
+CREATE TABLE public.tb_bomfilequotationexternalhistory (
+	id uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	quotationdate timestamp NULL,
+	unitpriceoriginalcurrency numeric(18, 6) NULL,
+	unitpricetwd numeric(18, 6) NULL,
+	moq int4 NULL,
+	currency varchar(50) NULL,
+	suppliername varchar(100) NULL,
+	stock int4 NULL,
+	manufacturerpartnumber text NULL,
+	CONSTRAINT tb_bomfilequotationexternalhistory_pk PRIMARY KEY (id)
+);
+
+
+-- public.tb_bomfilequotationother definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_bomfilequotationother;
+
+CREATE TABLE public.tb_bomfilequotationother (
+	id uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	quotationdate timestamp NULL,
+	unitpriceoriginalcurrency numeric(18, 6) NULL,
+	unitpricetwd numeric(18, 6) NULL,
+	moq int4 NULL,
+	currency varchar(50) NULL,
+	suppliername varchar(100) NULL,
+	bomfilecontentid uuid NOT NULL,
+	sourcetype int4 NOT NULL,
+	CONSTRAINT tb_bomfilequotationother_pk PRIMARY KEY (id)
+);
+
+
+-- public.tb_controllog definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_controllog;
+
+CREATE TABLE public.tb_controllog (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	logtime timestamp NOT NULL,
+	ip varchar(100) NOT NULL,
+	account varchar(100) NULL,
+	"name" varchar(100) NULL,
+	"exception" text NULL,
+	status int4 NULL,
+	controllername varchar(100) NOT NULL,
+	actionname varchar(100) NOT NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	dataid uuid NULL,
+	"action" int4 NULL,
+	CONSTRAINT pk_tb_controllog PRIMARY KEY (id)
+);
+
+
+-- public.tb_file definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_file;
+
+CREATE TABLE public.tb_file (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	filename varchar(100) NOT NULL,
+	fileformat varchar(100) NOT NULL,
+	filesize int8 NULL,
+	filecontent bytea NULL,
+	creator uuid NOT NULL,
+	createtime timestamp NOT NULL,
+	updator uuid NOT NULL,
+	updatetime timestamp NOT NULL,
+	"type" int4 NOT NULL,
+	filepath varchar(500) NULL,
+	physicalfilepath varchar(500) NULL,
+	filetitle varchar(100) NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_file PRIMARY KEY (id)
+);
+
+
+-- public.tb_sandermoduleitemkeyword definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sandermoduleitemkeyword;
+
+CREATE TABLE public.tb_sandermoduleitemkeyword (
+	id uuid NOT NULL,
+	"no" varchar(100) NULL,
+	columnname varchar(100) NULL,
+	keyword text NULL,
+	keywordembedding public.vector NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT tb_sander_module_item_keyword_pk PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysfunc definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysfunc;
+
+CREATE TABLE public.tb_sysfunc (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(100) NOT NULL,
+	funcclassid uuid NOT NULL,
+	url varchar(100) NOT NULL,
+	"sequence" varchar(100) NOT NULL,
+	status int4 NULL,
+	memo varchar(1000) NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysfunc PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysfuncclass definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysfuncclass;
+
+CREATE TABLE public.tb_sysfuncclass (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	classname varchar(100) NOT NULL,
+	status int4 NULL,
+	memo varchar(1000) NULL,
+	"sequence" int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysfuncclass PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysfuncdetail definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysfuncdetail;
+
+CREATE TABLE public.tb_sysfuncdetail (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(100) NULL,
+	funcid uuid NOT NULL,
+	"sequence" varchar(100) NOT NULL,
+	permissioncode varchar(100) NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysfuncdetail PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysparams definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysparams;
+
+CREATE TABLE public.tb_sysparams (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	status int4 NULL,
+	creator uuid NOT NULL,
+	createtime timestamp NOT NULL,
+	updater uuid NOT NULL,
+	updatetime timestamp NOT NULL,
+	"type" int4 NOT NULL,
+	value varchar(100) NULL,
+	"text" varchar(100) NULL,
+	"group" varchar(100) NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysparams PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysrole definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysrole;
+
+CREATE TABLE public.tb_sysrole (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	rolename varchar(100) NOT NULL,
+	status int4 NULL,
+	memo varchar(1000) NULL,
+	linesetting int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysrole PRIMARY KEY (id)
+);
+
+
+-- public.tb_sysrolefuncdetail definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_sysrolefuncdetail;
+
+CREATE TABLE public.tb_sysrolefuncdetail (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	roleid uuid NOT NULL,
+	funcdetailid uuid NOT NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_sysrolefuncdetail PRIMARY KEY (id)
+);
+
+
+-- public.tb_syssetting definition
+
+-- Drop table
+
+-- DROP TABLE public.tb_syssetting;
+
+CREATE TABLE public.tb_syssetting (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	param varchar(100) NOT NULL,
+	value varchar(100) NOT NULL,
+	status int4 NULL,
+	"type" varchar(100) NOT NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp NULL,
+	updatedat timestamp NULL,
+	CONSTRAINT pk_tb_syssetting PRIMARY KEY (id)
+);
+
+
+-- public.esschedulecycledbtransfer definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecycledbtransfer;
+
+CREATE TABLE public.esschedulecycledbtransfer (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	transfercode varchar(50) NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecycledbtransfer PRIMARY KEY (id),
+	CONSTRAINT esschedulecycledbtransfer_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecyclefiletransfer definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecyclefiletransfer;
+
+CREATE TABLE public.esschedulecyclefiletransfer (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	transfercode varchar(50) NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecycleexcel PRIMARY KEY (id),
+	CONSTRAINT esschedulecyclefiletransfer_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecyclelog definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecyclelog;
+
+CREATE TABLE public.esschedulecyclelog (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	runat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	durationms int4 NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	triggertype varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecyclelog PRIMARY KEY (id),
+	CONSTRAINT esschedulecyclelog_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecyclelogdetail definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecyclelogdetail;
+
+CREATE TABLE public.esschedulecyclelogdetail (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclelogid uuid NOT NULL,
+	datacount int4 NOT NULL,
+	errorcount int4 DEFAULT 0 NOT NULL,
+	dbtransfercode varchar(100) NULL,
+	filetransfercode varchar(100) NULL,
+	runat timestamp NULL,
+	durationms int4 NULL,
+	errormessage varchar(500) NULL,
+	jobstatus varchar(100) NULL,
+	dbtransfercsvcode varchar(100) NULL,
+	status int4 NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	transfercode varchar NULL,
+	otheractiontype int4 NULL,
+	CONSTRAINT esschedulecyclelogdetail_pk PRIMARY KEY (id),
+	CONSTRAINT esschedulecyclelogdetail_esschedulecyclelog_fk FOREIGN KEY (schedulecyclelogid) REFERENCES public.esschedulecyclelog(id) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecyclemonthday definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecyclemonthday;
+
+CREATE TABLE public.esschedulecyclemonthday (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	monthday int2 NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecyclemonthday PRIMARY KEY (id),
+	CONSTRAINT esschedulecyclemonthday_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecycleothertransfer definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecycleothertransfer;
+
+CREATE TABLE public.esschedulecycleothertransfer (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	actiontype int4 NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecycleothertransfer PRIMARY KEY (id),
+	CONSTRAINT esschedulecycleothertransfer_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.esschedulecycleweekday definition
+
+-- Drop table
+
+-- DROP TABLE public.esschedulecycleweekday;
+
+CREATE TABLE public.esschedulecycleweekday (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	schedulecyclecode varchar(50) NOT NULL,
+	weekday int2 NOT NULL,
+	"type" varchar(100) NULL,
+	sortno varchar(5) DEFAULT 'C0000'::character varying NULL,
+	priority bpchar(1) DEFAULT 'C'::bpchar NULL,
+	createdat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updatedat timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	createdby varchar(100) NULL,
+	updatedby varchar(100) NULL,
+	status int4 NULL,
+	CONSTRAINT pk_esschedulecycleweekday PRIMARY KEY (id),
+	CONSTRAINT esschedulecycleweekday_esschedulecycle_fk FOREIGN KEY (schedulecyclecode) REFERENCES public.esschedulecycle(schedulecyclecode) ON DELETE CASCADE
+);
+
+
+-- public.estransfererrorlog definition
+
+-- Drop table
+
+-- DROP TABLE public.estransfererrorlog;
+
+CREATE TABLE public.estransfererrorlog (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"exception" text NULL,
+	"sql" text NULL,
+	schedulecyclelogdetailid uuid NOT NULL,
+	CONSTRAINT estransfererrorlog_pk PRIMARY KEY (id),
+	CONSTRAINT estransfererrorlog_esschedulecyclelogdetail_fk FOREIGN KEY (schedulecyclelogdetailid) REFERENCES public.esschedulecyclelogdetail(id) ON DELETE CASCADE
+);
 -- 
 
 -- Data

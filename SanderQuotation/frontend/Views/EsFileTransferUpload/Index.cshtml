@@ -151,6 +151,33 @@
                     <div class="form-text text-muted">支援格式：xlsx、xls；可一次選取多個檔案。</div>
                 </div>
 
+                <!-- 預設值設定 -->
+                <div class="mb-3">
+                    <hr class="my-2" />
+                    <h6 class="mb-2 fw-semibold">
+                        <i class="ri-magic-line me-1"></i>預設值（上傳後自動套用）
+                    </h6>
+                    <div class="row g-2">
+                        <div class="col-lg-2 col-md-3">
+                            <label class="form-label mb-1">匯入設定規則</label>
+                            <select id="defaultImportRule" class="form-select"></select>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label mb-1">客戶名稱（或手動輸入）</label>
+                            <div class="d-flex gap-2">
+                                <div class="w-50">
+                                    <select id="defaultCustomerCode" class="form-select mb-1"></select>
+                                </div>
+                                <input type="text" id="defaultManualCustomerName" class="form-control w-50" placeholder="或手動輸入客戶名稱" />
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="form-label mb-1">報價數量(MOQ)</label>
+                            <input type="number" id="defaultQuotationQty" class="form-control websoft-positive-int" min="1" value="1" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 設定表格（有已上傳檔案才顯示） -->
                 <div id="uploadConfigSection" style="display:none;">
                     <hr class="my-3" />
@@ -162,10 +189,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="width:50px;"></th>
-                                    <th style="min-width:200px;">檔案名稱</th>
-                                    <th style="min-width:200px;" class="required">匯入設定規則</th>
-                                    <th style="width:240px;" class="required">客戶（代碼或手動輸入名稱）</th>
-                                    <th style="width:100px;">報價數量(MOQ)</th>
+                                    <th style="min-width:150px;">檔案名稱</th>
+                                    <th style="width:180px;" class="required">匯入設定規則</th>
+                                    <th style="width:350px;" class="required">客戶名稱（或手動輸入）</th>
+                                    <th style="width:150px;">報價數量(MOQ)</th>
                                 </tr>
                             </thead>
                             <tbody id="uploadConfigBody"></tbody>
@@ -240,6 +267,9 @@
         // ── 選項快取 ───────────────────────────────────────────────────────────
         var optionData = { TransferMappings: [], Customers: [] };
 
+        // ── 本地刪除的 FilePond 上傳 ID（processfile 後移除，不 revert） ─────────
+        var localRemovedUploadIds = {};
+
         // ── 查詢狀態（分頁 / 排序 / 篩選） ────────────────────────────────────
         var queryState = { page: 1, pageSize: 20, total: 0, sortField: EftuM.CreatedAtText, sortDir: 'desc', keyword: '' };
 
@@ -249,6 +279,10 @@
         // ── DOM ───────────────────────────────────────────────────────────────
         var dom = {
             uploadModal: $('#@(ui.ModalU.Id)'),
+            selDefaultImportRule: $('#defaultImportRule'),
+            selDefaultCustomerCode: $('#defaultCustomerCode'),
+            inputDefaultManualCustomerName: $('#defaultManualCustomerName'),
+            inputDefaultQuotationQty: $('#defaultQuotationQty'),
         };
 
         // ── 工具函式 ───────────────────────────────────────────────────────────
@@ -314,6 +348,8 @@
                     if (!res.Success) return;
                     optionData.TransferMappings = res.Data.TransferMappings || [];
                     optionData.Customers = res.Data.Customers || [];
+                    initMappingSelect2(dom.selDefaultImportRule);
+                    initCustomerSelect2(dom.selDefaultCustomerCode);
                 },
             });
         }
@@ -442,16 +478,22 @@
     <script>
         /** 初始化上傳 Modal：掛載 FilePond 事件、btnSaveUpload、Modal 開關 */
         function initUploadModal() {
-            // FilePond processfile：有檔案上傳完成 → 同步設定表格列
+            // FilePond processfile：有檔案上傳完成 → 同步設定表格列，並本地移除（不 revert）
             pond.on('processfile', function (err, file) {
                 if (err) return;
                 syncUploadConfigRow(file.serverId, file.filename);
                 refreshUploadConfigSection();
                 refreshBtnSaveUpload();
+                localRemovedUploadIds[file.serverId] = true;
+                pond.removeFile(file.id, { revert: false });
             });
 
-            // FilePond removefile：移除已上傳列
+            // FilePond removefile：本地刪除的略過，其餘移除設定列
             pond.on('removefile', function (err, file) {
+                if (localRemovedUploadIds[file.serverId]) {
+                    delete localRemovedUploadIds[file.serverId];
+                    return;
+                }
                 $('#uploadConfigBody').find('[data-upload-id="' + file.serverId + '"]').remove();
                 refreshUploadConfigSection();
                 refreshBtnSaveUpload();
@@ -465,6 +507,16 @@
                 pond.removeFiles({ revert: false });
                 $('#uploadConfigBody').empty();
                 $('#uploadConfigSection').hide();
+            });
+
+            // 預設值：客戶代碼 ↔ 手動輸入互斥
+            dom.selDefaultCustomerCode.on('change', function () {
+                if ($(this).val()) dom.inputDefaultManualCustomerName.val('');
+            });
+            dom.inputDefaultManualCustomerName.on('input', function () {
+                if ($(this).val() && dom.selDefaultCustomerCode.val()) {
+                    dom.selDefaultCustomerCode.val(null).trigger('change');
+                }
             });
 
             // 儲存按鈕
@@ -514,6 +566,26 @@
             });
 
             $tbody.append($row);
+            applyUploadDefaults($row);
+        }
+
+        /** 套用預設值至上傳設定列 */
+        function applyUploadDefaults($row) {
+            var defaultRule = dom.selDefaultImportRule.val();
+            if (defaultRule) {
+                $row.find('.up-import-rule').val(defaultRule).trigger('change');
+            }
+            var defaultCustomer = dom.selDefaultCustomerCode.val();
+            if (defaultCustomer) {
+                $row.find('.up-customer-code').val(defaultCustomer).trigger('change');
+            } else {
+                var defaultManualName = dom.inputDefaultManualCustomerName.val().trim();
+                if (defaultManualName) {
+                    $row.find('.up-manual-customer-name').val(defaultManualName);
+                }
+            }
+            var defaultQty = parseInt(dom.inputDefaultQuotationQty.val()) || 1;
+            $row.find('.up-quotation-qty').val(defaultQty);
         }
 
         /** 顯示/隱藏設定表格區塊 */
@@ -533,10 +605,11 @@
                         <td class="small fw-semibold">${escapeHtml(fileName)}</td>
                         <td><select class="form-select up-import-rule" required></select></td>
                         <td>
-                            <div class="cell-bom-extra">
-                                <select class="form-select up-customer-code mb-1"></select>
-                                <div class="text-center text-muted small py-1">或</div>
-                                <input type="text" class="form-control up-manual-customer-name" placeholder="手動輸入客戶名稱" />
+                            <div class="d-flex gap-2 cell-bom-extra">
+                                <div class="w-50">
+                                    <select class="form-select up-customer-code"></select>
+                                </div>
+                                <input type="text" class="form-control w-50 up-manual-customer-name" placeholder="或手動輸入客戶名稱" />
                             </div>
                         </td>
                         <td><div class="cell-bom-extra"><input type="number" class="form-control up-quotation-qty websoft-positive-int" min="1" value="1" /></div></td>
@@ -548,7 +621,7 @@
             var data = [{ id: '', text: '請選擇' }].concat(
                 optionData.Customers.map(function (c) { return { id: c.Value, text: c.Text }; })
             );
-            $sel.select2({ width: '100%', data: data, dropdownParent: dom.uploadModal });
+            $sel.select2({ width: '100%', data: data, allowClear: true, placeholder: '請選擇', dropdownParent: dom.uploadModal });
             $sel.on('change', function () {
                 if ($(this).val()) {
                     $(this).closest('tr').find('.up-manual-customer-name').val('');
@@ -570,7 +643,7 @@
             var data = [{ id: '', text: '請選擇' }].concat(
                 optionData.TransferMappings.map(function (m) { return { id: m.Value, text: m.Text }; })
             );
-            $sel.select2({ width: '100%', data: data, dropdownParent: dom.uploadModal });
+            $sel.select2({ width: '100%', allowClear: true, data: data, dropdownParent: dom.uploadModal });
             $sel.on('change', function () {
                 var val = $(this).val() || '';
                 var mapping = optionData.TransferMappings.find(function (m) { return m.Value === val; });
