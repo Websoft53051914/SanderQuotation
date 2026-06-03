@@ -109,9 +109,10 @@ namespace backend.Controllers
     {
         #region -- 查詢 --
 
-        /// <summary>
-        /// 分頁取得轉入檔案清單
-        /// </summary>
+        /// <summary>功能說明：分頁取得轉入檔案（BOM 上傳）清單。</summary>
+        /// <param name="filter">輸入參數：分頁、KeywordLike（EsFileTransferUploadSearchVM）。</param>
+        /// <returns>輸出參數：JsonSuccess({ Data, Total, Page, PageSize })。</returns>
+        /// <remarks>參考功能名稱與用途：GetBlEsFileTransferUpload().GetPageList。訊息內容及生成條件：成功 → 清單；例外 → System_Error。</remarks>
         [CustomAuthorization(FuncID.ESDbTransferMapping_View)]
         [HttpGet("GetPageList")]
         public ActionResult GetPageList([FromQuery] EsFileTransferUploadSearchVM filter)
@@ -191,9 +192,10 @@ namespace backend.Controllers
 
         #region -- 編輯 --
 
-        /// <summary>
-        /// 儲存編輯
-        /// </summary>
+        /// <summary>功能說明：儲存轉入檔案編輯（主要更新客戶代碼）。</summary>
+        /// <param name="req">輸入參數：Id、CustomerCode 等（EsFileTransferUploadVM）。</param>
+        /// <returns>輸出參數：JsonOK「儲存成功。」；Id 無效或資料不存在時 JsonValidFail。</returns>
+        /// <remarks>參考功能名稱與用途：GetOneInfo、DoUpdateEdit。訊息內容及生成條件：dm==null →「資料不存在」；成功 → JsonOK；例外 → System_Error。</remarks>
         [CustomAuthorization(FuncID.EsFileTransferUpload_Edit)]
         [HttpPost("SaveEdit")]
         public ActionResult SaveEdit([FromBody] EsFileTransferUploadVM req)
@@ -222,9 +224,10 @@ namespace backend.Controllers
 
         #region -- 刪除 --
 
-        /// <summary>
-        /// 依 Id 刪除一筆轉入檔案紀錄（邏輯刪除）及所有關聯資料
-        /// </summary>
+        /// <summary>功能說明：批次刪除轉入檔案（邏輯刪除）及關聯資料。</summary>
+        /// <param name="idList">輸入參數：Guid 清單。</param>
+        /// <returns>輸出參數：JsonOK「刪除成功」；idList 空時 JsonValidFail。</returns>
+        /// <remarks>參考功能名稱與用途：DoDelete。訊息內容及生成條件：Count==0 →「請至少選擇一筆資料進行刪除。」；成功 →「刪除成功」。</remarks>
         [CustomAuthorization(FuncID.EsFileTransferUpload_Delete)]
         [HttpPost("Delete")]
         public ActionResult Delete([FromBody] List<Guid> idList)

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Services/QuotationResult — 三個 .cs 檔功能說明</title>
+    <style>
+        :root {
+            --bg: #f6f8fa;
+            --card: #fff;
+            --text: #1f2328;
+            --muted: #656d76;
+            --border: #d0d7de;
+            --accent: #0969da;
+            --accent-soft: #ddf4ff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+            line-height: 1.65;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem 1.5rem;
+        }
+        .wrap { max-width: 900px; margin: 0 auto; }
+        h1 {
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+        }
+        .meta {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            font-size: 1.25rem;
+            margin: 2rem 0 0.75rem;
+            color: var(--accent);
+        }
+        h3 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .file-path {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.88rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+            margin: 0.75rem 0;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+        th { background: #f0f3f6; }
+        ul { margin: 0.5rem 0; padding-left: 1.35rem; }
+        .diagram {
+            background: #f0f3f6;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            font-family: Consolas, monospace;
+            font-size: 0.85rem;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .one-liner {
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            padding: 0.75rem 1rem;
+            margin-top: 2rem;
+            border-radius: 0 6px 6px 0;
+        }
+        footer {
+            margin-top: 2.5rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Services/QuotationResult — 三個 .cs 檔功能說明</h1>
+        <p class="meta">
+            路徑：<span class="file-path">SanderQuotation/backend/Services/QuotationResult/</span><br />
+            產生目的：說明應用服務層三個檔案的分工與呼叫關係。
+        </p>
+
+        <section class="card">
+            <h2>1. IQuotationResultAppService.cs（介面）</h2>
+            <p><strong>角色：</strong>定義「定時查價結果」應用層要對外提供的能力，讓 <code>QuotationResultController</code> 只依賴介面，不直接寫 BL／查價流程。</p>
+            <p><strong>內容：</strong>方法契約（簽名 + XML 註解），不包含實作。</p>
+            <h3>主要方法</h3>
+            <table>
+                <thead>
+                    <tr><th>方法</th><th>用途</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>GetPageList</code></td><td>分頁清單（BOM 上傳檔／查價結果）</td></tr>
+                    <tr><td><code>GetById</code></td><td>單筆明細（表頭 + 料項 + Mouser/DigiKey）</td></tr>
+                    <tr><td><code>ReInternalQuotationAsync</code></td><td>更新型號並重新內部查價、寫入 DB</td></tr>
+                    <tr><td><code>ReExternalQuotationAsync</code></td><td>重新 Nexar 外部查價、寫入 DB</td></tr>
+                    <tr><td><code>CheckInStockPriceAsync</code></td><td>Mouser + DigiKey 現貨價寫入 DB</td></tr>
+                    <tr><td><code>BuildQuickSearchResultAsync</code></td><td>快查：查料 + 內部查價（不寫 DB）</td></tr>
+                    <tr><td><code>BuildQuickPartMatchResultAsync</code></td><td>快查：僅查料比對（不寫 DB）</td></tr>
+                    <tr><td><code>BuildQuickPricingResultAsync</code></td><td>快查：依勾選執行內部/外部/現貨（不寫 DB）</td></tr>
+                    <tr><td><code>GetCustomerList</code></td><td>客戶下拉選項</td></tr>
+                    <tr><td><code>GetDecisionLogs</code></td><td>料項決策歷程</td></tr>
+                    <tr><td><code>GetPriceClusterPageList</code></td><td>價格分群採購紀錄分頁</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>2. QuotationResultAppService.cs（實作）</h2>
+            <p><strong>角色：</strong>實作 <code>IQuotationResultAppService</code>，將 Controller 的業務邏輯集中在應用服務層。</p>
+            <h3>依賴與職責</h3>
+            <ul>
+                <li><strong>BL：</strong><code>EsFileTransferUploadBL</code>、<code>BomFileContentBL</code>、<code>HandleQuotationBL</code>、<code>TBBomFileQuotationBL</code> 等 — 查詢與持久化。</li>
+                <li><strong>QuotationHandler：</strong>內部查價、外部 Nexar、查料比對（<code>RunInternalAsync</code>、<code>RunExternalAsync</code>、<code>RunPartSearchAsync</code>）。</li>
+                <li><strong>外部查價：</strong><code>IExternalQueryExecuteHandler</code> / <code>ExternalQueryExecuteHandler</code> — Mouser、DigiKey 現貨價。</li>
+                <li><strong>AutoMapper：</strong>組裝 <code>QuotationFileEditVM</code>、<code>QuotationItemVM</code> 等。</li>
+            </ul>
+            <h3>行為區分</h3>
+            <ul>
+                <li><strong>寫入類</strong>（重新查價、現貨價）→ 回傳 <code>QuotationResultServiceResult</code>（成功或「資料不存在」等）。</li>
+                <li><strong>快查類</strong> → 回傳匿名物件，<strong>不寫 DB</strong>，由 Controller 包成 <code>JsonSuccess</code>。</li>
+            </ul>
+            <h3>輔助方法</h3>
+            <table>
+                <thead>
+                    <tr><th>方法</th><th>用途</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>GetProcessStatusText</code>（static）</td><td>將 <code>ProcessStatus</code> 代碼轉中文描述</td></tr>
+                    <tr><td><code>BuildPageEntity</code>（private）</td><td>將分頁/排序請求轉成 <code>PageEntity</code></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>3. QuotationResultServiceResult.cs（結果 DTO）</h2>
+            <p><strong>角色：</strong>寫入類操作的簡單回傳包，避免 AppService 直接依賴 HTTP／JSON 格式。</p>
+            <table>
+                <thead>
+                    <tr><th>成員</th><th>用途</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Success</code></td><td>是否成功</td></tr>
+                    <tr><td><code>ErrorMessage</code></td><td>失敗時的業務訊息（例如「資料不存在」）</td></tr>
+                    <tr><td><code>Ok()</code></td><td>建立成功結果</td></tr>
+                    <tr><td><code>Fail(message)</code></td><td>建立失敗結果</td></tr>
+                </tbody>
+            </table>
+            <p>Controller 依 <code>Success</code> 轉成 <code>JsonOK</code> 或 <code>JsonValidFail(ErrorMessage)</code>。</p>
+        </section>
+
+        <section class="card">
+            <h2>呼叫關係</h2>
+            <div class="diagram">QuotationResultController
+        │ 注入
+        ▼
+IQuotationResultAppService  ←── 契約（介面）
+        │ 實作
+        ▼
+QuotationResultAppService   ←── BL / QuotationHandler / 外部 API
+        │ 寫入結果
+        ▼
+QuotationResultServiceResult ←── Success / ErrorMessage
+        │
+        ▼
+Controller → JsonSuccess / JsonOK / JsonValidFail</div>
+        </section>
+
+        <p class="one-liner">
+            <strong>一句話：</strong>介面定義「能做什麼」；<code>QuotationResultAppService</code> 負責「怎麼做」；<code>QuotationResultServiceResult</code> 負責「成功還是失敗、錯誤訊息是什麼」。
+        </p>
+
+        <footer>
+            對應原始碼：<code>backend/Services/QuotationResult/*.cs</code> · 各方法 XML 註解（功能說明、參考功能、輸入/輸出、訊息條件）請於 IDE 或原始檔查閱。
+        </footer>
+    </div>
+</body>
+</html>

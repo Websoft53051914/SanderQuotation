@@ -9,8 +9,15 @@ using System.Diagnostics;
 
 namespace frontend.Controllers
 {
+    /// <summary>專案前端 MVC 基底 Controller。</summary>
     public class BaseProjectController : BaseController
     {
+        /// <summary>功能說明：Action 執行前設定 ViewData 使用者資訊、麵包屑/選單 Cookie，首頁時清除 Cookie。</summary>
+        /// <param name="context">輸入參數：ActionExecutingContext（含 RouteData、HttpContext）。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：User.FindFirst — 讀取 JWT Claims；Response.Cookies — 寫入 Breadcrumb、MenuCode。
+        /// 訊息內容及生成條件：無 HTTP JSON；Home/Index 時 Delete Breadcrumb、MenuCode Cookie。
+        /// </remarks>
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             ViewData["name"] = User.FindFirst("UserName")?.Value;
@@ -76,9 +83,12 @@ namespace frontend.Controllers
             base.OnActionExecuting(context);
         }
 
-        /// <summary>
-        /// 從 JWT Claim 取得部門清單
-        /// </summary>
+        /// <summary>功能說明：從 JWT Claim 取得部門代碼清單。</summary>
+        /// <returns>輸出參數：部門代碼 List（以逗號分隔 Claim 解析）。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：User.FindFirst("DeptList")。
+        /// 訊息內容及生成條件：Claim 空則回傳空清單。
+        /// </remarks>
         protected List<string> GetDeptList()
         {
             var raw = User.FindFirst("DeptList")?.Value ?? string.Empty;
@@ -88,10 +98,12 @@ namespace frontend.Controllers
         #region -- Instance --
 
         private MessageHelper? _msgHelper = null;
-        /// <summary>
-        /// 錯誤訊息資訊
-        /// </summary>
-        /// <returns></returns>
+        /// <summary>功能說明：取得訊息輔助類別（累積驗證/業務錯誤）。</summary>
+        /// <returns>輸出參數：MessageHelper 單例。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：供子頁面或 Helper 組合錯誤訊息。
+        /// 訊息內容及生成條件：由呼叫端透過 Helper 設定，非直接 HTTP 回應。
+        /// </remarks>
         public MessageHelper GetMessage()
         {
             _msgHelper ??= new MessageHelper();
@@ -99,10 +111,12 @@ namespace frontend.Controllers
         }
 
         private SelectListHandler? _selectListHandler = null;
-        /// <summary>
-        /// SelectListHandler
-        /// </summary>
-        /// <returns></returns>
+        /// <summary>功能說明：取得下拉選單資料處理器（Enum、遠端選項等）。</summary>
+        /// <returns>輸出參數：SelectListHandler 單例。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：各 Index/Edit 頁面填入 ViewData 選項清單。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
         public SelectListHandler GetSelectListHandler()
         {
             _selectListHandler ??= new SelectListHandler();
@@ -111,6 +125,12 @@ namespace frontend.Controllers
 
         #endregion  -- Instance --
          
+        /// <summary>功能說明：將例外寫入 Trace（開發除錯用，非寫入 DB）。</summary>
+        /// <param name="ex">輸入參數：例外物件。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：System.Diagnostics.Trace。
+        /// 訊息內容及生成條件：輸出 Source、Message 至 Trace，無使用者可見 JSON。
+        /// </remarks>
         protected void LogError(Exception ex)
         {
             Trace.Write("<font color=red>Source:" + ex.Source + "</font>");
