@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>查價資料表關聯圖</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #f6f8fa; --card: #fff; --text: #1f2328; --muted: #656d76;
+            --border: #d0d7de; --accent: #0969da; --accent-soft: #ddf4ff;
+        }
+        body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; line-height: 1.6;
+            color: var(--text); background: var(--bg); margin: 0; padding: 2rem 1.5rem; }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+        h1 { font-size: 1.75rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; }
+        h2 { font-size: 1.2rem; color: var(--accent); margin: 1.75rem 0 0.6rem; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
+        .meta { color: var(--muted); font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.6rem 0; }
+        th, td { border: 1px solid var(--border); padding: 0.45rem 0.65rem; text-align: left; vertical-align: top; }
+        th { background: #f0f3f6; }
+        .mermaid { background: #fff; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+        code { background: #f0f3f6; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88em; }
+        .note { font-size: 0.9rem; color: var(--muted); }
+        footer { margin-top: 2rem; font-size: 0.85rem; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>查價資料表關聯圖</h1>
+        <p class="meta">
+            專案：<code>SanderQuotation</code> · 依 <code>Data/DataAccess/Entity</code> 與 DAO 查詢邏輯整理。<br />
+            關聯欄位若 DB 未建實體 FK，圖中以「邏輯關聯」標示。
+        </p>
+
+        <section class="card">
+            <h2>1. 總覽 ER 圖（查價主線）</h2>
+            <pre class="mermaid">
+erDiagram
+    EsFileTransferMapping ||--o{ EsFileTransferUpload : "EsFileTransferMappingId"
+    EsFileTransferUpload ||--o{ bomfilecontent : "UploadId"
+    bomfilecontent ||--|| tb_bomfilequotation : "BomFileContentId 1:1"
+    bomfilecontent ||--o{ tb_bomfilequotationother : "BomFileContentId"
+    bomfilecontent ||--o{ tb_bomfiledecisionlog : "BomFileContentId"
+    tb_bomfilequotation }o..o{ sandermoduleitem : "no 邏輯"
+    sandermoduleitem ||--o{ sandermodulepurchaseline : "no"
+    sandermoduleitem ||--o{ sandermoduleitemvariant : "ItemNo"
+    sandermoduleitem ||--o{ tb_sandermoduleitemkeyword : "no"
+    reportitemcustomer }o..o{ sandermoduleitemvariant : "VariantCode+CustomerCode"
+    EsFileTransferUpload }o..o{ reportitemcustomer : "CustomerCode 邏輯"
+
+    EsFileTransferUpload {
+        uuid Id PK
+        uuid UploadId UK
+        string FileName
+        uuid EsFileTransferMappingId FK
+        int ProcessStatus
+        string CustomerCode
+        int QuotationQty
+    }
+    bomfilecontent {
+        uuid Id PK
+        uuid UploadId FK
+        string ManufacturerPartNumber
+        string ComponentPart
+        int Qty
+    }
+    tb_bomfilequotation {
+        uuid Id PK
+        uuid BomFileContentId FK
+        string no
+        datetime InternalPurchaseOrderDate
+        decimal InternalUnitPriceTwd
+        datetime ExternalQuotationDate
+        decimal ExternalUnitPriceTwd
+    }
+    tb_bomfilequotationother {
+        uuid Id PK
+        uuid BomFileContentId FK
+        int SourceType
+        decimal UnitPriceOriginalCurrency
+    }
+    tb_bomfiledecisionlog {
+        uuid Id PK
+        uuid BomFileContentId FK
+        int Stage
+        int Step
+        string Message
+    }
+            </pre>
+        </section>
+
+        <section class="card">
+            <h2>2. 流程關聯圖（由上到下的資料流）</h2>
+            <pre class="mermaid">
+flowchart TB
+    subgraph upload ["上傳與轉檔"]
+        MAP[EsFileTransferMapping]
+        UP[EsFileTransferUpload]
+        BOM[bomfilecontent]
+        MAP --> UP
+        UP -->|"UploadId"| BOM
+    end
+    subgraph quote ["查價結果寫入"]
+        Q[tb_bomfilequotation<br/>內部+外部]
+        O[tb_bomfilequotationother<br/>Mouser/DigiKey]
+        L[tb_bomfiledecisionlog]
+        BOM --> Q
+        BOM --> O
+        BOM --> L
+    end
+    subgraph internal ["內部查價參考"]
+        ITEM[sandermoduleitem]
+        PL[sandermodulepurchaseline]
+        VAR[sandermoduleitemvariant]
+        CUST[reportitemcustomer]
+        Q -->|"no"| ITEM
+        ITEM --> PL
+        ITEM --> VAR
+        CUST --> VAR
+        UP -->|"CustomerCode"| CUST
+    end
+    subgraph handler ["QuotationHandler"]
+        H[RunPartSearch / RunInternal / RunExternal]
+    end
+    BOM --> H
+    H --> Q
+    H --> O
+    H --> L
+            </pre>
+        </section>
+
+        <section class="card">
+            <h2>3. 關聯欄位對照表</h2>
+            <table>
+                <thead>
+                    <tr><th>父表</th><th>子表</th><th>關聯鍵</th><th>說明</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>EsFileTransferMapping</code></td><td><code>EsFileTransferUpload</code></td><td><code>EsFileTransferMappingId</code></td><td>匯入規則</td></tr>
+                    <tr><td><code>EsFileTransferUpload</code></td><td><code>bomfilecontent</code></td><td><code>UploadId</code></td><td>一筆上傳檔多筆 BOM 料</td></tr>
+                    <tr><td><code>bomfilecontent</code></td><td><code>tb_bomfilequotation</code></td><td><code>BomFileContentId</code></td><td>內部/外部查價主結果（通常 1:1）</td></tr>
+                    <tr><td><code>bomfilecontent</code></td><td><code>tb_bomfilequotationother</code></td><td><code>BomFileContentId</code> + <code>SourceType</code></td><td>Mouser=1、DigiKey=2</td></tr>
+                    <tr><td><code>bomfilecontent</code></td><td><code>tb_bomfiledecisionlog</code></td><td><code>BomFileContentId</code></td><td>查料/查價決策歷程</td></tr>
+                    <tr><td><code>tb_bomfilequotation</code></td><td><code>sandermoduleitem</code></td><td><code>no</code></td><td>邏輯關聯（非 Entity FK）</td></tr>
+                    <tr><td><code>sandermoduleitem</code></td><td><code>sandermodulepurchaseline</code></td><td><code>no</code></td><td>內部採購歷史、價格分群</td></tr>
+                    <tr><td><code>sandermoduleitem</code></td><td><code>sandermoduleitemvariant</code></td><td><code>ItemNo</code> ≈ <code>no</code></td><td>客戶承認料</td></tr>
+                    <tr><td><code>reportitemcustomer</code></td><td><code>sandermoduleitemvariant</code></td><td><code>VariantCode</code> + <code>CustomerCode</code></td><td>客戶與 Variant 對照</td></tr>
+                    <tr><td><code>EsFileTransferUpload</code></td><td><code>reportitemcustomer</code></td><td><code>CustomerCode</code></td><td>內部查價過濾用（邏輯）</td></tr>
+                </tbody>
+            </table>
+            <p class="note"><code>tb_bomfilequotationexternalhistory</code>：以外部查價快取／效期為主，以 <code>ManufacturerPartNumber</code> 等欄位查詢，與 <code>bomfilecontent</code> 無直接 FK。</p>
+        </section>
+
+        <section class="card">
+            <h2>4. 各表用途（查價視角）</h2>
+            <table>
+                <thead><tr><th>資料表</th><th>用途</th><th>主要寫入時機</th></tr></thead>
+                <tbody>
+                    <tr><td><code>EsFileTransferUpload</code></td><td>轉入檔案表頭、ProcessStatus、客戶/報價數量</td><td>上傳、轉檔、查價流程更新狀態</td></tr>
+                    <tr><td><code>bomfilecontent</code></td><td>BOM 單筆料（MPN、數量等）</td><td>Excel/轉檔匯入</td></tr>
+                    <tr><td><code>tb_bomfilequotation</code></td><td>內部採購價 + Nexar 外部價、分群區間</td><td>HandleQuotationBL 儲存查價結果</td></tr>
+                    <tr><td><code>tb_bomfilequotationother</code></td><td>Mouser / DigiKey 現貨價</td><td>CheckInStockPrice、快查現貨</td></tr>
+                    <tr><td><code>tb_bomfiledecisionlog</code></td><td>查料/查價步驟訊息</td><td>QuotationHandler 各階段</td></tr>
+                    <tr><td><code>sandermoduleitem</code></td><td>內部採購型號主檔</td><td>維護匯入</td></tr>
+                    <tr><td><code>sandermodulepurchaseline</code></td><td>採購單價歷史（分群、內部查價）</td><td>維護匯入</td></tr>
+                    <tr><td><code>sandermoduleitemvariant</code></td><td>客戶承認料 CSV 來源</td><td>維護匯入</td></tr>
+                    <tr><td><code>tb_sandermoduleitemkeyword</code></td><td>料號向量/關鍵字（查料比對）</td><td>Embedding 批次</td></tr>
+                    <tr><td><code>reportitemcustomer</code></td><td>客戶下拉、Variant 對照</td><td>維護匯入</td></tr>
+                    <tr><td><code>tb_bomfilequotationexternalhistory</code></td><td>外部 Nexar 查價快取</td><td>外部查價寫入歷史</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>5. ProcessStatus（EsFileTransferUpload）與查價</h2>
+            <table>
+                <thead><tr><th>代碼（Enum）</th><th>說明</th><th>與查價關係</th></tr></thead>
+                <tbody>
+                    <tr><td>Pending</td><td>待處理</td><td>轉檔前/暫存</td></tr>
+                    <tr><td>Transferred</td><td>已轉檔</td><td>BOM 已入 bomfilecontent</td></tr>
+                    <tr><td>PendingPartSearch / PendingPricingSearch</td><td>待查料/待查價</td><td>排程或手動觸發查價</td></tr>
+                    <tr><td>PartSearchDone / PricingDone</td><td>查料/查價完成</td><td>定時查價結果清單篩選 PricingDone</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            另見：<code>查價程式檔案說明.html</code>、<code>查價資料表關聯圖.docx</code>（同內容 Word 版）。
+        </footer>
+    </div>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', er: { layoutDirection: 'TB' } });</script>
+</body>
+</html>
