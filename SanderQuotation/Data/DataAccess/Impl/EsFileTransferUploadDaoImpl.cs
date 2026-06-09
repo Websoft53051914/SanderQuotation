@@ -92,7 +92,10 @@ SELECT u.*
 , rc.CustomerName
 FROM EsFileTransferUpload u
 LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
-LEFT JOIN ReportItemCustomer rc ON rc.CustomerCode = u.CustomerCode
+LEFT JOIN (-- 依據 CustomerCode 去重
+    SELECT DISTINCT ON (CustomerCode) CustomerCode, CustomerName
+    FROM ReportItemCustomer
+    ORDER BY CustomerCode) rc ON rc.CustomerCode = u.CustomerCode
 WHERE 1 = 1 
 {condition}";
 
