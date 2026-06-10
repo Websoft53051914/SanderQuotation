@@ -144,13 +144,6 @@
             </div>
             <div class="modal-body">
 
-                <!-- FilePond 上傳區 -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">選取檔案（可多選）</label>
-                    <input type="file" id="@(ui.PartialIFC.ViewId)" multiple />
-                    <div class="form-text text-muted">支援格式：xlsx、xls；可一次選取多個檔案。</div>
-                </div>
-
                 <!-- 預設值設定 -->
                 <div class="mb-3">
                     <hr class="my-2" />
@@ -200,6 +193,13 @@
                     </div>
                 </div>
 
+                <!-- FilePond 上傳區（已移至下方） -->
+                <div class="mb-3 mt-3">
+                    <label class="form-label fw-semibold">選取檔案（可多選）</label>
+                    <input type="file" id="@(ui.PartialIFC.ViewId)" multiple />
+                    <div class="form-text text-muted">支援格式：xlsx、xls；可一次選取多個檔案。</div>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">關閉</button>
@@ -226,9 +226,9 @@
         }
     </style>
 
-    @* ══════════════════════════════════════════════════════════════════════
+    @* ══════════════════════════════════════════════════════════════════════════════
         全域設定：常數、狀態、工具函式、_CrudCommonScripts Hooks
-        ══════════════════════════════════════════════════════════════════════ *@
+        ══════════════════════════════════════════════════════════════════════════════ *@
     <script>
         // ── FilePond 建立 ──────────────────────────────────────────────────────
         var pond = FilePond.create(document.getElementById('@(ui.PartialIFC.ViewId)'), $.extend({}, optionsFilePondCreate, {
@@ -290,9 +290,9 @@
             Swal.fire({ icon: 'error', title: pageConfig.messages.systemError, confirmButtonText: pageConfig.messages.confirm });
         }
     </script>
-    @* ══════════════════════════════════════════════════════════════════════
+    @* ══════════════════════════════════════════════════════════════════════════════
          _CrudCommonScripts
-        ══════════════════════════════════════════════════════════════════════ *@
+        ══════════════════════════════════════════════════════════════════════════════ *@
     <script>
         // ── API URL ────────────────────────────────────────────────────────────
         var pageUrls = {
@@ -335,9 +335,9 @@
 
         $('#@(ui.IdBtnBatchDelete)').on('click', deleteMultiple);
     </script>
-    @* ══════════════════════════════════════════════════════════════════════
+    @* ══════════════════════════════════════════════════════════════════════════════
          全域設定：常數、狀態、工具函式、_CrudCommonScripts Hooks
-        ══════════════════════════════════════════════════════════════════════ *@
+        ══════════════════════════════════════════════════════════════════════════════ *@
     <script>
         // ── 載入下拉選項 ───────────────────────────────────────────────────────
         function loadOptionData() {
