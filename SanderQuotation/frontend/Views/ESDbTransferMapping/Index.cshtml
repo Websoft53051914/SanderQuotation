@@ -328,6 +328,7 @@
         let currentId       = null;
         let postaction      = 'create';
         let isLoadingEditData = false;  // 編輯資料載入中，跳過相同資料庫警告
+        let lastSrcDbTransferCode = '';  // 記錄上次選擇的來源DB
 
         // ═══════════════════════════════════════════════════════════════════════════
         // 初始化
@@ -415,6 +416,7 @@
         // ── 來源資料庫變更 → 重載來源TABLE ─────────────────────────────────────────
         $(document).on('change', '#SrcDbTransferCode', function () {
             const guid = $(this).val();
+            lastSrcDbTransferCode = guid;
             srcColumnCache = {};
             const $tbl = $('#SrcTableName');
 
@@ -927,6 +929,9 @@
             $('#exampleModalLabel_Edit').hide();
             postaction = 'create';
             currentId = null;
+            if (lastSrcDbTransferCode) {
+                $('#SrcDbTransferCode').val(lastSrcDbTransferCode).trigger('change');
+            }
             new bootstrap.Modal(document.getElementById('showModal'), { backdrop: 'static', keyboard: false }).show();
         });
 
@@ -1328,10 +1333,10 @@
             $('#submitForm input:not([type="radio"]):not([type="checkbox"])').val('');
             $('#submitForm textarea').val('');
             $('#TransferMappingCode').val('');
-            $('#SrcDbTransferCode').val('').removeClass('is-invalid');
-            $('#DstDbTransferCode').val('').removeClass('is-invalid');
-            $('#SrcTableName').removeClass('is-invalid');
-            $('#DstTableName').removeClass('is-invalid');
+            $('#SrcDbTransferCode').removeClass('is-invalid');
+            $('#DstDbTransferCode').val('').removeClass('is-invalid').trigger('change');
+            $('#SrcTableName').removeClass('is-invalid').trigger('change');
+            $('#DstTableName').removeClass('is-invalid').trigger('change');
 
             // 重置 Source Table 和 Target Table
             const $srcTbl = $('#SrcTableName');
