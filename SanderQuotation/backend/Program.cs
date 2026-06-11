@@ -1,13 +1,11 @@
 ﻿using backend.AI;
 using backend.AI.Plugins;
 using backend.Common;
-using backend.EIPSource;
+using backend.Jobs;
 using backend.Models;
-using Dapper;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.Extensions.Resilience;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
 using Polly;
@@ -203,7 +201,7 @@ builder.Services.AddTransient<PriceSearchJob>();
 builder.Services.AddSingleton<HangfireSchedulerHelper>();
 builder.Services.AddSingleton<PathProvider>();
 #if !DEBUG
-builder.Services.AddHostedService<EIPSourceScheduleHostService>();
+builder.Services.AddHostedService<SourceScheduleHostService>();
 #endif
 builder.Services.AddSingleton<TransferJob>();
 builder.Services.AddTransient<ExtractKeywordJob>();

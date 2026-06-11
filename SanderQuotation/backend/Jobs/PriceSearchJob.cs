@@ -5,7 +5,7 @@ using Business.DomainModel;
 using Const;
 using static Const.Enums;
 
-namespace backend.EIPSource
+namespace backend.Jobs
 {
     /// <summary>
     /// 查價排程工作

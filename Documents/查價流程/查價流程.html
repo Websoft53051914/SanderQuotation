@@ -153,8 +153,8 @@
 <pre class="mermaid">
 flowchart TD
     subgraph SCH["排程觸發鏈"]
-        A1["EIPSourceScheduleHostService\n啟動掛載 Hangfire 排程"]
-        A2["TransferJob.OtherTransfer()"]
+        A1["SourceScheduleHostService\n啟動掛載 Hangfire 排程"]
+        A2["TransferJob.OtherTransfer()：固定排程進入點"]
         A3["PriceSearchJob.ExecuteAsync()"]
         A4["AuthorizeExternalAsync()\n取得 Nexar Token"]
         A5["loop: ProcessUploadAsync()\n逐一上傳檔案"]
@@ -205,23 +205,23 @@ stateDiagram-v2
             <tbody>
                 <tr>
                     <td>1</td>
-                    <td>應用程式啟動，<code>EIPSourceScheduleHostService</code> 將資料庫中所有啟用排程以 Hangfire 掛載為定時工作</td>
-                    <td><span class="file-path">backend/EIPSource/EIPSourceScheduleHostService.cs</span></td>
+                    <td>應用程式啟動，<code>SourceScheduleHostService</code> 將資料庫中所有啟用排程以 Hangfire 掛載為定時工作</td>
+                    <td><span class="file-path">backend/Jobs/SourceScheduleHostService.cs</span></td>
                 </tr>
                 <tr>
                     <td>2</td>
                     <td><code>TransferJob.Run()</code> 依 OtherTransferSettings 遍歷，遇 <code>ScheduleCycleActionTypeEnum.PriceSearch</code> 時取出 <code>PriceSearchJob</code> 並呼叫 <code>ExecuteAsync()</code></td>
-                    <td><span class="file-path">backend/EIPSource/TransferJob.cs</span></td>
+                    <td><span class="file-path">backend/Jobs/TransferJob.cs</span></td>
                 </tr>
                 <tr>
                     <td>3</td>
                     <td>先呼叫 <code>QuotationHandler.AuthorizeExternalAsync()</code> 取得 Nexar Token，再查詢所有 <code>ProcessStatus = PendingPricingSearch(3)</code> 的上傳檔案，逐一呼叫 <code>ProcessUploadAsync()</code></td>
-                    <td><span class="file-path">backend/EIPSource/PriceSearchJob.cs</span></td>
+                    <td><span class="file-path">backend/Jobs/PriceSearchJob.cs</span></td>
                 </tr>
                 <tr>
                     <td>4</td>
                     <td>取出該上傳下所有 <code>BomFileContent</code>，對每筆呼叫 <code>QuotationHandler.RunAsync()</code>，完成後統一呼叫 <code>HandleQuotationBL.DoSaveFullSearchResult()</code>，ProcessStatus 更新為 <code>PricingDone(5)</code></td>
-                    <td><span class="file-path">backend/EIPSource/PriceSearchJob.cs</span></td>
+                    <td><span class="file-path">backend/Jobs/PriceSearchJob.cs</span></td>
                 </tr>
             </tbody>
         </table>
