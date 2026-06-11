@@ -4,7 +4,7 @@ using Business.BusinessLogic;
 using Const;
 using static Const.Enums;
 
-namespace backend.EIPSource
+namespace backend.Jobs
 {
     /// <summary>
     /// 資料清理排程工作
@@ -38,10 +38,10 @@ namespace backend.EIPSource
         public async Task ExecuteAsync()
         {   
             ConfigurationHelper configurationHelper = new ConfigurationHelper(_config);
-            int ControlLogRetentionDays = _config.GetValue<int>("DataCleanupSettings:ControlLogRetentionDays",15);
-            int HistoryFileRetentionDays = _config.GetValue<int>("DataCleanupSettings:HistoryFileRetentionDays", 5);
-            int EsFileTransferUploadRetentionDays = _config.GetValue<int>("DataCleanupSettings:EsFileTransferUploadRetentionDays", 5);
-            int AILogRetentionDays  = _config.GetValue<int>("DataCleanupSettings:AILogRetentionDays", 30);
+            int ControlLogRetentionDays = _config.GetValue("DataCleanupSettings:ControlLogRetentionDays",15);
+            int HistoryFileRetentionDays = _config.GetValue("DataCleanupSettings:HistoryFileRetentionDays", 5);
+            int EsFileTransferUploadRetentionDays = _config.GetValue("DataCleanupSettings:EsFileTransferUploadRetentionDays", 5);
+            int AILogRetentionDays  = _config.GetValue("DataCleanupSettings:AILogRetentionDays", 30);
             await Task.Run(() =>
             {
                 try

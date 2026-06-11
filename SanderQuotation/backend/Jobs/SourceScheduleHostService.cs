@@ -1,12 +1,12 @@
 ﻿using Business.BusinessLogic;
 using backend.Common;
 
-namespace backend.EIPSource
+namespace backend.Jobs
 {
-    public class EIPSourceScheduleHostService : IHostedService
+    public class SourceScheduleHostService : IHostedService
     {
         private readonly HangfireSchedulerHelper _hangfireSchedulerHelper;
-        public EIPSourceScheduleHostService(HangfireSchedulerHelper hangfireSchedulerHelper)
+        public SourceScheduleHostService(HangfireSchedulerHelper hangfireSchedulerHelper)
         {
             _hangfireSchedulerHelper = hangfireSchedulerHelper;
         }

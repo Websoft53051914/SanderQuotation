@@ -4,7 +4,7 @@ using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
 
-namespace backend.EIPSource
+namespace backend.Jobs
 {
     /// <summary>
     /// 內部料品表 AI 關鍵字抽取排程工作
