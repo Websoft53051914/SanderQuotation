@@ -1,4 +1,4 @@
-using Core.Utility.Base.Data;
+ï»¿using Core.Utility.Base.Data;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.DataAccess.Entity
@@ -7,27 +7,25 @@ namespace Data.DataAccess.Entity
     public class EsScheduleCycleLogDetailEntity : SP_BaseEntity
     {
         public Guid ScheduleCycleLogId { get; set; }
-
         public int DataCount { get; set; }
-
         public int ErrorCount { get; set; }
 
-        public DateTime RunAt { get; set; }
+        // âœ… ä¿®æ­£ï¼šDB ç‚º timestamp NULL
+        public DateTime? RunAt { get; set; }
 
         public int? DurationMs { get; set; }
-
-
         public string DBTransferCode { get; set; }
+
+        // âœ… æ–°å¢ï¼šDB æœ‰æ­¤æ¬„ä½ä½† Entity ç¼ºå°‘
+        public string DbTransferCsvCode { get; set; }
 
         public string FileTransferCode { get; set; }
 
-        /// <summary>Success / PartialFail / Failed</summary>
+        // âœ… æ–°å¢ï¼šDB æœ‰æ­¤æ¬„ä½ä½† Entity ç¼ºå°‘
+        public string TransferCode { get; set; }
+
         public string JobStatus { get; set; }
-
-        /// <summary>¥ô°È¼h¯Å¨Ò¥~°T®§¡]DB³s½u¥¢±Ñµ¥¡^</summary>
         public string ErrorMessage { get; set; }
-
-        /// <summary>¨ä¥L±Æµ{°Ê§@Ãş«¬¡]¹ïÀ³ ScheduleCycleActionTypeEnum¡^</summary>
         public int? OtherActionType { get; set; }
     }
 }

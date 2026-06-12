@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Data.DataAccess.Entity
 {
     [Table("esTransferErrorLog")]
-    public class EsTransferErrorLogEntity : SP_BaseEntity
+    public class EsTransferErrorLogEntity : Core.Utility.Base.Data.GuidId.BaseEntity
     {
         public string Exception { get; set; }
 

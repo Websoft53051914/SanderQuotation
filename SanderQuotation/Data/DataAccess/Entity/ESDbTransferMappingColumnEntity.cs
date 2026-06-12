@@ -1,4 +1,4 @@
-using Core.Utility.Base.Data;
+ï»¿using Core.Utility.Base.Data;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.DataAccess.Entity
@@ -7,20 +7,15 @@ namespace Data.DataAccess.Entity
     public class ESDbTransferMappingColumnEntity : SP_BaseEntity
     {
         public string Type { set; get; }
-
         public string SortNo { set; get; }
-
         public string Priority { set; get; }
 
-        // FK «ü¦V¥Dªí ESDbTransferMapping
         public string TransferMappingCode { set; get; }
-
-        // ¨Ó·½Äæ¦ì¦WºÙ
         public string SrcColumnName { set; get; }
-
-        // ¥Ø¼ÐÄæ¦ì¦WºÙ
         public string DstColumnName { set; get; }
-        public bool IsEncrypt { set; get; }
-        public bool IsPrimaryKey { set; get; }
+
+        // âœ… ä¿®æ­£ï¼šDB ç‚º bool NULL
+        public bool? IsEncrypt { set; get; }
+        public bool? IsPrimaryKey { set; get; }
     }
 }

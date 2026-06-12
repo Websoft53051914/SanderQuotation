@@ -74,17 +74,6 @@ namespace Data.DataAccess.Entity
         public string Priority { get; set; }
     }
 
-    [Table("esScheduleCycleDbCsvTransfer")]
-    public class EsScheduleCycleDbCsvTransferEntity : SP_BaseEntity
-    {
-        public string ScheduleCycleCode { get; set; }
-        public string TransferCode { get; set; }
-
-        public string Type { get; set; }
-        public string SortNo { get; set; }
-        public string Priority { get; set; }
-    }
-
     [Table("esScheduleCycleFileTransfer")]
     public class EsScheduleCycleFileTransferEntity : SP_BaseEntity
     {

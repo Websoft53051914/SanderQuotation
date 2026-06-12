@@ -6,26 +6,21 @@ namespace Data.DataAccess.Entity
     [Table("EsFileTransferMappingColumn")]
     public class EsFileTransferMappingColumnEntity : BaseEntity
     {
-        public int Status { set; get; }
+        // ✅ 修正：DB 為 int4 NULL
+        public int? Status { set; get; }
 
         public string Type { set; get; }
-
         public string SortNo { set; get; }
-
         public string Priority { set; get; }
-
         public DateTime? CreatedAt { set; get; }
-
         public DateTime? UpdatedAt { set; get; }
-
         public string CreatedBy { set; get; }
-
         public string UpdatedBy { set; get; }
 
         /// <summary>
         /// 系統編號 自動生成
         /// </summary>
-        public string EsFileTransferMappingColumnID {  set; get; }
+        public string EsFileTransferMappingColumnID { set; get; }
 
         // FK → EsFileTransferMappingEntity
         public string TransferMappingCode { set; get; }
@@ -56,11 +51,9 @@ namespace Data.DataAccess.Entity
         // 資料表對應欄位名稱
         public string TargetTableColumnName { set; get; }
 
-        // 是否為主鍵
-        public bool IsPrimaryKey { set; get; }
-
-        // 是否加密
-        public bool IsEncrypt { set; get; }
+        // ✅ 修正：DB 為 bool NULL
+        public bool? IsPrimaryKey { set; get; }
+        public bool? IsEncrypt { set; get; }
 
         // 當來源欄位值為 Null 時填入的預設值
         public string DefaultValue { set; get; }

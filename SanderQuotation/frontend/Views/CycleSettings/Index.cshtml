@@ -1263,7 +1263,8 @@
                     details.forEach(function (d) {
                         var statusBadge = getStatusBadge(d.JobStatus);
                         var typeBadge = getTypeBadge(d.TransferTypeDisplay);
-                        var errorIcon = (d.ErrorCount > 0)
+                        console.log(d)
+                        var errorIcon = (d.ErrorLogs.length>0)
                             ? ' <a href="javascript:void(0)" class="text-danger ms-1 show-error-detail-btn" data-detail-id="' + d.Id + '" title="查看錯誤"><i class="ri-external-link-line"></i></a>'
                             : '';
                         block.append(

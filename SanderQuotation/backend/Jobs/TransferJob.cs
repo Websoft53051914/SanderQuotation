@@ -100,7 +100,7 @@ namespace backend.Common
                 }
                 catch (Exception ex)
                 {
-                    // TODO: log ex
+                    Method.LogSystem(ex.ToString());
                     throw;
                 }
                 finally

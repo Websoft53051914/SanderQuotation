@@ -130,8 +130,6 @@ namespace Business.BusinessLogic
                     {
                         var errlogEntity = _mapper.Map<EsTransferErrorLogEntity>(errlog);
                         errlogEntity.ScheduleCycleLogDetailId = detailEntity.Id;
-                        errlogEntity.CreatedAt = base.now;
-                        errlogEntity.UpdatedAt = base.now;
                         GetErrorLogDAO().InsertAction(errlogEntity);
                     }
                 }
