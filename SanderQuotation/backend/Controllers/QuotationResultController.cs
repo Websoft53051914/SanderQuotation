@@ -2,12 +2,16 @@ using AutoMapper;
 using backend.Common;
 using backend.Common.Attribute;
 using backend.Models;
+using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
 using Const.ApiModels.QueryPrice;
 using Core.Utility.Extensions;
 using Core.Utility.Helper.DB.Entity;
 using Microsoft.AspNetCore.Mvc;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using ViewModel;
 using ViewModel.QuotationResult;
 using static Const.Enums;
@@ -23,6 +27,7 @@ namespace backend.Controllers
         private readonly IMapper _mapper;
         private readonly QuotationHandler _quotationHandler;
         private readonly ExternalQueryExecuteHandler _externalQueryExecuteHandler;
+        private readonly PathProvider _pathProvider;
 
         /// <summary>
         /// 功能說明：建立定時查價結果 Controller，注入查價處理器與外部 API 執行器，並設定 AutoMapper。
@@ -30,6 +35,7 @@ namespace backend.Controllers
         /// <param name="configuration">輸入參數：應用程式組態。</param>
         /// <param name="quotationHandler">輸入參數：內部/外部查價與查料流程。</param>
         /// <param name="externalQueryExecuteHandler">輸入參數：Mouser/DigiKey 現貨查價。</param>
+        /// <param name="pathProvider">輸入參數：檔案路徑中介站（匯出時讀取原始上傳檔）。</param>
         /// <remarks>
         /// 參考功能名稱與用途：BaseProjectController；Mapper 對應 BomFileContent、QueryActionResult 至 DM/VM。
         /// 訊息內容及生成條件：建構子本身不產生 API 回應。
@@ -37,10 +43,12 @@ namespace backend.Controllers
         public QuotationResultController(
             IConfiguration configuration,
             QuotationHandler quotationHandler,
-            ExternalQueryExecuteHandler externalQueryExecuteHandler) : base(configuration)
+            ExternalQueryExecuteHandler externalQueryExecuteHandler,
+            PathProvider pathProvider) : base(configuration)
         {
             _quotationHandler = quotationHandler;
             _externalQueryExecuteHandler = externalQueryExecuteHandler;
+            _pathProvider = pathProvider;
             MapperConfiguration cfg = new(c =>
             {
                 c.AllowNullCollections = true;
@@ -814,6 +822,345 @@ namespace backend.Controllers
                 LogError(ex);
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
+        }
+
+        #endregion
+    }
+
+    public partial class QuotationResultController
+    {
+        #region -- 匯出 --
+
+        /// <summary>匯出時附加於原始 Excel 右側的擴充標題欄位（依 Edit.cshtml table-responsive 欄位順序）</summary>
+        private static readonly string[] ExportExtraHeaders =
+        {
+            "內部料號", "比對結果分類", "比對命中欄位", "內部價格(原幣)", "幣別", "供應商（內部）",
+            "單據日期", "採購型號", "外部價格(原幣)", "供應商（外部）", "庫存量", "MOQ 階梯", "情境標註",
+        };
+
+        /// <summary>
+        /// 功能說明：匯出現貨優惠價查詢結果；讀取原始上傳 Excel，於標題列最後一個有效欄位右側附加系統比對資料後下載。
+        /// </summary>
+        /// <param name="id">輸入參數：EsFileTransferUpload 主鍵 Guid。</param>
+        /// <returns>輸出參數：附加擴充欄位後的 Excel 檔案（attachment）；驗證失敗回傳 JsonValidFail。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：PathProvider.EsFileTransferUpload（原始檔）、TableExcelBL.GetOne（匯入規則含欄位明細，status=1）、GetListWithQuotationByFilter（查價結果）。
+        /// 訊息內容及生成條件：資料/檔案/規則不存在 → JsonValidFail 對應訊息；成功 → File 下載；例外 → System_Error。
+        /// </remarks>
+        [CustomAuthorization(FuncID.QuotationResult_View)]
+        [HttpGet("Export")]
+        public ActionResult Export(Guid id)
+        {
+            try
+            {
+                EsFileTransferUploadDM? upload = GetBlEsFileTransferUpload().GetOneInfo(id);
+                if (upload == null)
+                    return JsonValidFail("資料不存在");
+                if (!upload.EsFileTransferMappingId.HasValue)
+                    return JsonValidFail("此檔案未設定匯入規則，無法匯出");
+
+                // 原始上傳檔：檔名 = uploadid + 原始檔名副檔名
+                string ext = Path.GetExtension(upload.FileName ?? string.Empty);
+                string filePath = Path.Combine(_pathProvider.EsFileTransferUpload, upload.UploadId + ext);
+                if (!System.IO.File.Exists(filePath))
+                    return JsonValidFail("原始上傳檔案不存在，無法匯出");
+
+                // 匯入規則欄位設定（EsFileTransferMappingColumn，DAO 內已過濾 status=1）
+                EsFileTransferMappingDM? mapping = GetBLInstance<TableExcelBL>().GetOne(upload.EsFileTransferMappingId.Value);
+                if (mapping == null || mapping.Columns.Count == 0)
+                    return JsonValidFail("找不到匯入規則欄位設定，無法匯出");
+
+                // BOM 料項對應的欄位群（同一工作表 HeaderRowIndex 相同）；無 bomfilecontent 設定時退回全部欄位
+                List<EsFileTransferMappingColumnDM> bomColumns = mapping.Columns
+                    .Where(c => string.Equals(c.TargetTableName, "bomfilecontent", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (bomColumns.Count == 0)
+                    bomColumns = mapping.Columns;
+
+                int sheetIndex = bomColumns[0].SrcSheetIndex;
+                int headerRowIndex = bomColumns[0].HeaderRowIndex - 1; // HeaderRowIndex 為 1-based
+
+                // 查價結果（同 GetById 的 contentList）
+                SearchVO contentSearchVO = new();
+                contentSearchVO.UploadIdEq = upload.UploadId;
+                List<BomFileContentDM> contentList = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO);
+
+                byte[] fileBytes;
+                using (FileStream stream = new(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    IWorkbook workbook = ext.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)
+                        ? new XSSFWorkbook(stream)
+                        : new HSSFWorkbook(stream);
+
+                    ISheet? sheet = sheetIndex >= 0 && sheetIndex < workbook.NumberOfSheets
+                        ? workbook.GetSheetAt(sheetIndex)
+                        : workbook.GetSheet(bomColumns[0].SrcSheetName);
+                    if (sheet == null)
+                        return JsonValidFail($"找不到工作表：index={sheetIndex}, name={bomColumns[0].SrcSheetName}");
+
+                    IRow? headerRow = sheet.GetRow(headerRowIndex);
+                    if (headerRow == null)
+                        return JsonValidFail("找不到標題列，無法匯出");
+
+                    // 擴充欄位起點 = 標題列最後一個有文字內容欄位的下一欄
+                    int startCol = GetLastTextCellIndex(headerRow) + 1;
+
+                    // 擴充欄位樣式：Arial 字型 + 細格線（標題粗體）
+                    IFont headerFont = workbook.CreateFont();
+                    headerFont.IsBold = true;
+                    headerFont.FontName = "Arial";
+                    ICellStyle headerStyle = workbook.CreateCellStyle();
+                    headerStyle.SetFont(headerFont);
+                    SetThinBorders(headerStyle);
+
+                    IFont dataFont = workbook.CreateFont();
+                    dataFont.FontName = "Arial";
+                    ICellStyle dataStyle = workbook.CreateCellStyle();
+                    dataStyle.SetFont(dataFont);
+                    SetThinBorders(dataStyle);
+
+                    // 寫入擴充標題
+                    for (int i = 0; i < ExportExtraHeaders.Length; i++)
+                    {
+                        ICell cell = headerRow.GetCell(startCol + i) ?? headerRow.CreateCell(startCol + i);
+                        cell.SetCellValue(ExportExtraHeaders[i]);
+                        cell.CellStyle = headerStyle;
+                    }
+
+                    // 以匯入規則的識別欄位將 Excel 資料列對應回查價結果（處理轉檔時被篩選略過的列）
+                    Dictionary<string, int> headerMap = BuildHeaderMap(headerRow);
+                    List<(string TargetCol, int CellIdx, string? DefaultValue)> keyColumns = bomColumns
+                        .Where(c => !string.IsNullOrWhiteSpace(c.SrcFileColumnName)
+                            && headerMap.ContainsKey(c.SrcFileColumnName)
+                            && GetContentKeyValue(new BomFileContentDM(), c.TargetTableColumnName) != KeyFieldNotSupported)
+                        .Select(c => (c.TargetTableColumnName, headerMap[c.SrcFileColumnName], (string?)c.DefaultValue))
+                        .ToList();
+
+                    Dictionary<string, Queue<BomFileContentDM>> contentQueues = new();
+                    foreach (BomFileContentDM content in contentList)
+                    {
+                        string key = string.Join("\u001f", keyColumns.Select(k => NormalizeKeyValue(GetContentKeyValue(content, k.TargetCol))));
+                        if (!contentQueues.TryGetValue(key, out Queue<BomFileContentDM>? queue))
+                        {
+                            queue = new Queue<BomFileContentDM>();
+                            contentQueues[key] = queue;
+                        }
+                        queue.Enqueue(content);
+                    }
+
+                    // 逐列寫入擴充資料
+                    for (int rowIdx = headerRowIndex + 1; rowIdx <= sheet.LastRowNum; rowIdx++)
+                    {
+                        IRow? row = sheet.GetRow(rowIdx);
+                        if (row == null || IsRowEmpty(row)) continue;
+
+                        // 不論是否比對成功，擴充欄位範圍一律先套用樣式（Arial + 格線），維持表格外觀一致
+                        for (int i = 0; i < ExportExtraHeaders.Length; i++)
+                        {
+                            ICell cell = row.GetCell(startCol + i) ?? row.CreateCell(startCol + i);
+                            cell.CellStyle = dataStyle;
+                        }
+
+                        string rowKey = string.Join("\u001f", keyColumns.Select(k =>
+                        {
+                            ICell? cell = row.GetCell(k.CellIdx);
+                            string? value = cell == null ? null : GetCellValue(cell);
+                            if (string.IsNullOrEmpty(value)) value = k.DefaultValue;
+                            return NormalizeKeyValue(value);
+                        }));
+
+                        if (!contentQueues.TryGetValue(rowKey, out Queue<BomFileContentDM>? matched) || matched.Count == 0)
+                            continue;
+
+                        WriteExportRow(row, startCol, matched.Dequeue());
+                    }
+
+                    using MemoryStream ms = new();
+                    workbook.Write(ms, true);
+                    fileBytes = ms.ToArray();
+                }
+
+                string downloadName = $"{Path.GetFileNameWithoutExtension(upload.FileName)}_查價結果{ext}";
+                string mimeType = Method.GetMimeType(downloadName);
+                string encodedFileName = Uri.EscapeDataString(downloadName);
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"{encodedFileName}\"; filename*=UTF-8''{encodedFileName}";
+                return File(fileBytes, mimeType);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return JsonValidFail(GetMsg(_config, "System_Error"));
+            }
+        }
+
+        /// <summary>
+        /// 功能說明：將單筆查價結果依擴充欄位順序寫入 Excel 資料列。
+        /// </summary>
+        /// <param name="row">輸入參數：目標資料列。</param>
+        /// <param name="startCol">輸入參數：擴充欄位起始欄索引（0-based）。</param>
+        /// <param name="content">輸入參數：查價結果 DM。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：欄位順序對應 ExportExtraHeaders；價格欄位輸出原幣金額（數值），幣別欄位顯示原幣幣別。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
+        private static void WriteExportRow(IRow row, int startCol, BomFileContentDM content)
+        {
+            string matchCategoryText = content.MatchCategory.HasValue
+                ? ((MatchCategoryEnum)content.MatchCategory.Value).GetDescription()
+                : string.Empty;
+            string scenarioText = content.ExternalScenario.HasValue
+                ? ((ExternalScenarioEnum)content.ExternalScenario.Value).GetDescription()
+                : string.Empty;
+
+            // 供應商（內部）：名稱 (代碼)；無代碼則僅顯示名稱
+            string internalSupplier = content.InternalSupplierName ?? string.Empty;
+            if (!string.IsNullOrEmpty(content.InternalSupplierCode))
+                internalSupplier = $"{internalSupplier} ({content.InternalSupplierCode})".Trim();
+
+            int col = startCol;
+            SetTextCell(row, col++, content.No);
+            SetTextCell(row, col++, matchCategoryText);
+            SetTextCell(row, col++, content.MatchField);
+            SetNumericCell(row, col++, content.InternalUnitPriceOriginalCurrency);
+            SetTextCell(row, col++, content.InternalCurrency);
+            SetTextCell(row, col++, internalSupplier);
+            SetTextCell(row, col++, content.InternalPurchaseOrderDate?.ToString("yyyy/MM/dd"));
+            SetTextCell(row, col++, content.InternalItemDescription2);
+            SetNumericCell(row, col++, content.ExternalUnitPriceOriginalCurrency);
+            SetTextCell(row, col++, content.ExternalSupplierName);
+            SetNumericCell(row, col++, content.ExternalStock);
+            SetNumericCell(row, col++, content.ExternalMoq);
+            SetTextCell(row, col, scenarioText);
+        }
+
+        /// <summary>套用上下左右細邊框（擴充欄位格線）。</summary>
+        private static void SetThinBorders(ICellStyle style)
+        {
+            style.BorderTop = BorderStyle.Thin;
+            style.BorderBottom = BorderStyle.Thin;
+            style.BorderLeft = BorderStyle.Thin;
+            style.BorderRight = BorderStyle.Thin;
+        }
+
+        private static void SetTextCell(IRow row, int colIdx, string? value)
+        {
+            ICell cell = row.GetCell(colIdx) ?? row.CreateCell(colIdx);
+            cell.SetCellValue(value ?? string.Empty);
+        }
+
+        private static void SetNumericCell(IRow row, int colIdx, int? value)
+        {
+            ICell cell = row.GetCell(colIdx) ?? row.CreateCell(colIdx);
+            if (value.HasValue)
+                cell.SetCellValue(value.Value);
+            else
+                cell.SetCellValue(string.Empty);
+        }
+
+        private static void SetNumericCell(IRow row, int colIdx, decimal? value)
+        {
+            ICell cell = row.GetCell(colIdx) ?? row.CreateCell(colIdx);
+            if (value.HasValue)
+                cell.SetCellValue((double)value.Value);
+            else
+                cell.SetCellValue(string.Empty);
+        }
+
+        /// <summary>識別欄位不支援時的標記值（非六大識別欄位者不納入比對 key）</summary>
+        private const string KeyFieldNotSupported = "\u0000__NOT_SUPPORTED__";
+
+        /// <summary>
+        /// 功能說明：依匯入規則目標欄位名稱取出查價結果 DM 上對應的識別欄位值，用於 Excel 列與料項的比對 key。
+        /// </summary>
+        /// <param name="content">輸入參數：查價結果 DM。</param>
+        /// <param name="targetColumnName">輸入參數：EsFileTransferMappingColumn.TargetTableColumnName。</param>
+        /// <returns>輸出參數：欄位字串值；非識別欄位回傳 KeyFieldNotSupported。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：bomfilecontent 六個識別欄位（ComponentPart/Description/Qty/Manufacturer/ManufacturerPartNumber/DisplayPart）。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
+        private static string? GetContentKeyValue(BomFileContentDM content, string targetColumnName)
+        {
+            return (targetColumnName ?? string.Empty).ToLowerInvariant() switch
+            {
+                "componentpart" => content.ComponentPart,
+                "description" => content.Description,
+                "qty" => content.Qty?.ToString(),
+                "manufacturer" => content.Manufacturer,
+                "manufacturerpartnumber" => content.ManufacturerPartNumber,
+                "displaypart" => content.DisplayPart,
+                _ => KeyFieldNotSupported,
+            };
+        }
+
+        /// <summary>比對 key 正規化：去除前後空白；數值字串去除小數點後多餘的 0（Excel 數值欄與 DB 整數一致化）。</summary>
+        private static string NormalizeKeyValue(string? value)
+        {
+            string trimmed = value?.Trim() ?? string.Empty;
+            if (decimal.TryParse(trimmed, out decimal number))
+                return number.ToString("0.######");
+            return trimmed;
+        }
+
+        /// <summary>取得標題列最後一個有文字內容的欄位索引（0-based）；全空時回傳 -1。</summary>
+        private static int GetLastTextCellIndex(IRow row)
+        {
+            int last = -1;
+            for (int i = 0; i < row.LastCellNum; i++)
+            {
+                ICell? cell = row.GetCell(i);
+                if (cell != null && !string.IsNullOrWhiteSpace(cell.ToString()))
+                    last = i;
+            }
+            return last;
+        }
+
+        /// <summary>建立標題文字 → 欄索引對應（忽略大小寫，重複標題取第一個）。</summary>
+        private static Dictionary<string, int> BuildHeaderMap(IRow headerRow)
+        {
+            Dictionary<string, int> map = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < headerRow.LastCellNum; i++)
+            {
+                ICell? cell = headerRow.GetCell(i);
+                if (cell == null) continue;
+                string? title = cell.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(title) && !map.ContainsKey(title))
+                    map[title] = i;
+            }
+            return map;
+        }
+
+        /// <summary>判斷資料列是否整列為空。</summary>
+        private static bool IsRowEmpty(IRow row)
+        {
+            for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
+            {
+                ICell? cell = row.GetCell(i);
+                if (cell != null && cell.CellType != CellType.Blank && !string.IsNullOrWhiteSpace(cell.ToString()))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>讀取儲存格字串值（數值/日期/布林/公式快取結果轉字串，與轉檔邏輯一致）。</summary>
+        private static string? GetCellValue(ICell cell)
+        {
+            return cell.CellType switch
+            {
+                CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
+                    ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
+                    : cell.NumericCellValue.ToString(),
+                CellType.Boolean => cell.BooleanCellValue.ToString(),
+                CellType.Formula => cell.CachedFormulaResultType switch
+                {
+                    CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
+                        ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
+                        : cell.NumericCellValue.ToString(),
+                    CellType.Boolean => cell.BooleanCellValue.ToString(),
+                    _ => cell.StringCellValue
+                },
+                _ => cell.ToString()?.Trim()
+            };
         }
 
         #endregion

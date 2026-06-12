@@ -154,6 +154,9 @@
                     <button type="button" class="btn btn-success" id="btnCheckInStockPrice">
                         <i class="ri-search-line"></i>查詢現貨優惠價
                     </button>
+                    <button type="button" class="btn btn-primary" id="btnExport">
+                        <i class="ri-download-2-line"></i>匯出
+                    </button>
                 </div>
 
             </div>
@@ -305,6 +308,7 @@
             CheckInStockPrice: '@(Configuration["BackendURL"])/api/QuotationResult/CheckInStockPrice',
             GetDecisionLogs: '@(Configuration["BackendURL"])/api/QuotationResult/GetDecisionLogs',
             GetPriceClusterPageList: '@(Configuration["BackendURL"])/api/QuotationResult/GetPriceClusterPageList',
+            Export: '@(Configuration["BackendURL"])/api/QuotationResult/Export',
         };
 
         // ── 欄位名稱（Razor nameof 強型別） ──────────────────────────────────
@@ -663,6 +667,49 @@
                 })
                 .catch(function (msg) {
                     Swal.fire({ icon: 'error', title: '查詢失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
+                })
+                .finally(function () { hideLoader(); });
+        });
+
+        // ── 匯出（原始 Excel 附加系統比對資料） ──────────────────────────
+        $('#btnExport').on('click', function () {
+            if (!currentFileId) return;
+            showLoader();
+            fetch(pageUrls.Export + '?id=' + currentFileId, {
+                method: 'GET',
+                credentials: 'include'
+            })
+                .then(function (res) {
+                    var contentType = res.headers.get('Content-Type') || '';
+                    // 後端驗證失敗時回傳 JSON（如：原始檔不存在）
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json().then(function (json) {
+                            return Promise.reject(json.Message || '匯出失敗');
+                        });
+                    }
+                    if (!res.ok) throw new Error('匯出失敗');
+                    var disposition = res.headers.get('Content-Disposition');
+                    var fileName = 'export.xlsx';
+                    if (disposition) {
+                        var match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^;"'\n]+)["']?/i);
+                        if (match) fileName = decodeURIComponent(match[1]);
+                    }
+                    return res.blob().then(function (blob) {
+                        return { blob: blob, fileName: fileName };
+                    });
+                })
+                .then(function (result) {
+                    var url = URL.createObjectURL(result.blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = result.fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(function (msg) {
+                    Swal.fire({ icon: 'error', title: '匯出失敗', text: typeof msg === 'string' ? msg : '', confirmButtonText: '確定' });
                 })
                 .finally(function () { hideLoader(); });
         });
