@@ -975,6 +975,9 @@ namespace backend.Controllers
                         WriteExportRow(row, startCol, matched.Dequeue());
                     }
 
+                    // 擴充欄位欄寬依內容實際長度調整（含標題；全形字以 2 個字元計）
+                    AutoFitExportColumns(sheet, headerRowIndex, startCol, ExportExtraHeaders.Length);
+
                     using MemoryStream ms = new();
                     workbook.Write(ms, true);
                     fileBytes = ms.ToArray();
@@ -1031,6 +1034,50 @@ namespace backend.Controllers
             SetNumericCell(row, col++, content.ExternalStock);
             SetNumericCell(row, col++, content.ExternalMoq);
             SetTextCell(row, col, scenarioText);
+        }
+
+        /// <summary>
+        /// 功能說明：依內容實際字數調整擴充欄位的欄寬（從標題列掃描到最後一列，取每欄最長內容）。
+        /// </summary>
+        /// <param name="sheet">輸入參數：目標工作表。</param>
+        /// <param name="headerRowIndex">輸入參數：標題列索引（0-based）。</param>
+        /// <param name="startCol">輸入參數：擴充欄位起始欄索引（0-based）。</param>
+        /// <param name="columnCount">輸入參數：擴充欄位數。</param>
+        /// <remarks>
+        /// 參考功能名稱與用途：不使用 AutoSizeColumn（伺服器無對應字型時會失敗），改以字元數計算；全形字計 2 個字元寬。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
+        private static void AutoFitExportColumns(ISheet sheet, int headerRowIndex, int startCol, int columnCount)
+        {
+            const int maxExcelWidth = 255 * 256; // Excel 欄寬上限（單位：1/256 字元）
+
+            for (int i = 0; i < columnCount; i++)
+            {
+                int colIdx = startCol + i;
+                int maxLen = 0;
+
+                for (int rowIdx = headerRowIndex; rowIdx <= sheet.LastRowNum; rowIdx++)
+                {
+                    ICell? cell = sheet.GetRow(rowIdx)?.GetCell(colIdx);
+                    if (cell == null) continue;
+                    string text = GetCellValue(cell) ?? string.Empty;
+                    int len = GetDisplayWidth(text);
+                    if (len > maxLen) maxLen = len;
+                }
+
+                if (maxLen == 0) continue;
+                // +2 字元邊距，避免內容貼齊框線
+                sheet.SetColumnWidth(colIdx, Math.Min((maxLen + 2) * 256, maxExcelWidth));
+            }
+        }
+
+        /// <summary>計算字串顯示寬度：ASCII 計 1 個字元，全形（中文等非 Latin-1 字元）計 2 個字元。</summary>
+        private static int GetDisplayWidth(string text)
+        {
+            int width = 0;
+            foreach (char c in text)
+                width += c > 0xFF ? 2 : 1;
+            return width;
         }
 
         /// <summary>套用上下左右細邊框（擴充欄位格線）。</summary>
