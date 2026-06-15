@@ -49,11 +49,12 @@ namespace Data.DataAccess.Impl
             Dictionary<string, object> param = new() { { "targetDate", targetDate } };
 
             string sql = @"
-DELETE FROM esScheduleCycleLogDetail
-WHERE CreatedAt < @targetDate";
+DELETE FROM esschedulecyclelogdetail AS d
+USING esschedulecyclelog AS l
+WHERE d.schedulecyclelogid = l.id
+  AND l.createdat < @targetDate";
 
             DbHelper.Execute(sql, param);
-            DbHelper.Commit();
         }
     }
 }

@@ -9,14 +9,13 @@ namespace Data.DataAccess.Impl
         public void DeleteOldLog(int days)
         {
             var targetDate = DateTime.Now.AddDays(-days);
-            Dictionary<string, object> param = new() { { "targetDate", targetDate } };
+            Dictionary<string, object> param = new() { { "targetDate", targetDate } };  
 
             string sql = @"
-DELETE FROM esScheduleCycleLog
-WHERE CreatedAt < @targetDate";
+DELETE FROM esschedulecyclelog
+WHERE createdat < @targetDate";
 
             DbHelper.Execute(sql, param);
-            DbHelper.Commit();
         }
     }
 }
