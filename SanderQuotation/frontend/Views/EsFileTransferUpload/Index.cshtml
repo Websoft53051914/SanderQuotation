@@ -258,10 +258,11 @@
 
         // ── 狀態對應設定（EsFileTransferUploadProcessStatusEnum） ──────────────
         var statusConfig = {
-            1: { text: '未轉檔', cls: 'badge bg-secondary-subtle text-secondary' },
-            2: { text: '已轉檔', cls: 'badge bg-info-subtle text-info' },
-            3: { text: '未查價', cls: 'badge bg-warning-subtle text-warning' },
-            5: { text: '已查價', cls: 'badge bg-success-subtle text-success' },
+            '@EsFileTransferUploadProcessStatusEnum.Pending.ToInt()': { text: '@EsFileTransferUploadProcessStatusEnum.Pending.GetDescription().ToHtmlString()', cls: 'badge bg-secondary-subtle text-secondary' },
+            '@EsFileTransferUploadProcessStatusEnum.Transferred.ToInt()': { text: '@EsFileTransferUploadProcessStatusEnum.Transferred.GetDescription().ToHtmlString()', cls: 'badge bg-info-subtle text-info' },
+            '@EsFileTransferUploadProcessStatusEnum.PendingPricingSearch.ToInt()': { text: '@EsFileTransferUploadProcessStatusEnum.PendingPricingSearch.GetDescription().ToHtmlString()', cls: 'badge bg-warning-subtle text-warning' },
+            '@EsFileTransferUploadProcessStatusEnum.PricingDone.ToInt()': { text: '@EsFileTransferUploadProcessStatusEnum.PricingDone.GetDescription().ToHtmlString()', cls: 'badge bg-success-subtle text-success' },
+            '@EsFileTransferUploadProcessStatusEnum.TransferredError.ToInt()': { text: '@EsFileTransferUploadProcessStatusEnum.TransferredError.GetDescription().ToHtmlString()', cls: 'badge bg-danger-subtle text-danger' },
         };
 
         // ── 選項快取 ───────────────────────────────────────────────────────────

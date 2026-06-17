@@ -130,8 +130,6 @@ namespace Business.BusinessLogic
                     {
                         var errlogEntity = _mapper.Map<EsTransferErrorLogEntity>(errlog);
                         errlogEntity.ScheduleCycleLogDetailId = detailEntity.Id;
-                        errlogEntity.CreatedAt = base.now;
-                        errlogEntity.UpdatedAt = base.now;
                         GetErrorLogDAO().InsertAction(errlogEntity);
                     }
                 }
@@ -155,6 +153,18 @@ namespace Business.BusinessLogic
         public void DeleteOldLogDetail(int days)
         {
             GetDetailDAO().DeleteOldLog(days);
+        }
+
+        /// <summary>
+        /// 刪除超過 N 天的排程執行紀錄，包含 esTransferErrorLog、esScheduleCycleLogDetail、esScheduleCycleLog，
+        /// 三個刪除在同一交易中執行，依外鍵順序刪除。
+        /// </summary>
+        public void DeleteOldScheduleLogs(int days)
+        {
+            GetErrorLogDAO().DeleteOldLog(days);
+            GetDetailDAO().DeleteOldLog(days);
+            GetDAO().DeleteOldLog(days);
+            _unitOfWork.Commit();
         }
     }
 }

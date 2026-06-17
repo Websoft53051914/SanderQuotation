@@ -37,5 +37,10 @@ namespace Business.BusinessLogic
         }
 
         private IEsTransferErrorLogDAO GetDAO() => _unitOfWork.Repository<IEsTransferErrorLogDAO>();
+
+        public void DeleteOldLog(int days)
+        {
+            GetDAO().DeleteOldLog(days);
+        }
     }
 }

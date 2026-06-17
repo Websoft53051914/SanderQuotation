@@ -20,5 +20,20 @@ namespace Data.DataAccess.Impl
 
             return DbHelper.FindList<EsTransferErrorLogEntity>(sql, param);
         }
+
+        public void DeleteOldLog(int days)
+        {
+            var targetDate = DateTime.Now.AddDays(-days);
+            Dictionary<string, object> param = new() { { "targetDate", targetDate } };
+
+            string sql = @"
+DELETE FROM estransfererrorlog AS el
+USING esschedulecyclelogdetail AS d, esschedulecyclelog AS l
+WHERE el.schedulecyclelogdetailid = d.id
+  AND d.schedulecyclelogid = l.id
+  AND l.createdat < @targetDate";
+
+            DbHelper.Execute(sql, param);
+        }
     }
 }

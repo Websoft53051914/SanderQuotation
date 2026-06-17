@@ -16,6 +16,7 @@ namespace backend.Jobs
     /// 5. 刪除 30 天前的 ailog (不論 status)，確保資料庫不會累積過多無用資料
     /// 6. 刪除超過 ExternalQuotation:ExpirationDay 天的 TBBomFileQuotationExternalHistory 紀錄
     /// 7. 刪除超過 DataCleanupSettings:AIFileRetentionDays 天的 AI 產生 Excel 暫存檔案
+    /// 8. 刪除超過 15 天的 排程執行 紀錄
     /// </summary>
     public class DataCleanupJob
     {
@@ -126,6 +127,18 @@ namespace backend.Jobs
                                 File.Delete(file);
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+                }
+
+                try
+                {
+                    // 刪除超過 15 天的 排程執行 紀錄 (依外鍵順序：esTransferErrorLog → esScheduleCycleLogDetail → esScheduleCycleLog)，三個刪除為同一交易
+                    int cycleLogDays = 15;
+                    EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
+                    cycleLogBL.DeleteOldScheduleLogs(cycleLogDays);
                 }
                 catch (Exception ex)
                 {

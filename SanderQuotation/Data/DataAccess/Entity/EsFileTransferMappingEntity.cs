@@ -11,14 +11,6 @@ namespace Data.DataAccess.Entity
 
         public string Priority { set; get; }
 
-        public DateTime? CreatedAt { set; get; }
-
-        public DateTime? UpdatedAt { set; get; }
-
-        public string CreatedBy { set; get; }
-
-        public string? UpdatedBy { set; get; }
-
         /// <summary>
         /// 系統編號 (自動產生)
         /// </summary>
@@ -29,8 +21,6 @@ namespace Data.DataAccess.Entity
 
         // 匯入範本檔案類型
         public int ExampleFileType { set; get; }
-
-      
 
         // NAS 檔案路徑
         public string SrcNasFilePath { set; get; }
