@@ -312,11 +312,11 @@ backend.Common.HttpContext.Configure(app.Services.GetRequiredService<IHttpContex
 //BackgroundJob.Enqueue<ExtractKeywordJob>(job => job.ExecuteAsync());
 #endif
 
-// 每天凌晨 3 點執行資料清理排程
+// 每天早上 9 點執行資料清理排程
 RecurringJob.AddOrUpdate<DataCleanupJob>(
     "DataCleanupJob",
     job => job.ExecuteAsync(),
-    "0 3 * * *",
+    "0 9 * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time")

@@ -279,7 +279,7 @@ namespace backend.Controllers
 
 
         [HttpGet("GetPageList")]
-        [CustomAuthorization(FuncID.ESDbTransfer_View)]
+        [CustomAuthorization(FuncID.HistoryFile_View)]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, string Keyword)
         {
             try

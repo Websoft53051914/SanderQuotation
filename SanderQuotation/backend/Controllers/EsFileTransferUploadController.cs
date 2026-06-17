@@ -113,7 +113,7 @@ namespace backend.Controllers
         /// <param name="filter">輸入參數：分頁、KeywordLike（EsFileTransferUploadSearchVM）。</param>
         /// <returns>輸出參數：JsonSuccess({ Data, Total, Page, PageSize })。</returns>
         /// <remarks>參考功能名稱與用途：GetBlEsFileTransferUpload().GetPageList。訊息內容及生成條件：成功 → 清單；例外 → System_Error。</remarks>
-        [CustomAuthorization(FuncID.ESDbTransferMapping_View)]
+        [CustomAuthorization(FuncID.EsFileTransferUpload_View)]
         [HttpGet("GetPageList")]
         public ActionResult GetPageList([FromQuery] EsFileTransferUploadSearchVM filter)
         {
@@ -158,7 +158,7 @@ namespace backend.Controllers
         /// <summary>
         /// 取得上傳設定用的下拉選項（匯入規則、客戶代碼）
         /// </summary>
-        [CustomAuthorization(FuncID.ESDbTransferMapping_View)]
+        [CustomAuthorization(FuncID.EsFileTransferUpload_Edit, FuncID.EsFileTransferUpload_View)]
         [HttpGet("GetOptionData")]
         public ActionResult GetOptionData()
         {
