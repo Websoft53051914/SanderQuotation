@@ -103,7 +103,8 @@ WHERE
         }
 
         /// <summary>
-        /// 以文字相似度比對 LongDesc 關鍵字（用於 MPN / 廠牌比對）
+        /// 以文字相似度比對 LongDesc 關鍵字（用於 MPN / 廠牌比對）。
+        /// 候選條件：整段 similarity &gt; 0.4、子字串 word_similarity &gt; 0.5，或 MPN 長度 &gt;= 6 時 ILIKE 字面包含保底。
         /// </summary>
         /// <param name="pKeyword">搜尋字串</param>
         /// <param name="pNo">限定料號（可為 null）</param>
@@ -119,18 +120,30 @@ WHERE
                 paras.Add(nameof(pNo), pNo);
             }
 
+            // 整段 trigram 門檻維持 0.4；子字串 word_similarity 門檻 0.5；MPN 長度 >= 6 時 ILIKE 字面包含保底
+            const decimal WholeTextThreshold = 0.40m;
+            const decimal SubstringThreshold = 0.50m;
+            const int MinKeywordLengthForContains = 6;
+
             string sql = $@"
 SELECT
     k.no
     , k.columnname
     , k.keyword
-    , similarity(k.keyword, @pKeyword) AS SimilarityScore
+    , GREATEST(
+        similarity(k.keyword, @pKeyword),
+        word_similarity(@pKeyword, k.keyword)
+      ) AS SimilarityScore
 FROM tb_sandermoduleitemkeyword k
 WHERE 1=1
     AND (k.columnname = 'LongDesc' OR k.columnname = 'LongDesc2')
-    AND similarity(k.keyword, @pKeyword) > 0.4
+    AND (
+        similarity(k.keyword, @pKeyword) > {WholeTextThreshold}
+        OR word_similarity(@pKeyword, k.keyword) > {SubstringThreshold}
+        OR (length(@pKeyword) >= {MinKeywordLengthForContains} AND k.keyword ILIKE '%' || @pKeyword || '%')
+    )
 {condition}
-ORDER BY similarity(k.keyword, @pKeyword) DESC, k.no
+ORDER BY SimilarityScore DESC, k.no
 LIMIT 20";
 
             return DbHelper.FindList<TBSanderModuleItemKeywordDTO>(sql, paras);

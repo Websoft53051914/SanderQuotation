@@ -496,7 +496,7 @@ namespace backend.Models
             string description = SandermoduleItemNormalizer.Normalize(content.Description ?? string.Empty);
             string componentPart = SandermoduleItemNormalizer.Normalize(content.ComponentPart ?? string.Empty);
 
-            // Step1：以 Manufacturer Part Number（MPN）查詢
+            // Step1-PhaseA：以 MPN 查詢（此階段不比對廠牌）
             string step1Info = $"查詢值：{mpn}\n";
             if (!string.IsNullOrWhiteSpace(mpn))
             {
@@ -512,8 +512,9 @@ namespace backend.Models
                         dmListMatch = dmListMatch.Where(x => x.ColumnName == nameof(SanderModuleItemDM.LongDesc)).ToList();
                     dmListMatch = dmListMatch.OrderBy(x => x.No, StringComparer.Ordinal).ToList();
 
-                    step1Info += $"命中 {dmListMatch.Count} 筆，候選清單：{string.Join(", ", dmListMatch.Select(x => $"{x.No}({x.Keyword})"))}\n";
+                    step1Info += $"MPN 命中 {dmListMatch.Count} 筆（此階段不比對廠牌），候選清單：{string.Join(", ", dmListMatch.Select(x => $"{x.No}({x.Keyword})"))}\n";
 
+                    // Step1-PhaseB：依 MPN 命中結果決定料號；僅 DIODE 類別才查 LongDesc 是否含符合廠牌字眼
                     string? step1FallbackNo = null;
                     string step1FallbackResult = string.Empty;
 
@@ -523,58 +524,52 @@ namespace backend.Models
                             continue;
 
                         SanderModuleItemDM? itemDM = blSanderModuleItem.GetOneInfoByNo(dm.No);
-                        bool needsBrandComparison =
-                            itemDM?.ItemCategoryCode != null &&
-                            brandComparisonCategorySet.Contains(itemDM.ItemCategoryCode);
-
-                        if (!needsBrandComparison)
+                        if (!RequiresDiodeBrandComparison(itemDM, brandComparisonCategorySet))
                         {
-                            step1Info += $"[{dm.No}] 非需比對廠牌類別，完全命中，命中欄位：{dm.ColumnName}\n";
-                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，非需比對廠牌類別）");
+                            step1Info += $"[{dm.No}] 非 DIODE 類別，MPN 命中即完全命中，命中欄位：{dm.ColumnName}\n";
+                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN）");
                             content.No = dm.No;
-                            content.IsRecommendedNo = false; content.MatchCategory = (int)MatchCategoryEnum.Hit;
-                            content.MatchField = "MPN"; return;
+                            content.IsRecommendedNo = false;
+                            content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                            content.MatchField = "MPN";
+                            return;
                         }
-                        else if (string.IsNullOrWhiteSpace(manufacturer))
+
+                        if (string.IsNullOrWhiteSpace(manufacturer))
                         {
-                            step1Info += $"[{dm.No}] 需比對廠牌類別，廠牌欄空白，列為建議候選\n";
+                            step1Info += $"[{dm.No}] DIODE 類別，BOM 廠牌欄空白，列為建議候選\n";
                             if (step1FallbackNo == null)
                             {
                                 step1FallbackNo = dm.No;
-                                step1FallbackResult = "查料結果：建議料號（MPN，需比對廠牌類別，廠牌欄空白）";
+                                step1FallbackResult = "查料結果：建議料號（MPN 命中，DIODE 類別，廠牌欄空白）";
                             }
+                            continue;
                         }
-                        else
-                        {
-                            List<TBSanderModuleItemKeywordDM> dmListMatchMfr = blTBSanderModuleItemKeyword.GetListMatchLongDesc(manufacturer, dm.No);
-                            dmListMatchMfr = await _extractKeywordHandler.MatchKeyword(manufacturer, dmListMatchMfr);
-                            dmListMatchMfr = dmListMatchMfr.Where(x => x.SimilarityScore.HasValue && x.SimilarityScore == 1).ToList();
 
-                            if (dmListMatchMfr.Count > 0)
-                            {
-                                step1Info += $"[{dm.No}] 需比對廠牌類別，廠牌一致，完全命中\n";
-                                content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN，需比對廠牌類別，廠牌一致）");
-                                content.No = dm.No;
-                                content.IsRecommendedNo = false;
-                                content.MatchCategory = (int)MatchCategoryEnum.Hit;
-                                content.MatchField = "MPN";
-                                return;
-                            }
-                            else
-                            {
-                                step1Info += $"[{dm.No}] 需比對廠牌類別，廠牌不符，列為建議候選\n";
-                                if (step1FallbackNo == null)
-                                {
-                                    step1FallbackNo = dm.No;
-                                    step1FallbackResult = "查料結果：建議料號（MPN，需比對廠牌類別，廠牌不符）";
-                                }
-                            }
+                        bool brandMatched = await HasMatchingManufacturerInLongDescAsync(
+                            manufacturer, dm.No, blTBSanderModuleItemKeyword);
+                        if (brandMatched)
+                        {
+                            step1Info += $"[{dm.No}] DIODE 類別，LongDesc 含符合廠牌字眼，完全命中\n";
+                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + "查料結果：完全命中（MPN + DIODE 廠牌一致）");
+                            content.No = dm.No;
+                            content.IsRecommendedNo = false;
+                            content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                            content.MatchField = "MPN";
+                            return;
+                        }
+
+                        step1Info += $"[{dm.No}] DIODE 類別，LongDesc 未找到符合廠牌字眼，列為建議候選\n";
+                        if (step1FallbackNo == null)
+                        {
+                            step1FallbackNo = dm.No;
+                            step1FallbackResult = "查料結果：建議料號（MPN 命中，DIODE 類別，廠牌不符）";
                         }
                     }
 
                     if (step1FallbackNo != null)
                     {
-                        step1Info += $"所有候選皆非完全命中，建議料號：{step1FallbackNo}\n";
+                        step1Info += $"DIODE 候選皆未完全命中，建議料號：{step1FallbackNo}\n";
                         content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info + step1FallbackResult);
                         content.No = step1FallbackNo;
                         content.IsRecommendedNo = true;
@@ -691,6 +686,31 @@ namespace backend.Models
             content.MatchCategory = (int)MatchCategoryEnum.Miss;
             content.MatchField = null;
             content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：查無料號");
+        }
+
+        /// <summary>
+        /// 是否為需比對廠牌的 DIODE 類別（依系統設定 BrandComparisonCategoryList，目前為 DIODE）
+        /// </summary>
+        private static bool RequiresDiodeBrandComparison(SanderModuleItemDM? item, HashSet<string> brandComparisonCategorySet)
+        {
+            return item?.ItemCategoryCode != null
+                && brandComparisonCategorySet.Contains(item.ItemCategoryCode);
+        }
+
+        /// <summary>
+        /// 於指定料號的 LongDesc / LongDesc2 關鍵字中，查找是否有與 BOM 廠牌語意相同的字眼
+        /// </summary>
+        private async Task<bool> HasMatchingManufacturerInLongDescAsync(
+            string manufacturer,
+            string itemNo,
+            TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword)
+        {
+            List<TBSanderModuleItemKeywordDM> dmListMatchMfr = blTBSanderModuleItemKeyword.GetListMatchLongDesc(manufacturer, itemNo);
+            if (dmListMatchMfr.Count == 0)
+                return false;
+
+            dmListMatchMfr = await _extractKeywordHandler.MatchKeyword(manufacturer, dmListMatchMfr);
+            return dmListMatchMfr.Any(x => x.SimilarityScore.HasValue && x.SimilarityScore == 1);
         }
     }
 
