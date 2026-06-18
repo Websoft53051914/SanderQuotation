@@ -133,10 +133,11 @@ namespace Business.BusinessLogic
     public partial class TBSanderModuleItemKeywordBL
     {
         /// <summary>
-        /// 儲存料品關鍵字抽取結果：先刪除舊資料、新增關鍵字、更新 FlagNeedExtractKeyword 旗標，三步共用同一連線
+        /// 儲存料品關鍵字抽取結果：先刪除舊資料、新增關鍵字、更新 FlagNeedExtractKeyword 旗標，三步共用同一連線。
+        /// 呼叫端應只傳入 AI 已成功回傳關鍵字的料號；未傳入的料號旗標不會被更新。
         /// </summary>
-        /// <param name="noList">料號清單（用於刪除舊關鍵字與更新旗標）</param>
-        /// <param name="ids">資料 Id 清單（用於更新 FlagNeedExtractKeyword）</param>
+        /// <param name="noList">已成功抽取關鍵字的料號清單（用於刪除舊關鍵字與更新旗標）</param>
+        /// <param name="ids">對應資料 Id 清單（用於更新 FlagNeedExtractKeyword 為 0）</param>
         /// <param name="dmList">新關鍵字 DM 清單</param>
         public void DoSaveExtractKeyword(List<string> noList, List<Guid> ids, List<TBSanderModuleItemKeywordDM> dmList)
         {

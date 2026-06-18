@@ -36,16 +36,27 @@ namespace backend.Jobs
         }
 
         /// <summary>
+        /// 單一批次 API 失敗時的重試次數（不含首次，共嘗試 1 + 此值 次）
+        /// </summary>
+        private const int MaxRetryPerBatch = 2;
+
+        /// <summary>
+        /// 連續失敗（含重試用盡）批次達此數量則提前終止
+        /// </summary>
+        private const int MaxConsecutiveFailedBatches = 10;
+
+        /// <summary>
         /// 執行關鍵字抽取工作
-        /// 取 FlagNeedExtractKeyword = 1 的料品，每批 30 筆，處理後更新旗標為 0；
-        /// 批次失敗時將該批次旗標標為 2（錯誤），累計錯誤批次達 3 次則提前終止。
-        /// 工作結束後無論成功/失敗，將所有 2（錯誤）重置為 1（待處理）供下次執行。
+        /// 取 FlagNeedExtractKeyword = 1 的料品，每批 30 筆；
+        /// 僅對 AI 有回傳關鍵字的料號寫入並更新旗標為 0，漏回傳者維持 1 供下輪重試；
+        /// 單批 API 失敗時重試 MaxRetryPerBatch 次，仍失敗則標為 2（錯誤）；
+        /// 連續失敗批次達 MaxConsecutiveFailedBatches 則提前終止。
+        /// 工作結束後將所有 2（錯誤）重置為 1（待處理）供下次執行。
         /// </summary>
         /// <param name="logDM">排程執行紀錄，供呼叫端彙總結果；傳入 null 時略過紀錄更新</param>
         public async Task ExecuteAsync(EsScheduleCycleLogDetailDM logDM = null)
         {
-            const int MaxErrorBatches = 3;
-            int errorBatchCount = 0;
+            int consecutiveFailedBatchCount = 0;
 
             SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
             TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
@@ -58,33 +69,21 @@ namespace backend.Jobs
                     if (batch.Count == 0)
                         break;
 
-                    List<Guid> batchIds = batch.Select(x => x.Id).ToList();
-                    List<string> batchNos = batch
-                        .Where(x => !string.IsNullOrEmpty(x.No))
-                        .Select(x => x.No!)
-                        .ToList();
+                    bool batchSucceeded = await TryProcessBatchWithRetryAsync(
+                        batch, blSanderModuleItem, blTBSanderModuleItemKeyword, logDM);
 
-                    try
+                    if (batchSucceeded)
                     {
-                        List<TBSanderModuleItemKeywordDM> dataList = await ProcessBatchAsync(batch);
-                        blTBSanderModuleItemKeyword.DoSaveExtractKeyword(batchNos, batchIds, dataList);
-                        if (logDM != null)
-                            logDM.DataCount += batch.Count;
+                        consecutiveFailedBatchCount = 0;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                        if (logDM != null)
-                            logDM.ErrorCount += batch.Count;
-
-                        // 將此批次標為錯誤狀態（2），避免下次循環重複取到
-                        try { blSanderModuleItem.GetDAO().UpdateFlagNeedExtractKeyword(batchIds, 2); }
-                        catch (Exception markEx) { Method.LogSystem(markEx.ToString(), ControllerName: LogControllerName); }
-
-                        errorBatchCount++;
-                        if (errorBatchCount >= MaxErrorBatches)
+                        consecutiveFailedBatchCount++;
+                        if (consecutiveFailedBatchCount >= MaxConsecutiveFailedBatches)
                         {
-                            Method.LogSystem($"[{LogControllerName}] 錯誤批次達 {MaxErrorBatches} 次，提前終止工作", ControllerName: LogControllerName);
+                            Method.LogSystem(
+                                $"[{LogControllerName}] 連續失敗批次達 {MaxConsecutiveFailedBatches} 次，提前終止工作",
+                                ControllerName: LogControllerName);
                             break;
                         }
                     }
@@ -130,6 +129,105 @@ namespace backend.Jobs
                 result.Add(normalized);
             }
             return result;
+        }
+
+        /// <summary>
+        /// 處理單一批次（含重試）：API 失敗時重試，成功則依 AI 回傳寫入並僅更新有關鍵字料號的旗標
+        /// </summary>
+        /// <returns>該批次是否至少有一筆成功寫入；全部失敗（含重試用盡）則 false</returns>
+        private async Task<bool> TryProcessBatchWithRetryAsync(
+            List<SanderModuleItemDM> batch,
+            SanderModuleItemBL blSanderModuleItem,
+            TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword,
+            EsScheduleCycleLogDetailDM? logDM)
+        {
+            List<Guid> batchIds = batch.Select(x => x.Id).ToList();
+            int maxAttempts = MaxRetryPerBatch + 1;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    List<TBSanderModuleItemKeywordDM> dataList = await ProcessBatchAsync(batch);
+                    SaveBatchExtractKeywordResult(batch, dataList, blTBSanderModuleItemKeyword, logDM);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    bool isLastAttempt = attempt >= maxAttempts;
+                    string attemptInfo = $"第 {attempt}/{maxAttempts} 次";
+                    Method.LogSystem(
+                        $"[{LogControllerName}] 批次處理失敗（{attemptInfo}）\n{ex}",
+                        ControllerName: LogControllerName);
+
+                    if (!isLastAttempt)
+                    {
+                        await Task.Delay(2000);
+                        continue;
+                    }
+
+                    if (logDM != null)
+                        logDM.ErrorCount += batch.Count;
+
+                    try { blSanderModuleItem.GetDAO().UpdateFlagNeedExtractKeyword(batchIds, 2); }
+                    catch (Exception markEx) { Method.LogSystem(markEx.ToString(), ControllerName: LogControllerName); }
+
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 比對批次輸入與 AI 回傳，僅寫入有關鍵字的料號；漏回傳者維持 flag=1
+        /// </summary>
+        /// <returns>成功寫入的料號筆數</returns>
+        private int SaveBatchExtractKeywordResult(
+            List<SanderModuleItemDM> batch,
+            List<TBSanderModuleItemKeywordDM> dataList,
+            TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword,
+            EsScheduleCycleLogDetailDM? logDM)
+        {
+            Dictionary<string, List<TBSanderModuleItemKeywordDM>> keywordsByNo = dataList
+                .Where(x => !string.IsNullOrWhiteSpace(x.No) && !string.IsNullOrWhiteSpace(x.Keyword))
+                .GroupBy(x => x.No!, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
+
+            List<SanderModuleItemDM> successfulItems = batch
+                .Where(item => !string.IsNullOrEmpty(item.No) && keywordsByNo.ContainsKey(item.No))
+                .ToList();
+
+            List<string> missingNos = batch
+                .Where(item => !string.IsNullOrEmpty(item.No) && !keywordsByNo.ContainsKey(item.No))
+                .Select(item => item.No!)
+                .ToList();
+
+            if (missingNos.Count > 0)
+            {
+                Method.LogSystem(
+                    $"[{LogControllerName}] AI 漏回傳 {missingNos.Count}/{batch.Count} 筆，料號：{string.Join(", ", missingNos)}",
+                    ControllerName: LogControllerName);
+
+                if (logDM != null)
+                    logDM.ErrorCount += missingNos.Count;
+            }
+
+            if (successfulItems.Count == 0)
+                throw new InvalidOperationException($"批次 {batch.Count} 筆皆無有效關鍵字回傳");
+
+            List<string> successfulNos = successfulItems.Select(x => x.No!).ToList();
+            List<Guid> successfulIds = successfulItems.Select(x => x.Id).ToList();
+            List<TBSanderModuleItemKeywordDM> successfulKeywords = successfulItems
+                .SelectMany(item => keywordsByNo[item.No!])
+                .ToList();
+
+            blTBSanderModuleItemKeyword.DoSaveExtractKeyword(successfulNos, successfulIds, successfulKeywords);
+
+            if (logDM != null)
+                logDM.DataCount += successfulItems.Count;
+
+            return successfulItems.Count;
         }
 
         /// <summary>
