@@ -43,5 +43,10 @@ namespace Data.DataAccess.Dao
         /// 將所有 FlagNeedExtractKeyword = 2（錯誤）的料品重置為 1（待處理）
         /// </summary>
         void ResetErrorFlagToNeedProcess();
+
+        /// <summary>
+        /// 將 description 為已停用／作廢的料品標記為不需 AI 關鍵字抽取（flag=0）
+        /// </summary>
+        void SkipDeactivatedItemsForExtractKeyword();
     }
 }

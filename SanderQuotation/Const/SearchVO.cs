@@ -177,6 +177,11 @@
         public int? SanderModuleItemFlagNeedExtractKeywordEq { get; set; }
 
         /// <summary>
+        /// 排除 description 標記為已停用／作廢的料品（用於 AI 關鍵字抽取）
+        /// </summary>
+        public bool ExcludeDeactivatedSanderModuleItem { get; set; }
+
+        /// <summary>
         /// EsFileTransferUpload 執行狀態
         /// </summary>
         public int? ProcessStatusEq { get; set; }

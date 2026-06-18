@@ -179,7 +179,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 取得指定批次數量的待處理料品（FlagNeedExtractKeyword = 1）
+        /// 取得指定批次數量的待處理料品（FlagNeedExtractKeyword = 1，排除已停用／作廢）
         /// </summary>
         /// <param name="batchSize">批次筆數上限</param>
         /// <returns>待處理的 DM 清單</returns>
@@ -187,9 +187,19 @@ namespace Business.BusinessLogic
         {
             SearchVO searchVO = new();
             searchVO.SanderModuleItemFlagNeedExtractKeywordEq = 1;
+            searchVO.ExcludeDeactivatedSanderModuleItem = true;
             searchVO.LimitRows = batchSize;
 
             return GetListByFilter(searchVO);
+        }
+
+        /// <summary>
+        /// 將已停用／作廢料品標記為不需 AI 關鍵字抽取（flag=0），避免重複進入待處理佇列
+        /// </summary>
+        public void DoSkipDeactivatedItemsForExtractKeyword()
+        {
+            GetDAO().SkipDeactivatedItemsForExtractKeyword();
+            _unitOfWork.Commit();
         }
 
         /// <summary>

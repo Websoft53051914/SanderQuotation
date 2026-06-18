@@ -13,6 +13,15 @@ namespace Data.DataAccess.Impl
     public class SanderModuleItemDaoImpl : Core.Utility.Base.Data.GuidId.BaseImpl<SanderModuleItemEntity>, ISanderModuleItemDAO
     {
         /// <summary>
+        /// description 標記為已停用／作廢的 SQL 條件（別名 s）
+        /// </summary>
+        private const string DeactivatedDescriptionSql = @"
+(
+    COALESCE(s.description,'') ILIKE '%已停用%'
+    OR COALESCE(s.description,'') ILIKE '%作廢%'
+)";
+
+        /// <summary>
         /// 依條件查詢清單
         /// </summary>
         /// <param name="searchVO">查詢條件</param>
@@ -45,6 +54,10 @@ namespace Data.DataAccess.Impl
             if (searchVO.LimitRows.HasValue)
             {
                 sqlLimit = $" LIMIT {searchVO.LimitRows.Value} ";
+            }
+            if (searchVO.ExcludeDeactivatedSanderModuleItem)
+            {
+                condition.Append($"AND NOT {DeactivatedDescriptionSql} ");
             }
 
             string sql = $@"
@@ -159,6 +172,20 @@ WHERE {nameof(SanderModuleItemEntity.Id)} = ANY(@ids)";
 UPDATE sandermoduleitem
 SET {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = 1
 WHERE {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = 2";
+
+            DbHelper.Execute(sql, []);
+        }
+
+        /// <summary>
+        /// 將 description 為已停用／作廢的料品標記為不需 AI 關鍵字抽取（flag=0）
+        /// </summary>
+        public void SkipDeactivatedItemsForExtractKeyword()
+        {
+            string sql = $@"
+UPDATE sandermoduleitem s
+SET {nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} = 0
+WHERE s.{nameof(SanderModuleItemEntity.FlagNeedExtractKeyword)} IN (1, 2)
+AND {DeactivatedDescriptionSql}";
 
             DbHelper.Execute(sql, []);
         }

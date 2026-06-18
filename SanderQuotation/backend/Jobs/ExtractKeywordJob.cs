@@ -1,8 +1,10 @@
 ﻿using backend.AI;
 using backend.Common;
+using backend.Common.ConfigurationHelper;
 using Business.BusinessLogic;
 using Business.Common;
 using Business.DomainModel;
+using Microsoft.Extensions.Configuration;
 
 namespace backend.Jobs
 {
@@ -23,16 +25,22 @@ namespace backend.Jobs
 
         private readonly ExtractKeywordHandler _extractKeywordHandler;
         private readonly ManualBatchEmbedding _manualBatchEmbedding;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// 建構子
         /// </summary>
         /// <param name="extractKeywordHandler">AI 關鍵字抽取處理器</param>
         /// <param name="manualBatchEmbedding">向量化處理器</param>
-        public ExtractKeywordJob(ExtractKeywordHandler extractKeywordHandler, ManualBatchEmbedding manualBatchEmbedding)
+        /// <param name="configuration">應用程式設定</param>
+        public ExtractKeywordJob(
+            ExtractKeywordHandler extractKeywordHandler,
+            ManualBatchEmbedding manualBatchEmbedding,
+            IConfiguration configuration)
         {
             _extractKeywordHandler = extractKeywordHandler;
             _manualBatchEmbedding = manualBatchEmbedding;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -41,30 +49,49 @@ namespace backend.Jobs
         private const int MaxRetryPerBatch = 2;
 
         /// <summary>
-        /// 連續失敗（含重試用盡）批次達此數量則提前終止
+        /// 單次執行最長分鐘數；逾時優雅結束，剩餘 flag=1 留待下次排程繼續
         /// </summary>
-        private const int MaxConsecutiveFailedBatches = 10;
+        private const int MaxRunMinutes = 180;
 
         /// <summary>
         /// 執行關鍵字抽取工作
-        /// 取 FlagNeedExtractKeyword = 1 的料品，每批 30 筆；
+        /// 取 FlagNeedExtractKeyword = 1 的料品（排除 description 已停用／作廢），每批 30 筆，直到無待處理或達最長執行時間（MaxRunMinutes）；
         /// 僅對 AI 有回傳關鍵字的料號寫入並更新旗標為 0，漏回傳者維持 1 供下輪重試；
-        /// 單批 API 失敗時重試 MaxRetryPerBatch 次，仍失敗則標為 2（錯誤）；
-        /// 連續失敗批次達 MaxConsecutiveFailedBatches 則提前終止。
+        /// 單批 API 失敗時重試 MaxRetryPerBatch 次，仍失敗則標為 2（錯誤）並繼續下一批；
+        /// AbortAfterConsecutiveFailedBatches &gt; 0 時，連續失敗達該值才提前終止（預設 0 不中止）。
         /// 工作結束後將所有 2（錯誤）重置為 1（待處理）供下次執行。
         /// </summary>
         /// <param name="logDM">排程執行紀錄，供呼叫端彙總結果；傳入 null 時略過紀錄更新</param>
         public async Task ExecuteAsync(EsScheduleCycleLogDetailDM logDM = null)
         {
+            ConfigurationHelper configHelper = new(_configuration);
+            int abortAfterConsecutiveFailedBatches = configHelper.GetIntValue("ExtractKeyword:AbortAfterConsecutiveFailedBatches");
+            int failedBatchCooldownSeconds = configHelper.GetIntValue("ExtractKeyword:FailedBatchCooldownSeconds");
+            if (failedBatchCooldownSeconds < 1)
+                failedBatchCooldownSeconds = 1;
+
             int consecutiveFailedBatchCount = 0;
+            DateTime runStartedAt = DateTime.Now;
 
             SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
             TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
+
+            blSanderModuleItem.DoSkipDeactivatedItemsForExtractKeyword();
 
             try
             {
                 while (true)
                 {
+                    if (DateTime.Now - runStartedAt >= TimeSpan.FromMinutes(MaxRunMinutes))
+                    {
+                        Method.LogSystem(
+                            $"[{LogControllerName}] 已達最長執行時間 {MaxRunMinutes} 分鐘，優雅結束；剩餘待處理請下次排程繼續",
+                            ControllerName: LogControllerName);
+                        if (logDM != null)
+                            logDM.ErrorMessage = $"已達最長執行時間 {MaxRunMinutes} 分鐘，剩餘待處理將於下次執行";
+                        break;
+                    }
+
                     List<SanderModuleItemDM> batch = blSanderModuleItem.GetListNeedExtractKeyword(BatchSize);
                     if (batch.Count == 0)
                         break;
@@ -75,20 +102,24 @@ namespace backend.Jobs
                     if (batchSucceeded)
                     {
                         consecutiveFailedBatchCount = 0;
+                        await Task.Delay(1000);
                     }
                     else
                     {
                         consecutiveFailedBatchCount++;
-                        if (consecutiveFailedBatchCount >= MaxConsecutiveFailedBatches)
+                        if (abortAfterConsecutiveFailedBatches > 0
+                            && consecutiveFailedBatchCount >= abortAfterConsecutiveFailedBatches)
                         {
                             Method.LogSystem(
-                                $"[{LogControllerName}] 連續失敗批次達 {MaxConsecutiveFailedBatches} 次，提前終止工作",
+                                $"[{LogControllerName}] 連續失敗批次達 {abortAfterConsecutiveFailedBatches} 次，提前終止工作",
                                 ControllerName: LogControllerName);
+                            if (logDM != null)
+                                logDM.ErrorMessage = $"連續失敗批次達 {abortAfterConsecutiveFailedBatches} 次，提前終止";
                             break;
                         }
-                    }
 
-                    await Task.Delay(1000); // 每批次處理完後暫停 1 秒，避免對 API 造成過大壓力
+                        await Task.Delay(failedBatchCooldownSeconds * 1000);
+                    }
                 }
 
                 if (logDM != null)
@@ -244,4 +275,3 @@ namespace backend.Jobs
         }
     }
 }
-

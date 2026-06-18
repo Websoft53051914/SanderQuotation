@@ -60,6 +60,12 @@ namespace backend.Common.ConfigurationHelper
             // AI 產生檔案保留天數
             { "DataCleanupSettings:AIFileRetentionDays", "1" },
 	        #endregion
+            #region -- ExtractKeywordJob --
+            // 連續失敗批次達此數提前終止；0 表示不中止，持續處理至無 flag=1 或達最長執行時間
+            { "ExtractKeyword:AbortAfterConsecutiveFailedBatches", "0" },
+            // 整批失敗後暫停秒數（讓 API 恢復，再處理下一批）
+            { "ExtractKeyword:FailedBatchCooldownSeconds", "5" },
+	        #endregion
             
         };
 
