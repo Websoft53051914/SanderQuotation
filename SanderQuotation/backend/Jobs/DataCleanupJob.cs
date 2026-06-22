@@ -36,115 +36,112 @@ namespace backend.Jobs
             _pathProvider = pathProvider;
         }
 
-        public async Task ExecuteAsync()
+        public void Execute()
         {   
             ConfigurationHelper configurationHelper = new ConfigurationHelper(_config);
             int ControlLogRetentionDays = _config.GetValue("DataCleanupSettings:ControlLogRetentionDays",15);
             int HistoryFileRetentionDays = _config.GetValue("DataCleanupSettings:HistoryFileRetentionDays", 5);
             int EsFileTransferUploadRetentionDays = _config.GetValue("DataCleanupSettings:EsFileTransferUploadRetentionDays", 5);
             int AILogRetentionDays  = _config.GetValue("DataCleanupSettings:AILogRetentionDays", 30);
-            await Task.Run(() =>
+            try
             {
-                try
-                {
-                    // 刪除 15 天前的 tb_controllog
-                    LogBL logBL = BLFactory.GetInstanceBackGround<LogBL>(_config);
-                    logBL.DeleteOldLog(ControlLogRetentionDays);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+                // 刪除 15 天前的 tb_controllog
+                LogBL logBL = BLFactory.GetInstanceBackGround<LogBL>(_config);
+                logBL.DeleteOldLog(ControlLogRetentionDays);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除 Status = 9 (作廢) 的 tb_bomfiledecisionlog
-                    TBBomFileDecisionLogBL decisionLogBL = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>(_config);
-                    decisionLogBL.PhysicalDeleteByStatus((int)StatusEnum.Cancel);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            try
+            {
+                // 刪除 Status = 9 (作廢) 的 tb_bomfiledecisionlog
+                TBBomFileDecisionLogBL decisionLogBL = BLFactory.GetInstanceBackGround<TBBomFileDecisionLogBL>(_config);
+                decisionLogBL.PhysicalDeleteByStatus((int)StatusEnum.Cancel);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除 status <> 1 且 5 天以前的 HistoryFile 記錄及實體檔案
-                    string historyFileDir = Path.Combine(_env.ContentRootPath, FileDirectoryConst.HistoryFile);
-                    HistoryFileBL historyFileBL = BLFactory.GetInstanceBackGround<HistoryFileBL>(_config);
-                    historyFileBL.DeleteOldNonActiveFiles(HistoryFileRetentionDays, historyFileDir);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            try
+            {
+                // 刪除 status <> 1 且 5 天以前的 HistoryFile 記錄及實體檔案
+                string historyFileDir = Path.Combine(_env.ContentRootPath, FileDirectoryConst.HistoryFile);
+                HistoryFileBL historyFileBL = BLFactory.GetInstanceBackGround<HistoryFileBL>(_config);
+                historyFileBL.DeleteOldNonActiveFiles(HistoryFileRetentionDays, historyFileDir);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除 status <> 1 且 5 天以前的 EsFileTransferUpload 記錄及實體檔案
-                    EsFileTransferUploadBL esFileTransferUploadBL = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>(_config);
-                    esFileTransferUploadBL.DeleteOldNonActiveFiles(EsFileTransferUploadRetentionDays, _pathProvider.EsFileTransferUpload);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            try
+            {
+                // 刪除 status <> 1 且 5 天以前的 EsFileTransferUpload 記錄及實體檔案
+                EsFileTransferUploadBL esFileTransferUploadBL = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>(_config);
+                esFileTransferUploadBL.DeleteOldNonActiveFiles(EsFileTransferUploadRetentionDays, _pathProvider.EsFileTransferUpload);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除 30 天前的 ailog (不論 status)
-                    AILogBL aiLogBL = BLFactory.GetInstanceBackGround<AILogBL>(_config);
-                    aiLogBL.DeleteOldLog(AILogRetentionDays);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            try
+            {
+                // 刪除 30 天前的 ailog (不論 status)
+                AILogBL aiLogBL = BLFactory.GetInstanceBackGround<AILogBL>(_config);
+                aiLogBL.DeleteOldLog(AILogRetentionDays);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除超過效期天數的外部查價歷史紀錄
-                    int externalExpirationDays = configurationHelper.GetIntValue("ExternalQuotation:ExpirationDay");
-                    TBBomFileQuotationExternalHistoryBL externalHistoryBL = BLFactory.GetInstanceBackGround<TBBomFileQuotationExternalHistoryBL>(_config);
-                    externalHistoryBL.DeleteOldRecords(externalExpirationDays);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            try
+            {
+                // 刪除超過效期天數的外部查價歷史紀錄
+                int externalExpirationDays = configurationHelper.GetIntValue("ExternalQuotation:ExpirationDay");
+                TBBomFileQuotationExternalHistoryBL externalHistoryBL = BLFactory.GetInstanceBackGround<TBBomFileQuotationExternalHistoryBL>(_config);
+                externalHistoryBL.DeleteOldRecords(externalExpirationDays);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
+            try
+            {
+                // 刪除 AI 產生的 Excel 暫存檔案（超過設定保留天數）
+                int aiFileRetentionDays = configurationHelper.GetIntValue("DataCleanupSettings:AIFileRetentionDays");
+                string aiExcelDir = _pathProvider.AIExcel;
+                DateTime cutoff = DateTime.Now.AddDays(-aiFileRetentionDays);
+                if (Directory.Exists(aiExcelDir))
                 {
-                    // 刪除 AI 產生的 Excel 暫存檔案（超過設定保留天數）
-                    int aiFileRetentionDays = configurationHelper.GetIntValue("DataCleanupSettings:AIFileRetentionDays");
-                    string aiExcelDir = _pathProvider.AIExcel;
-                    DateTime cutoff = DateTime.Now.AddDays(-aiFileRetentionDays);
-                    if (Directory.Exists(aiExcelDir))
+                    foreach (string file in Directory.GetFiles(aiExcelDir))
                     {
-                        foreach (string file in Directory.GetFiles(aiExcelDir))
-                        {
-                            if (File.GetCreationTime(file) < cutoff)
-                                File.Delete(file);
-                        }
+                        if (File.GetCreationTime(file) < cutoff)
+                            File.Delete(file);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
 
-                try
-                {
-                    // 刪除超過 15 天的 排程執行 紀錄 (依外鍵順序：esTransferErrorLog → esScheduleCycleLogDetail → esScheduleCycleLog)，三個刪除為同一交易
-                    int cycleLogDays = 15;
-                    EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
-                    cycleLogBL.DeleteOldScheduleLogs(cycleLogDays);
-                }
-                catch (Exception ex)
-                {
-                    Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
-                }
-            });
+            try
+            {
+                // 刪除超過 15 天的 排程執行 紀錄 (依外鍵順序：esTransferErrorLog → esScheduleCycleLogDetail → esScheduleCycleLog)，三個刪除為同一交易
+                int cycleLogDays = 15;
+                EsScheduleCycleLogBL cycleLogBL = BLFactory.GetInstanceBackGround<EsScheduleCycleLogBL>(_config);
+                cycleLogBL.DeleteOldScheduleLogs(cycleLogDays);
+            }
+            catch (Exception ex)
+            {
+                Method.LogSystem(ex.ToString(), ControllerName: LogControllerName);
+            }
         }
     }
 }
