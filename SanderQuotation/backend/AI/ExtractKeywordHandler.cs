@@ -44,7 +44,10 @@ namespace backend.AI
    - 例如：UPM1E102MHD6、EKY-250ELL102MK20S
 2. 抓取品牌名稱（若可辨識）
    - 例如：Nichicon、Rubycon、Panasonic
-3. 忽略：
+3. 抓取客戶料號／承認料／BOM Component Part（若可辨識）
+   - 常為英數與連字號（長度 >= 6），例如：0080433-005
+   - 若整行僅有此料號，或與 MPN 並存於 LongDesc，亦須原樣輸出（不可略過）
+4. 忽略：
    - 中文描述（如：短、腳位外八）
    - 尺寸（如：12.5x20mm）
 --------------------

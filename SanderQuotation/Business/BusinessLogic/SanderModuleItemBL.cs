@@ -203,6 +203,15 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
+        /// 依客戶料號在 longdesc / longdesc2 / description2 字面比對（Step 2 fallback）
+        /// </summary>
+        /// <param name="partNumber">客戶料號（已正規化）</param>
+        public List<SanderModuleItemPartMatchDTO> GetListMatchPartNumberInSpecFields(string partNumber)
+        {
+            return GetDAO().GetListMatchPartNumberInSpecFields(partNumber);
+        }
+
+        /// <summary>
         /// 將所有 FlagNeedExtractKeyword = 2（錯誤）的料品重置為 1（待處理）
         /// </summary>
         public void DoResetErrorItems()

@@ -270,6 +270,7 @@ namespace backend.Jobs
         {
             List<SanderModuleItemDM> normalizeList = Normalize(batch);
             List<TBSanderModuleItemKeywordDM> dataList = await _extractKeywordHandler.ExtractKeyword(normalizeList);
+            SanderModuleItemKeywordSupplement.AppendCustomerPartKeywords(normalizeList, dataList);
             await _manualBatchEmbedding.FillEmbed(dataList);
             return dataList;
         }

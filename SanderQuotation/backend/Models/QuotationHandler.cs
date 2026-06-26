@@ -6,6 +6,7 @@ using Business.Common;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Extensions;
+using Data.DataAccess.DTO;
 using static Const.Enums;
 
 namespace backend.Models
@@ -592,7 +593,7 @@ namespace backend.Models
 
             content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep1, step1Info);
 
-            // Step2：以客戶料號（Component Part）查詢
+            // Step2：以客戶料號（Component Part）查詢 keyword，失敗時 fallback 主檔字面比對
             string step2Info = $"查詢值：{componentPart}\n";
             if (!string.IsNullOrWhiteSpace(componentPart))
             {
@@ -608,7 +609,7 @@ namespace backend.Models
                         dmListMatch = dmListMatch.Where(x => x.ColumnName == nameof(SanderModuleItemDM.LongDesc)).ToList();
                     dmListMatch = dmListMatch.OrderBy(x => x.No, StringComparer.Ordinal).ToList();
 
-                    step2Info += $"命中 {dmListMatch.Count} 筆，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
+                    step2Info += $"keyword 命中 {dmListMatch.Count} 筆，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
 
                     foreach (TBSanderModuleItemKeywordDM dm in dmListMatch)
                     {
@@ -624,12 +625,28 @@ namespace backend.Models
                         return;
                     }
 
-                    step2Info += "未找到\n";
+                    step2Info += "keyword 比對未找到\n";
                 }
                 else
                 {
-                    step2Info += "未找到\n";
+                    step2Info += "keyword 候選 0 筆\n";
                 }
+
+                List<SanderModuleItemPartMatchDTO> specFieldMatches = blSanderModuleItem.GetListMatchPartNumberInSpecFields(componentPart);
+                if (specFieldMatches.Count > 0)
+                {
+                    SanderModuleItemPartMatchDTO bestMatch = specFieldMatches[0];
+                    step2Info += $"主檔字面命中 {specFieldMatches.Count} 筆，候選清單：{string.Join(", ", specFieldMatches.Select(x => x.No))}\n";
+                    step2Info += $"[{bestMatch.No}] 完全命中，命中欄位：{bestMatch.MatchedField}（主檔原文）\n";
+                    content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info + "查料結果：完全命中（Component Part，主檔原文）");
+                    content.No = bestMatch.No;
+                    content.IsRecommendedNo = false;
+                    content.MatchCategory = (int)MatchCategoryEnum.Hit;
+                    content.MatchField = "Component Part";
+                    return;
+                }
+
+                step2Info += "主檔字面比對未找到\n";
             }
             else
             {

@@ -189,5 +189,47 @@ AND {DeactivatedDescriptionSql}";
 
             DbHelper.Execute(sql, []);
         }
+
+        /// <summary>
+        /// 依客戶料號在 longdesc / longdesc2 / description2 字面比對（Step 2 fallback）
+        /// </summary>
+        /// <param name="partNumber">客戶料號（已正規化）</param>
+        public List<SanderModuleItemPartMatchDTO> GetListMatchPartNumberInSpecFields(string partNumber)
+        {
+            if (string.IsNullOrWhiteSpace(partNumber))
+                return [];
+
+            Dictionary<string, object> paras = [];
+            paras.Add(nameof(partNumber), partNumber);
+            string likePattern = $"%{partNumber}%";
+            paras.Add("likePattern", likePattern);
+
+            string sql = $@"
+SELECT
+    s.no
+    , CASE
+        WHEN COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc)}, '') ILIKE @likePattern THEN 'LongDesc'
+        WHEN COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc2)}, '') ILIKE @likePattern THEN 'LongDesc2'
+        WHEN COALESCE(s.{nameof(SanderModuleItemEntity.Description2)}, '') ILIKE @likePattern THEN 'Description2'
+        ELSE 'LongDesc'
+      END AS MatchedField
+FROM sandermoduleitem s
+WHERE NOT {DeactivatedDescriptionSql}
+    AND (
+        COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc)}, '') ILIKE @likePattern
+        OR COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc2)}, '') ILIKE @likePattern
+        OR COALESCE(s.{nameof(SanderModuleItemEntity.Description2)}, '') ILIKE @likePattern
+    )
+ORDER BY
+    CASE
+        WHEN COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc)}, '') ILIKE @likePattern THEN 0
+        WHEN COALESCE(s.{nameof(SanderModuleItemEntity.LongDesc2)}, '') ILIKE @likePattern THEN 1
+        ELSE 2
+    END
+    , s.no
+LIMIT 20";
+
+            return DbHelper.FindList<SanderModuleItemPartMatchDTO>(sql, paras);
+        }
     }
 }
