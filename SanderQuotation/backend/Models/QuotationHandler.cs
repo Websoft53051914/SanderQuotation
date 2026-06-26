@@ -77,6 +77,27 @@ namespace backend.Models
     public partial class QuotationHandler
     {
         /// <summary>
+        /// 依 tb_syssetting 設定自動查價是否執行內部／外部查價（無設定時預設皆執行）
+        /// </summary>
+        public void ApplyPricingSearchSettingsFromSysSetting()
+        {
+            TBSysSettingBL blTBSysSetting = BLFactory.GetInstanceBackGround<TBSysSettingBL>();
+            List<TBSysSettingDM> list = blTBSysSetting.GetListEnabled(new SearchVO());
+
+            RunInternal = GetPricingSearchSwitch(list, ParameterTypeEnum.PricingSearchRunInternalSwitch, true);
+            RunExternal = GetPricingSearchSwitch(list, ParameterTypeEnum.PricingSearchRunExternalSwitch, true);
+        }
+
+        private static bool GetPricingSearchSwitch(List<TBSysSettingDM> list, ParameterTypeEnum type, bool defaultValue)
+        {
+            TBSysSettingDM? dm = list.FirstOrDefault(x => x.Type == type.ToString());
+            if (dm == null || string.IsNullOrWhiteSpace(dm.Value))
+                return defaultValue;
+
+            return dm.Value == "1";
+        }
+
+        /// <summary>
         /// 對單一 BOM 料項執行查價作業
         /// 依 RunInternal / RunExternal 屬性控制是否執行內部/外部查價，
         /// 並將決策過程記錄至 TBBomFileDecisionLog

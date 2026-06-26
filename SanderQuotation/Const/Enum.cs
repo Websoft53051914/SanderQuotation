@@ -534,6 +534,18 @@ namespace Const
             /// </summary>
             [Description("AI 決策過程顯示開關")]
             AIDecisionProcessDisplaySwitch = 3,
+
+            /// <summary>
+            /// 自動查價是否執行內部查價
+            /// </summary>
+            [Description("自動查價執行內部查價")]
+            PricingSearchRunInternalSwitch = 4,
+
+            /// <summary>
+            /// 自動查價是否執行外部查價
+            /// </summary>
+            [Description("自動查價執行外部查價")]
+            PricingSearchRunExternalSwitch = 5,
         }
 
         /// <summary>

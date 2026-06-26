@@ -66,6 +66,18 @@
                             <label class="form-check-label" for="@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()">@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.GetDescription().ToHtmlString()</label>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch form-switch-md mb-3" dir="ltr">
+                            <input type="checkbox" class="form-check-input" id="@ParameterTypeEnum.PricingSearchRunInternalSwitch.ToString()">
+                            <label class="form-check-label" for="@ParameterTypeEnum.PricingSearchRunInternalSwitch.ToString()">@ParameterTypeEnum.PricingSearchRunInternalSwitch.GetDescription().ToHtmlString()</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch form-switch-md mb-3" dir="ltr">
+                            <input type="checkbox" class="form-check-input" id="@ParameterTypeEnum.PricingSearchRunExternalSwitch.ToString()">
+                            <label class="form-check-label" for="@ParameterTypeEnum.PricingSearchRunExternalSwitch.ToString()">@ParameterTypeEnum.PricingSearchRunExternalSwitch.GetDescription().ToHtmlString()</label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="card-footer">
@@ -138,6 +150,8 @@
                     if(data.Success){
                         //處理資料
                         $('#@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()').prop('checked', data.Data.IsAIDecisionProcessDisplay);
+                        $('#@ParameterTypeEnum.PricingSearchRunInternalSwitch.ToString()').prop('checked', data.Data.IsRunInternalPricing !== false);
+                        $('#@ParameterTypeEnum.PricingSearchRunExternalSwitch.ToString()').prop('checked', data.Data.IsRunExternalPricing !== false);
 
                         $('#@mapAttr.IdPreferredVendorListContainer').empty();
                         const pList = data.Data.PreferredVendorList.map(function(v){
@@ -331,7 +345,11 @@
                     url: '@(Configuration["BackendURL"])/api/SysSetting/SaveOther',
                     contentType: 'application/json; charset=utf-8',
                     dataType: 'json',
-                    data: JSON.stringify({ IsAIDecisionProcessDisplay: $('#@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()').prop('checked') }),
+                    data: JSON.stringify({
+                        IsAIDecisionProcessDisplay: $('#@ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()').prop('checked'),
+                        IsRunInternalPricing: $('#@ParameterTypeEnum.PricingSearchRunInternalSwitch.ToString()').prop('checked'),
+                        IsRunExternalPricing: $('#@ParameterTypeEnum.PricingSearchRunExternalSwitch.ToString()').prop('checked')
+                    }),
                     success: function (response) {
                         hideLoader();
                         if (response.Success) {

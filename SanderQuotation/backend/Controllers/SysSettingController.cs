@@ -72,7 +72,9 @@ namespace backend.Controllers
                 });
                 list = list.Where(x => x.Type != ParameterTypeEnum.Internal.ToString()).ToList();
                 SysSettingVM vM = new();
-                vM.IsAIDecisionProcessDisplay = list.Where(x => x.Type == ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString()).Select(x => x.Value == "1").FirstOrDefault();
+                vM.IsAIDecisionProcessDisplay = GetSwitchSetting(list, ParameterTypeEnum.AIDecisionProcessDisplaySwitch, true);
+                vM.IsRunInternalPricing = GetSwitchSetting(list, ParameterTypeEnum.PricingSearchRunInternalSwitch, true);
+                vM.IsRunExternalPricing = GetSwitchSetting(list, ParameterTypeEnum.PricingSearchRunExternalSwitch, true);
                 vM.PreferredVendorList = list.Where(x => x.Type == ParameterTypeEnum.PreferredVendorList.ToString()).Select(x => new SysSettingVM.ListItemVM(){ Id = x.Id, Value = x.Value }).ToList();
                 vM.BrandComparisonCategoryList = list.Where(x => x.Type == ParameterTypeEnum.BrandComparisonCategoryList.ToString()).Select(x => new SysSettingVM.ListItemVM(){ Id = x.Id, Value = x.Value }).ToList();
                 return JsonSuccess(vM);
@@ -216,6 +218,18 @@ namespace backend.Controllers
                         Param = value.IsAIDecisionProcessDisplay ? "1" : "0",
                         Value = value.IsAIDecisionProcessDisplay ? "1" : "0",
                         Type = ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString(),
+                    },
+                    new TBSysSettingDM()
+                    {
+                        Param = value.IsRunInternalPricing ? "1" : "0",
+                        Value = value.IsRunInternalPricing ? "1" : "0",
+                        Type = ParameterTypeEnum.PricingSearchRunInternalSwitch.ToString(),
+                    },
+                    new TBSysSettingDM()
+                    {
+                        Param = value.IsRunExternalPricing ? "1" : "0",
+                        Value = value.IsRunExternalPricing ? "1" : "0",
+                        Type = ParameterTypeEnum.PricingSearchRunExternalSwitch.ToString(),
                     }
                 });
                 LogSuccess();
@@ -226,6 +240,15 @@ namespace backend.Controllers
                 LogError(ex);
                 return JsonValidFail(GetMsg(_config, "System_Error"));
             }
+        }
+
+        private static bool GetSwitchSetting(List<TBSysSettingDM> list, ParameterTypeEnum type, bool defaultValue)
+        {
+            TBSysSettingDM? dm = list.FirstOrDefault(x => x.Type == type.ToString());
+            if (dm == null || string.IsNullOrWhiteSpace(dm.Value))
+                return defaultValue;
+
+            return dm.Value == "1";
         }
     }
 }

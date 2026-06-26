@@ -38,7 +38,10 @@ namespace backend.Jobs
         {
             try
             {
-                await _quotationHandler.AuthorizeExternalAsync();
+                _quotationHandler.ApplyPricingSearchSettingsFromSysSetting();
+
+                if (_quotationHandler.RunExternal)
+                    await _quotationHandler.AuthorizeExternalAsync();
 
                 EsFileTransferUploadBL blEsFileTransferUpload = BLFactory.GetInstanceBackGround<EsFileTransferUploadBL>();
 
@@ -87,12 +90,6 @@ namespace backend.Jobs
 
                     try
                     {
-                        //_quotationHandler.RunExternal = false;
-                        //if (i == 0 || i == 1)
-                        //{
-                        //    _quotationHandler.RunExternal = true;
-                        //}
-
                         BomFileContentDM result = await _quotationHandler.RunAsync(content, upload);
                         results.Add(result);
                         if (logDM != null)
