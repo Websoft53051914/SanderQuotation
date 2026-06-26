@@ -315,7 +315,7 @@ backend.Common.HttpContext.Configure(app.Services.GetRequiredService<IHttpContex
 // 每天早上 9 點執行資料清理排程
 RecurringJob.AddOrUpdate<DataCleanupJob>(
     "DataCleanupJob",
-    job => job.ExecuteAsync(),
+    job => job.Execute(),
     "0 9 * * *",
     new RecurringJobOptions
     {
