@@ -51,6 +51,9 @@ namespace Business.DomainModel
         /// </summary>
         public bool IsBomFileRule { get; set; }
 
+        /// <summary>是否已有上傳紀錄使用此規則（關鍵欄位不可再修改）</summary>
+        public bool IsMappingLocked { get; set; }
+
         //額外欄位
         public List<EsScheduleCycleDM> EsScheduleCycleDMs { get; set; } = new();
     }

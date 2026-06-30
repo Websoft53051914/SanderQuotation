@@ -49,6 +49,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.EsFileTransferMappingId)} = @{nameof(searchVO.EsFileTransferMappingIdEq)} ");
                 paras.Add(nameof(searchVO.EsFileTransferMappingIdEq), searchVO.EsFileTransferMappingIdEq);
             }
+            if (searchVO.EsFileTransferMappingIdIn.Count > 0)
+            {
+                condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.EsFileTransferMappingId)} = ANY(@{nameof(searchVO.EsFileTransferMappingIdIn)}) ");
+                paras.Add(nameof(searchVO.EsFileTransferMappingIdIn), searchVO.EsFileTransferMappingIdIn.ToArray());
+            }
 
             string sql = $@"
 SELECT u.*, eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)}

@@ -836,6 +836,7 @@ namespace backend.Controllers
         {
             "內部料號", "比對結果分類", "比對命中欄位", "內部價格(原幣)", "幣別", "供應商（內部）",
             "單據日期", "採購型號", "外部價格(原幣)", "供應商（外部）", "庫存量", "MOQ 階梯", "情境標註",
+            "查價日期(Mouser)", "優惠價(原幣)(Mouser)", "查價日期(DigiKey)", "優惠價(原幣)(DigiKey)",
         };
 
         /// <summary>
@@ -885,6 +886,27 @@ namespace backend.Controllers
                 contentSearchVO.UploadIdEq = upload.UploadId;
                 List<BomFileContentDM> contentList = GetBlBomFileContent().GetListWithQuotationByFilter(contentSearchVO);
 
+                // 批次取得現貨優惠價（Mouser / DigiKey）
+                Dictionary<Guid, TBBomFileQuotationOtherDM> mouserMap = new();
+                Dictionary<Guid, TBBomFileQuotationOtherDM> dkMap = new();
+                List<Guid> contentIds = contentList
+                    .Where(c => c.Id != Guid.Empty)
+                    .Select(c => c.Id)
+                    .ToList();
+                if (contentIds.Count > 0)
+                {
+                    SearchVO otherSearchVO = new();
+                    otherSearchVO.BomFileContentIdIn = contentIds;
+                    List<TBBomFileQuotationOtherDM> otherList = GetBlTBBomFileQuotationOther().GetListByFilter(otherSearchVO);
+                    foreach (TBBomFileQuotationOtherDM other in otherList)
+                    {
+                        if (other.SourceType == (int)BomFileQuotationOtherSourceTypeEnum.Mouser)
+                            mouserMap[other.BomFileContentId] = other;
+                        else if (other.SourceType == (int)BomFileQuotationOtherSourceTypeEnum.DigiKey)
+                            dkMap[other.BomFileContentId] = other;
+                    }
+                }
+
                 byte[] fileBytes;
                 using (FileStream stream = new(filePath, FileMode.Open, FileAccess.Read))
                 {
@@ -927,14 +949,31 @@ namespace backend.Controllers
                         cell.CellStyle = headerStyle;
                     }
 
-                    // 以匯入規則的識別欄位將 Excel 資料列對應回查價結果（處理轉檔時被篩選略過的列）
+                    // 以匯入規則主鍵欄位（與轉檔 Upsert 一致）將 Excel 資料列對應回查價結果；無主鍵時退回識別欄位
                     Dictionary<string, int> headerMap = BuildHeaderMap(headerRow);
-                    List<(string TargetCol, int CellIdx, string? DefaultValue)> keyColumns = bomColumns
-                        .Where(c => !string.IsNullOrWhiteSpace(c.SrcFileColumnName)
+                    List<EsFileTransferMappingColumnDM> pkBomColumns = bomColumns
+                        .Where(c => c.IsPrimaryKey
+                            && !string.IsNullOrWhiteSpace(c.SrcFileColumnName)
                             && headerMap.ContainsKey(c.SrcFileColumnName)
                             && GetContentKeyValue(new BomFileContentDM(), c.TargetTableColumnName) != KeyFieldNotSupported)
-                        .Select(c => (c.TargetTableColumnName, headerMap[c.SrcFileColumnName], (string?)c.DefaultValue))
                         .ToList();
+
+                    List<(string TargetCol, int CellIdx, string? DefaultValue)> keyColumns;
+                    if (pkBomColumns.Count > 0)
+                    {
+                        keyColumns = pkBomColumns
+                            .Select(c => (c.TargetTableColumnName, headerMap[c.SrcFileColumnName], (string?)c.DefaultValue))
+                            .ToList();
+                    }
+                    else
+                    {
+                        keyColumns = bomColumns
+                            .Where(c => !string.IsNullOrWhiteSpace(c.SrcFileColumnName)
+                                && headerMap.ContainsKey(c.SrcFileColumnName)
+                                && GetContentKeyValue(new BomFileContentDM(), c.TargetTableColumnName) != KeyFieldNotSupported)
+                            .Select(c => (c.TargetTableColumnName, headerMap[c.SrcFileColumnName], (string?)c.DefaultValue))
+                            .ToList();
+                    }
 
                     Dictionary<string, Queue<BomFileContentDM>> contentQueues = new();
                     foreach (BomFileContentDM content in contentList)
@@ -972,7 +1011,10 @@ namespace backend.Controllers
                         if (!contentQueues.TryGetValue(rowKey, out Queue<BomFileContentDM>? matched) || matched.Count == 0)
                             continue;
 
-                        WriteExportRow(row, startCol, matched.Dequeue());
+                        BomFileContentDM matchedContent = matched.Peek();
+                        mouserMap.TryGetValue(matchedContent.Id, out TBBomFileQuotationOtherDM? mouserDm);
+                        dkMap.TryGetValue(matchedContent.Id, out TBBomFileQuotationOtherDM? dkDm);
+                        WriteExportRow(row, startCol, matchedContent, mouserDm, dkDm);
                     }
 
                     // 擴充欄位欄寬依內容實際長度調整（含標題；全形字以 2 個字元計）
@@ -1002,11 +1044,18 @@ namespace backend.Controllers
         /// <param name="row">輸入參數：目標資料列。</param>
         /// <param name="startCol">輸入參數：擴充欄位起始欄索引（0-based）。</param>
         /// <param name="content">輸入參數：查價結果 DM。</param>
+        /// <param name="mouser">輸入參數：Mouser 現貨優惠價（可為 null）。</param>
+        /// <param name="digiKey">輸入參數：DigiKey 現貨優惠價（可為 null）。</param>
         /// <remarks>
         /// 參考功能名稱與用途：欄位順序對應 ExportExtraHeaders；價格欄位輸出原幣金額（數值），幣別欄位顯示原幣幣別。
         /// 訊息內容及生成條件：無 HTTP 回應。
         /// </remarks>
-        private static void WriteExportRow(IRow row, int startCol, BomFileContentDM content)
+        private static void WriteExportRow(
+            IRow row,
+            int startCol,
+            BomFileContentDM content,
+            TBBomFileQuotationOtherDM? mouser = null,
+            TBBomFileQuotationOtherDM? digiKey = null)
         {
             string matchCategoryText = content.MatchCategory.HasValue
                 ? ((MatchCategoryEnum)content.MatchCategory.Value).GetDescription()
@@ -1033,7 +1082,11 @@ namespace backend.Controllers
             SetTextCell(row, col++, content.ExternalSupplierName);
             SetNumericCell(row, col++, content.ExternalStock);
             SetNumericCell(row, col++, content.ExternalMoq);
-            SetTextCell(row, col, scenarioText);
+            SetTextCell(row, col++, scenarioText);
+            SetTextCell(row, col++, mouser?.QuotationDate?.ToString("yyyy/MM/dd"));
+            SetNumericCell(row, col++, mouser?.UnitPriceOriginalCurrency);
+            SetTextCell(row, col++, digiKey?.QuotationDate?.ToString("yyyy/MM/dd"));
+            SetNumericCell(row, col, digiKey?.UnitPriceOriginalCurrency);
         }
 
         /// <summary>

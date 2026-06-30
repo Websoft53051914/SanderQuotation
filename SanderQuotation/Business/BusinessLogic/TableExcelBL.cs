@@ -9,6 +9,7 @@ using Core.Utility.Extensions;
 using Core.Utility.Helper.DB;
 using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
+using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
 using DocumentFormat.OpenXml.Bibliography;
 using System.Transactions;
@@ -65,6 +66,47 @@ namespace Business.BusinessLogic
         {
             scheduleCycleExcelDAO ??= _unitOfWork.Repository<IEsScheduleCycleExcelDAO>();
             return scheduleCycleExcelDAO;
+        }
+
+        private IEsFileTransferUploadDAO? uploadDAO;
+        private IEsFileTransferUploadDAO GetUploadDAO()
+        {
+            uploadDAO ??= _unitOfWork.Repository<IEsFileTransferUploadDAO>();
+            return uploadDAO;
+        }
+
+        /// <summary>
+        /// 匯入規則是否已有上傳紀錄使用（status=啟用）
+        /// </summary>
+        public bool IsUsedByUpload(Guid mappingId)
+        {
+            List<EsFileTransferUploadDTO> uploads = GetUploadDAO().GetListByFilter(new SearchVO
+            {
+                EsFileTransferMappingIdEq = mappingId,
+                StatusEq = (int)StatusEnum.Enabled,
+            });
+            return uploads.Count > 0;
+        }
+
+        /// <summary>
+        /// 批次查詢已有上傳紀錄的匯入規則 Id 集合
+        /// </summary>
+        public HashSet<Guid> GetMappingIdsUsedByUpload(IEnumerable<Guid> mappingIds)
+        {
+            List<Guid> ids = mappingIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return new HashSet<Guid>();
+
+            List<EsFileTransferUploadDTO> uploads = GetUploadDAO().GetListByFilter(new SearchVO
+            {
+                EsFileTransferMappingIdIn = ids,
+                StatusEq = (int)StatusEnum.Enabled,
+            });
+
+            return uploads
+                .Where(u => u.EsFileTransferMappingId.HasValue)
+                .Select(u => u.EsFileTransferMappingId!.Value)
+                .ToHashSet();
         }
 
         /// <summary>
@@ -130,7 +172,10 @@ namespace Business.BusinessLogic
                     dms[i].EsScheduleCycleDMs = scheduleCycleDict[dms[i].TransferMappingCode];
                 }
             }
-               
+
+            HashSet<Guid> usedMappingIds = GetMappingIdsUsedByUpload(dms.Select(d => d.Id));
+            foreach (EsFileTransferMappingDM dm in dms)
+                dm.IsMappingLocked = usedMappingIds.Contains(dm.Id);
 
             return new PageResult<EsFileTransferMappingDM>
             {
@@ -147,6 +192,19 @@ namespace Business.BusinessLogic
         public void Delete(List<string> ids)
         {
             var pkList = GetMappingDAO().FindByPkList(ids.Select(x => Guid.Parse(x)).ToList());
+            foreach (EsFileTransferMappingEntity x in pkList)
+            {
+                if (IsUsedByUpload(x.Id))
+                    throw new InvalidOperationException($"匯入規則「{x.TransferMappingCode}」已有上傳紀錄，無法刪除");
+
+                List<EsScheduleCycleFileTransferEntity> schedules = GetScheduleCycleExcelDAO().GetListByFilter(new SearchVO
+                {
+                    TransferCodeIn = [x.TransferMappingCode],
+                });
+                if (schedules.Count > 0)
+                    throw new InvalidOperationException($"匯入規則「{x.TransferMappingCode}」已設定排程，無法刪除");
+            }
+
             pkList.ForEach(x =>
             {
                 x.UpdatedBy = UserInfo.UserAccount;
@@ -181,6 +239,7 @@ namespace Business.BusinessLogic
             var dm = mapper.Map<EsFileTransferMappingDM>(entity);
             var columns = GetColumnDAO().GetListByMappingSettingId(entity.TransferMappingCode);
             dm.Columns = columns.Select(c => mapper.Map<EsFileTransferMappingColumnDM>(c)).ToList();
+            dm.IsMappingLocked = IsUsedByUpload(entity.Id);
             return dm;
         }
 
@@ -242,6 +301,22 @@ namespace Business.BusinessLogic
         public void Update(EsFileTransferMappingDM dm)
         {
             var entity = GetMappingDAO().FindByPk(dm.Id);
+            if (entity == null)
+                throw new InvalidOperationException("資料不存在");
+
+            bool isLocked = IsUsedByUpload(dm.Id);
+            if (isLocked)
+            {
+                if (HasCriticalMappingChanges(entity.TransferMappingCode, dm))
+                    throw new InvalidOperationException("此匯入規則已有上傳紀錄，欄位對應、主鍵及標題列不可修改，僅可修改備註");
+
+                entity.Description = dm.Description;
+                entity.UpdatedAt = base.now;
+                entity.UpdatedBy = UserInfo?.UserAccount;
+                GetMappingDAO().Update(entity);
+                _unitOfWork.Commit();
+                return;
+            }
 
             entity.ExampleFileName = dm.ExampleFileName;
             entity.ExampleFileType = dm.ExampleFileType;
@@ -280,6 +355,64 @@ namespace Business.BusinessLogic
             }
 
             _unitOfWork.Commit();
+        }
+
+        /// <summary>
+        /// 比對欄位對應、主鍵、工作表／標題列等關鍵設定是否變更
+        /// </summary>
+        private bool HasCriticalMappingChanges(string transferMappingCode, EsFileTransferMappingDM incoming)
+        {
+            var existingColumns = GetColumnDAO().FindListByPropertys(new Dictionary<string, object>
+            {
+                { nameof(EsFileTransferMappingColumnEntity.TransferMappingCode), transferMappingCode },
+                { nameof(EsFileTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() },
+            });
+
+            if (existingColumns.Count != incoming.Columns.Count)
+                return true;
+
+            static string N(string? v) => v?.Trim() ?? string.Empty;
+
+            var existingKeys = existingColumns
+                .Select(c => string.Join("\u001f",
+                    c.SrcSheetIndex,
+                    N(c.SrcSheetName),
+                    c.HeaderRowIndex,
+                    N(c.DBTransferMappingCode),
+                    N(c.TargetTableName),
+                    N(c.SrcFileColumnName),
+                    N(c.TargetTableColumnName),
+                    c.IsPrimaryKey == true,
+                    N(c.FilterCondition),
+                    N(c.FilterMode)))
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToList();
+
+            var incomingKeys = incoming.Columns
+                .Select(c => string.Join("\u001f",
+                    c.SrcSheetIndex,
+                    N(c.SrcSheetName),
+                    c.HeaderRowIndex,
+                    N(c.DBTransferMappingCode),
+                    N(c.TargetTableName),
+                    N(c.SrcFileColumnName),
+                    N(c.TargetTableColumnName),
+                    c.IsPrimaryKey,
+                    N(c.FilterCondition),
+                    N(c.FilterMode)))
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToList();
+
+            if (existingKeys.Count != incomingKeys.Count)
+                return true;
+
+            for (int i = 0; i < existingKeys.Count; i++)
+            {
+                if (!string.Equals(existingKeys[i], incomingKeys[i], StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
     }
 

@@ -192,6 +192,11 @@
         public Guid? EsFileTransferMappingIdEq { get; set; }
 
         /// <summary>
+        /// EsFileTransferUpload 對應的轉入規則 ID 清單（批次查詢）
+        /// </summary>
+        public List<Guid> EsFileTransferMappingIdIn { get; set; } = [];
+
+        /// <summary>
         /// 客戶代碼（用於 ReportItemCustomer 查詢）
         /// </summary>
         public string? CustomerCodeEq { get; set; }
