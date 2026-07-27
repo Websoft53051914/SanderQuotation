@@ -144,6 +144,8 @@ namespace backend.Common
                 {
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = exeLogDM.ErrorMessage;
+                    if (exeLogDM.ErrorLogs?.Count > 0)
+                        logDM.ErrorLogs = exeLogDM.ErrorLogs;
                 }
                 else
                 {
@@ -476,13 +478,13 @@ namespace backend.Common
             {
                 CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                     ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                    : cell.NumericCellValue.ToString(),
+                    : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 CellType.Boolean => cell.BooleanCellValue.ToString(),
                 CellType.Formula => cell.CachedFormulaResultType switch
                 {
                     CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                         ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                        : cell.NumericCellValue.ToString(),
+                        : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     CellType.Boolean => cell.BooleanCellValue.ToString(),
                     _ => cell.StringCellValue
                 },

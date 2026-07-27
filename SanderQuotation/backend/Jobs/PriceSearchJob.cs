@@ -65,6 +65,7 @@ namespace backend.Jobs
                 {
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = ex.Message;
+                    logDM.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = ex.ToString() });
                 }
             }
         }
@@ -99,7 +100,13 @@ namespace backend.Jobs
                     {
                         Method.LogSystem($"[查價錯誤] UploadId={upload.UploadId} ContentId={content.Id}\n{ex}", ControllerName: LogControllerName);
                         if (logDM != null)
+                        {
                             logDM.ErrorCount++;
+                            logDM.ErrorLogs.Add(new EsTransferErrorLogDM
+                            {
+                                Exception = $"[查價錯誤] UploadId={upload.UploadId} ContentId={content.Id} MPN={content.ManufacturerPartNumber}\n{ex}"
+                            });
+                        }
                     }
                 }
 
@@ -109,7 +116,13 @@ namespace backend.Jobs
             {
                 Method.LogSystem($"[查價流程錯誤] UploadId={upload.UploadId}\n{ex}", ControllerName: LogControllerName);
                 if (logDM != null)
+                {
                     logDM.ErrorCount++;
+                    logDM.ErrorLogs.Add(new EsTransferErrorLogDM
+                    {
+                        Exception = $"[查價流程錯誤] UploadId={upload.UploadId}\n{ex}"
+                    });
+                }
             }
         }
     }

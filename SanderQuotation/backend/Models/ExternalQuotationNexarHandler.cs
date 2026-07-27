@@ -117,7 +117,7 @@ namespace backend.Models
         /// <returns>外部查價結果，找不到時回傳空白的 VO</returns>
         public async Task<ExternalQuotationRecordVO> Search(PriceBomVO bomVO, List<string> configPreferredVendorList)
         {
-            int bomQty = bomVO.Qty ?? 0;
+            decimal bomQty = bomVO.Qty ?? 0m;
             ExternalQuotationRecordVO result = new();
             if (_dataAccessToken == null)
             {

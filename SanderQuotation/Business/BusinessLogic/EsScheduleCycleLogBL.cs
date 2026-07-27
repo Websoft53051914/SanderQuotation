@@ -119,6 +119,12 @@ namespace Business.BusinessLogic
                 foreach (var detail in dm.Details)
                 {
                     Guid detailId = Guid.NewGuid();
+                    if (!string.IsNullOrWhiteSpace(detail.ErrorMessage)
+                        && (detail.ErrorLogs == null || detail.ErrorLogs.Count == 0))
+                    {
+                        detail.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = detail.ErrorMessage });
+                    }
+
                     var detailEntity = _mapper.Map<EsScheduleCycleLogDetailEntity>(detail);
                     detailEntity.Id = detailId;
                     detailEntity.ScheduleCycleLogId = entity.Id;

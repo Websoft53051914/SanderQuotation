@@ -1185,7 +1185,7 @@ namespace backend.Controllers
             {
                 "componentpart" => content.ComponentPart,
                 "description" => content.Description,
-                "qty" => content.Qty?.ToString(),
+                "qty" => content.Qty?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "manufacturer" => content.Manufacturer,
                 "manufacturerpartnumber" => content.ManufacturerPartNumber,
                 "displaypart" => content.DisplayPart,
@@ -1193,12 +1193,13 @@ namespace backend.Controllers
             };
         }
 
-        /// <summary>比對 key 正規化：去除前後空白；數值字串去除小數點後多餘的 0（Excel 數值欄與 DB 整數一致化）。</summary>
+        /// <summary>比對 key 正規化：去除前後空白；數值字串去除小數點後多餘的 0（Excel 數值欄與 DB 一致化）。</summary>
         private static string NormalizeKeyValue(string? value)
         {
             string trimmed = value?.Trim() ?? string.Empty;
-            if (decimal.TryParse(trimmed, out decimal number))
-                return number.ToString("0.######");
+            if (decimal.TryParse(trimmed, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out decimal number))
+                return number.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture);
             return trimmed;
         }
 
@@ -1249,13 +1250,13 @@ namespace backend.Controllers
             {
                 CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                     ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                    : cell.NumericCellValue.ToString(),
+                    : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 CellType.Boolean => cell.BooleanCellValue.ToString(),
                 CellType.Formula => cell.CachedFormulaResultType switch
                 {
                     CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                         ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                        : cell.NumericCellValue.ToString(),
+                        : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     CellType.Boolean => cell.BooleanCellValue.ToString(),
                     _ => cell.StringCellValue
                 },

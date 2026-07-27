@@ -18,8 +18,8 @@ namespace ViewModel.QuotationResult
         /// <summary>元件描述</summary>
         public string? Description { get; set; }
 
-        /// <summary>BOM 數量</summary>
-        public int? Qty { get; set; }
+        /// <summary>BOM 數量（允許小數）</summary>
+        public decimal? Qty { get; set; }
 
         /// <summary>廠商</summary>
         public string? Manufacturer { get; set; }

@@ -132,6 +132,7 @@ namespace backend.Jobs
                 {
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = ex.Message;
+                    logDM.ErrorLogs.Add(new EsTransferErrorLogDM { Exception = ex.ToString() });
                 }
             }
             finally
@@ -198,7 +199,13 @@ namespace backend.Jobs
                     }
 
                     if (logDM != null)
+                    {
                         logDM.ErrorCount += batch.Count;
+                        logDM.ErrorLogs.Add(new EsTransferErrorLogDM
+                        {
+                            Exception = $"關鍵字擷取批次失敗（{attemptInfo}，共 {batch.Count} 筆）：{ex}"
+                        });
+                    }
 
                     try { blSanderModuleItem.GetDAO().UpdateFlagNeedExtractKeyword(batchIds, 2); }
                     catch (Exception markEx) { Method.LogSystem(markEx.ToString(), ControllerName: LogControllerName); }

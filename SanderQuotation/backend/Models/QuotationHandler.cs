@@ -269,7 +269,12 @@ namespace backend.Models
                 return;
             }
 
-            int qty = (content.Qty ?? 0) * quotationQty;
+            // BOM 數量允許小數；外部 MOQ・庫存以 decimal 直接比對
+            // 僅 0 < demandQty < 1 時進成 1（例如 0.006 → 1）；其餘保留小數
+            decimal demandQty = (content.Qty ?? 0m) * quotationQty;
+            decimal qty = demandQty <= 0 ? 0m
+                : demandQty < 1 ? 1m
+                : demandQty;
             List<string> preferredVendorList = GetPreferredVendorList();
 
             if (UseExpirationCache)
@@ -763,9 +768,9 @@ namespace backend.Models
         public string? ManufacturerPartNumber { get; set; }
 
         /// <summary>
-        /// 需求數量
+        /// 需求數量（允許小數；呼叫端對 0&lt;qty&lt;1 應先進成 1）
         /// </summary>
-        public int? Qty { get; set; }
+        public decimal? Qty { get; set; }
     }
 
     /// <summary>
