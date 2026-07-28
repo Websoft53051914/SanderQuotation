@@ -51,6 +51,12 @@ namespace ViewModel
         public string? CustomerName { get; set; }
 
         /// <summary>
+        /// BOM 料項數
+        /// </summary>
+        [Sort]
+        public int? ItemCount { get; set; }
+
+        /// <summary>
         /// 手動輸入客戶名稱（CustomerCode 為空時使用）
         /// </summary>
         public string? ManualCustomerName { get; set; }

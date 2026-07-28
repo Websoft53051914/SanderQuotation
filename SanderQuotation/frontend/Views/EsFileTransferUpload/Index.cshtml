@@ -58,7 +58,7 @@
                         <div class="col-xxl-3 col-sm-12">
                             <div class="search-box">
                                 <input type="text" id="keywordInput" class="form-control search bg-light border-light"
-                                       placeholder="搜尋關鍵字">
+                                       placeholder="搜尋關鍵字（含客戶代號）">
                                 <i class="ri-search-line search-icon"></i>
                             </div>
                         </div>
@@ -81,12 +81,14 @@
                                         <input class="form-check-input" type="checkbox" id="checkAll" />
                                     </div>
                                 </th>
-                                <th style="width:110px;">Action</th>
+                                <th style="width:130px;">Action</th>
                                 <th style="width:40px;">項次</th>
                                 <th style="min-width:200px;" class="sort" data-sort="FileName">檔案名稱</th>
                                 <th style="min-width:150px;" class="sort" data-sort="TransferMappingCode">匯入規則</th>
                                 <th style="min-width:100px;" class="sort" data-sort="QuotationQty">報價數量(MOQ)</th>
                                 <th style="min-width:120px;" class="sort" data-sort="CustomerName">客戶名稱</th>
+                                <th style="min-width:100px;" class="sort" data-sort="CustomerCode">客戶代號</th>
+                                <th style="min-width:90px;" class="sort" data-sort="ItemCount">料項數</th>
                                 <th style="width:100px;" class="sort" data-sort="ProcessStatus">狀態</th>
                                 <th style="width:120px;" class="sort" data-sort="CreatedAtText">建立日期</th>
                                 <th style="width:120px;" class="sort" data-sort="UpdatedAtText">更新日期</th>
@@ -247,6 +249,7 @@
             CustomerCode: '@nameof(EsFileTransferUploadVM.CustomerCode)',
             CustomerName: '@nameof(EsFileTransferUploadVM.CustomerName)',
             ManualCustomerName: '@nameof(EsFileTransferUploadVM.ManualCustomerName)',
+            ItemCount: '@nameof(EsFileTransferUploadVM.ItemCount)',
             QuotationQty: '@nameof(EsFileTransferUploadVM.QuotationQty)',
             ProcessStatus: '@nameof(EsFileTransferUploadVM.ProcessStatus)',
             ProcessStatusText: '@nameof(EsFileTransferUploadVM.ProcessStatusText)',
@@ -255,6 +258,9 @@
             UploadId: '@nameof(EsFileTransferUploadVM.UploadId)',
             EsFileTransferMappingId: '@nameof(EsFileTransferUploadVM.EsFileTransferMappingId)',
         };
+
+        var pricingDoneStatus = '@EsFileTransferUploadProcessStatusEnum.PricingDone.ToInt()';
+        var quotationResultEditUrl = '@Url.Action("Edit", "QuotationResult")';
 
         // ── 狀態對應設定（EsFileTransferUploadProcessStatusEnum） ──────────────
         var statusConfig = {
@@ -301,6 +307,7 @@
             GetOptionData: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/GetOptionData',
             Delete: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/Delete',
             SaveUpload: '@(Configuration["BackendURL"])/api/EsFileTransferUpload/SaveUpload',
+            QuotationResultEdit: quotationResultEditUrl,
         };
 
         // ── Hooks（供 _CrudCommonScripts 呼叫） ─────────────────────────────────
@@ -438,6 +445,12 @@
 
         function buildRow(r) {
             var sc = statusConfig[r[EftuM.ProcessStatus]] || { text: r[EftuM.ProcessStatusText], cls: 'badge bg-secondary-subtle text-secondary' };
+            var isPricingDone = String(r[EftuM.ProcessStatus]) === String(pricingDoneStatus);
+            var resultMenuItem = isPricingDone
+                ? `<li><a class="dropdown-item" href="${pageUrls.QuotationResultEdit}?Id=${r[EftuM.Id]}">
+                        <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>結果
+                   </a></li>`
+                : '';
 
             return `
                 <tr data-id="${r[EftuM.Id]}">
@@ -453,6 +466,7 @@
                                 <i class="ri-more-fill align-middle"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                ${resultMenuItem}
                                 <li><a class="dropdown-item remove-item-btn"
                                         data-id="${r[EftuM.Id]}" data-bs-toggle="modal" href="#@(ui.ModalD.Id)">
                                     <i class="ri-delete-bin-fill align-bottom me-2"></i>刪除
@@ -465,6 +479,8 @@
                     <td>${escapeHtml(r[EftuM.TransferMappingCode] || '')}</td>
                     <td>${r[EftuM.QuotationQty] || 0}</td>
                     <td>${escapeHtml(r[EftuM.CustomerName] || r[EftuM.ManualCustomerName] || '')}</td>
+                    <td><code class="fs-6">${escapeHtml(r[EftuM.CustomerCode] || '')}</code></td>
+                    <td><span class="badge bg-secondary-subtle text-secondary">${r[EftuM.ItemCount] ?? '—'}</span></td>
                     <td><span class="${sc.cls}">${escapeHtml(sc.text)}</span></td>
                     <td class="text-muted">${escapeHtml(r[EftuM.CreatedAtText])}</td>
                     <td class="text-muted">${escapeHtml(r[EftuM.UpdatedAtText])}</td>
