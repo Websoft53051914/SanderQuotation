@@ -296,6 +296,7 @@ namespace backend.Controllers
                 EsFileTransferUploadDM? upload = GetBlEsFileTransferUpload().GetOneInfo(content.UploadId);
                 string? customerCode = upload?.CustomerCode;
 
+                _quotationHandler.ApplyDecisionLogSettingFromSysSetting();
                 await _quotationHandler.RunInternalAsync(content, customerCode);
 
                 GetBlHandleQuotation().DoSaveSingleInternalQuotationResult(content);
@@ -337,6 +338,7 @@ namespace backend.Controllers
                 int quotationQty = dmEsFileTransferUpload?.QuotationQty ?? 1;
 
                 await _quotationHandler.AuthorizeExternalAsync();
+                _quotationHandler.ApplyDecisionLogSettingFromSysSetting();
                 await _quotationHandler.RunExternalAsync(dmBomFileContent, quotationQty);
 
                 GetBlHandleQuotation().DoSaveSingleExternalQuotationResult(dmBomFileContent);

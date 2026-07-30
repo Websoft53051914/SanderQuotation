@@ -49,6 +49,11 @@ namespace backend.Models
         public bool UseExpirationCache { get; set; } = true;
 
         /// <summary>
+        /// 是否記錄 AI 決策過程（對應系統設定 AI 決策過程顯示開關；關閉時不累積／不寫入）
+        /// </summary>
+        public bool WriteDecisionLog { get; set; } = true;
+
+        /// <summary>
         /// 建構子
         /// </summary>
         /// <param name="scopeFactory">DI Scope 工廠</param>
@@ -77,7 +82,7 @@ namespace backend.Models
     public partial class QuotationHandler
     {
         /// <summary>
-        /// 依 tb_syssetting 設定自動查價是否執行內部／外部查價（無設定時預設皆執行）
+        /// 依 tb_syssetting 設定自動查價是否執行內部／外部查價，以及是否記錄 AI 決策過程（無設定時預設皆執行／記錄）
         /// </summary>
         public void ApplyPricingSearchSettingsFromSysSetting()
         {
@@ -86,6 +91,17 @@ namespace backend.Models
 
             RunInternal = GetPricingSearchSwitch(list, ParameterTypeEnum.PricingSearchRunInternalSwitch, true);
             RunExternal = GetPricingSearchSwitch(list, ParameterTypeEnum.PricingSearchRunExternalSwitch, true);
+            WriteDecisionLog = GetPricingSearchSwitch(list, ParameterTypeEnum.AIDecisionProcessDisplaySwitch, true);
+        }
+
+        /// <summary>
+        /// 僅同步 AI 決策過程顯示開關（不影響內部／外部查價開關）
+        /// </summary>
+        public void ApplyDecisionLogSettingFromSysSetting()
+        {
+            TBSysSettingBL blTBSysSetting = BLFactory.GetInstanceBackGround<TBSysSettingBL>();
+            List<TBSysSettingDM> list = blTBSysSetting.GetListEnabled(new SearchVO());
+            WriteDecisionLog = GetPricingSearchSwitch(list, ParameterTypeEnum.AIDecisionProcessDisplaySwitch, true);
         }
 
         private static bool GetPricingSearchSwitch(List<TBSysSettingDM> list, ParameterTypeEnum type, bool defaultValue)
@@ -107,6 +123,7 @@ namespace backend.Models
         /// <returns>已填入查價結果的 BomFileContentDM</returns>
         public async Task<BomFileContentDM> RunAsync(BomFileContentDM content, EsFileTransferUploadDM dmUpload)
         {
+            content.WriteDecisionLog = WriteDecisionLog;
             string? customerCode = dmUpload.CustomerCode;
             int quotationQty = dmUpload.QuotationQty ?? 1;
 
@@ -140,6 +157,7 @@ namespace backend.Models
         /// <param name="customerCode">客戶代碼（來自上傳檔案），用於 Variant 客戶承認料過濾；空則不過濾</param>
         public async Task RunInternalAsync(BomFileContentDM content, string? customerCode)
         {
+            content.WriteDecisionLog = WriteDecisionLog;
             content.InternalPurchaseOrderDate = null;
             content.InternalUnitPriceOriginalCurrency = null;
             content.InternalUnitPriceTwd = null;
@@ -252,6 +270,7 @@ namespace backend.Models
         /// <param name="quotationQty">報價數量（來自上傳檔案），與 content.Qty 相乘後作為查詢數量</param>
         public async Task RunExternalAsync(BomFileContentDM content, int quotationQty)
         {
+            content.WriteDecisionLog = WriteDecisionLog;
             content.ExternalQuotationDate = null;
             content.ExternalUnitPriceOriginalCurrency = null;
             content.ExternalUnitPriceTwd = null;
@@ -506,6 +525,7 @@ namespace backend.Models
         /// <param name="brandComparisonCategorySet">需比對廠牌之料品類別集合</param>
         public async Task RunPartSearchAsync(BomFileContentDM content, HashSet<string> brandComparisonCategorySet)
         {
+            content.WriteDecisionLog = WriteDecisionLog;
             TBSanderModuleItemKeywordBL blTBSanderModuleItemKeyword = BLFactory.GetInstanceBackGround<TBSanderModuleItemKeywordBL>();
             SanderModuleItemBL blSanderModuleItem = BLFactory.GetInstanceBackGround<SanderModuleItemBL>();
 

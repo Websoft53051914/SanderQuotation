@@ -168,14 +168,17 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// 批次寫入 BomFileContentDM 中的暂存決策歷程
+        /// 批次寫入 BomFileContentDM 中的暂存決策歷程。
+        /// 當系統設定「AI 決策過程顯示開關」為關閉時不寫入。
         /// </summary>
         /// <param name="bomFileContentId">BOM 料項識別碼</param>
         /// <param name="logs">暂存決策歷程清單</param>
         public void DoInsertPendingLogs(Guid bomFileContentId, IEnumerable<TBBomFileDecisionLogDM> logs)
         {
+            if (!IsAIDecisionProcessDisplayEnabled())
+                return;
+
             List<TBBomFileDecisionLogDM> logList = logs.ToList();
-            string account = SessionVO?.Account ?? string.Empty;
 
             // 先刪除各階段的舊歷程
             foreach (int stage in logList.Where(l => l.Stage.HasValue).Select(l => l.Stage!.Value).Distinct())
@@ -188,6 +191,29 @@ namespace Business.BusinessLogic
                 log.BomFileContentId = bomFileContentId;
                 DoInsert(log);
             }
+        }
+
+        private bool? _isAIDecisionProcessDisplayEnabled;
+
+        /// <summary>
+        /// 讀取 AI 決策過程顯示開關（無設定時預設開啟）；同一 BL 實例內快取結果。
+        /// </summary>
+        private bool IsAIDecisionProcessDisplayEnabled()
+        {
+            if (_isAIDecisionProcessDisplayEnabled.HasValue)
+                return _isAIDecisionProcessDisplayEnabled.Value;
+
+            TBSysSettingBL blTBSysSetting = new(_unitOfWork, SessionVO ?? new());
+            blTBSysSetting._Configuration = _Configuration;
+            List<TBSysSettingDM> list = blTBSysSetting.GetListByType(
+                new SearchVO(),
+                ParameterTypeEnum.AIDecisionProcessDisplaySwitch.ToString());
+            TBSysSettingDM? dm = list.FirstOrDefault();
+            _isAIDecisionProcessDisplayEnabled = dm == null
+                || string.IsNullOrWhiteSpace(dm.Value)
+                || dm.Value == "1";
+
+            return _isAIDecisionProcessDisplayEnabled.Value;
         }
     }
 }

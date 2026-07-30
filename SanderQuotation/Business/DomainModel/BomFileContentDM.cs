@@ -189,6 +189,11 @@ namespace Business.DomainModel
         public List<TBBomFileDecisionLogDM> PendingDecisionLogs { get; set; } = new();
 
         /// <summary>
+        /// 是否累積決策歷程（對應系統設定 AI 決策過程顯示開關；關閉時不記錄）
+        /// </summary>
+        public bool WriteDecisionLog { get; set; } = true;
+
+        /// <summary>
         /// 新增一筆待寫入的決策歷程至暫存清單
         /// </summary>
         /// <param name="stage">決策階段（int 值）</param>
@@ -196,6 +201,9 @@ namespace Business.DomainModel
         /// <param name="message">決策訊息</param>
         public void AddDecisionLog(int stage, int step, string message)
         {
+            if (!WriteDecisionLog)
+                return;
+
             TBBomFileDecisionLogDM log = new();
             log.Stage = stage;
             log.Step = step;

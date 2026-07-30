@@ -151,10 +151,6 @@
                             <label class="form-label fw-semibold">需設定匯入的工作表</label>
                             <div id="sheetCheckList" class="mb-3 ps-1">
                             </div>
-                            <div class="d-flex gap-2 mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSelectAll">全選</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeselectAll">取消全選</button>
-                            </div>
                             <button type="button" class="btn btn-primary" id="btnNextStep">
                                 下一步 <i class="ri-arrow-right-line align-bottom"></i>
                             </button>
@@ -359,7 +355,8 @@
             uploadFailedFormat: '上傳失敗，請確認檔案格式是否正確',
             parseFailed: '請確認檔案格式',
             loading: '載入中...',
-            selectAtLeastOneSheet: '請至少選擇一個工作表',
+            selectAtLeastOneSheet: '請選擇一個工作表',
+            selectOnlyOneSheet: '只能選擇一個工作表',
             noColumnData: '沒有資料欄位，無法進行欄位對應設定',
             cannotProceed: '無法進行下一步',
             nextStep: '下一步',
@@ -1072,7 +1069,7 @@ function loadDbTransferList(selectedValue, callback) {
                 $list.append(
                     '<div class="sheet-item d-flex align-items-center gap-3">' +
                     '<div class="form-check mb-0 flex-grow-1">' +
-                    '<input class="form-check-input sheet-check" type="checkbox" id="sheetCheck' + i + '" value="' + i + '" checked>' +
+                    '<input class="form-check-input sheet-check" type="radio" name="sheetCheckGroup" id="sheetCheck' + i + '" value="' + i + '">' +
                     '<label class="form-check-label" for="sheetCheck' + i + '">' +
                     '<i class="ri-checkbox-circle-line text-success me-1"></i>' +
                     s.name +
@@ -1115,14 +1112,6 @@ function loadDbTransferList(selectedValue, callback) {
             }
         });
 
-        $('#btnSelectAll').on('click', function () {
-            $('.sheet-check').prop('checked', true);
-        });
-
-        $('#btnDeselectAll').on('click', function () {
-            $('.sheet-check').prop('checked', false);
-        });
-
         $(document).on('blur', '.sheet-header-row', function () {
             this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value === '' || parseInt(this.value) < 1) {
@@ -1140,6 +1129,10 @@ function loadDbTransferList(selectedValue, callback) {
             });
             if (selected.length === 0) {
                 Swal.fire({ icon: 'warning', title: tableExcelMsg.selectAtLeastOneSheet, confirmButtonText: pageConfig.messages.confirm });
+                return;
+            }
+            if (selected.length > 1) {
+                Swal.fire({ icon: 'warning', title: tableExcelMsg.selectOnlyOneSheet, confirmButtonText: pageConfig.messages.confirm });
                 return;
             }
 
@@ -1400,12 +1393,20 @@ function loadDbTransferList(selectedValue, callback) {
             var $list = $('#sheetCheckList');
             $list.empty();
             var existingSheets = editData ? (editData.Sheets || editData.sheets || []) : [];
+            var firstExistingIndex = -1;
+            parsedSheets.forEach(function (s, i) {
+                var exists = existingSheets.some(function (es) {
+                    return (es.SrcSheetIndex === i || es.srcSheetIndex === i);
+                });
+                if (exists && firstExistingIndex < 0) firstExistingIndex = i;
+            });
 
             parsedSheets.forEach(function (s, i) {
                 var existingSheet = existingSheets.find(function (es) {
                     return (es.SrcSheetIndex === i || es.srcSheetIndex === i);
                 });
-                var isChecked = !!existingSheet;
+                // 只能選一個工作表：編輯時若先前有多張，僅預選第一張
+                var isChecked = (i === firstExistingIndex);
                 var headerRowIndex = existingSheet
                     ? (existingSheet.HeaderRowIndex || existingSheet.headerRowIndex || 1)
                     : 1;
@@ -1413,7 +1414,7 @@ function loadDbTransferList(selectedValue, callback) {
                 $list.append(
                     '<div class="sheet-item d-flex align-items-center gap-3">' +
                     '<div class="form-check mb-0 flex-grow-1">' +
-                    '<input class="form-check-input sheet-check" type="checkbox" id="sheetCheck' + i + '" value="' + i + '" ' + (isChecked ? 'checked' : '') + '>' +
+                    '<input class="form-check-input sheet-check" type="radio" name="sheetCheckGroup" id="sheetCheck' + i + '" value="' + i + '" ' + (isChecked ? 'checked' : '') + '>' +
                     '<label class="form-check-label" for="sheetCheck' + i + '">' +
                     '<i class="ri-checkbox-circle-line text-success me-1"></i>' +
                     s.name +
