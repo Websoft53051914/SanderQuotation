@@ -1263,8 +1263,12 @@
                     details.forEach(function (d) {
                         var statusBadge = getStatusBadge(d.JobStatus);
                         var typeBadge = getTypeBadge(d.TransferTypeDisplay);
-                        console.log(d)
-                        var errorIcon = (d.ErrorLogs.length>0)
+                        var errorLogs = d.ErrorLogs || [];
+                        var hasErrorDetail = errorLogs.length > 0
+                            || !!(d.ErrorMessage && String(d.ErrorMessage).trim())
+                            || d.JobStatus === 'Failed'
+                            || d.JobStatus === 'PartialFail';
+                        var errorIcon = hasErrorDetail
                             ? ' <a href="javascript:void(0)" class="text-danger ms-1 show-error-detail-btn" data-detail-id="' + d.Id + '" title="查看錯誤"><i class="ri-external-link-line"></i></a>'
                             : '';
                         block.append(

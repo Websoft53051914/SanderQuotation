@@ -59,7 +59,7 @@ namespace backend.Controllers
                     Description             = dm.Description,
                     MappingTables           = dm.MappingTables,
                     Status                  = dm.Status.ToString(),
-                    CanDelete               = dm.EsScheduleCycleDMs.Count ==0
+                    CanDelete               = dm.EsScheduleCycleDMs.Count == 0 && !dm.IsMappingLocked
                 }).ToList();
 
                 return JsonSuccess(new
@@ -187,6 +187,7 @@ namespace backend.Controllers
                     ExampleFileType = ConvertFileTypeToText(dm.ExampleFileType),
                     SrcNasFilePath  = dm.SrcNasFilePath,
                     Description     = dm.Description,
+                    IsMappingLocked = dm.IsMappingLocked,
                     Sheets = dm.Columns
                         .GroupBy(c => c.SrcSheetIndex)
                         .OrderBy(g => g.Key)
@@ -315,6 +316,10 @@ namespace backend.Controllers
                 GetTableExcelBL().Update(dm);
                 return JsonSuccess("編輯成功");
             }
+            catch (InvalidOperationException ex)
+            {
+                return JsonValidFail(ex.Message);
+            }
             catch (Exception ex)
             {
                 LogError(ex);
@@ -356,6 +361,10 @@ namespace backend.Controllers
                     catch { /* 檔案清除失敗不影響主流程 */ }
                 }
                 return JsonSuccess("刪除成功");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return JsonValidFail(ex.Message);
             }
             catch (Exception ex)
             {

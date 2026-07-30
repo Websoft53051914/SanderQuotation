@@ -43,6 +43,9 @@ namespace ViewModel.TableExcel
         public string TransferMappingCode { get; set; }
         public List<TableExcelSheetVM> Sheets { get; set; } = new();
 
+        /// <summary>是否已曾被上傳使用（鎖定欄位對應、主鍵、標題列等關鍵設定）</summary>
+        public bool IsMappingLocked { get; set; }
+
         /// <summary>
         /// 供列表頁顯示用：所有已對應的資料表名稱（逗號分隔）
         /// </summary>

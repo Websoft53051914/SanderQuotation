@@ -90,7 +90,7 @@ sandermoduleitemvariant.code  = reportitemcustomer.variantcode
 - uploadid (uuid)：外鍵，關聯至 esfiletransferupload.uploadid
 - componentpart (text)：元件料號
 - description (text)：元件描述
-- qty (int4)：數量
+- qty (numeric)：數量（允許小數）
 - manufacturer (text)：廠商
 - manufacturerpartnumber (text)：廠商型號（MPN）
 - displaypart (text)：顯示用料號

@@ -49,6 +49,11 @@ namespace Data.DataAccess.Impl
                 condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.EsFileTransferMappingId)} = @{nameof(searchVO.EsFileTransferMappingIdEq)} ");
                 paras.Add(nameof(searchVO.EsFileTransferMappingIdEq), searchVO.EsFileTransferMappingIdEq);
             }
+            if (searchVO.EsFileTransferMappingIdIn.Count > 0)
+            {
+                condition.Append($"AND u.{nameof(EsFileTransferUploadDTO.EsFileTransferMappingId)} = ANY(@{nameof(searchVO.EsFileTransferMappingIdIn)}) ");
+                paras.Add(nameof(searchVO.EsFileTransferMappingIdIn), searchVO.EsFileTransferMappingIdIn.ToArray());
+            }
 
             string sql = $@"
 SELECT u.*, eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)}
@@ -82,6 +87,8 @@ ORDER BY {orderBy}
                 condition.Append($@" AND (u.{nameof(EsFileTransferUploadDTO.FileName)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR eftm.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} ILIKE @{nameof(searchVO.KeywordLike)}
 OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR u.{nameof(EsFileTransferUploadDTO.CustomerCode)} ILIKE @{nameof(searchVO.KeywordLike)}
+OR u.{nameof(EsFileTransferUploadDTO.ManualCustomerName)} ILIKE @{nameof(searchVO.KeywordLike)}
 )");
                 paras.Add(nameof(searchVO.KeywordLike), $"%{searchVO.KeywordLike}%");
             }
@@ -90,6 +97,7 @@ OR rc.{nameof(EsFileTransferUploadDTO.CustomerName)} ILIKE @{nameof(searchVO.Key
 SELECT u.*
 , eftm.TransferMappingCode
 , rc.CustomerName
+, (SELECT COUNT(*) FROM bomfilecontent bfc WHERE bfc.UploadId = u.UploadId) AS ItemCount
 FROM EsFileTransferUpload u
 LEFT JOIN EsFileTransferMapping eftm ON eftm.Id = u.EsFileTransferMappingId
 LEFT JOIN (-- 依據 CustomerCode 去重

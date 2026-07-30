@@ -18,9 +18,9 @@ namespace Business.DomainModel
         public string? Description { get; set; }
 
         /// <summary>
-        /// 數量
+        /// 數量（允許小數，例如塗料 0.006）
         /// </summary>
-        public int? Qty { get; set; }
+        public decimal? Qty { get; set; }
 
         /// <summary>
         /// 廠商

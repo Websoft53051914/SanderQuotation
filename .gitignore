@@ -4,3 +4,4 @@ obj
 packages
 *.user
 /SanderQuotation/backend/Uploads
+.tmp/

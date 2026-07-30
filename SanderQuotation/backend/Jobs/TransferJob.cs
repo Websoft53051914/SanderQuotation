@@ -144,6 +144,8 @@ namespace backend.Common
                 {
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = exeLogDM.ErrorMessage;
+                    if (exeLogDM.ErrorLogs?.Count > 0)
+                        logDM.ErrorLogs = exeLogDM.ErrorLogs;
                 }
                 else
                 {
@@ -476,13 +478,13 @@ namespace backend.Common
             {
                 CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                     ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                    : cell.NumericCellValue.ToString(),
+                    : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 CellType.Boolean => cell.BooleanCellValue.ToString(),
                 CellType.Formula => cell.CachedFormulaResultType switch
                 {
                     CellType.Numeric => DateUtil.IsCellDateFormatted(cell)
                         ? cell.DateCellValue.ToString("yyyy-MM-dd HH:mm:ss")
-                        : cell.NumericCellValue.ToString(),
+                        : cell.NumericCellValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     CellType.Boolean => cell.BooleanCellValue.ToString(),
                     _ => cell.StringCellValue
                 },
@@ -760,6 +762,7 @@ namespace backend.Common
         /// <summary>
         /// 使用已開啟的連線執行 Upsert（供 Sheet/CSV 迴圈共用連線呼叫）。
         /// extraValues 中的鍵值對會在欄位對應完成後直接寫入目標資料，可用於注入額外欄位（如 uploadid）。
+        /// extraValues 中非主鍵的欄位會一併納入 Upsert 比對範圍，避免跨上傳改寫同一筆資料。
         /// columnTypes 為目標資料表欄位型別字典，用於將字串值轉換為對應的 .NET 型別。
         /// </summary>
         private void UpsertRow(
@@ -784,11 +787,13 @@ namespace backend.Common
                 }
 
                 List<EsFileTransferMappingColumnDM> pkColumns = columns.Where(c => c.IsPrimaryKey).ToList();
+                // extraValues（如 uploadid）限定 Upsert 範圍，避免跨上傳比對主鍵而改寫 uploadid
+                List<string> scopeColumnNames = GetUpsertScopeColumnNames(extraValues, pkColumns);
                 if (pkColumns.Count > 0)
                 {
-                    bool exists = CheckExists(conn, transaction, targetTableName, pkColumns, targetData, dialect);
+                    bool exists = CheckExists(conn, transaction, targetTableName, pkColumns, targetData, dialect, scopeColumnNames);
                     if (exists)
-                        UpdateRecord(conn, transaction, targetTableName, targetData, pkColumns, dialect);
+                        UpdateRecord(conn, transaction, targetTableName, targetData, pkColumns, dialect, scopeColumnNames);
                     else
                         InsertRecord(conn, transaction, targetTableName, targetData, dialect);
                 }
@@ -907,13 +912,33 @@ namespace backend.Common
             return rawValue;
         }
 
+        /// <summary>
+        /// 取得 Upsert 範圍欄位（extraValues 注入、且非主鍵），例如 bomfilecontent.uploadid。
+        /// </summary>
+        private static List<string> GetUpsertScopeColumnNames(
+            Dictionary<string, object> extraValues,
+            List<EsFileTransferMappingColumnDM> pkColumns)
+        {
+            if (extraValues == null || extraValues.Count == 0)
+                return new List<string>();
+
+            HashSet<string> pkNames = pkColumns
+                .Select(c => c.TargetTableColumnName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return extraValues.Keys
+                .Where(k => !pkNames.Contains(k))
+                .ToList();
+        }
+
         private static bool CheckExists(
             DbConnection conn,
             DbTransaction tran,
             string tableName,
             List<EsFileTransferMappingColumnDM> pkColumns,
             Dictionary<string, object> targetData,
-            IDbDialect dialect)
+            IDbDialect dialect,
+            List<string> scopeColumnNames = null)
         {
             List<string> whereParts = new();
             using DbCommand cmd = conn.CreateCommand();
@@ -926,6 +951,21 @@ namespace backend.Common
                 DbParameter param = cmd.CreateParameter();
                 param.ParameterName = pName;
                 param.Value = targetData[pkColumns[i].TargetTableColumnName];
+                cmd.Parameters.Add(param);
+            }
+
+            scopeColumnNames ??= new List<string>();
+            for (int i = 0; i < scopeColumnNames.Count; i++)
+            {
+                string colName = scopeColumnNames[i];
+                if (!targetData.TryGetValue(colName, out object scopeValue))
+                    continue;
+
+                string pName = $"@scope{i}";
+                whereParts.Add($"{dialect.QuoteIdentifier(colName)} = {pName}");
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = pName;
+                param.Value = scopeValue ?? DBNull.Value;
                 cmd.Parameters.Add(param);
             }
 
@@ -965,14 +1005,29 @@ namespace backend.Common
             string tableName,
             Dictionary<string, object> targetData,
             List<EsFileTransferMappingColumnDM> pkColumns,
-            IDbDialect dialect)
+            IDbDialect dialect,
+            List<string> scopeColumnNames = null)
         {
             HashSet<string> pkNames = pkColumns.Select(c => c.TargetTableColumnName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            List<KeyValuePair<string, object>> updateCols = targetData.Where(kv => !pkNames.Contains(kv.Key)).ToList();
+            HashSet<string> scopeNames = (scopeColumnNames ?? new List<string>())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            List<KeyValuePair<string, object>> updateCols = targetData
+                .Where(kv => !pkNames.Contains(kv.Key) && !scopeNames.Contains(kv.Key))
+                .ToList();
             if (updateCols.Count == 0) return;
 
             List<string> setClauses = updateCols.Select((kv, i) => $"{dialect.QuoteIdentifier(kv.Key)} = @set{i}").ToList();
             List<string> whereClauses = pkColumns.Select((c, i) => $"{dialect.QuoteIdentifier(c.TargetTableColumnName)} = @where{i}").ToList();
+
+            scopeColumnNames ??= new List<string>();
+            for (int i = 0; i < scopeColumnNames.Count; i++)
+            {
+                string colName = scopeColumnNames[i];
+                if (!targetData.TryGetValue(colName, out object scopeValue))
+                    continue;
+
+                whereClauses.Add($"{dialect.QuoteIdentifier(colName)} = @scopeWhere{i}");
+            }
 
             using DbCommand cmd = conn.CreateCommand();
             cmd.Transaction = tran;
@@ -990,6 +1045,17 @@ namespace backend.Common
                 DbParameter param = cmd.CreateParameter();
                 param.ParameterName = $"@where{i}";
                 param.Value = targetData[pkColumns[i].TargetTableColumnName];
+                cmd.Parameters.Add(param);
+            }
+            for (int i = 0; i < scopeColumnNames.Count; i++)
+            {
+                string colName = scopeColumnNames[i];
+                if (!targetData.TryGetValue(colName, out object scopeValue))
+                    continue;
+
+                DbParameter param = cmd.CreateParameter();
+                param.ParameterName = $"@scopeWhere{i}";
+                param.Value = scopeValue ?? DBNull.Value;
                 cmd.Parameters.Add(param);
             }
 
