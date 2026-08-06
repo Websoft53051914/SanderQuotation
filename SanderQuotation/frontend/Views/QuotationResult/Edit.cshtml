@@ -68,7 +68,7 @@
                         <h6 class="text-dark mb-0">
                             <i class="ri-price-tag-3-line me-1"></i>BOM 料項查價結果
                         </h6>
-                        <button type="button" class="btn btn-warning" id="btnToggleRecommended"
+                        <button type="button" class="btn btn-primary" id="btnToggleRecommended"
                                 title="勾選建議料號">
                             <i class="ri-checkbox-line me-1"></i>勾選建議料號
                         </button>
@@ -177,21 +177,9 @@
         padding-top: 0.375rem;
     }
 
-    #e_FileName {
-        font-size: 150%;
-    }
-
     #itemCountBadge {
         font-size: 150%;
     }
-
-    #btnToggleRecommended {
-        color: #4A3208;
-    }
-
-        #btnToggleRecommended i {
-            color: #4A3208;
-        }
 
     #itemTable .internal-part-hint {
         color: #000;
@@ -206,6 +194,14 @@
         font-size: 0.875rem !important;
         font-weight: 400 !important;
         color: #000 !important;
+    }
+
+    /* 元件描述：單行省略，完整內容以 title tooltip 顯示 */
+    #itemTable tbody td.text-ellipsis-cell {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     #itemTable .badge {
@@ -516,7 +512,7 @@
                 <td class="text-center">${escapeHtml(no)}</td>
                 <td>${escapeHtml(r[FI.ManufacturerPartNumber] || '')}</td>
                 <td>${escapeHtml(r[FI.Manufacturer] || '')}</td>
-                <td><span title="${escapeHtml(r[FI.Description])}">${escapeHtml(r[FI.Description] || '')}</span></td>
+                <td class="text-ellipsis-cell" title="${escapeHtml(r[FI.Description] || '')}">${escapeHtml(r[FI.Description] || '')}</td>
                 <td><span title="${escapeHtml(r[FI.ComponentPart])}">${escapeHtml(r[FI.ComponentPart] || '')}</span></td>
                 <td><span title="${escapeHtml(r[FI.DisplayPart])}">${escapeHtml(r[FI.DisplayPart] || '')}</span></td>
                 <td class="text-center">${fmtNum(r[FI.Qty])}</td>
