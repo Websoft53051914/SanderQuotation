@@ -3,6 +3,7 @@ using backend.Common;
 using backend.Common.ConfigurationHelper;
 using Business.BusinessLogic;
 using Business.Common;
+using Business.Common.PartSpecCheck;
 using Business.DomainModel;
 using Const;
 using Core.Utility.Extensions;
@@ -701,7 +702,7 @@ namespace backend.Models
 
             content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep2, step2Info);
 
-            // Step3：以零件規格（Description）查詢
+            // Step3：以零件規格（Description）查詢；需檢查類型再套用料品檢查參數（主參數／硬條件）
             string step3Info = $"查詢值：{description}\n";
             if (!string.IsNullOrWhiteSpace(description))
             {
@@ -709,6 +710,28 @@ namespace backend.Models
                 step3Info += $"AI 標準化後查詢值：{standardized}\n";
                 if (string.IsNullOrWhiteSpace(standardized))
                     standardized = description;
+
+                ParsedPartSpec querySpec = PartSpecParser.Parse(standardized);
+                PartSpecCheckRule? specRule = PartSpecCheckRules.GetRule(querySpec.CategoryCode);
+                if (specRule != null)
+                {
+                    step3Info += $"Category：{querySpec.CategoryCode}（套用料品檢查參數：主參數={string.Join("+", specRule.MainParams.Select(PartSpecCheckRules.ParamDisplayName))}；硬條件={string.Join("+", specRule.HardParams.Select(PartSpecCheckRules.ParamDisplayName).DefaultIfEmpty("—"))}）\n";
+                    if (!PartSpecHardMatcher.QueryHasAllMainParams(querySpec, specRule))
+                    {
+                        string missing = string.Join("、", specRule.MainParams
+                            .Where(p => !querySpec.HasParam(p))
+                            .Select(PartSpecCheckRules.ParamDisplayName));
+                        step3Info += $"查詢端缺少主參數「{missing}」，無法硬比，不建議料號\n";
+                        content.MatchCategory = (int)MatchCategoryEnum.Miss;
+                        content.MatchField = null;
+                        content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：查無料號（查詢規格不足）");
+                        return;
+                    }
+                }
+                else
+                {
+                    step3Info += $"Category：{querySpec.CategoryCode ?? "（未辨識）"}（不做規格比對，維持向量 Top1）\n";
+                }
 
                 TBSanderModuleItemKeywordDM dmForVector = new();
                 dmForVector.Keyword = standardized;
@@ -722,14 +745,53 @@ namespace backend.Models
 
                     if (dmListMatch?.Count > 0)
                     {
-                        TBSanderModuleItemKeywordDM dmBest = dmListMatch.First();
-                        step3Info += $"以 Description 查詢有 {dmListMatch.Count} 筆結果，建議料號：{dmBest.No}，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
-                        content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：建議料號（Description）");
-                        content.No = dmBest.No;
-                        content.IsRecommendedNo = true;
-                        content.MatchCategory = (int)MatchCategoryEnum.Recommended;
-                        content.MatchField = "Description";
-                        return;
+                        step3Info += $"以 Description 查詢有 {dmListMatch.Count} 筆結果，候選清單：{string.Join(", ", dmListMatch.Select(x => x.No))}\n";
+
+                        if (specRule == null)
+                        {
+                            TBSanderModuleItemKeywordDM dmBest = dmListMatch.First();
+                            step3Info += $"建議料號：{dmBest.No}（未套用規格硬比）\n";
+                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：建議料號（Description）");
+                            content.No = dmBest.No;
+                            content.IsRecommendedNo = true;
+                            content.MatchCategory = (int)MatchCategoryEnum.Recommended;
+                            content.MatchField = "Description";
+                            return;
+                        }
+
+                        TBSanderModuleItemKeywordDM? dmPassed = null;
+                        foreach (TBSanderModuleItemKeywordDM dm in dmListMatch)
+                        {
+                            if (string.IsNullOrEmpty(dm.No))
+                                continue;
+
+                            ParsedPartSpec candidateSpec = PartSpecParser.Parse(dm.Keyword);
+                            SanderModuleItemDM? itemDM = blSanderModuleItem.GetOneInfoByNo(dm.No);
+                            PartSpecMatchResult matchResult = PartSpecHardMatcher.Evaluate(
+                                querySpec, candidateSpec, specRule, itemDM?.ItemCategoryCode);
+
+                            if (matchResult.Passed)
+                            {
+                                step3Info += $"[{dm.No}] {matchResult.Reason}\n";
+                                dmPassed = dm;
+                                break;
+                            }
+
+                            step3Info += $"[{dm.No}] 剔除：{matchResult.Reason}\n";
+                        }
+
+                        if (dmPassed != null)
+                        {
+                            step3Info += $"建議料號：{dmPassed.No}（已通過料品檢查參數）\n";
+                            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：建議料號（Description，已通過必填規格硬比）");
+                            content.No = dmPassed.No;
+                            content.IsRecommendedNo = true;
+                            content.MatchCategory = (int)MatchCategoryEnum.Recommended;
+                            content.MatchField = "Description";
+                            return;
+                        }
+
+                        step3Info += "通過清單：0 筆\n";
                     }
                     else
                     {
@@ -748,7 +810,8 @@ namespace backend.Models
 
             content.MatchCategory = (int)MatchCategoryEnum.Miss;
             content.MatchField = null;
-            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3, step3Info + "查料結果：查無料號");
+            content.AddDecisionLog((int)BomFileDecisionLogStageEnum.PartSearch, (int)BomFileDecisionLogStepEnum.PartSearchStep3,
+                step3Info + "查料結果：查無料號" + (string.IsNullOrWhiteSpace(description) ? string.Empty : "（Step3 未通過料品檢查參數或無候選）"));
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using AutoMapper;
+using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
@@ -51,9 +52,10 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o¤À­¶¦Cªí
+        /// å–å¾—åˆ†é åˆ—è¡¨
         /// </summary>
         [HttpGet("GetPageList")]
+        [CustomAuthorization(FuncID.SysFunc_View)]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, SysFuncVM vm)
         {
             try
@@ -68,7 +70,7 @@ namespace backend.Controllers
                 {
                     var item = list[i];
                     item.No = (request.pageIndex - 1) * request.pageSize + i + 1;
-                    item.StatusName = item.Status == 1 ? "±Ò¥Î" : "°±¥Î";
+                    item.StatusName = item.Status == 1 ? "å•Ÿç”¨" : "åœç”¨";
                 }
 
                 return JsonSuccess(new
@@ -85,9 +87,10 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o³æµ§¸ê®Æ
+        /// å–å¾—å–®ç­†è³‡æ–™
         /// </summary>
         [HttpPost("Get")]
+        [CustomAuthorization(FuncID.SysFunc_View, FuncID.SysFunc_Edit)]
         public IActionResult Get(Guid id)
         {
             try
@@ -98,7 +101,7 @@ namespace backend.Controllers
 
                 var vm = _mapper.Map<SysFuncVM>(dm);
 
-                // ¨ú±o¥\¯à²Ó¶µ¸ê®Æ¡]Åv­­¥N½X¡^
+                // å–å¾—åŠŸèƒ½ç´°é …è³‡æ–™ï¼ˆæ¬Šé™ä»£ç¢¼ï¼‰
                 var detailList = GetSysFuncDetailBL().GetInfoBySysFuncId(id);
                 if (detailList != null && detailList.Count > 0)
                 {
@@ -123,39 +126,40 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ·s¼W
+        /// æ–°å¢
         /// </summary>
         [HttpPost("Create")]
+        [CustomAuthorization(FuncID.SysFunc_Create)]
         public IActionResult Create([FromBody] SysFuncVM vm)
         {
             try
             {
-                // ÅçÃÒ¥\¯à¦WºÙ¬O§_¤w¦s¦b
+                // é©—è­‰åŠŸèƒ½åç¨±æ˜¯å¦å·²å­˜åœ¨
                 var existingFunc = GetSysFuncBL().CheckExist(vm.Name);
                 if (existingFunc != null)
                 {
-                    return JsonValidFail("¥\¯à¦WºÙ¤w¦s¦b");
+                    return JsonValidFail("åŠŸèƒ½åç¨±å·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<SysFuncDM>(vm);
 
                 var guid = GetSysFuncBL().Create(dm);
 
-                // Àx¦s¥\¯à²Ó¶µ¡]Åv­­¥N½X¡^
+                // å„²å­˜åŠŸèƒ½ç´°é …ï¼ˆæ¬Šé™ä»£ç¢¼ï¼‰
                 if (vm.PerCodes != null && vm.PerCodes.Count > 0)
                 {
                     var detailDM = new SysFuncDetailDM
                     {
-                        FuncId = dm.Id, // Guid Âà¬° long¡]¨Ï¥Î HashCode¡^
+                        FuncId = dm.Id, // Guid è½‰ç‚º longï¼ˆä½¿ç”¨ HashCodeï¼‰
                         PerCodes = vm.PerCodes,
                         Codes = vm.Codes ?? new List<string>()
                     };
-                    detailDM.Id = dm.Id; // ¥Î Id ¶Ç»¼ FuncId¡]¦]¬° Edit ¤èªk¨Ï¥Î Id¡^
+                    detailDM.Id = dm.Id; // ç”¨ Id å‚³é FuncIdï¼ˆå› ç‚º Edit æ–¹æ³•ä½¿ç”¨ Idï¼‰
                     GetSysFuncDetailBL().Edit(detailDM);
                 }
 
                 LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -166,25 +170,26 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ½s¿è
+        /// ç·¨è¼¯
         /// </summary>
         [HttpPost("Edit")]
+        [CustomAuthorization(FuncID.SysFunc_Edit)]
         public IActionResult Edit([FromBody] SysFuncVM vm)
         {
             try
             {
-                // ÅçÃÒ¥\¯à¦WºÙ¬O§_¤w¦s¦b¡]±Æ°£¦Û¤v¡^
+                // é©—è­‰åŠŸèƒ½åç¨±æ˜¯å¦å·²å­˜åœ¨ï¼ˆæ’é™¤è‡ªå·±ï¼‰
                 var existingFunc = GetSysFuncBL().CheckExist(vm.Name);
                 if (existingFunc != null && existingFunc.Id != vm.Id)
                 {
-                    return JsonValidFail("¥\¯à¦WºÙ¤w¦s¦b");
+                    return JsonValidFail("åŠŸèƒ½åç¨±å·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<SysFuncDM>(vm);
 
                 GetSysFuncBL().Edit(dm);
 
-                // §ó·s¥\¯à²Ó¶µ¡]Åv­­¥N½X¡^
+                // æ›´æ–°åŠŸèƒ½ç´°é …ï¼ˆæ¬Šé™ä»£ç¢¼ï¼‰
                 var detailDM = new SysFuncDetailDM
                 {
                     Id = vm.Id,
@@ -194,7 +199,7 @@ namespace backend.Controllers
                 GetSysFuncDetailBL().Edit(detailDM);
 
                 LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -205,9 +210,10 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// §R°£¡]§å¦¸¡^
+        /// åˆªé™¤ï¼ˆæ‰¹æ¬¡ï¼‰
         /// </summary>
         [HttpPost("Delete")]
+        [CustomAuthorization(FuncID.SysFunc_Delete)]
         public IActionResult Delete(List<Guid> list)
         {
             try
@@ -221,7 +227,7 @@ namespace backend.Controllers
                     LogSuccess(id, LogAction.Delete);
                 }
 
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -231,16 +237,17 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ±Ò¥Î/°±¥Î
+        /// å•Ÿç”¨/åœç”¨
         /// </summary>
         [HttpPost("Enable")]
+        [CustomAuthorization(FuncID.SysFunc_Edit)]
         public IActionResult Enable(Guid id, int enable)
         {
             try
             {
                 GetSysFuncBL().Enable(id, enable);
                 LogSuccess(id, LogAction.Edit);
-                return JsonSuccess(enable == 1 ? "±Ò¥Î¦¨¥\" : "°±¥Î¦¨¥\");
+                return JsonSuccess(enable == 1 ? "å•Ÿç”¨æˆåŠŸ" : "åœç”¨æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -250,9 +257,10 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o©Ò¦³¥\¯àÃş§O¡]¤U©Ô¿ï³æ¥Î¡^
+        /// å–å¾—æ‰€æœ‰åŠŸèƒ½é¡åˆ¥ï¼ˆä¸‹æ‹‰é¸å–®ç”¨ï¼‰
         /// </summary>
         [HttpGet("GetFuncClassList")]
+        [CustomAuthorization(FuncID.SysFunc_View, FuncID.SysFunc_Create, FuncID.SysFunc_Edit)]
         public IActionResult GetFuncClassList()
         {
             try
@@ -272,9 +280,10 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o¨t²Î¥\¯à²M³æ¡]¥Î©ó¨¤¦âÅv­­³]©w¡^
+        /// å–å¾—ç³»çµ±åŠŸèƒ½æ¸…å–®ï¼ˆç”¨æ–¼è§’è‰²æ¬Šé™è¨­å®šï¼‰
         /// </summary>
         [HttpGet("GetSysFuncList")]
+        [CustomAuthorization(FuncID.SysFunc_View, FuncID.SysFuncRole_View, FuncID.SysFuncRole_Create, FuncID.SysFuncRole_Edit)]
         public IActionResult GetSysFuncList()
         {
             try
@@ -282,7 +291,7 @@ namespace backend.Controllers
                 var list = GetSysFuncBL().GetAll();
                 var result = list.Where(x => x.Status == 1).Select(x =>
                 {
-                    // ¨ú±o¥\¯à¸Ô²Ó¸ê®Æ¡]Åv­­¥N½X²M³æ¡^
+                    // å–å¾—åŠŸèƒ½è©³ç´°è³‡æ–™ï¼ˆæ¬Šé™ä»£ç¢¼æ¸…å–®ï¼‰
                     var details = GetSysFuncDetailBL().GetInfoBySysFuncId(x.Id);
                     var allowActionList = details?.Select(d => new { Id = d.Id, Sequence = d.Sequence }).ToList();
 

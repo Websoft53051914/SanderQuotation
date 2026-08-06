@@ -1250,6 +1250,19 @@ VALUES('019e3938-1039-76b0-ab26-c4c44be1247b'::uuid, 'N', '019e3938-0feb-7434-88
 INSERT INTO public.tb_sysfuncdetail
 (id, "name", funcid, "sequence", permissioncode, status, createdby, updatedby, createdat, updatedat)
 VALUES('b5f551cf-6124-4cd6-bccf-5dd4c0ec5f77'::uuid, 'N', '74fe5247-ab84-44dc-b71e-b00fd851e7e9'::uuid, '1', '990201', 1, NULL, NULL, '2026-05-11 18:31:46.907', '2026-05-11 18:31:46.907');
+-- 功能管理（SysFunc）權限 990011~990014
+INSERT INTO public.tb_sysfuncdetail
+(id, "name", funcid, "sequence", permissioncode, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-5f11-7000-8000-000000990011'::uuid, 'N', 'fd2c0fde-58bb-43e7-b834-f797be46d8df'::uuid, '1', '990011', 1, NULL, NULL, '2026-05-27 14:01:21.711', '2026-05-27 14:01:21.711');
+INSERT INTO public.tb_sysfuncdetail
+(id, "name", funcid, "sequence", permissioncode, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-5f12-7000-8000-000000990012'::uuid, 'N', 'fd2c0fde-58bb-43e7-b834-f797be46d8df'::uuid, '2', '990012', 1, NULL, NULL, '2026-05-27 14:01:21.711', '2026-05-27 14:01:21.711');
+INSERT INTO public.tb_sysfuncdetail
+(id, "name", funcid, "sequence", permissioncode, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-5f13-7000-8000-000000990013'::uuid, 'N', 'fd2c0fde-58bb-43e7-b834-f797be46d8df'::uuid, '3', '990013', 1, NULL, NULL, '2026-05-27 14:01:21.711', '2026-05-27 14:01:21.711');
+INSERT INTO public.tb_sysfuncdetail
+(id, "name", funcid, "sequence", permissioncode, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-5f14-7000-8000-000000990014'::uuid, 'N', 'fd2c0fde-58bb-43e7-b834-f797be46d8df'::uuid, '4', '990014', 1, NULL, NULL, '2026-05-27 14:01:21.711', '2026-05-27 14:01:21.711');
 
 --角色與權限綁定資料
 INSERT INTO public.tb_sysrolefuncdetail
@@ -1366,6 +1379,19 @@ VALUES('019e6806-a0a1-71da-aacb-af7f987224b1'::uuid, '5d28d5da-55de-4ccf-9d17-9e
 INSERT INTO public.tb_sysrolefuncdetail
 (id, roleid, funcdetailid, status, createdby, updatedby, createdat, updatedat)
 VALUES('019e6806-a0b7-75d5-b449-bd44227b09ed'::uuid, '5d28d5da-55de-4ccf-9d17-9e417f8c0c25'::uuid, 'e3c41c85-09ab-4594-b241-aabbca962050'::uuid, NULL, NULL, NULL, '2026-05-27 14:00:36.523', '2026-05-27 14:00:36.523');
+-- 功能管理權限綁定系統管理員
+INSERT INTO public.tb_sysrolefuncdetail
+(id, roleid, funcdetailid, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-6a11-7000-8000-000000990011'::uuid, '5d28d5da-55de-4ccf-9d17-9e417f8c0c25'::uuid, '019f0a10-5f11-7000-8000-000000990011'::uuid, NULL, NULL, NULL, '2026-05-27 14:00:36.523', '2026-05-27 14:00:36.523');
+INSERT INTO public.tb_sysrolefuncdetail
+(id, roleid, funcdetailid, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-6a12-7000-8000-000000990012'::uuid, '5d28d5da-55de-4ccf-9d17-9e417f8c0c25'::uuid, '019f0a10-5f12-7000-8000-000000990012'::uuid, NULL, NULL, NULL, '2026-05-27 14:00:36.523', '2026-05-27 14:00:36.523');
+INSERT INTO public.tb_sysrolefuncdetail
+(id, roleid, funcdetailid, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-6a13-7000-8000-000000990013'::uuid, '5d28d5da-55de-4ccf-9d17-9e417f8c0c25'::uuid, '019f0a10-5f13-7000-8000-000000990013'::uuid, NULL, NULL, NULL, '2026-05-27 14:00:36.523', '2026-05-27 14:00:36.523');
+INSERT INTO public.tb_sysrolefuncdetail
+(id, roleid, funcdetailid, status, createdby, updatedby, createdat, updatedat)
+VALUES('019f0a10-6a14-7000-8000-000000990014'::uuid, '5d28d5da-55de-4ccf-9d17-9e417f8c0c25'::uuid, '019f0a10-5f14-7000-8000-000000990014'::uuid, NULL, NULL, NULL, '2026-05-27 14:00:36.523', '2026-05-27 14:00:36.523');
 
 --系統設定預設值
 INSERT INTO public.tb_syssetting
