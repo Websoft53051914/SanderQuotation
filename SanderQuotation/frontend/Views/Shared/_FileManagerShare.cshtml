@@ -1311,11 +1311,11 @@
             folders.forEach((item) =>
             {
                 $el.folderList.append(buildFolderCardHtml(item))
-                initDynamicDropdowns();
                 const $card = $el.folderList.find(`.folder-card[data-path="${CSS.escape(item.path)}"]`).last()
                 $card.find('[data-bs-toggle="tooltip"]').each(function () { new bootstrap.Tooltip(this) })
                 fillDirSizeToCard(item.path, $card, { pollMs: 800, maxPoll: 40 })
             })
+            initDynamicDropdowns('folderlist-data')
         }
 
         function renderFiles(files)
@@ -1397,9 +1397,8 @@
                         </td>
                     </tr>
                 `)
-
-                initDynamicDropdowns()
             })
+            initDynamicDropdowns('file-list-data')
         }
 
         function getChartColorsArray(chartId)

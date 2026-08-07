@@ -206,6 +206,7 @@
             list.forEach(function (r) {
                 dom.listBody.append(buildRow(r));
             });
+            initDynamicDropdowns('quotation-list-data');
 
             // 更新排序欄位視覺指示
             $('#dataTable .sort').each(function () {

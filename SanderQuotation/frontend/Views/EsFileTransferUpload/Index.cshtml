@@ -1,7 +1,7 @@
 @using ViewModel
 @{
-    ViewBag.Title = "轉入檔案上傳";
-    ViewBag.pTitle = "轉入檔案上傳";
+    ViewBag.Title = "BOM檔案管理";
+    ViewBag.pTitle = "BOM檔案管理";
     ViewBag.pageTitle = "採購管理";
 
     var ui = new
@@ -433,6 +433,7 @@
             list.forEach(function (r) {
                 $tbody.append(buildRow(r));
             });
+            initDynamicDropdowns('import-file-list-data');
 
             // 更新排序欄位視覺指示
             $('#dataTable .sort').each(function () {

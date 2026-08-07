@@ -78,7 +78,7 @@
 
                 <div class="table-responsive" style="max-height:600px; overflow-y:auto;">
                     <table class="table table-bordered table-sm align-middle mb-0" id="itemTable"
-                           style="min-width:1600px;">
+                           style="min-width:3000px;">
                         <thead class="table-light sticky-top" style="top:0;z-index:10;">
                             <tr>
                                 <th rowspan="2" style="min-width: 40px; max-width: 40px; " class="text-center align-middle">
@@ -93,45 +93,43 @@
                                 <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">元件描述</th>
                                 <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">元件料號</th>
                                 <th rowspan="2" style="min-width: 150px; max-width: 150px; " class="align-middle">顯示料號</th>
-                                <th rowspan="2" style="width:70px;" class="text-center align-middle">數量</th>
+                                <th rowspan="2" style="min-width:70px;" class="text-center align-middle">數量</th>
                                 <th rowspan="2" style="min-width:180px;"
                                     class="text-center align-middle bg-warning-subtle internal-part-col">
                                     <div class="internal-part-hint mb-1">黃底標示表示建議料號</div>
                                     <div>內部料號</div>
                                 </th>
-                                <th rowspan="2" style="min-width:80px;"
+                                <th rowspan="2" style="min-width:90px;"
                                     class="text-center align-middle">比對分類</th>
-                                <th rowspan="2" style="min-width:80px;"
+                                <th rowspan="2" style="min-width:90px;"
                                     class="text-center align-middle">命中欄位</th>
-                                <th colspan="7" class="text-center bg-primary-subtle">內部採購紀錄</th>
-                                <th colspan="8" class="text-center bg-success-subtle">外部查價</th>
+                                <th colspan="6" class="text-center bg-primary-subtle">內部採購紀錄</th>
+                                <th colspan="7" class="text-center bg-success-subtle">外部查價</th>
                                 <th colspan="2" class="text-center bg-warning-subtle">Mouser</th>
                                 <th colspan="2" class="text-center bg-info-subtle">DigiKey</th>
                             </tr>
                             <tr>
-                                <!-- 內部採購紀錄 sub-headers -->
+                                <!-- 內部採購紀錄 sub-headers（幣別欄已隱藏，colspan 不含該欄） -->
                                 <th class="bg-primary-subtle" style="min-width:100px;">採購日期</th>
-                                <th class="bg-primary-subtle" style="min-width:90px;">單價(原幣)</th>
-                                <th class="bg-primary-subtle" style="min-width:90px;">單價(台幣)</th>
-                                <th class="bg-primary-subtle" style="width:70px;">數量</th>
-                                <th class="bg-primary-subtle d-none" style="width:65px;">幣別</th>
+                                <th class="bg-primary-subtle" style="min-width:100px;">單價(原幣)</th>
+                                <th class="bg-primary-subtle" style="min-width:100px;">單價(台幣)</th>
+                                <th class="bg-primary-subtle" style="min-width:70px;">數量</th>
                                 <th class="bg-primary-subtle" style="min-width:140px;">供應商</th>
                                 <th class="bg-primary-subtle" style="min-width:120px;">採購型號</th>
-                                <!-- 外部查價 sub-headers -->
+                                <!-- 外部查價 sub-headers（幣別欄已隱藏，colspan 不含該欄） -->
                                 <th class="bg-success-subtle" style="min-width:100px;">查價日期</th>
-                                <th class="bg-success-subtle" style="min-width:90px;">單價(原幣)</th>
-                                <th class="bg-success-subtle" style="min-width:90px;">單價(台幣)</th>
-                                <th class="bg-success-subtle" style="width:70px;">MOQ</th>
-                                <th class="bg-success-subtle d-none" style="width:65px;">幣別</th>
+                                <th class="bg-success-subtle" style="min-width:100px;">單價(原幣)</th>
+                                <th class="bg-success-subtle" style="min-width:100px;">單價(台幣)</th>
+                                <th class="bg-success-subtle" style="min-width:70px;">MOQ</th>
                                 <th class="bg-success-subtle" style="min-width:120px;">供應商名稱</th>
-                                <th class="bg-success-subtle" style="width:70px;">庫存量</th>
-                                <th class="bg-success-subtle" style="width:100px;">情境</th>
+                                <th class="bg-success-subtle" style="min-width:80px;">庫存量</th>
+                                <th class="bg-success-subtle" style="min-width:100px;">情境</th>
                                 <!-- Mouser sub-headers -->
                                 <th class="bg-warning-subtle" style="min-width:100px;">查價日期</th>
-                                <th class="bg-warning-subtle" style="min-width:90px;">優惠價(原幣)</th>
+                                <th class="bg-warning-subtle" style="min-width:110px;">優惠價(原幣)</th>
                                 <!-- DigiKey sub-headers -->
                                 <th class="bg-info-subtle" style="min-width:100px;">查價日期</th>
-                                <th class="bg-info-subtle" style="min-width:90px;">優惠價(原幣)</th>
+                                <th class="bg-info-subtle" style="min-width:110px;">優惠價(原幣)</th>
                             </tr>
                         </thead>
                         <tbody id="item-table-body">
@@ -187,6 +185,19 @@
         white-space: normal;
     }
 
+    /* 表頭文字一律單行，避免欄寬不足時折行跑版 */
+    #itemTable thead th {
+        white-space: nowrap;
+    }
+
+    #itemTable thead th.internal-part-col {
+        white-space: normal;
+    }
+
+    #itemTable thead th.internal-part-col > div:not(.internal-part-hint) {
+        white-space: nowrap;
+    }
+
     /* 表格字體：統一大小、非粗體、黑色 */
     #itemTable,
     #itemTable th,
@@ -196,7 +207,7 @@
         color: #000 !important;
     }
 
-    /* 元件描述：單行省略，完整內容以 title tooltip 顯示 */
+    /* 元件描述／情境：單行省略，完整內容以 title tooltip 顯示 */
     #itemTable tbody td.text-ellipsis-cell {
         max-width: 150px;
         overflow: hidden;
@@ -477,7 +488,7 @@
             $('#itemCountBadge').text(items.length + ' 筆料項');
 
             if (!items.length) {
-                $body.append('<tr><td colspan="31" class="text-center py-4">無料項資料</td></tr>');
+                $body.append('<tr><td colspan="29" class="text-center py-4">無料項資料</td></tr>');
                 return;
             }
 
@@ -531,17 +542,15 @@
                 <td>${fmtPrice(r[FI.InternalUnitPriceOriginalCurrency])}</td>
                 <td>${fmtPrice(r[FI.InternalUnitPriceTwd])}</td>
                 <td>${fmtNum(r[FI.InternalQuantity])}</td>
-                <td class="d-none">${fmtCurrency(r[FI.InternalCurrency])}</td>
                 <td>${escapeHtml((r[FI.InternalSupplierName] || '') + (r[FI.InternalSupplierCode] ? ' (' + r[FI.InternalSupplierCode] + ')' : ''))}</td>
                 <td>${escapeHtml(r[FI.InternalItemDescription2] != null ? String(r[FI.InternalItemDescription2]) : '')}</td>
                 <td>${fmtDate(r[FI.ExternalQuotationDate])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceOriginalCurrency])}</td>
                 <td>${fmtPrice(r[FI.ExternalUnitPriceTwd])}</td>
                 <td>${fmtNum(r[FI.ExternalMoq])}</td>
-                <td class="d-none">${fmtCurrency(r[FI.ExternalCurrency])}</td>
                 <td>${escapeHtml(r[FI.ExternalSupplierName] != null ? String(r[FI.ExternalSupplierName]) : '')}</td>
                 <td>${fmtNum(r[FI.ExternalStock])}</td>
-                <td>${fmtScenarioText(r[FI.ExternalScenarioText])}</td>
+                <td class="text-ellipsis-cell" style="max-width:100px;" title="${escapeHtml(r[FI.ExternalScenarioText] || '')}">${fmtScenarioText(r[FI.ExternalScenarioText])}</td>
                 <td>${fmtDate(r[FI.MouserQuotationDate])}</td>
                 <td>${fmtPrice(r[FI.MouserUnitPriceOriginalCurrency])}</td>
                 <td>${fmtDate(r[FI.DkQuotationDate])}</td>

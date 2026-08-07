@@ -41,35 +41,36 @@ function handleAvatarError(element) {
 
 function initDynamicDropdowns(tableId = 'data-list-data') {
     // 只初始化表格列內的 dropdown，避免覆蓋 topbar 等全域 dropdown 的 placement
-    var dropdownElements = document.querySelectorAll(`#${tableId} [data-bs-toggle="dropdown"]`)
+    // 使用 getElementById，避免 id 含特殊字元或數字開頭時 querySelector 失敗
+    var root = document.getElementById(tableId)
+    if (!root) return
+
+    var dropdownElements = root.querySelectorAll('[data-bs-toggle="dropdown"]')
 
     dropdownElements.forEach(function (dropdownToggleEl) {
-        // 為了避免重複初始化，可以檢查是否已經有實例
         var instance = bootstrap.Dropdown.getInstance(dropdownToggleEl)
         if (instance) instance.dispose()
-        if (!instance) {
-            // 2. 重新初始化
-            new bootstrap.Dropdown(dropdownToggleEl, {
-                popperConfig: {
-                    placement: 'bottom-start',
-                    strategy: 'fixed', // 脫離父層 table 的 overflow 限制
-                    modifiers: [
-                        {
-                            name: 'flip',
-                            options: {
-                                fallbackPlacements: ['top-start'] // 優先嘗試往上彈
-                            }
-                        },
-                        {
-                            name: 'preventOverflow',
-                            options: {
-                                boundary: 'viewport' // 以視窗為界
-                            }
+
+        new bootstrap.Dropdown(dropdownToggleEl, {
+            popperConfig: {
+                placement: 'bottom-start',
+                strategy: 'fixed', // 脫離父層 table 的 overflow 限制
+                modifiers: [
+                    {
+                        name: 'flip',
+                        options: {
+                            fallbackPlacements: ['top-start'] // 優先嘗試往上彈
                         }
-                    ]
-                }
-            })
-        }
+                    },
+                    {
+                        name: 'preventOverflow',
+                        options: {
+                            boundary: 'viewport' // 以視窗為界
+                        }
+                    }
+                ]
+            }
+        })
     })
 }
 

@@ -836,10 +836,13 @@ namespace backend.Controllers
         /// <summary>匯出時附加於原始 Excel 右側的擴充標題欄位（依 Edit.cshtml table-responsive 欄位順序）</summary>
         private static readonly string[] ExportExtraHeaders =
         {
-            "內部料號", "比對結果分類", "比對命中欄位", "內部價格(原幣)", "幣別", "供應商（內部）",
-            "單據日期", "採購型號", "外部價格(原幣)", "供應商（外部）", "庫存量", "MOQ 階梯", "情境標註",
+            "內部料號", "比對結果分類", "比對命中欄位", "內部價格(原幣)", "幣別(內部)", "供應商（內部）",
+            "單據日期", "採購型號", "外部價格(原幣)", "幣別(外部)", "供應商（外部）", "庫存量", "MOQ 階梯", "情境標註",
             "查價日期(Mouser)", "優惠價(原幣)(Mouser)", "查價日期(DigiKey)", "優惠價(原幣)(DigiKey)",
         };
+
+        /// <summary>擴充欄位中需隱藏的相對索引（比照畫面：內部／外部幣別不顯示，資料仍寫入）</summary>
+        private static readonly int[] ExportHiddenExtraHeaderIndexes = [4, 9];
 
         /// <summary>
         /// 功能說明：匯出現貨優惠價查詢結果；讀取原始上傳 Excel，於標題列最後一個有效欄位右側附加系統比對資料後下載。
@@ -881,6 +884,7 @@ namespace backend.Controllers
                     bomColumns = mapping.Columns;
 
                 int sheetIndex = bomColumns[0].SrcSheetIndex;
+                string sheetName = bomColumns[0].SrcSheetName ?? string.Empty;
                 int headerRowIndex = bomColumns[0].HeaderRowIndex - 1; // HeaderRowIndex 為 1-based
 
                 // 查價結果（同 GetById 的 contentList）
@@ -916,11 +920,15 @@ namespace backend.Controllers
                         ? new XSSFWorkbook(stream)
                         : new HSSFWorkbook(stream);
 
-                    ISheet? sheet = sheetIndex >= 0 && sheetIndex < workbook.NumberOfSheets
-                        ? workbook.GetSheetAt(sheetIndex)
-                        : workbook.GetSheet(bomColumns[0].SrcSheetName);
+                    // 依匯入規則選取工作表：優先 SrcSheetName（跨檔案 sheet 順序可能不同），再退回 SrcSheetIndex
+                    ISheet? sheet = ResolveExportSheet(workbook, sheetIndex, sheetName);
                     if (sheet == null)
-                        return JsonValidFail($"找不到工作表：index={sheetIndex}, name={bomColumns[0].SrcSheetName}");
+                        return JsonValidFail($"找不到工作表：index={sheetIndex}, name={sheetName}");
+
+                    // 開啟檔案時直接落在有填入查價結果的工作表
+                    int resolvedSheetIdx = workbook.GetSheetIndex(sheet);
+                    if (resolvedSheetIdx >= 0)
+                        workbook.SetActiveSheet(resolvedSheetIdx);
 
                     IRow? headerRow = sheet.GetRow(headerRowIndex);
                     if (headerRow == null)
@@ -1022,6 +1030,10 @@ namespace backend.Controllers
                     // 擴充欄位欄寬依內容實際長度調整（含標題；全形字以 2 個字元計）
                     AutoFitExportColumns(sheet, headerRowIndex, startCol, ExportExtraHeaders.Length);
 
+                    // 比照查價結果畫面：內部／外部幣別寫入後隱藏欄位
+                    foreach (int hiddenOffset in ExportHiddenExtraHeaderIndexes)
+                        sheet.SetColumnHidden(startCol + hiddenOffset, true);
+
                     using MemoryStream ms = new();
                     workbook.Write(ms, true);
                     fileBytes = ms.ToArray();
@@ -1041,6 +1053,32 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// 功能說明：依匯入規則解析要填入查價結果的工作表。優先以 SrcSheetName 名稱比對，找不到再以 SrcSheetIndex。
+        /// </summary>
+        /// <param name="workbook">輸入參數：Excel 活頁簿。</param>
+        /// <param name="sheetIndex">輸入參數：匯入規則 SrcSheetIndex。</param>
+        /// <param name="sheetName">輸入參數：匯入規則 SrcSheetName。</param>
+        /// <returns>輸出參數：對應工作表；皆找不到時回傳 null。</returns>
+        /// <remarks>
+        /// 參考功能名稱與用途：與轉檔不同，匯出優先名稱，因同一規則套用到不同上傳檔時 sheet 順序可能改變，名稱較能對到「規則所選 sheet」。
+        /// 訊息內容及生成條件：無 HTTP 回應。
+        /// </remarks>
+        private static ISheet? ResolveExportSheet(IWorkbook workbook, int sheetIndex, string? sheetName)
+        {
+            if (!string.IsNullOrWhiteSpace(sheetName))
+            {
+                ISheet? byName = workbook.GetSheet(sheetName.Trim());
+                if (byName != null)
+                    return byName;
+            }
+
+            if (sheetIndex >= 0 && sheetIndex < workbook.NumberOfSheets)
+                return workbook.GetSheetAt(sheetIndex);
+
+            return null;
+        }
+
+        /// <summary>
         /// 功能說明：將單筆查價結果依擴充欄位順序寫入 Excel 資料列。
         /// </summary>
         /// <param name="row">輸入參數：目標資料列。</param>
@@ -1049,7 +1087,7 @@ namespace backend.Controllers
         /// <param name="mouser">輸入參數：Mouser 現貨優惠價（可為 null）。</param>
         /// <param name="digiKey">輸入參數：DigiKey 現貨優惠價（可為 null）。</param>
         /// <remarks>
-        /// 參考功能名稱與用途：欄位順序對應 ExportExtraHeaders；價格欄位輸出原幣金額（數值），幣別欄位顯示原幣幣別。
+        /// 參考功能名稱與用途：欄位順序對應 ExportExtraHeaders；價格欄位輸出原幣金額（數值），幣別欄位寫入後由 Export 以 SetColumnHidden 隱藏。
         /// 訊息內容及生成條件：無 HTTP 回應。
         /// </remarks>
         private static void WriteExportRow(
@@ -1081,6 +1119,7 @@ namespace backend.Controllers
             SetTextCell(row, col++, content.InternalPurchaseOrderDate?.ToString("yyyy/MM/dd"));
             SetTextCell(row, col++, content.InternalItemDescription2);
             SetNumericCell(row, col++, content.ExternalUnitPriceOriginalCurrency);
+            SetTextCell(row, col++, content.ExternalCurrency);
             SetTextCell(row, col++, content.ExternalSupplierName);
             SetNumericCell(row, col++, content.ExternalStock);
             SetNumericCell(row, col++, content.ExternalMoq);

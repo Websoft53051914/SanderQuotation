@@ -8,6 +8,74 @@ html {
   }
 }
 
+/*
+ * Typography size aligned to QuotationResult/Edit (font-size only)
+ * - Table: 0.875rem
+ * - Label / input / button: var(--vz-font-base)
+ * - Sidebar menu: slightly larger, coordinated with page text
+ */
+:root,
+[data-theme=default] {
+  --vz-vertical-menu-item-font-size: 1rem;
+  --vz-vertical-menu-sub-item-font-size: 0.875rem;
+}
+
+/* Header: page title / breadcrumb / topbar user */
+.page-title-box h4,
+.page-title-box #header-pTitle {
+  font-size: 1.125rem !important;
+}
+
+.page-title-box .breadcrumb {
+  font-size: 0.9375rem;
+}
+
+.navbar-header .user-name-text {
+  font-size: 0.9375rem;
+}
+
+.page-content .table,
+.page-content .table th,
+.page-content .table td,
+.modal-content .table,
+.modal-content .table th,
+.modal-content .table td {
+  font-size: 0.875rem !important;
+}
+
+.page-content .table code,
+.modal-content .table code,
+.page-content .table .badge,
+.modal-content .table .badge {
+  font-size: inherit !important;
+}
+
+.page-content .form-label,
+.page-content .col-form-label,
+.modal-content .form-label,
+.modal-content .col-form-label {
+  font-size: var(--vz-font-base);
+}
+
+.page-content .form-control,
+.page-content .form-select,
+.modal-content .form-control,
+.modal-content .form-select {
+  font-size: var(--vz-font-base);
+}
+
+.page-content .select2-container .select2-selection,
+.page-content .select2-container .select2-selection__rendered,
+.modal-content .select2-container .select2-selection,
+.modal-content .select2-container .select2-selection__rendered {
+  font-size: var(--vz-font-base);
+}
+
+.page-content .btn,
+.modal-content .btn {
+  font-size: var(--vz-font-base) !important;
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
