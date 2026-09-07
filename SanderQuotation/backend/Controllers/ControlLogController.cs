@@ -39,7 +39,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ���o Log �����C��
+        /// 取得 Log 分頁列表
         /// </summary>
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.Log_View)]
@@ -83,7 +83,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ���o�浧 Exception ���e
+        /// 取得單筆 Exception 內容
         /// </summary>
         [HttpGet("GetException")]
         [CustomAuthorization(FuncID.Log_View)]

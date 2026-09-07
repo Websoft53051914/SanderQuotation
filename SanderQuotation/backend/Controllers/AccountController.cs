@@ -46,7 +46,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o¤À­¶¦Cªí
+        /// å–å¾—åˆ†é åˆ—è¡¨
         /// </summary>
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.Permission_View)]
@@ -85,7 +85,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o³æµ§¸ê®Æ
+        /// å–å¾—å–®ç­†è³‡æ–™
         /// </summary>
         [HttpPost("Get")]
         [CustomAuthorization(FuncID.Permission_View)]
@@ -108,7 +108,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ·s¼W
+        /// æ–°å¢
         /// </summary>
         [HttpPost("Create")]
         [CustomAuthorization(FuncID.Permission_Create)]
@@ -116,17 +116,17 @@ namespace backend.Controllers
         {
             try
             {
-                // ÀË¬d±b¸¹¬O§_¤w¦s¦b
+                // æª¢æŸ¥å¸³è™Ÿæ˜¯å¦å·²å­˜åœ¨
                 var existAccount = GetAccountBL().CheckExist(vm.MemberAccount);
                 if (existAccount != null)
                 {
-                    return JsonValidFail("±b¸¹¤w¦s¦b");
+                    return JsonValidFail("å¸³è™Ÿå·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<AccountDM>(vm);
                 var guid = GetAccountBL().Create(dm);
                 LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -137,7 +137,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ½s¿è
+        /// ç·¨è¼¯
         /// </summary>
         [HttpPost("Edit")]
         [CustomAuthorization(FuncID.Permission_Edit)]
@@ -148,7 +148,7 @@ namespace backend.Controllers
                 var dm = _mapper.Map<AccountDM>(vm);
                 GetAccountBL().Edit(dm);
                 LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -159,7 +159,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// §R°£¡]§å¦¸¡^
+        /// åˆªé™¤ï¼ˆæ‰¹æ¬¡ï¼‰
         /// </summary>
         [HttpPost("Delete")]
         [CustomAuthorization(FuncID.Permission_Delete)]
@@ -176,7 +176,7 @@ namespace backend.Controllers
                     LogSuccess(id, LogAction.Delete);
                 }
 
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -186,7 +186,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ±Ò¥Î/°±¥Î
+        /// å•Ÿç”¨/åœç”¨
         /// </summary>
         [HttpPost("Enable")]
         [CustomAuthorization(FuncID.Permission_Edit)]
@@ -196,7 +196,7 @@ namespace backend.Controllers
             {
                 GetAccountBL().Enable(id, enable);
                 LogSuccess(id, LogAction.Edit);
-                return JsonSuccess(enable == AccountStatusEnum.Enabled.ToInt() ? "±Ò¥Î¦¨¥\" : "°±¥Î¦¨¥\");
+                return JsonSuccess(enable == AccountStatusEnum.Enabled.ToInt() ? "å•Ÿç”¨æˆåŠŸ" : "åœç”¨æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -206,7 +206,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o©Ò¦³¨¤¦â¦Cªí¡]¥Î©ó¤U©Ô¿ï³æ¡^
+        /// å–å¾—æ‰€æœ‰è§’è‰²åˆ—è¡¨ï¼ˆç”¨æ–¼ä¸‹æ‹‰é¸å–®ï¼‰
         /// </summary>
         [HttpGet("GetRoleList")]
         [CustomAuthorization(FuncID.Permission_View)]

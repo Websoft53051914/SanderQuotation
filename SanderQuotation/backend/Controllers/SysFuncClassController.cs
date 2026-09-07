@@ -37,7 +37,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o¤À­¶¦Cªí
+        /// å–å¾—åˆ†é åˆ—è¡¨
         /// </summary>
         [HttpGet("GetPageList")]
         public IActionResult GetPageList([FromQuery] DataSourceRequest request, SysFuncClassVM vm)
@@ -54,7 +54,7 @@ namespace backend.Controllers
                 {
                     var item = list[i];
                     item.No = (request.pageIndex - 1) * request.pageSize + i + 1;
-                    item.StatusName = item.Status == 1 ? "±Ò¥Î" : "°±¥Î";
+                    item.StatusName = item.Status == 1 ? "å•Ÿç”¨" : "åœç”¨";
                 }
 
                 return JsonSuccess(new
@@ -71,7 +71,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o³æµ§¸ê®Æ
+        /// å–å¾—å–®ç­†è³‡æ–™
         /// </summary>
         [HttpPost("Get")]
         public IActionResult Get(Guid id)
@@ -93,24 +93,24 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ·s¼W
+        /// æ–°å¢
         /// </summary>
         [HttpPost("Create")]
         public IActionResult Create(SysFuncClassVM vm)
         {
             try
             {
-                // ÅçÃÒÃş§O¦WºÙ¬O§_¤w¦s¦b
+                // é©—è­‰é¡åˆ¥åç¨±æ˜¯å¦å·²å­˜åœ¨
                 var existingClass = GetSysFuncClassBL().CheckExist(vm.ClassName);
                 if (existingClass != null)
                 {
-                    return JsonValidFail("Ãş§O¦WºÙ¤w¦s¦b");
+                    return JsonValidFail("é¡åˆ¥åç¨±å·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<SysFuncClassDM>(vm);
                 var guid = GetSysFuncClassBL().Create(dm);
                 LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -121,24 +121,24 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ½s¿è
+        /// ç·¨è¼¯
         /// </summary>
         [HttpPost("Edit")]
         public IActionResult Edit(SysFuncClassVM vm)
         {
             try
             {
-                // ÅçÃÒÃş§O¦WºÙ¬O§_¤w¦s¦b¡]±Æ°£¦Û¤v¡^
+                // é©—è­‰é¡åˆ¥åç¨±æ˜¯å¦å·²å­˜åœ¨ï¼ˆæ’é™¤è‡ªå·±ï¼‰
                 var existingClass = GetSysFuncClassBL().CheckExist(vm.ClassName);
                 if (existingClass != null && existingClass.Id != vm.Id)
                 {
-                    return JsonValidFail("Ãş§O¦WºÙ¤w¦s¦b");
+                    return JsonValidFail("é¡åˆ¥åç¨±å·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<SysFuncClassDM>(vm);
                 GetSysFuncClassBL().Edit(dm);
                 LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -149,7 +149,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// §R°£¡]§å¦¸¡^
+        /// åˆªé™¤ï¼ˆæ‰¹æ¬¡ï¼‰
         /// </summary>
         [HttpPost("Delete")]
         public IActionResult Delete(List<Guid> list)
@@ -165,7 +165,7 @@ namespace backend.Controllers
                     LogSuccess(id, LogAction.Delete);
                 }
 
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -175,7 +175,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ±Ò¥Î/°±¥Î
+        /// å•Ÿç”¨/åœç”¨
         /// </summary>
         [HttpPost("Enable")]
         public IActionResult Enable(Guid id, int enable)
@@ -184,7 +184,7 @@ namespace backend.Controllers
             {
                 GetSysFuncClassBL().Enable(id, enable);
                 LogSuccess(id, LogAction.Edit);
-                return JsonSuccess(enable == 1 ? "±Ò¥Î¦¨¥\" : "°±¥Î¦¨¥\");
+                return JsonSuccess(enable == 1 ? "å•Ÿç”¨æˆåŠŸ" : "åœç”¨æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -194,7 +194,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o©Ò¦³¥\¯àÃş§O¡]¤U©Ô¿ï³æ¥Î¡^
+        /// å–å¾—æ‰€æœ‰åŠŸèƒ½é¡åˆ¥ï¼ˆä¸‹æ‹‰é¸å–®ç”¨ï¼‰
         /// </summary>
         [HttpGet("GetAll")]
         public IActionResult GetAll()

@@ -74,7 +74,7 @@ namespace Business.BusinessLogic
                 });
                 if (entity != null)
                 {
-                    GetMessage().SetAlert("����Ʈw���ɥN�X�w�s�b");
+                    GetMessage().SetAlert("此資料庫轉檔代碼已存在");
                 }
             }
             
@@ -166,7 +166,7 @@ namespace Business.BusinessLogic
         }
 
         /// <summary>
-        /// ?? TransferCode ???o??�^??w?s?u?]?w?C
+        /// 依連線代碼（TransferCode）取得資料庫連線設定。
         /// </summary>
         public ESDbTransferDM? GetDbTransferConfig(string dbTransferCode)
         {

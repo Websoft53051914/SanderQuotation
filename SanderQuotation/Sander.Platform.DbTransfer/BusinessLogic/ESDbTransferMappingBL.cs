@@ -247,7 +247,7 @@ namespace Business.BusinessLogic
 
             dao.Update(entity);
 
-            // ¥ý§R°£ÂÂÄæ¦ì¹ïÀ³¡A¦A¼g¤J·sªº
+            // 先刪除舊欄位對應，再寫入新的
             var colDao = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
             var oldCols = colDao.FindListByPropertys(new Dictionary<string, object> { { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode },{ nameof(ESDbTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() } });
             foreach (var old in oldCols)
@@ -268,13 +268,13 @@ namespace Business.BusinessLogic
 
 
         /// <summary>
-        /// °õ¦æ«ü©wªº¸ê®Æ¶Ç¿é¹ïÀ³³]©w
+        /// 執行指定的資料傳輸對應設定
         /// </summary>
-        /// <param name="mappingRowGuid">¶Ç¿é¹ïÀ³³]©wªº RowGuid¡]»P transferMappingCode ¾Ü¤@¨Ï¥Î¡^</param>
-        /// <param name="transferMappingCode">¶Ç¿é¹ïÀ³³]©w¥N½X¡]»P mappingRowGuid ¾Ü¤@¨Ï¥Î¡^</param>
-        /// <param name="secretKey">¥[±Kª÷Æ_¡]¿ï¶ñ¡A­YÄæ¦ì»Ý­n¥[±K«h¥²¶ñ¡^</param>
-        /// <param name="secretIV">¥[±K¦V¶q¡]¿ï¶ñ¡A­YÄæ¦ì»Ý­n¥[±K«h¥²¶ñ¡^</param>
-        /// <returns>°õ¦æµ²ªG</returns>
+        /// <param name="mappingRowGuid">傳輸對應設定的 RowGuid（與 transferMappingCode 擇一使用）</param>
+        /// <param name="transferMappingCode">傳輸對應設定代碼（與 mappingRowGuid 擇一使用）</param>
+        /// <param name="secretKey">加密金鑰（選填，若欄位需要加密則必填）</param>
+        /// <param name="secretIV">加密向量（選填，若欄位需要加密則必填）</param>
+        /// <returns>執行結果</returns>
         public EsScheduleCycleLogDetailDM ExecuteTransfer(
             Guid? mappingRowGuid = null,
             string transferMappingCode = null,
@@ -284,7 +284,7 @@ namespace Business.BusinessLogic
             try
             {
                 if (!mappingRowGuid.HasValue && string.IsNullOrEmpty(transferMappingCode))
-                    return ErrorResult("¥²¶·´£¨Ñ mappingRowGuid ©Î transferMappingCode ¨ä¤¤¤§¤@");
+                    return ErrorResult("必須提供 mappingRowGuid 或 transferMappingCode 其中之一");
 
                 ESDbTransferMappingDM mapping = null;
 
@@ -292,7 +292,7 @@ namespace Business.BusinessLogic
                 {
                     var mappingResponse = GetById(mappingRowGuid.Value);
                     if (mappingResponse == null)
-                        return ErrorResult("§ä¤£¨ì«ü©wªº¶Ç¿é¹ïÀ³³]©w");
+                        return ErrorResult("找不到指定的傳輸對應設定");
                     mapping = mappingResponse;
                 }
                 else
@@ -303,7 +303,7 @@ namespace Business.BusinessLogic
                     });
 
                     if (entity == null)
-                        return ErrorResult("§ä¤£¨ì«ü©wªº¶Ç¿é¹ïÀ³³]©w");
+                        return ErrorResult("找不到指定的傳輸對應設定");
 
                     mapping = mapper.Map<ESDbTransferMappingDM>(entity);
                 }
@@ -312,7 +312,7 @@ namespace Business.BusinessLogic
             }
             catch (Exception ex)
             {
-                return ErrorResult($"°õ¦æ¶Ç¿é®Éµo¥Í¿ù»~: {ex.Message}");
+                return ErrorResult($"執行傳輸時發生錯誤: {ex.Message}");
             }
         }
 
@@ -333,19 +333,19 @@ namespace Business.BusinessLogic
         {
             try
             {
-                // ¨ú±oÄæ¦ì¹ïÀ³³]©w
+                // 取得欄位對應設定
                 var columns = GetColumns(mapping.TransferMappingCode);
                 if (columns == null || columns.Count == 0)
-                    return ErrorResult("§ä¤£¨ìÄæ¦ì¹ïÀ³³]©w");
+                    return ErrorResult("找不到欄位對應設定");
 
-                // ¨ú±o¨Ó·½¸ê®Æ®w³]©w
+                // 取得來源資料庫設定
                 var srcDbDao = _unitOfWork.Repository<IESDbTransferDAO>();
                 var srcDbEntity = srcDbDao.FindByPropertys(new Dictionary<string, object>
                 {
                     { nameof(ESDbTransferEntity.TransferCode), mapping.SrcDbTransferCode }
                 });
                 if (srcDbEntity == null)
-                    return ErrorResult("§ä¤£¨ì¨Ó·½¸ê®Æ®w³]©w");
+                    return ErrorResult("找不到來源資料庫設定");
                 var srcDbConfig = new ESDbTransferDM
                 {
                     TransferCode = srcDbEntity.TransferCode,
@@ -358,13 +358,13 @@ namespace Business.BusinessLogic
                     DbPassword = srcDbEntity.DbPassword
                 };
 
-                // ¨ú±o¥Øªº¸ê®Æ®w³]©w
+                // 取得目的資料庫設定
                 var dstDbEntity = srcDbDao.FindByPropertys(new Dictionary<string, object>
                 {
                     { nameof(ESDbTransferEntity.TransferCode), mapping.DstDbTransferCode }
                 });
                 if (dstDbEntity == null)
-                    return ErrorResult("§ä¤£¨ì¥Øªº¸ê®Æ®w³]©w");
+                    return ErrorResult("找不到目的資料庫設定");
                 var dstDbConfig = new ESDbTransferDM
                 {
                     TransferCode = dstDbEntity.TransferCode,
@@ -377,7 +377,7 @@ namespace Business.BusinessLogic
                     DbPassword = dstDbEntity.DbPassword
                 };
 
-                // «Ø¥ß°õ¦æ¾¹¨Ã°õ¦æ
+                // 建立執行器並執行
                 var executor = new ESDbTransferExecutor(
                     _unitOfWork,
                     mapping,
@@ -392,7 +392,7 @@ namespace Business.BusinessLogic
             }
             catch (Exception ex)
             {
-                return ErrorResult($"°õ¦æ¶Ç¿é®Éµo¥Í¿ù»~: {ex.Message}");
+                return ErrorResult($"執行傳輸時發生錯誤: {ex.Message}");
             }
         }
 

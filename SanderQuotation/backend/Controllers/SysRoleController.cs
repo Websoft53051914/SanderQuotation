@@ -39,7 +39,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o¤À­¶¦Cªí
+        /// å–å¾—åˆ†é åˆ—è¡¨
         /// </summary>
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.SysFuncRole_View)]
@@ -74,7 +74,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o³æµ§¸ê®Æ
+        /// å–å¾—å–®ç­†è³‡æ–™
         /// </summary>
         [HttpPost("Get")]
         [CustomAuthorization(FuncID.SysFuncRole_Edit)]
@@ -88,7 +88,7 @@ namespace backend.Controllers
 
                 var vm = _mapper.Map<SysRoleVM>(dm);
 
-                // ¨ú±o¨¤¦â¥\¯à¸Ô²ÓID²M³æ
+                // å–å¾—è§’è‰²åŠŸèƒ½ç´°é …IDåˆ—è¡¨
                 vm.FuncDetailIds = GetSysRoleBL().GetFuncDetailIdsByRole(id);
 
                 return JsonSuccess(vm);
@@ -101,7 +101,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ·s¼W
+        /// æ–°å¢
         /// </summary>
         [HttpPost("Create")]
         [CustomAuthorization(FuncID.SysFuncRole_Create)]
@@ -109,20 +109,20 @@ namespace backend.Controllers
         {
             try
             {
-                // ÀË¬d¨¤¦â¦WºÙ¬O§_¤w¦s¦b
+                // æª¢æŸ¥è§’è‰²åç¨±æ˜¯å¦å·²å­˜åœ¨
                 var existRole = GetSysRoleBL().CheckExist(vm.RoleName);
                 if (existRole != null)
                 {
-                    return JsonValidFail("¨¤¦â¦WºÙ¤w¦s¦b");
+                    return JsonValidFail("è§’è‰²åç¨±å·²å­˜åœ¨");
                 }
 
                 var dm = _mapper.Map<SysRoleDM>(vm);
                 var guid = GetSysRoleBL().Create(dm);
 
-                // Àx¦s¥\¯àÅv­­³]©w
+                // å„²å­˜åŠŸèƒ½æ¬Šé™è¨­å®š
                 if (vm.FuncDetailIds != null && vm.FuncDetailIds.Count > 0)
                 {
-                    // ¨ú±o·s«Ø¥ßªº¨¤¦âID
+                    // å–å¾—æ–°å»ºç«‹çš„è§’è‰²ID
                     var newRole = GetSysRoleBL().CheckExist(vm.RoleName);
                     if (newRole != null)
                     {
@@ -132,7 +132,7 @@ namespace backend.Controllers
                 }
 
                 LogSuccess(guid, LogAction.Edit);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -142,7 +142,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ½s¿è
+        /// ç·¨è¼¯
         /// </summary>
         [HttpPost("Edit")]
         [CustomAuthorization(FuncID.SysFuncRole_Edit)]
@@ -153,12 +153,12 @@ namespace backend.Controllers
                 var dm = _mapper.Map<SysRoleDM>(vm);
                 GetSysRoleBL().Edit(dm);
 
-                // Àx¦s¥\¯àÅv­­³]©w
+                // å„²å­˜åŠŸèƒ½æ¬Šé™è¨­å®š
                 dm.PerCodes = vm.FuncDetailIds ?? new List<string>();
                 GetSysRoleBL().EditPermission(dm);
                 LogSuccess(vm.Id, LogAction.Edit);
 
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -168,7 +168,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// §R°£¡]§å¦¸¡^
+        /// åˆªé™¤ï¼ˆæ‰¹æ¬¡ï¼‰
         /// </summary>
         [HttpPost("Delete")]
         [CustomAuthorization(FuncID.SysFuncRole_Delete)]
@@ -185,7 +185,7 @@ namespace backend.Controllers
                     LogSuccess(id, LogAction.Delete);
                 }
 
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -195,7 +195,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ±Ò¥Î/°±¥Î
+        /// å•Ÿç”¨/åœç”¨
         /// </summary>
         [HttpPost("Enable")]
         [CustomAuthorization(FuncID.SysFuncRole_Edit)]
@@ -204,7 +204,7 @@ namespace backend.Controllers
             try
             {
                 GetSysRoleBL().Enable(id, enable);
-                return JsonSuccess(enable == StatusEnum.Enabled.ToInt() ? "±Ò¥Î¦¨¥\" : "°±¥Î¦¨¥\");
+                return JsonSuccess(enable == StatusEnum.Enabled.ToInt() ? "å•Ÿç”¨æˆåŠŸ" : "åœç”¨æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -214,7 +214,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o©Ò¦³¥\¯à¦Cªí¡]¥Î©óÅv­­³]©w¡^
+        /// å–å¾—æ‰€æœ‰åŠŸèƒ½åˆ—è¡¨ï¼ˆç”¨æ–¼æ¬Šé™è¨­å®šï¼‰
         /// </summary>
         [HttpGet("GetAllFuncList")]
         [CustomAuthorization(FuncID.SysFuncRole_Edit,FuncID.SysFuncRole_Create)]
@@ -233,7 +233,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ½s¿èÅv­­
+        /// ç·¨è¼¯æ¬Šé™
         /// </summary>
         [HttpPost("EditPermission")]
         [CustomAuthorization(FuncID.SysFuncRole_Edit)]
@@ -243,7 +243,7 @@ namespace backend.Controllers
             {
                 var dm = _mapper.Map<SysRoleDM>(vm);
                 GetSysRoleBL().EditPermission(dm);
-                return JsonSuccess("Åv­­³]©w¦¨¥\");
+                return JsonSuccess("æ¬Šé™è¨­å®šæˆåŠŸ");
             }
             catch (Exception ex)
             {
