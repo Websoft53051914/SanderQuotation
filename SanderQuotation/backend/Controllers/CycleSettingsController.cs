@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using backend.Common;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
+using Sander.Platform.DbTransfer;
 using Business.DomainModel;
 using CommonClass.Model;
 using Const;
@@ -254,7 +254,7 @@ namespace backend.Controllers
             try
             {
                 var bl = GetBLInstance<EsScheduleCycleBL>();
-                var dbOptions = bl.GetDbTransferOptions();
+                var dbOptions = Business.BusinessFactory.GetInstance<IDbTransferService>().GetDbTransferOptions();
                 var fileOptions = bl.GetFileTransferOptions();
 
                 return JsonSuccess(new

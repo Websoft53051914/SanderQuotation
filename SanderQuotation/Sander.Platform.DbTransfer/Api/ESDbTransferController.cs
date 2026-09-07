@@ -1,5 +1,4 @@
 using AutoMapper;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
@@ -7,7 +6,9 @@ using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Utility;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
+using Sander.Platform.DbTransfer;
 using System.Data.SqlClient;
 using ViewModel;
 using static Const.Enums;
@@ -15,7 +16,7 @@ using static Const.Enums;
 namespace backend.Controllers
 {
     [Route("api/ESDbTransfer")]
-    public class ESDbTransferController : BaseProjectController
+    public class ESDbTransferController : PlatformApiController
     {
         private readonly IConfiguration _config;
         private readonly IMapper _mapper;
@@ -115,7 +116,7 @@ namespace backend.Controllers
                 }
                 var guid = GetESDbTransferBL().Create(dm);
                 LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("·s¼W¦¨¥\");
+                return JsonSuccess("æ–°å¢æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -133,7 +134,7 @@ namespace backend.Controllers
                 var dm = _mapper.Map<ESDbTransferDM>(vm);
                 GetESDbTransferBL().Edit(dm);
                 LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("½s¿è¦¨¥\");
+                return JsonSuccess("ç·¨è¼¯æˆåŠŸ");
             }
             catch (Exception ex)
             {
@@ -153,7 +154,7 @@ namespace backend.Controllers
                     string.IsNullOrWhiteSpace(vm.DbHost) ||
                     string.IsNullOrWhiteSpace(vm.DbName) ||
                     string.IsNullOrWhiteSpace(vm.DbUser))
-                    return JsonValidFail("½Ğ¶ñ¼g§¹¾ã³s½u¸ê°T");
+                    return JsonValidFail("è«‹å¡«å¯«å®Œæ•´é€£ç·šè³‡è¨Š");
 
                 int dbType = int.Parse(vm.DbType);
                 var portPart = string.IsNullOrWhiteSpace(vm.DbPort) ? "" : $",{vm.DbPort}";
@@ -176,15 +177,15 @@ namespace backend.Controllers
                 }
                 else
                 {
-                    return JsonValidFail("¤£¤ä´©ªº¸ê®Æ®wÃş«¬");
+                    return JsonValidFail("ä¸æ”¯æ´çš„è³‡æ–™åº«é¡å‹");
                 }
 
-                return JsonSuccess("³s½u¦¨¥\");
+                return JsonSuccess("é€£ç·šæˆåŠŸ");
             }
             catch (Exception ex)
             {
                 LogError(ex.ToString());
-                return JsonValidFail("³s½u¥¢±Ñ");
+                return JsonValidFail("é€£ç·šå¤±æ•—");
             }
         }
 
@@ -202,7 +203,7 @@ namespace backend.Controllers
                 {
                     LogSuccess(item, LogAction.Delete);
                 }
-                return JsonSuccess("§R°£¦¨¥\");
+                return JsonSuccess("åˆªé™¤æˆåŠŸ");
 
             }
             catch (Exception ex)

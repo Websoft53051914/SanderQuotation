@@ -10,7 +10,6 @@ using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
-using Microsoft.VisualBasic;
 using static Const.Enums;
 
 namespace Business.BusinessLogic
@@ -75,7 +74,7 @@ namespace Business.BusinessLogic
                 });
                 if (entity != null)
                 {
-                    GetMessage().SetAlert("¦¹¸ê®Æ®wÂàÀÉ¥N½X¤w¦s¦b");
+                    GetMessage().SetAlert("ï¿½ï¿½ï¿½ï¿½Æ®wï¿½ï¿½ï¿½É¥Nï¿½Xï¿½wï¿½sï¿½b");
                 }
             }
             
@@ -164,6 +163,18 @@ namespace Business.BusinessLogic
             var entity = dao.FindByPk(id);
             var newDM = mapper.Map<ESDbTransferDM>(entity);
             return newDM;
+        }
+
+        /// <summary>
+        /// ?? TransferCode ???o??ï¿½^??w?s?u?]?w?C
+        /// </summary>
+        public ESDbTransferDM? GetDbTransferConfig(string dbTransferCode)
+        {
+            var entity = GetDAO().FindByPropertys(new Dictionary<string, object>
+            {
+                { nameof(ESDbTransferEntity.TransferCode), dbTransferCode }
+            });
+            return entity == null ? null : mapper.Map<ESDbTransferDM>(entity);
         }
 
         public void Edit(ESDbTransferDM dm)

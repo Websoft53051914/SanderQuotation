@@ -1,6 +1,5 @@
 using AutoMapper;
 using backend.Common;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
@@ -40,7 +39,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o Log ¤À­¶¦Cªí
+        /// ï¿½ï¿½ï¿½o Log ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½ï¿½
         /// </summary>
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.Log_View)]
@@ -84,7 +83,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ¨ú±o³æµ§ Exception ¤º®e
+        /// ï¿½ï¿½ï¿½oï¿½æµ§ Exception ï¿½ï¿½ï¿½e
         /// </summary>
         [HttpGet("GetException")]
         [CustomAuthorization(FuncID.Log_View)]

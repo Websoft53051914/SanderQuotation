@@ -10,8 +10,7 @@ using Core.Utility.Helper.DB.Entity;
 using Data.DataAccess.Dao;
 using Data.DataAccess.DTO;
 using Data.DataAccess.Entity;
-using Microsoft.Extensions.Configuration;
-using MySqlX.XDevAPI.Common;
+using Sander.Platform.DbTransfer;
 using static Const.Enums;
 
 namespace Business.BusinessLogic
@@ -192,6 +191,16 @@ namespace Business.BusinessLogic
             return newDM;
         }
 
+        public List<DbTransferOptionItem> GetDbTransferOptions()
+        {
+            return GetDAO().FindListByProperty(nameof(ESDbTransferMappingEntity.Status), StatusEnum.Enabled.ToInt())
+                .Select(x => new DbTransferOptionItem
+                {
+                    Value = x.TransferMappingCode,
+                    Text = x.TransferMappingCode
+                }).ToList();
+        }
+
         public ESDbTransferMappingDM GetByCode(string transferMappingCode)
         {
             var dao = _unitOfWork.Repository<IESDbTransferMappingDAO>();
@@ -238,7 +247,7 @@ namespace Business.BusinessLogic
 
             dao.Update(entity);
 
-            // ¥ı§R°£ÂÂÄæ¦ì¹ïÀ³¡A¦A¼g¤J·sªº
+            // Â¥Ã½Â§RÂ°Â£Ã‚Ã‚Ã„Ã¦Â¦Ã¬Â¹Ã¯Ã€Â³Â¡AÂ¦AÂ¼gÂ¤JÂ·sÂªÂº
             var colDao = _unitOfWork.Repository<IESDbTransferMappingColumnDAO>();
             var oldCols = colDao.FindListByPropertys(new Dictionary<string, object> { { nameof(ESDbTransferMappingColumnEntity.TransferMappingCode), entity.TransferMappingCode },{ nameof(ESDbTransferMappingColumnEntity.Status), StatusEnum.Enabled.ToInt() } });
             foreach (var old in oldCols)
@@ -259,13 +268,13 @@ namespace Business.BusinessLogic
 
 
         /// <summary>
-        /// °õ¦æ«ü©wªº¸ê®Æ¶Ç¿é¹ïÀ³³]©w
+        /// Â°ÃµÂ¦Ã¦Â«Ã¼Â©wÂªÂºÂ¸ÃªÂ®Ã†Â¶Ã‡Â¿Ã©Â¹Ã¯Ã€Â³Â³]Â©w
         /// </summary>
-        /// <param name="mappingRowGuid">¶Ç¿é¹ïÀ³³]©wªº RowGuid¡]»P transferMappingCode ¾Ü¤@¨Ï¥Î¡^</param>
-        /// <param name="transferMappingCode">¶Ç¿é¹ïÀ³³]©w¥N½X¡]»P mappingRowGuid ¾Ü¤@¨Ï¥Î¡^</param>
-        /// <param name="secretKey">¥[±Kª÷Æ_¡]¿ï¶ñ¡A­YÄæ¦ì»İ­n¥[±K«h¥²¶ñ¡^</param>
-        /// <param name="secretIV">¥[±K¦V¶q¡]¿ï¶ñ¡A­YÄæ¦ì»İ­n¥[±K«h¥²¶ñ¡^</param>
-        /// <returns>°õ¦æµ²ªG</returns>
+        /// <param name="mappingRowGuid">Â¶Ã‡Â¿Ã©Â¹Ã¯Ã€Â³Â³]Â©wÂªÂº RowGuidÂ¡]Â»P transferMappingCode Â¾ÃœÂ¤@Â¨ÃÂ¥ÃÂ¡^</param>
+        /// <param name="transferMappingCode">Â¶Ã‡Â¿Ã©Â¹Ã¯Ã€Â³Â³]Â©wÂ¥NÂ½XÂ¡]Â»P mappingRowGuid Â¾ÃœÂ¤@Â¨ÃÂ¥ÃÂ¡^</param>
+        /// <param name="secretKey">Â¥[Â±KÂªÃ·Ã†_Â¡]Â¿Ã¯Â¶Ã±Â¡AÂ­YÃ„Ã¦Â¦Ã¬Â»ÃÂ­nÂ¥[Â±KÂ«hÂ¥Â²Â¶Ã±Â¡^</param>
+        /// <param name="secretIV">Â¥[Â±KÂ¦VÂ¶qÂ¡]Â¿Ã¯Â¶Ã±Â¡AÂ­YÃ„Ã¦Â¦Ã¬Â»ÃÂ­nÂ¥[Â±KÂ«hÂ¥Â²Â¶Ã±Â¡^</param>
+        /// <returns>Â°ÃµÂ¦Ã¦ÂµÂ²ÂªG</returns>
         public EsScheduleCycleLogDetailDM ExecuteTransfer(
             Guid? mappingRowGuid = null,
             string transferMappingCode = null,
@@ -275,7 +284,7 @@ namespace Business.BusinessLogic
             try
             {
                 if (!mappingRowGuid.HasValue && string.IsNullOrEmpty(transferMappingCode))
-                    return ErrorResult("¥²¶·´£¨Ñ mappingRowGuid ©Î transferMappingCode ¨ä¤¤¤§¤@");
+                    return ErrorResult("Â¥Â²Â¶Â·Â´Â£Â¨Ã‘ mappingRowGuid Â©Ã transferMappingCode Â¨Ã¤Â¤Â¤Â¤Â§Â¤@");
 
                 ESDbTransferMappingDM mapping = null;
 
@@ -283,7 +292,7 @@ namespace Business.BusinessLogic
                 {
                     var mappingResponse = GetById(mappingRowGuid.Value);
                     if (mappingResponse == null)
-                        return ErrorResult("§ä¤£¨ì«ü©wªº¶Ç¿é¹ïÀ³³]©w");
+                        return ErrorResult("Â§Ã¤Â¤Â£Â¨Ã¬Â«Ã¼Â©wÂªÂºÂ¶Ã‡Â¿Ã©Â¹Ã¯Ã€Â³Â³]Â©w");
                     mapping = mappingResponse;
                 }
                 else
@@ -294,7 +303,7 @@ namespace Business.BusinessLogic
                     });
 
                     if (entity == null)
-                        return ErrorResult("§ä¤£¨ì«ü©wªº¶Ç¿é¹ïÀ³³]©w");
+                        return ErrorResult("Â§Ã¤Â¤Â£Â¨Ã¬Â«Ã¼Â©wÂªÂºÂ¶Ã‡Â¿Ã©Â¹Ã¯Ã€Â³Â³]Â©w");
 
                     mapping = mapper.Map<ESDbTransferMappingDM>(entity);
                 }
@@ -303,7 +312,7 @@ namespace Business.BusinessLogic
             }
             catch (Exception ex)
             {
-                return ErrorResult($"°õ¦æ¶Ç¿é®Éµo¥Í¿ù»~: {ex.Message}");
+                return ErrorResult($"Â°ÃµÂ¦Ã¦Â¶Ã‡Â¿Ã©Â®Ã‰ÂµoÂ¥ÃÂ¿Ã¹Â»~: {ex.Message}");
             }
         }
 
@@ -324,19 +333,19 @@ namespace Business.BusinessLogic
         {
             try
             {
-                // ¨ú±oÄæ¦ì¹ïÀ³³]©w
+                // Â¨ÃºÂ±oÃ„Ã¦Â¦Ã¬Â¹Ã¯Ã€Â³Â³]Â©w
                 var columns = GetColumns(mapping.TransferMappingCode);
                 if (columns == null || columns.Count == 0)
-                    return ErrorResult("§ä¤£¨ìÄæ¦ì¹ïÀ³³]©w");
+                    return ErrorResult("Â§Ã¤Â¤Â£Â¨Ã¬Ã„Ã¦Â¦Ã¬Â¹Ã¯Ã€Â³Â³]Â©w");
 
-                // ¨ú±o¨Ó·½¸ê®Æ®w³]©w
+                // Â¨ÃºÂ±oÂ¨Ã“Â·Â½Â¸ÃªÂ®Ã†Â®wÂ³]Â©w
                 var srcDbDao = _unitOfWork.Repository<IESDbTransferDAO>();
                 var srcDbEntity = srcDbDao.FindByPropertys(new Dictionary<string, object>
                 {
                     { nameof(ESDbTransferEntity.TransferCode), mapping.SrcDbTransferCode }
                 });
                 if (srcDbEntity == null)
-                    return ErrorResult("§ä¤£¨ì¨Ó·½¸ê®Æ®w³]©w");
+                    return ErrorResult("Â§Ã¤Â¤Â£Â¨Ã¬Â¨Ã“Â·Â½Â¸ÃªÂ®Ã†Â®wÂ³]Â©w");
                 var srcDbConfig = new ESDbTransferDM
                 {
                     TransferCode = srcDbEntity.TransferCode,
@@ -349,13 +358,13 @@ namespace Business.BusinessLogic
                     DbPassword = srcDbEntity.DbPassword
                 };
 
-                // ¨ú±o¥Øªº¸ê®Æ®w³]©w
+                // Â¨ÃºÂ±oÂ¥Ã˜ÂªÂºÂ¸ÃªÂ®Ã†Â®wÂ³]Â©w
                 var dstDbEntity = srcDbDao.FindByPropertys(new Dictionary<string, object>
                 {
                     { nameof(ESDbTransferEntity.TransferCode), mapping.DstDbTransferCode }
                 });
                 if (dstDbEntity == null)
-                    return ErrorResult("§ä¤£¨ì¥Øªº¸ê®Æ®w³]©w");
+                    return ErrorResult("Â§Ã¤Â¤Â£Â¨Ã¬Â¥Ã˜ÂªÂºÂ¸ÃªÂ®Ã†Â®wÂ³]Â©w");
                 var dstDbConfig = new ESDbTransferDM
                 {
                     TransferCode = dstDbEntity.TransferCode,
@@ -368,7 +377,7 @@ namespace Business.BusinessLogic
                     DbPassword = dstDbEntity.DbPassword
                 };
 
-                // «Ø¥ß°õ¦æ¾¹¨Ã°õ¦æ
+                // Â«Ã˜Â¥ÃŸÂ°ÃµÂ¦Ã¦Â¾Â¹Â¨ÃƒÂ°ÃµÂ¦Ã¦
                 var executor = new ESDbTransferExecutor(
                     _unitOfWork,
                     mapping,
@@ -383,7 +392,7 @@ namespace Business.BusinessLogic
             }
             catch (Exception ex)
             {
-                return ErrorResult($"°õ¦æ¶Ç¿é®Éµo¥Í¿ù»~: {ex.Message}");
+                return ErrorResult($"Â°ÃµÂ¦Ã¦Â¶Ã‡Â¿Ã©Â®Ã‰ÂµoÂ¥ÃÂ¿Ã¹Â»~: {ex.Message}");
             }
         }
 
@@ -400,7 +409,7 @@ namespace Business.BusinessLogic
                 });
                 if (entity != null)
                 {
-                    GetMessage().SetAlert("¦¹¸ê®ÆªíÂàÀÉ³]©w¥N½X¤w¦s¦b");
+                    GetMessage().SetAlert("æ­¤è³‡æ–™è¡¨è½‰æª”è¨­å®šä»£ç¢¼å·²å­˜åœ¨");
                 }
             }
         }

@@ -328,16 +328,6 @@ namespace Business.BusinessLogic
             GetOtherTransferDao().DeleteByPropertys(new Dictionary<string, object> { { nameof(EsScheduleCycleOtherTransferEntity.ScheduleCycleCode), code } });
         }
 
-        public List<(string Value, string Text)> GetDbTransferOptions()
-        {
-            var dao = _unitOfWork.Repository<IESDbTransferMappingDAO>();
-            return dao.FindListByProperty(nameof(ESDbTransferMappingEntity.Status),StatusEnum.Enabled.ToInt())
-                .Select(x => (
-                    Value: x.TransferMappingCode,
-                    Text: x.TransferMappingCode
-                )).ToList();
-        }
-
         public List<(string Value, string Text)> GetFileTransferOptions()
         {
             var dao = _unitOfWork.Repository<IEsFileTransferMappingDAO>();

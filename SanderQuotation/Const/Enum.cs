@@ -492,15 +492,6 @@ namespace Const
             Csv = 3,
         }
 
-
-        public enum EsDbTransferDbTypeEnum
-        {
-            [Description("PostgreSQL")]
-            PostgreSQL = 1,
-            [Description("MSSQL")]
-            MSSQL = 2
-        }
-
         public enum ScheduleCycleActionTypeEnum
         {
             [Description("查價")]

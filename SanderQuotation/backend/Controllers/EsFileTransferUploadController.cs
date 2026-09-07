@@ -1,5 +1,4 @@
 using AutoMapper;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Const;
@@ -67,18 +66,6 @@ namespace backend.Controllers
             _blEsFileTransferUpload ??= GetBLInstance<EsFileTransferUploadBL>();
 
             return _blEsFileTransferUpload;
-        }
-
-        private ESDbTransferMappingBL? _blESDbTransferMapping = null;
-        /// <summary>
-        /// ESDbTransferMappingBL
-        /// </summary>
-        /// <returns></returns>
-        protected ESDbTransferMappingBL GetBlESDbTransferMapping()
-        {
-            _blESDbTransferMapping ??= GetBLInstance<ESDbTransferMappingBL>();
-
-            return _blESDbTransferMapping;
         }
 
         private ReportItemCustomerBL? _blReportItemCustomer = null;

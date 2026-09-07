@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
 using Polly;
 using Polly.Retry;
+using Sander.Platform.DbTransfer;
 using System.Reflection;
 using System.Text;
 
@@ -46,7 +47,7 @@ builder.Services.AddScoped<ISystemLockService, SystemLockService>();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ApiSystemLockFilter>();
-});
+}).AddDbTransfer();
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<AdAuthService>();
@@ -305,6 +306,7 @@ app.UseRequestLocalization(localizationoptions);
 //// 專案啟動時載入
 var container = new Unity.UnityContainer();
 Business.BusinessFactory.Register(container);
+container.AddDbTransferDao();
 backend.Common.HttpContext.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
 #if DEBUG

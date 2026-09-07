@@ -67,13 +67,13 @@ WHERE 1=1";
             string sql = $@"SELECT m.*,
     (
         SELECT STRING_AGG(
-    DISTINCT COALESCE(et.{nameof(ESDbTransferEntity.DbName)} || '.', '') 
+    DISTINCT COALESCE(et.DbName || '.', '') 
     || c2.{nameof(EsFileTransferMappingColumnEntity.TargetTableName)}
     || COALESCE('(' || NULLIF(c2.{nameof(EsFileTransferMappingColumnEntity.TargetTableNameComment)},'') || ')', '')
     , ','
 )
 FROM EsFileTransferMappingColumn c2
-LEFT JOIN ESDbTransfer et ON et.{nameof(ESDbTransferEntity.TransferCode)} = c2.{nameof(EsFileTransferMappingColumnEntity.DBTransferMappingCode)}
+LEFT JOIN ESDbTransfer et ON et.TransferCode = c2.{nameof(EsFileTransferMappingColumnEntity.DBTransferMappingCode)}
 WHERE c2.{nameof(EsFileTransferMappingColumnEntity.TransferMappingCode)} = m.{nameof(EsFileTransferMappingEntity.TransferMappingCode)} AND c2.{nameof(EsFileTransferMappingColumnEntity.Status)} = @Status
     ) AS {nameof(EsFileTransferMappingDTO.MappingTables)}
 FROM EsFileTransferMapping m

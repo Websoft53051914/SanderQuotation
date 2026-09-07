@@ -30,7 +30,6 @@ namespace Business.BusinessLogic
             {
                 cfg.CreateMap<EsFileTransferMappingDM, EsFileTransferMappingEntity>().ReverseMap();
                 cfg.CreateMap<EsFileTransferMappingColumnDM, EsFileTransferMappingColumnEntity>().ReverseMap();
-                cfg.CreateMap<ESDbTransferEntity, ESDbTransferDM>();
             });
             mapper = configuration.CreateMapper();
         }
@@ -52,13 +51,6 @@ namespace Business.BusinessLogic
         {
             columnDAO ??= _unitOfWork.Repository<IEsFileTransferMappingColumnDAO>();
             return columnDAO;
-        }
-
-        private IESDbTransferDAO? dbTransferDAO;
-        private IESDbTransferDAO GetDbTransferDAO()
-        {
-            dbTransferDAO ??= _unitOfWork.Repository<IESDbTransferDAO>();
-            return dbTransferDAO;
         }
 
         private IEsScheduleCycleExcelDAO? scheduleCycleExcelDAO;
@@ -125,18 +117,6 @@ namespace Business.BusinessLogic
             var columns = GetColumnDAO().GetListByMappingSettingId(entity.TransferMappingCode);
             dm.Columns = columns.Select(c => mapper.Map<EsFileTransferMappingColumnDM>(c)).ToList();
             return dm;
-        }
-
-        /// <summary>
-        /// 依 DBTransferMappingCode 取得目標資料庫連線設定
-        /// </summary>
-        public ESDbTransferDM? GetDbTransferConfig(string dbTransferMappingCode)
-        {
-            var entity = GetDbTransferDAO().FindByPropertys(new Dictionary<string, object>
-            {
-                { nameof(ESDbTransferEntity.TransferCode), dbTransferMappingCode }
-            });
-            return entity == null ? null : mapper.Map<ESDbTransferDM>(entity);
         }
 
         /// <summary>

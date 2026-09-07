@@ -10,6 +10,7 @@ using Hangfire.Storage;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using Sander.Platform.DbTransfer;
 using System.Data.Common;
 using System.Text;
 using System.Text.Json;
@@ -131,25 +132,21 @@ namespace backend.Common
 
             try
             {
-                ESDbTransferMappingBL eSDbTransferMappingBL = BLFactory.GetInstanceBackGround<ESDbTransferMappingBL>();
-                var dm = eSDbTransferMappingBL.GetByCode(transferCode);
-
+                IDbTransferService dbTransfer = Business.BusinessFactory.GetInstance<IDbTransferService>();
                 var secretKey = _config["SecretKey"];
                 var secretIV = _config["SecretIV"];
+                var exeLogDM = dbTransfer.ExecuteTransfer(transferCode, secretKey, secretIV);
 
-                var exeLogDM = eSDbTransferMappingBL.ExecuteTransfer(dm.Id, secretKey, secretIV);
-
-                // ExecuteTransfer 內部已設定 JobStatus=Failed 代表基礎設施層級錯誤
                 if (exeLogDM.JobStatus == "Failed")
                 {
                     logDM.JobStatus = "Failed";
                     logDM.ErrorMessage = exeLogDM.ErrorMessage;
                     if (exeLogDM.ErrorLogs?.Count > 0)
-                        logDM.ErrorLogs = exeLogDM.ErrorLogs;
+                        logDM.ErrorLogs = ToErrorLogs(exeLogDM.ErrorLogs);
                 }
                 else
                 {
-                    logDM.ErrorLogs = exeLogDM.ErrorLogs;
+                    logDM.ErrorLogs = ToErrorLogs(exeLogDM.ErrorLogs);
                     logDM.DataCount = exeLogDM.DataCount;
                     logDM.ErrorCount = exeLogDM.ErrorCount;
                     logDM.JobStatus = logDM.ErrorCount > 0 ? "PartialFail" : "Success";
@@ -1067,10 +1064,35 @@ namespace backend.Common
         private ESDbTransferDM GetOrCacheDbConfig(string dbTransferMappingCode)
         {
             if (_dbConfigCache.TryGetValue(dbTransferMappingCode, out var cached)) return cached;
-            var bl = BLFactory.GetInstanceBackGround<TableExcelBL>();
-            var cfg = bl.GetDbTransferConfig(dbTransferMappingCode);
-            if (cfg != null) _dbConfigCache[dbTransferMappingCode] = cfg;
-            return cfg;
+            var cfg = Business.BusinessFactory.GetInstance<IDbTransferService>().GetDbTransferConfig(dbTransferMappingCode);
+            if (cfg == null) return null;
+            var dm = new ESDbTransferDM
+            {
+                TransferCode = cfg.TransferCode,
+                TransferName = cfg.TransferName,
+                DbType = cfg.DbType,
+                DbHost = cfg.DbHost,
+                DbPort = cfg.DbPort,
+                DbName = cfg.DbName,
+                DbUser = cfg.DbUser,
+                DbPassword = cfg.DbPassword
+            };
+            _dbConfigCache[dbTransferMappingCode] = dm;
+            return dm;
+        }
+
+        private static List<EsTransferErrorLogDM> ToErrorLogs(List<DbTransferErrorLog>? logs)
+        {
+            if (logs == null || logs.Count == 0)
+            {
+                return new List<EsTransferErrorLogDM>();
+            }
+
+            return logs.Select(e => new EsTransferErrorLogDM
+            {
+                Exception = e.Exception,
+                Sql = e.Sql
+            }).ToList();
         }
 
         /// <summary>

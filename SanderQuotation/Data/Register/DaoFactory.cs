@@ -53,9 +53,6 @@ namespace Data.Register
             }
 
             container
-                .RegisterType<IESDbTransferDAO, ESDbTransferDaoImpl>()
-                .RegisterType<IESDbTransferMappingDAO, ESDbTransferMappingDaoImpl>()
-                .RegisterType<IESDbTransferMappingColumnDAO, ESDbTransferMappingColumnDaoImpl>()
                 .RegisterType<IEsFileTransferMappingDAO, EsFileTransferMappingDaoImpl>()
                 .RegisterType<IEsFileTransferMappingColumnDAO, EsFileTransferMappingColumnDaoImpl>()
                 .RegisterType<IEsFileTransferUploadDAO, EsFileTransferUploadDaoImpl>()

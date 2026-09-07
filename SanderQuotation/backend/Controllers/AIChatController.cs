@@ -1,7 +1,6 @@
 ﻿using backend.AI;
 using backend.AI.VO;
 using backend.Common;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using Google.GenAI;

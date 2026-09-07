@@ -1,6 +1,4 @@
 using AutoMapper;
-using backend.Common;
-using backend.Common.Attribute;
 using Business.BusinessLogic;
 using Business.DomainModel;
 using CommonClass.Model;
@@ -10,20 +8,19 @@ using Core.Utility.Helper.DB.Entity;
 using Core.Utility.Utility;
 using Core.Utility.Web.EX;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
-using SixLabors.ImageSharp.ColorSpaces;
+using Sander.Platform.DbTransfer;
 using System.Data;
 using System.Data.SqlClient;
 using ViewModel;
 using static Const.Enums;
-using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace backend.Controllers
 {
     [Route("api/ESDbTransferMapping")]
-    public class ESDbTransferMappingController : BaseProjectController
+    public class ESDbTransferMappingController : PlatformApiController
     {
         private readonly IConfiguration _config;
         private readonly IMapper _mapper;
@@ -55,7 +52,7 @@ namespace backend.Controllers
             return _transferBL;
         }
 
-        // ¢w¢w CRUD ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ?w?w CRUD ?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w
 
         [HttpGet("GetPageList")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_View)]
@@ -73,7 +70,7 @@ namespace backend.Controllers
                 var pageResult = GetBL().GetPageList(pageEntity, searchVO);
                 var list = _mapper.Map<List<ESDbTransferMappingVM>>(pageResult.Results);
 
-                //®˙±o©“¶≥∏ÍÆ∆Æw≥]©w
+                //???o??????w?]?w
 
                 var resDB = GetTransferBL().GetAll();
                 var dicDb = resDB.ToDictionary(k => k.TransferCode, v => v.TransferName);
@@ -93,7 +90,7 @@ namespace backend.Controllers
 
                     list[i].Columns = _mapper.Map<List<ESDbTransferMappingColumnVM>>(GetBL().GetColumns(list[i].TransferMappingCode));
 
-                    list[i].CanDelete = pageResult.Results[i].EsScheduleCycleDMs.Count == 0; // ≠Y¶≥±∆µ{∏j©w´h§£•ißR∞£
+                    list[i].CanDelete = pageResult.Results[i].EsScheduleCycleDMs.Count == 0; // ?Y????{?j?w?h???i?R??
                 }
 
                 return JsonSuccess(new
@@ -163,7 +160,7 @@ namespace backend.Controllers
                 }
                 var guid = GetBL().Create(dm);
                 LogSuccess(guid, LogAction.Create);
-                return JsonSuccess("∑sºW¶®•\");
+                return JsonSuccess("Êñ∞Â¢ûÊàêÂäü");
             }
             catch (Exception ex)
             {
@@ -181,7 +178,7 @@ namespace backend.Controllers
                 var dm = _mapper.Map<ESDbTransferMappingDM>(vm);
                 GetBL().Edit(dm);
                 LogSuccess(vm.Id, LogAction.Edit);
-                return JsonSuccess("ΩsøË¶®•\");
+                return JsonSuccess("Á∑®ËºØÊàêÂäü");
 
             }
             catch (Exception ex)
@@ -203,7 +200,7 @@ namespace backend.Controllers
                 {
                     LogSuccess(item, LogAction.Delete);
                 }
-                return JsonSuccess("ßR∞£¶®•\");
+                return JsonSuccess("Âà™Èô§ÊàêÂäü");
             }
             catch (Exception ex)
             {
@@ -212,7 +209,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ®˙±o´¸©w•D™Ì™∫ƒÊ¶ÏπÔ¿≥©˙≤”
+        /// ???o???w?D??????????????
         /// </summary>
         [HttpGet("GetColumns")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
@@ -240,10 +237,10 @@ namespace backend.Controllers
             }
         }
 
-        // ¢w¢w ®”∑Ω∏ÍÆ∆Æw§U©‘≤M≥Ê ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ?w?w ??????w?U??M?? ?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w
 
         /// <summary>
-        /// ®˙±o©“¶≥§w≥]©w™∫®”∑Ω∏ÍÆ∆Æw≥sΩu≤M≥Ê°]ESDbTransfer°^
+        /// ???o????w?]?w????????w?s?u?M??]ESDbTransfer?^
         /// </summary>
         [HttpGet("GetDbTransferList")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit, FuncID.TableExcel_Create, FuncID.TableExcel_Edit)]
@@ -262,10 +259,10 @@ namespace backend.Controllers
             }
         }
 
-        // ¢w¢w ®”∑Ω∏ÍÆ∆Æw Schema ¨d∏ﬂ ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ?w?w ??????w Schema ?d?? ?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w
 
         /// <summary>
-        /// ®Ã®”∑ΩDB≥sΩu®˙±o©“¶≥ TABLE ¶W∫Ÿ
+        /// ????DB?s?u???o??? TABLE ?W??
         /// </summary>
         [HttpGet("GetSourceTables")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create,FuncID.ESDbTransferMapping_Edit)]
@@ -289,7 +286,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ®Ã®”∑ΩDB≥sΩu + TABLE ¶W∫Ÿ®˙±oƒÊ¶Ï≤M≥Ê
+        /// ????DB?s?u + TABLE ?W????o???M??
         /// </summary>
         [HttpGet("GetSourceColumns")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit)]
@@ -315,10 +312,10 @@ namespace backend.Controllers
             }
         }
 
-        // ¢w¢w •ÿº–∏ÍÆ∆Æw Schema ¨d∏ﬂ
+        // ?w?w ???^??w Schema ?d??
 
         /// <summary>
-        /// ®˙±o•ÿ™∫∏ÍÆ∆Æw©“¶≥ TABLE ¶W∫Ÿ°]≠Y´¸©w dbTransferGuid ´h•Œ∏”≥sΩu°Aß_´h•Œ MainConnection°^
+        /// ???o??????w??? TABLE ?W??]?Y???w dbTransferGuid ?h??c?s?u?A?_?h?? MainConnection?^
         /// </summary>
         [HttpGet("GetTargetTables")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit,FuncID.TableExcel_Create,FuncID.TableExcel_Edit)]
@@ -353,7 +350,7 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// ®˙±o•ÿ™∫∏ÍÆ∆Æw´¸©w TABLE ™∫ƒÊ¶Ï≤M≥Ê°]≠Y´¸©w dbTransferGuid ´h•Œ∏”≥sΩu°Aß_´h•Œ MainConnection°^
+        /// ???o??????w???w TABLE ?????M??]?Y???w dbTransferGuid ?h??c?s?u?A?_?h?? MainConnection?^
         /// </summary>
         [HttpGet("GetTargetColumns")]
         [CustomAuthorization(FuncID.ESDbTransferMapping_Create, FuncID.ESDbTransferMapping_Edit, FuncID.TableExcel_Create, FuncID.TableExcel_Edit)]
@@ -390,7 +387,7 @@ namespace backend.Controllers
             }
         }
 
-        // ¢w¢w ®p¶≥ª≤ßU§Ë™k ¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+        // ?w?w ?p?????U??k ?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w?w
 
         private ESDbTransferDM? GetTransferDm(string transferCode)
         {
