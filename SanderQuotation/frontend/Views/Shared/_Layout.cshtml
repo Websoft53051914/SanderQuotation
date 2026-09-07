@@ -339,7 +339,11 @@
                             window.location.href = '@Url.Action("Index", "Login")';
                         }
                     } else if (x.status === 403) {
-                        alert("無權限執行此動作");
+                        if (hasout == false) {
+                            hasout = true;
+                            alert("無權限執行此動作");
+                            window.location.href = '@Url.Action("Index", "Home")';
+                        }
                     }
                 },
                 error: function (xhr) {
