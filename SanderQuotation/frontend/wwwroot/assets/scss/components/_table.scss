@@ -76,17 +76,18 @@
     }
     .sort {
         position: relative;
+        padding-right: 1.35rem;
         &::before {
             content: "\f035d";
             position: absolute;
-            right: 0.5rem;
+            right: 0.15rem;
             top: 18px;
             font-size: 0.8rem;
             font-family: "Material Design Icons";
         }
         &::after {
             position:absolute;
-            right: 0.5rem;
+            right: 0.15rem;
             content: "\f0360";
             font-family: "Material Design Icons";
             font-size: 0.8rem;

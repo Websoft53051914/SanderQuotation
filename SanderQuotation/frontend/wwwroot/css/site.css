@@ -43,6 +43,16 @@ html {
   font-size: 0.875rem !important;
 }
 
+/* ???? icon ?????1024px ???????? */
+.page-content .table .sort {
+  padding-right: 1.35rem;
+}
+
+.page-content .table .sort::before,
+.page-content .table .sort::after {
+  right: 0.15rem;
+}
+
 .page-content .table code,
 .modal-content .table code,
 .page-content .table .badge,
