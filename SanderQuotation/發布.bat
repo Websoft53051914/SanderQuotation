@@ -116,9 +116,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "if (-not (Test-Path -LiteralPath $backendOut)) { throw 'Backend WebPublisher folder not found.' };" ^
   "if (-not (Test-Path -LiteralPath $frontendOut)) { throw 'Frontend WebPublisher folder not found.' };" ^
   "if (-not (Test-Path -LiteralPath $rootDir)) { throw 'WebPublisher folder not found.' };" ^
-  "New-LinuxZip $backendOut $backendZip '';" ^
+  "New-LinuxZip $backendOut $backendZip 'WebPublisher';" ^
   "Write-Host ('Created: ' + $backendZip);" ^
-  "New-LinuxZip $frontendOut $frontendZip '';" ^
+  "New-LinuxZip $frontendOut $frontendZip 'WebPublisher';" ^
   "Write-Host ('Created: ' + $frontendZip);" ^
   "New-LinuxZip $rootDir $rootZip (Split-Path -Leaf $rootDir);" ^
   "Write-Host ('Created: ' + $rootZip);"

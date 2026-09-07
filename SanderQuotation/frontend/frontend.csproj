@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Business\Business.csproj" />
     <ProjectReference Include="..\Const\Const.csproj" />
     <PackageReference Include="Sander.Platform.DbTransfer" Version="1.0.0" />
+    <PackageReference Include="Sander.Platform.Web" Version="1.0.0" />
     <ProjectReference Include="..\ViewModel\ViewModel.csproj" />
   </ItemGroup>
 
