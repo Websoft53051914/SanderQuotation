@@ -78,7 +78,7 @@ if exist "%FRONTEND_OUT%\appsettings.Development.json" (
 )
 
 echo.
-echo [4/5] Creating backend/frontend zip archives...
+echo [4/5] Creating zip archives (Linux-compatible paths)...
 echo.
 
 if not exist "%ZIP_BACKEND_DIR%" mkdir "%ZIP_BACKEND_DIR%"
@@ -88,45 +88,44 @@ set "PUBLISH_BACKEND_OUT=%BACKEND_OUT%"
 set "PUBLISH_FRONTEND_OUT=%FRONTEND_OUT%"
 set "PUBLISH_ZIP_BACKEND=%ZIP_BACKEND_FILE%"
 set "PUBLISH_ZIP_FRONTEND=%ZIP_FRONTEND_FILE%"
-
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference = 'Stop';" ^
-  "$backendZip = $env:PUBLISH_ZIP_BACKEND;" ^
-  "$frontendZip = $env:PUBLISH_ZIP_FRONTEND;" ^
-  "$backendOut = $env:PUBLISH_BACKEND_OUT;" ^
-  "$frontendOut = $env:PUBLISH_FRONTEND_OUT;" ^
-  "if (-not (Test-Path -LiteralPath $backendOut)) { throw 'Backend WebPublisher folder not found.' };" ^
-  "if (-not (Test-Path -LiteralPath $frontendOut)) { throw 'Frontend WebPublisher folder not found.' };" ^
-  "Compress-Archive -Path (Join-Path $backendOut '*') -DestinationPath $backendZip -Force;" ^
-  "Compress-Archive -Path (Join-Path $frontendOut '*') -DestinationPath $frontendZip -Force;" ^
-  "Write-Host ('Created: ' + $backendZip);" ^
-  "Write-Host ('Created: ' + $frontendZip);"
-
-if errorlevel 1 (
-    echo.
-    echo backend/frontend zip creation failed.
-    pause
-    exit /b 1
-)
-
-echo.
-echo [5/5] Creating WebPublisher root zip...
-echo.
-
 set "PUBLISH_ZIP_ROOT_DIR=%ZIP_ROOT_DIR%"
 set "PUBLISH_ZIP_ROOT_FILE=%ZIP_ROOT_FILE%"
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference = 'Stop';" ^
+  "Add-Type -AssemblyName System.IO.Compression;" ^
+  "Add-Type -AssemblyName System.IO.Compression.FileSystem;" ^
+  "function New-LinuxZip([string]$SourceDir, [string]$ZipPath, [string]$EntryPrefix) {" ^
+  "  $src = (Resolve-Path -LiteralPath $SourceDir).Path.TrimEnd('\');" ^
+  "  if (Test-Path -LiteralPath $ZipPath) { Remove-Item -LiteralPath $ZipPath -Force };" ^
+  "  $zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create);" ^
+  "  try {" ^
+  "    Get-ChildItem -LiteralPath $src -Recurse -File | ForEach-Object {" ^
+  "      $relative = $_.FullName.Substring($src.Length).TrimStart('\');" ^
+  "      $entryName = if ($EntryPrefix) { ($EntryPrefix + '/' + $relative).Replace('\', '/') } else { $relative.Replace('\', '/') };" ^
+  "      [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal);" ^
+  "    };" ^
+  "  } finally { $zip.Dispose() };" ^
+  "};" ^
+  "$backendZip = $env:PUBLISH_ZIP_BACKEND;" ^
+  "$frontendZip = $env:PUBLISH_ZIP_FRONTEND;" ^
+  "$backendOut = $env:PUBLISH_BACKEND_OUT;" ^
+  "$frontendOut = $env:PUBLISH_FRONTEND_OUT;" ^
   "$rootDir = $env:PUBLISH_ZIP_ROOT_DIR;" ^
   "$rootZip = $env:PUBLISH_ZIP_ROOT_FILE;" ^
+  "if (-not (Test-Path -LiteralPath $backendOut)) { throw 'Backend WebPublisher folder not found.' };" ^
+  "if (-not (Test-Path -LiteralPath $frontendOut)) { throw 'Frontend WebPublisher folder not found.' };" ^
   "if (-not (Test-Path -LiteralPath $rootDir)) { throw 'WebPublisher folder not found.' };" ^
-  "Compress-Archive -Path $rootDir -DestinationPath $rootZip -Force;" ^
+  "New-LinuxZip $backendOut $backendZip '';" ^
+  "Write-Host ('Created: ' + $backendZip);" ^
+  "New-LinuxZip $frontendOut $frontendZip '';" ^
+  "Write-Host ('Created: ' + $frontendZip);" ^
+  "New-LinuxZip $rootDir $rootZip (Split-Path -Leaf $rootDir);" ^
   "Write-Host ('Created: ' + $rootZip);"
 
 if errorlevel 1 (
     echo.
-    echo WebPublisher root zip creation failed.
+    echo zip creation failed.
     pause
     exit /b 1
 )
